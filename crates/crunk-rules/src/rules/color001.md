@@ -28,6 +28,10 @@ Use `var(--color-...)` for the nearest palette entry, or add the colour to `[pal
 `crunk.toml` when it is a new brand colour. Beyond `[lint] color_tolerance` the nearest entry is a
 different colour and the replacement is a design decision.
 
+`crunk fix` applies the replacement itself within `color_tolerance` (default mode only): an opaque
+literal becomes `var(--color-...)`, a translucent one `color-mix(in srgb, var(--color-...) N%,
+transparent)` so its alpha survives.
+
 ## Examples
 
 ### A hex literal outside the palette fires

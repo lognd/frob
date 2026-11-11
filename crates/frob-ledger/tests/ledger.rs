@@ -457,6 +457,29 @@ fn alias_ambiguity_lists_both_candidates(layout: Layout) {
 }
 both_layouts!(alias_ambiguity_lists_both_candidates);
 
+// frob:tests add_alias
+fn add_alias_resolves_once_and_rejects_bad_keys(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let t = ledger
+        .new_ticket(NewTicket::new("Aliased", TicketType::Task))
+        .expect("new");
+    let id = t.ticket.front.id;
+    let first = ledger.add_alias(id, "PROJ-123").expect("add");
+    assert!(!first.already);
+    assert_eq!(first.ticket.front.aliases, vec!["PROJ-123".to_owned()]);
+    assert_eq!(ledger.resolve("PROJ-123").expect("resolve"), id);
+    assert!(ledger.add_alias(id, "PROJ-123").expect("repeat").already);
+    assert!(matches!(
+        ledger.add_alias(id, "bad key"),
+        Err(LedgerError::Invalid { .. })
+    ));
+    let events = ledger.events(id).expect("events");
+    assert_eq!(events.len(), 2, "create plus one add-alias");
+    let folded = fold::fold(id, &events).expect("fold");
+    assert_eq!(folded.ticket.front.aliases, vec!["PROJ-123".to_owned()]);
+}
+both_layouts!(add_alias_resolves_once_and_rejects_bad_keys);
+
 #[test]
 fn handles_resolve_and_ambiguous_suffixes_refuse() {
     let dir = tempfile::tempdir().expect("tempdir");

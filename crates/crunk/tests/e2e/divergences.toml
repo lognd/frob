@@ -3,16 +3,6 @@
 # A listed step that no longer differs fails its scenario test, so the list cannot go stale.
 
 [[divergence]]
-id = "near-palette-colour-not-rewritten"
-field = "exit"
-steps = [
-  "e2e_02_color/near_accent_color_flagged_and_fixed#04",
-  "e2e_10_alpha/near_translucent_literal_fixes_to_color_mix_preserving_alpha#04",
-  "e2e_13_prefixes/empty_color_prefix_exported_accepted_and_fixed#06",
-]
-reason = "After `fix`, the Rust `check` still reports a COLOR001 error where the Python run came back clean. In the traced case (e2e_02) Rust `fix` reports no fixable violations, because Rust measures COLOR001 distance on a different scale (0.15 against 1.68 in Python), so the near-palette literal is never rewritten."
-
-[[divergence]]
 id = "config-error-exit-code"
 field = "exit"
 steps = [

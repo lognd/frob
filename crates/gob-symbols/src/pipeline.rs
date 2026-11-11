@@ -28,7 +28,7 @@ use crate::types::TypeFacts;
 // frob:ticket 01M47QKT10CG0RSF784EEYTQ0J
 /// Bump when extraction output changes for the same input; part of the
 /// cache key.
-pub const EXTRACTOR_VERSION: u32 = 29;
+pub const EXTRACTOR_VERSION: u32 = 37;
 
 /// Files read per filter pipeline (building one loads the index and attributes).
 const READ_CHUNK: usize = 256;
@@ -201,9 +201,10 @@ fn extract_cacheable(entry: &FileEntry, text: &str) -> (FileSymbols, bool) {
     }
 }
 
-fn key(entry: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
+/// The cache key of a file's symbol view; the path rides in the digest so byte-identical files stay distinct.
+pub fn key(entry: &FileEntry, adapter: &dyn Adapter) -> ArtifactKey {
     ArtifactKey {
-        content_digest: entry.digest.to_string(),
+        content_digest: format!("{}@{}", entry.digest, entry.path),
         producer_identity: adapter.identity(),
     }
 }

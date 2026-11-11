@@ -206,7 +206,7 @@ That is the whole loop: paste, read, test, refine, run, ask why. Section
 | # | Construct | Example | Meaning |
 |---|---|---|---|
 | 1 | rule | `rule TODO001 "bare-work-marker" { ... }` | id, slug, body |
-| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs test_items`, `reads diff, lease` | metadata (rules.md 2); `needs` names language capabilities, `reads` names side relations |
+| 2 | header | `lang rust`, `polarity P+`, `severity error`, `scope repo`, `must_measure`, `needs test_items`, `reads diff, lease`, `since "0.5.0"`, `fidelity f2` | metadata (rules.md 2); `needs` names language capabilities, `reads` names side relations, `since` the release the rule first shipped in, `fidelity` the lowest adapter fidelity (`f0` to `f4`) it accepts; `since` and `fidelity` feed `rules list` and are not part of the plan |
 | 3 | snippet | `` `print($$$ARGS)` `` ``rust`if $C { $F($$$A) }` as roles`` | code that looks like this |
 | 4 | metavariables | `$X`, `$$$XS`, `$_` | holes in a snippet |
 | 5 | find | `find f: function where f is public` | bind a variable to each thing of a shape |
@@ -239,6 +239,8 @@ header     = "lang" lang_set
            | "must_measure"
            | "needs" need { "," need }
            | "reads" need { "," need }
+           | "since" string
+           | "fidelity" ( "f0" | "f1" | "f2" | "f3" | "f4" )
            | "rollup" ( "file" | "directory" | "unit" )
            | knob ;
 need       = NAME | "vocab" "(" NAME ")" ;
@@ -267,7 +269,9 @@ atom       = term rel
            | term CMP term
            | term "~" ( REGEX | term )              (* regex match; a list means any *)
            | term "matches" term                    (* glob match; a list means any *)
-           | term "in" term                         (* membership; ranges a..b allowed *)
+           | term "in" term                         (* membership; ranges a..b allowed; a side column
+                                                      (config.layers.value) tests the column's values;
+                                                      text is compared to an integer cell by parsing *)
            | term "is" ( KIND | WORD )              (* kind test or boolean field: is public *)
            | term "has" "attr" STRING
            | term "is" SNIPPET [ "as" "roles" ]
@@ -356,7 +360,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `function(.name, .params, .returns)` | fields | Q15 | `is public`, `is async` where the language has them |
 | `key(.path, .name, .value)` | fields | Q19 | `.path` is the slash path from the document root: `/` then the enclosing key names and the key itself joined by `/` (`/jobs/build/steps/0`; sequence items are named by zero-based index). In `key(path = "...")` the string is a pattern: `*` matches within one segment, `**` crosses segments, the rest is literal. Only simple keys (ASCII alphanumerics, `_`, `-`) are keys; quoted, dotted and flow-collection keys and the contents of flow mappings are not, duplicate keys are each a member, an empty document has none |
 | `comment(.text)`, `literal(.value)`, `heading(.text, .level, .slug)` | fields | Q10, Q14, Q11 | |
-| `.bucket`, `.component` | field | Q02 | path-derived, on every kind and via `.file`: `.bucket` is the name of the file's immediate parent directory, `.component` its file stem (`css/components/card.css` is bucket `components`, component `card`); absent when the path has none |
+| `.bucket`, `.component` | field | Q02 | path-derived, on every kind and via `.file`: `.bucket` is the name of the file's immediate parent directory, `.component` its file stem (`css/components/card.css` is bucket `components`, component `card`); absent when the path has none. A host that knows the style root stamps the file root with the `file.bucket` and `file.component` attributes (exported as `BUCKET_ATTR`, `COMPONENT_ATTR`); a stamp, found on the node or its nearest stamped ancestor, wins over the path, and an empty stamp means the file has no bucket or component (a crunk `bucket_for` result relative to `css_root`); `crunk-ingest` stamps both (`sheet_attrs`) plus a `file.outside_css_root` flag (`"true"` for an ungoverned `.css` file outside `css_root`, via `outside_attrs`) for ORG005 |
 | `.unit` | field | Q05 | the nearest enclosing unit (not any ancestor) |
 | `is public`, `is exported` | field | Q07, Q33 | may be Unknown |
 | `has attr "k"` | field | Q08 | |
@@ -377,13 +381,16 @@ the compiler and the engine read one source. `grimble rule catalog
 | `diff.changed`, `diff.added` | side relation | gob-git | declare `reads diff` |
 | `lease.globs`, `lease.ticket` | side relation | frob-lease | declare `reads lease` |
 | `model.nodes`, `model.selectors` | side relation | grimble-model | declare `reads model` |
-| `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not |
+| `is integer` | flag | built in | a string value that is a whole signed integer; `auto` and units are not, so `x in config.layers.value` (never true for `auto`) plus `x == "auto"` exempts the keyword |
+| `is bem_kebab`, `is bem_snake`, `is bem_camel` | flag | built in | a string whose BEM segments (split on a doubled `_` or `-`) are each in that case; select the case by comparing `config.org.class_case` with a literal |
 | `glob(s)`, `resolve(path, from)`, `slug(s)`, `valid_glob` | function | built in | typed signatures in the catalog |
 
 Side relations are typed from their JSON schemas (config, diff, lease,
 model); a misspelt column is GRL001 like any other name (survey 8.5
 item 2). A rule that reads a side relation must declare it in `reads` (not `needs`, which names
-language capabilities), which also decides when the rule must re-run (rules.md 3).
+language capabilities), which also decides when the rule must re-run (rules.md 3). The older spelling `needs diff` (a side relation under `needs`) is still accepted as a deprecated alias of `reads diff` and logs a deprecation warning; write `reads`.
+
+`rules list --json` gives a GRL rule the same row as a Rust std rule and a pack rule (`RuleRow`): `since` and `fidelity` fill the `since` and `fidelity` fields, `needs` and `reads` list the capabilities and side relations.
 
 In a kind pattern the field name may be written with or without its
 leading dot: `element(.tag = "img")` and `element(tag = "img")` are the

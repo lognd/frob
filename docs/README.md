@@ -34,9 +34,13 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
 | [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
+| [design/grimble/conformance.md](design/grimble/conformance.md) | The .grmb language: conformance, example and milestones | draft | grimble |
 | [design/grimble/grimble-capabilities-v3.md](design/grimble/grimble-capabilities-v3.md) | Grimble capability language v3 | draft | grimble |
 | [design/grimble/grmb-spec.md](design/grimble/grmb-spec.md) | The .grmb language specification | draft | grimble |
+| [design/grimble/language-expansion.md](design/grimble/language-expansion.md) | Language expansion: ranked target set and per-language semantics | draft | grimble |
+| [design/grimble/lint-classification.md](design/grimble/lint-classification.md) | Design lint classification: portable vs language-specific | draft | grimble |
 | [design/grimble/output-atoms.md](design/grimble/output-atoms.md) | Output atoms: every way a program writes, per language | draft | grimble |
+| [design/grimble/planning-semantics.md](design/grimble/planning-semantics.md) | The .grmb planning layer: semantics, binding, impl chains and ambient faults | draft | grimble |
 | [design/grimble/rule-families.md](design/grimble/rule-families.md) | Rule families: NEAT, COH, CI and DK | draft | grimble |
 | [design/mirror/model.md](design/mirror/model.md) | Formal model of the one-way ticket mirror | current | frob |
 | [design/shared/architecture.md](design/shared/architecture.md) | Architecture: workspace, git, paths and time | current | gob |
@@ -112,7 +116,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
-| [reference/rules/](reference/rules/) | One page per entry (336 pages) | generated | - |
+| [reference/rules/](reference/rules/) | One page per entry (343 pages) | generated | - |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 
 ## Supporting files

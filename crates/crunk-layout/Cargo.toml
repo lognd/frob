@@ -13,6 +13,7 @@ categories = ["development-tools"]
 [dependencies]
 crunk-scene = { version = "0.532.0", path = "../crunk-scene" }
 tracing = "0.1"
+parley = { version = "0.12", default-features = false, features = ["std"] }
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }

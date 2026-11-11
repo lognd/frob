@@ -1,0 +1,1 @@
+grimble-lints: TIME001/TIME002 now take their function and method scopes from the universal model (`gob_symbols::model_of_source_at`) instead of a tree-sitter walk; the datetime flow stays on the tree.

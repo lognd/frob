@@ -238,8 +238,13 @@ impl Command for Show {
             changelog_exempt,
             forecast,
         };
-        let rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
-        Ok(Payload::new(data).with_pretty(rows))
+        let mut rows = rendered.unwrap_or_else(|| crate::text_view::show_rows(&data));
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        let view = super::view_freshness(ctx);
+        rows.extend(super::freshness_footer(view.as_ref()));
+        Ok(Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(super::envelope_freshness(view.as_ref())))
     }
 }
 
@@ -275,6 +280,9 @@ pub struct ListRow {
     /// With `--newcomer`: the ticket's `## Start here` notes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_here: Option<String>,
+    /// Set when the cached view is past `stale_error`, so another actor may already hold this ticket.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub may_be_taken: bool,
 }
 
 impl From<InboxEntry> for ListRow {
@@ -285,6 +293,7 @@ impl From<InboxEntry> for ListRow {
             aliases: None,
             events: None,
             start_here: None,
+            may_be_taken: false,
         }
     }
 }
@@ -318,6 +327,7 @@ impl ListData {
                     aliases: None,
                     events: None,
                     start_here: None,
+                    may_be_taken: false,
                 })
                 .collect(),
         }
@@ -464,8 +474,13 @@ impl Command for List {
         if self.full {
             fill_full(&ledger, &mut data)?;
         }
-        let rows = crate::text_view::list_rows(&data);
-        Ok(Payload::new(data).with_pretty(rows))
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        let view = super::view_freshness(ctx);
+        let mut rows = crate::text_view::list_rows(&data);
+        rows.extend(super::freshness_footer(view.as_ref()));
+        Ok(Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(super::envelope_freshness(view.as_ref())))
     }
 }
 
@@ -621,9 +636,16 @@ impl Command for Doable {
         let ledger = open(ctx)?;
         let (leases, warning) = lease_check(ctx);
         let freshness = freshness_notice(ctx);
+        // frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+        let view = super::view_freshness(ctx);
+        if let Some(v) = &view {
+            super::refuse_if_stale(v)?;
+        }
         let tickets = ledger
             .doable_in(&*leases, self.krate.as_deref(), self.product.as_deref())
             .map_err(cli_err)?;
+        // frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+        let (tickets, claimed_note) = drop_remote_claimed(ctx, tickets);
         let mut data = if self.newcomer {
             newcomer_rows(&ledger, tickets)?
         } else if crate::profile::Profile::for_cwd(&ctx.cwd) == crate::profile::Profile::Newcomer {
@@ -635,10 +657,19 @@ impl Command for Doable {
             data.tickets.truncate(n);
             data.count = data.tickets.len();
         }
-        let rows = crate::text_view::list_rows(&data);
-        let payload = Payload::new(data).with_pretty(rows);
+        // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+        mark_may_be_taken(&mut data, view.as_ref());
+        let mut rows = crate::text_view::list_rows(&data);
+        rows.extend(super::freshness_footer(view.as_ref()));
+        let payload = Payload::new(data)
+            .with_pretty(rows)
+            .with_freshness(super::envelope_freshness(view.as_ref()));
         let payload = match warning {
             Some(w) => payload.with_warning(w),
+            None => payload,
+        };
+        let payload = match claimed_note {
+            Some(n) => payload.with_warning(n),
             None => payload,
         };
         // frob:ticket 01M6P6117CXPW6TTAAEAQ9F2RW
@@ -649,6 +680,52 @@ impl Command for Doable {
             Some(n) => payload.with_warning(n),
             None => payload,
         })
+    }
+}
+
+/// Drop tickets whose `ticket/<handle>` is in the remote-tracking refs (an unrecorded claim) and describe what was hidden.
+///
+/// Offline by design: only refs already fetched by a sync are read
+/// (`distributed-tickets.md` sections 3.3 and 5.2), so a claim that has not
+/// been fetched yet is not seen until the next refresh.
+// frob:ticket 01M5DBVT9HH0MRR30JVCJZYRTY
+// frob:tests crates/frob/tests/it/doable_remote_claims.rs::doable_skips_tickets_claimed_on_origin_without_a_ledger_event
+pub(super) fn drop_remote_claimed(
+    ctx: &Context,
+    tickets: Vec<Summary>,
+) -> (Vec<Summary>, Option<String>) {
+    let Ok((repo, root)) = crate::workspace::Located::discover(&ctx.cwd).into_repo() else {
+        return (tickets, None);
+    };
+    let Ok(cfg) = FrobConfig::load(&root) else {
+        return (tickets, None);
+    };
+    let remote = cfg.sync.remote;
+    let (kept, hidden): (Vec<Summary>, Vec<Summary>) = tickets.into_iter().partition(|s| {
+        let branch = format!("ticket/{}", s.handle.trim_start_matches('~'));
+        frob_worktree::claim::cached_remote_claim(&repo, &remote, &branch).is_none()
+    });
+    if hidden.is_empty() {
+        return (kept, None);
+    }
+    let handles: Vec<&str> = hidden.iter().map(|s| s.handle.as_str()).collect();
+    tracing::info!(hidden = hidden.len(), %remote, "doable: hid tickets claimed on the remote");
+    let note = format!(
+        "{} ticket(s) hidden: claimed on {remote} without a ledger event yet ({})",
+        hidden.len(),
+        handles.join(", ")
+    );
+    (kept, Some(note))
+}
+
+/// Flag every row `may_be_taken` when the view is past `stale_error` (only reachable when the refusal is tolerated, e.g. `CI`).
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+pub(super) fn mark_may_be_taken(data: &mut ListData, view: Option<&crate::freshness::Freshness>) {
+    if view.is_some_and(|v| v.stale_error().is_some()) {
+        tracing::debug!(rows = data.tickets.len(), "doable: rows may be taken");
+        for row in &mut data.tickets {
+            row.may_be_taken = true;
+        }
     }
 }
 
@@ -707,6 +784,7 @@ fn newcomer_rows(
                 aliases: None,
                 events: None,
                 start_here,
+                may_be_taken: false,
             });
         }
     }

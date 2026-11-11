@@ -10,9 +10,13 @@
 
 pub mod brief;
 pub mod claude;
+pub mod codex;
 pub mod digest;
 pub mod engine;
+pub mod hook;
+pub mod native;
 pub mod project;
+pub mod telemetry;
 
 use std::path::{Component, Path, PathBuf};
 
@@ -127,6 +131,15 @@ pub enum RegState {
     Missing,
     /// Present but duplicated, legacy-unmarked, or different from what sync would write.
     Changed,
+}
+
+/// What `install` planned (and, unless dry, did) for one agent.
+#[derive(Debug, Clone, Default, Serialize, JsonSchema)]
+pub struct InstallReport {
+    /// One row per native hook.
+    pub hooks: Vec<native::Row>,
+    /// True when the registration file changed (or would change).
+    pub changed: bool,
 }
 
 /// The parsed `[agent]` manifest.
@@ -257,6 +270,14 @@ pub trait Emitter {
         Ok(false)
     }
 
+    /// Register frob's own `frob agent hook` handlers, touching only frob-owned entries.
+    ///
+    /// # Errors
+    /// [`AgentError`] when the registration file cannot be read or written.
+    fn install_native(&self, _home: &Path, _dry_run: bool) -> Result<InstallReport, AgentError> {
+        Ok(InstallReport::default())
+    }
+
     /// Remove every frob-owned registration (including those of `regs`); the number removed.
     ///
     /// # Errors
@@ -271,7 +292,7 @@ pub trait Emitter {
 // frob:tests crates/frob/tests/it/agent.rs::unknown_agent_is_a_usage_error
 /// Every implemented emitter; a new agent is one line here plus its module.
 pub fn emitters() -> Vec<Box<dyn Emitter>> {
-    vec![Box::new(claude::Claude)]
+    vec![Box::new(claude::Claude), Box::new(codex::Codex)]
 }
 
 /// The emitters named by `--agent` (`all` or one id).

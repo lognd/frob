@@ -26,6 +26,7 @@ mod kind;
 mod rowkind;
 mod verdict;
 
+use self::fxmap::FastMap;
 use std::collections::HashMap;
 
 use gob_ir::{Model, NodeId, Truth};
@@ -34,10 +35,12 @@ use regex::RegexBuilder;
 
 pub use eval::Val;
 pub(crate) use eval::{Env, Eval, Wired, is_test_word};
+pub(crate) use field::Reader;
 pub use field::{Datum, Scalar, compare};
 pub use verdict::{Doubt, Verdict};
 
 use eval::Matcher;
+pub use kind::{BUCKET_ATTR, COMPONENT_ATTR};
 pub(crate) use kind::{KindTest, PATH_ATTR, WORKSPACE_ATTR, is_external_unit, may_hide_members};
 
 use crate::exec::relations::{
@@ -161,7 +164,7 @@ pub struct Run {
 }
 
 /// Kind tests by kind word, compiled patterns by op and the supplied relations the plan names.
-type Prepared<'r> = (HashMap<StrId, KindTest>, HashMap<OpId, Matcher>, Wired<'r>);
+type Prepared<'r> = (FastMap<StrId, KindTest>, FastMap<OpId, Matcher>, Wired<'r>);
 
 fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
     ExecError::MissingRelation {
@@ -171,11 +174,41 @@ fn missing(p: &PlanParts, what: &'static str, name: &str) -> ExecError {
     }
 }
 
+/// Reads the known cells of one side-table column as a membership set.
+fn side_members(
+    p: &PlanParts,
+    rels: &Relations,
+    table: StrId,
+    column: StrId,
+) -> Result<Vec<Scalar>, ExecError> {
+    let name = &p.strings[table as usize];
+    let t = rels
+        .side
+        .get(name)
+        .ok_or_else(|| missing(p, "side table", name))?;
+    let col = &p.strings[column as usize];
+    let members: Vec<Scalar> = (0..t.len())
+        .filter_map(|row| {
+            let row = u32::try_from(row).expect("side tables are far below u32::MAX rows");
+            match t.cell(row, col) {
+                Datum::Known(s) => Some(s),
+                _ => None,
+            }
+        })
+        .collect();
+    tracing::debug!(
+        table = name.as_str(),
+        members = members.len(),
+        "member set read"
+    );
+    Ok(members)
+}
+
 /// Resolves every kind word, compiles every pattern and finds every relation the plan names,
 /// or names what cannot run.
 fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
-    let mut kinds = HashMap::new();
-    let mut matchers = HashMap::new();
+    let mut kinds = FastMap::default();
+    let mut matchers = FastMap::default();
     let mut wired = Wired {
         knobs: rels.knobs.clone(),
         budget: rels.step_budget,
@@ -203,6 +236,10 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
                 let src = &p.strings[*pattern as usize];
                 let g = globset::Glob::new(src).map_err(|e| bad_pattern(p, src, &e))?;
                 matchers.insert(id, Matcher::Glob(g.compile_matcher()));
+            }
+            Op::InSide { table, column, .. } => {
+                let members = side_members(p, rels, *table, *column)?;
+                matchers.insert(id, Matcher::Members(members));
             }
             Op::MatchGlobSet { table, column, .. } => {
                 let name = &p.strings[*table as usize];
@@ -274,7 +311,7 @@ fn wire_kind<'r>(
     p: &PlanParts,
     rels: &'r Relations,
     wired: &mut Wired<'r>,
-    kinds: &mut HashMap<StrId, KindTest>,
+    kinds: &mut FastMap<StrId, KindTest>,
     kind: StrId,
 ) -> Result<(), ExecError> {
     let word = &p.strings[kind as usize];
@@ -371,6 +408,7 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
         Op::MatchRegex { subject, .. }
         | Op::MatchGlob { subject, .. }
         | Op::MatchGlobSet { subject, .. }
+        | Op::InSide { subject, .. }
         | Op::Is { subject, .. }
         | Op::Exists { subject } => operand(subject, out),
         Op::HasAttr { var, .. } | Op::MatchSnippet { var, .. } | Op::InVocab { var, .. } => {

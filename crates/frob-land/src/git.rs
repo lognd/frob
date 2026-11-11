@@ -177,4 +177,76 @@ mod tests {
             "error: Your local changes would be overwritten"
         ));
     }
+
+    /// Marker variable: set, the probe test builds a package through [`cargo`]; unset, it does nothing.
+    const PROBE_VAR: &str = "FROB_LAND_CARGO_ENV_PROBE";
+    /// Name of the probe test, re-run by the parent test with the profile environment set.
+    const PROBE_TEST: &str = "git::tests::land_cargo_probe_child";
+
+    /// Write a package whose build script fails unless the build profile has `OPT_LEVEL` 2.
+    fn write_probe_package(p: &Path) {
+        write_probe_manifest(p);
+        write_probe_build_script(p);
+    }
+
+    /// Write the probe's manifest and empty lib so cargo has a crate to build.
+    fn write_probe_manifest(p: &Path) {
+        let manifest =
+            "[package]\nname = \"probe\"\nversion = \"0.0.0\"\nedition = \"2021\"\n\n[workspace]\n";
+        std::fs::create_dir(p.join("src")).expect("src");
+        std::fs::write(p.join("Cargo.toml"), manifest).expect("manifest");
+        std::fs::write(p.join("src/lib.rs"), "").expect("lib");
+    }
+
+    /// Write the build script that asserts the caller's profile env reached cargo.
+    fn write_probe_build_script(p: &Path) {
+        let build = "fn main() { assert_eq!(std::env::var(\"OPT_LEVEL\").unwrap(), \"2\"); }\n";
+        std::fs::write(p.join("build.rs"), build).expect("build.rs");
+    }
+
+    /// Child half: build the probe package through [`cargo`] and assert it succeeded (no-op unless [`PROBE_VAR`] is set).
+    #[test]
+    fn land_cargo_probe_child() {
+        let armed = std::env::var_os(PROBE_VAR).is_some();
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        write_probe_package(dir.path());
+        let run = cargo(&repo, dir.path(), &["build", "--offline"]).expect("spawn cargo");
+        assert!(
+            !armed || run.ok(),
+            "CARGO_PROFILE_* did not reach cargo: {}",
+            run.text
+        );
+    }
+
+    // frob:ticket 01M5EH4JK63Q7HEJ2PZ3A55YQE
+    // frob:tests crates/frob-land/src/git.rs::cargo
+    #[test]
+    fn land_cargo_inherits_the_callers_profile_env() {
+        let exe = std::env::current_exe().expect("current_exe");
+        let env = [
+            (PROBE_VAR, "1"),
+            ("CARGO_INCREMENTAL", "0"),
+            ("CARGO_PROFILE_DEV_OPT_LEVEL", "2"),
+        ]
+        .map(|(k, v)| (k.to_owned(), v.to_owned()))
+        .to_vec();
+        let spec = Spec {
+            program: Program::Hook { path: exe },
+            args: vec!["--exact".to_owned(), PROBE_TEST.to_owned()],
+            cwd: None,
+            env,
+            timeout: Duration::from_secs(300),
+            capture: true,
+        };
+        let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
+            .run(&spec)
+            .expect("re-run the test binary");
+        assert!(
+            matches!(out.status, Outcome::Exited(0)),
+            "{}{}",
+            out.stdout,
+            out.stderr
+        );
+    }
 }

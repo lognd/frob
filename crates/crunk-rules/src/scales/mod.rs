@@ -8,12 +8,14 @@
 //! step` as an absolute allowance.
 
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
 
 use crunk_ingest::ProjectStyles;
 use crunk_spec::DesignSpec;
 use crunk_values::{Length, LengthKind};
 use gob_rules::{Out, RuleDecl};
 
+use crate::fixes::replace_span;
 use crate::sheets::site_path;
 
 /// The properties SPACE001 judges.
@@ -168,7 +170,17 @@ pub fn check<R: RuleDecl>(
                     message.push_str(" (beyond fix_tolerance, so no automatic replacement)");
                 }
                 tracing::debug!(rule = R::DEF.id, %path, prop = %decl.prop, raw = %located.length.raw, "off-scale length");
-                out.fire_in(&path, located.span.0, message);
+                let negative = located.length.px.is_some_and(f64::is_sign_negative);
+                if off.snappable && !negative {
+                    let fix = replace_span(
+                        format!("use var({})", name(off.nearest)),
+                        located.span,
+                        format!("var({})", name(off.nearest)),
+                    );
+                    out.fire_in_with_fix(&path, located.span.0, message, fix);
+                } else {
+                    out.fire_in(&path, located.span.0, message);
+                }
             }
         }
     }

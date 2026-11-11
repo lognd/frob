@@ -211,6 +211,10 @@ An interactive excuse prompt is not implemented yet.
   candidate (at most 8 attempts, never waiting). When nothing is
   claimable it refuses with `E-NO-DOABLE-TICKET` (remedy `frob ticket
   doable`). `--next` conflicts with a ticket argument and with `--here`.
+  `work` and `start` first probe the remote within `[sync] foreground_budget_ms`
+  and refuse `E-SYNC-STALE` (remedy `frob refresh`) when the cached view is
+  older than `[sync] stale_error`; `--offline --reason TEXT` claims without
+  syncing, logs the reason and returns it in a `W-SYNC-OFFLINE` warning.
   `frob work <ticket> --anyway --reason TEXT` is the escape valve over
   another clone's claim (`E-CLAIM-LOST`): nothing is pushed and no claim
   transfers; the work proceeds, optionally limited to `--anyway-scope
@@ -365,8 +369,10 @@ described in their own files, and are Milestone 2 or later (D36).
 | `grimble vet [--hook]` | grimble | grimble-vet | yes; implemented (shared/charter.md 4.2.3.1); `--hook` library only (shared/charter.md 4.2.3.1) | 0 1 2 4 | 2 | policy: the vet gate semantics |
 | `grimble vet-refresh [SOURCE] [--db DIR] [--check] [--max-age-days N]` | grimble | grimble-vet | yes; implemented (shared/charter.md 4.2.3.1) | 0 1 2 | 2 | policy: refresh the advisory snapshot and stamp its date |
 | `grimble explore outline\|map\|xref` | grimble | grimble-check over gob-symbols | yes, read-only | 0 2 4 | 2 | object: the explore noun of grimble |
+| `grimble show` `grimble trace` (show --prose prints a scenario as numbered English steps, and trace prints its derived path from goals to steps with the paired verification status) | grimble | grimble (bin) over grimble-model | yes, read-only | 0 2 4 | 2 | object: the planning scenario noun of grimble |
 | `grimble serve --mcp` | grimble | grimble-serve | not applicable | 0 2 4 | 2 | effect: opens a server session |
 | `agent status\|sync\|uninstall\|brief\|digest` (install, inspect and undo the agent integration; the brief verb prints a byte-capped session summary; the digest verb runs a command, stores its full output as an artifact and prints a bounded summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files; `digest` writes the command output under `.frob/artifacts/` |
+| `agent install\|hook\|heavy\|profile` (install registers frob's hook handlers in each agent's settings; hook answers the agent's hook JSON; heavy runs one heavy command under a shared lock and records its cost; profile folds those cost rows into a per-command summary) | frob | frob (bin) | yes; hook and profile are read-only, install adds only frob-marked entries, heavy repeats its command | 0 1 2 3 4 | 1 | effect: install writes the agent settings and heavy records command cost rows; hook and profile are the object noun `agent` answering and summarising those rows |
 | `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
 | `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
 | `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |

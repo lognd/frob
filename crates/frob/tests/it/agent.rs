@@ -251,3 +251,21 @@ fn unknown_agent_is_a_usage_error() {
     let bad = frob(r, &["agent", "status", "--agent", "nope"]);
     assert_ne!(code(&bad), 0);
 }
+
+// frob:tests crates/frob/src/agent_cmd.rs::targets
+#[test]
+fn home_with_agent_all_is_a_usage_error() {
+    let repo = repo();
+    let out = frob(
+        repo.path(),
+        &[
+            "agent",
+            "status",
+            "--agent",
+            "all",
+            "--home",
+            "/nonexistent",
+        ],
+    );
+    assert_eq!(code(&out), 2);
+}

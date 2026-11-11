@@ -598,7 +598,9 @@ GitHub Actions YAML: a workflow is a `unit(kind=workflow)` with
 `group(order=sequence)` of steps; `uses:` is `apply(kind=instantiate)`
 whose head resolves to an external identity (owner/repo@ref) with
 status Must when SHA-pinned, May when tag-pinned (the referent can
-move); `needs:` is `apply(kind=dependency)`; triggers are entrypoints
+move), and a trailing version comment (`# v4.1.0`) on a SHA-pinned
+`uses:` is bound to the reference as its human-readable version;
+`needs:` is `apply(kind=dependency)`; triggers are entrypoints
 (`attr(on)`); `permissions`, `concurrency`, `timeout-minutes` are
 `attr` nodes; `${{ }}` expressions are a `region(kind=embedded,
 lang=actions-expr)` with references into the event context (a scope
@@ -612,7 +614,8 @@ Dockerfile: one `unit` per stage (`FROM ... AS name`), `FROM` is
 `apply(kind=instantiate)` to an image identity (Must when digest-pinned,
 May for tags, Unknown for `latest`), `COPY --from` is a dependency edge
 between stages, `RUN` is an embedded shell region, `USER`, `EXPOSE`,
-`HEALTHCHECK` are attributes.
+`HEALTHCHECK` are attributes (shipped: the stage's Attr facet carries `user`,
+`expose` and `healthcheck`; last `USER`/`HEALTHCHECK` wins, `EXPOSE` accumulates).
 
 Implementation status: `gob-symbols` ships `ActionsAdapter`
 (`.github/workflows/*.yml|yaml`) and `DockerfileAdapter` (`Dockerfile`,

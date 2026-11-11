@@ -29,6 +29,7 @@ use frob_release::status::{
 use frob_release::{Mode, Options, ReleaseError};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_exec::{Limits, Program, Runner};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -231,7 +232,7 @@ impl Command for ReleaseNotes {
                 RefusalClass::GuardNeedsAction,
                 why,
             )
-            .with_remedy("frob release changelog --version <X>")
+            .with_command(RemedyCommand::new("frob", "release changelog").flag("version", "<X>"))
             .into()
         };
         let text = std::fs::read_to_string(&path)

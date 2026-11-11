@@ -9,6 +9,10 @@
 | `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
 | `agent brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a bounded summary of the ticket leased from this worktree, its scope, the worktree and the standing rules. |
 | `agent digest` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run a command, store its full output content-addressed and print head, tail, error lines and the artifact path. |
+| `agent heavy` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Run a heavy command under the shared build lock, then clean regenerable test executables. |
+| `agent hook` | yes | no | 0 ok, 2 usage, 4 internal | Answer one coding-agent hook call from the payload on stdin, failing open on any problem. |
+| `agent install` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Register the native `frob agent hook` handlers in each selected agent's settings, touching only frob-owned entries. |
+| `agent profile` | no | no | 0 ok, 1 negative, 2 usage, 4 internal | Refresh `heavy-profile.toml` from command telemetry, or check that it is current. |
 | `agent status` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Report drift between the repository manifest and each selected agent's home; exits 1 on drift. |
 | `agent sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Publish the manifest into each selected agent's home behind a do-not-edit banner and register its hooks. |
 | `agent uninstall` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Remove only the files and registrations frob installed, leaving user additions alone. |
@@ -23,6 +27,7 @@
 | `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
+| `coord status` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | List the live full `frob check` runs of every worktree of this repository. |
 | `cycle assign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed. |
 | `cycle close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress. |
 | `cycle list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every cycle, earliest start first. |
@@ -52,6 +57,7 @@
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
+| `mirror alias` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record a tracker key (such as PROJ-123) as an alias of a ticket, so `ticket show` finds it by that key. |
 | `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
 | `plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose or create tickets for design entities no live ticket implements; goal to epic, scenario to story, impl to task. |
@@ -101,6 +107,7 @@
 | `ticket unlink` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove a typed link between two tickets; removing a missing link is a no-op. |
 | `ticket update` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Patch fields of a ticket: `--set key=value`, dedicated flags, label, scope and acceptance edits. |
 | `ticket url` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the current blob URL of the ticket file on the ticket branch, and the mirrored issue URL when one exists. |
+| `ticket usage` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Record token usage on a ticket as an audit event; `frob stats` sums these into cost per token. |
 | `tour` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the repository tour: one stop at a time on a terminal, every stop otherwise. |
 | `train drain` | yes | no | 0 ok, 3 refused, 4 internal | Run land train rounds until the queue is empty. |
 | `train drop` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Remove one queue entry of the land train with a reason. |

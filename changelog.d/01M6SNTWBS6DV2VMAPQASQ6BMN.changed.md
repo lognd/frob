@@ -1,0 +1,1 @@
+grimble-lints: ERR001, ERR002 and ERR003 now discover sites from the universal model (`gob_symbols::model_of_source_at`) instead of per-language tree-sitter queries; catch-all, rethrow and signature judgements remain textual.

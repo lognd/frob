@@ -623,6 +623,39 @@ atoms = [
    be promoted per project; every other atom is a waivable error
    (`frob:waive` with a reason).
 
+## 5a. Universal-model witness
+
+`log/universal.rs` resolves output calls for the Rust and
+Python groups through gob-symbols `calls` and `uses`, with no callee text
+matching. Argument conditions are queried from U: each call's byte span
+(`start`/`end`) is split into positional and keyword arguments, and `when`
+(fd or path literals such as `write(1, ..)` or `open("/dev/stdout")`),
+`mode_arg` and `capture-kwarg` (`subprocess.run(.., capture_output=True)`
+suppresses the atom) are evaluated against them. An argument that is a
+literal or a dotted path (resolved through `uses` aliases) is decided; a call
+with no known span has empty arguments. Handle-flow is followed one hop: a name
+bound exactly once in the file (`h = sys.stdout`, `fd = 1`) stands for its right-hand side
+when it is an argument; a rebound name is not followed, so the scanner result stands. A mode-aware
+call whose `mode_arg` is neither a literal nor a once-bound name is listed by
+`mode_unresolved_calls`; the `pass.rs` cross-check reports each such call the scanner did not
+already hit or flag as a LOG001 Unresolved finding (anchor `universal-mode`), never silently clean.
+Deeper flow (through fields, calls, or method receivers) needs type inference and stays with the scanner.
+`pass.rs` cross-checks it against the language scanners: a call
+the model resolves that the scanner neither reports nor lists as unresolved
+becomes a LOG001 Unresolved finding, so disagreement is never clean. Matching is by
+byte offset: gob-symbols records each call site's `start`/`end` byte span, and a model call is
+covered only when its span overlaps a scanner hit or unresolved range, so a second call on a line
+the scanner already reported is still caught (a call with no known span is reported, not hidden).
+JavaScript/TypeScript and C# are resolved too: C# `using Ns;` globs and `using A = Ns.T;` aliases
+are expanded to candidate paths, and the C# adapter records each call's byte span, so C# calls
+are covered by span like the others (span-less sites in other languages fall back to the line). Java is
+resolved with byte spans: the Java adapter records every method invocation and object creation in a
+method or constructor, and its imports (`import a.B;`, `import a.*;`, `import static a.B.m;`) become
+uses; a bare head also tries each wildcard package and the implicit `java.lang`. Bash is resolved too:
+the shell adapter records each plain simple command (not captured or redirected ones) with its byte
+span, and the command name is the callee. C/C++ is resolved too: the adapter records call sites with byte spans and `using` declarations as
+uses, and `::` is the path separator.
+
 ## 6. Coverage against ~JKKJPTT
 
 | ~JKKJPTT criterion | Where |

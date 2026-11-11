@@ -22,7 +22,8 @@ The ledger branch allows a force push or deletion, or the hosting API could not 
 `doctor` and `frob check` ask the hosting API for the ledger branch's protection (security.md
 2.11). An answer that force pushes or deletion are allowed is an Error; no token, an
 unreachable API or an answer that cannot be read is Unresolved, never clean. Enable branch
-protection on the ticket branch with "allow force pushes" and "allow deletions" both off.
+protection on the ticket branch with "allow force pushes" and "allow deletions" both off, or a
+repository ruleset with the `deletion` and `non_fast_forward` rules, which is also consulted.
 
 ## Examples
 

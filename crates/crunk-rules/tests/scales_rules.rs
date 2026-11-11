@@ -145,6 +145,7 @@ fn size001_uses_the_declared_sizes_scale_and_its_token_names() {
 }
 
 // frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
+// frob:tests crates/crunk-rules/src/host.rs::missing_scale
 #[test]
 fn radius001_is_inapplicable_without_declared_radii() {
     let spec = support::DEFAULT_SPEC.replace("radii = [0, 4, 8, 16]", "radii = []");
@@ -157,6 +158,7 @@ fn radius001_is_inapplicable_without_declared_radii() {
 }
 
 // frob:tests crates/crunk-rules/src/rules/radius001.rs::Radius001
+// frob:tests crates/crunk-rules/src/host.rs::missing_scale
 #[test]
 fn radius001_is_inapplicable_without_declared_radii_part_2() {
     let with = css(".a { border-radius: 6px; }\n");

@@ -1,12 +1,14 @@
 # The crunk-core std pack manifest (packs-and-plugins.md section 4 and 6.1). It owns the LAYER and ORG
-# families. No rule is GRL yet: every rule is a recorded exception in exceptions.toml, each naming
-# the GRL construct that is missing. `provides.rules` stays empty until a rule moves.
+# families. LAYER001 and ORG002 are GRL; every other rule is a recorded exception in exceptions.toml,
+# each naming the GRL construct that is missing. `provides.rules` lists the rules ported to GRL; the rest stay in exceptions.toml.
+# Its GRL sources compile under `rules/` with `docs/schemas/crunk.json` typing `config.*`
+# (cargo dev gen std-rules, crates/gob-dev/src/render/std_rules.rs CRUNK_CORE).
 [pack]
 name = "crunk-core"
 version = "0.0.0"
 families = ["LAYER", "ORG"]
 
 [provides]
-rules = []
+rules = ["LAYER001", "ORG002"]
 
 [effects]

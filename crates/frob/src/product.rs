@@ -78,9 +78,13 @@ impl Product for FrobProduct {
                 .register::<crate::config_cmd::ConfigSync>()
                 .register::<crate::agent_cmd::AgentSync>()
                 .register::<crate::agent_cmd::AgentStatus>()
+                .register::<crate::agent_install_cmd::AgentInstall>()
                 .register::<crate::agent_cmd::AgentUninstall>()
                 .register::<crate::agent_cmd::AgentBrief>()
                 .register::<crate::agent_digest_cmd::AgentDigest>()
+                .register::<crate::agent_hook_cmd::AgentHook>()
+                .register::<crate::agent_heavy_cmd::AgentHeavy>()
+                .register::<crate::agent_profile_cmd::AgentProfile>()
                 .register::<lease_cmd::LeaseWiden>()
                 .register::<lease_cmd::LeaseRelease>()
                 .register::<lease_cmd::LeaseRekind>()
@@ -98,6 +102,8 @@ impl Product for FrobProduct {
         let cli = crate::baseline_cmd::register(cli);
         // frob:ticket 01M68K5GXB2C7G082PGAA9C2BY
         let cli = cli.register::<crate::dismiss_cmd::Dismiss>();
+        // frob:ticket 01M5B6QR4JZ19YAGB7922H0R69
+        let cli = cli.register::<crate::coord_cmd::CoordStatus>();
         // frob:ticket 01M66G70F82EC8EERE0077QKVV
         let cli = crate::migrate_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);

@@ -1,0 +1,41 @@
+rule ORG002 "class-case" {
+  lang [css, scss]
+  severity error
+  scope repo
+  reads config
+
+  find o: config.org
+  find c: class_selector
+  where (o.class_case == "kebab" and not c.name is bem_kebab)
+     or (o.class_case == "snake" and not c.name is bem_snake)
+     or (o.class_case == "camel" and not c.name is bem_camel)
+  report c "class '{c.name}' violates the configured [org] class_case"
+
+  example fire css {
+    config """
+      [org]
+      class_case = "kebab"
+    """
+    file "a.css" """
+      .FooBar { color: red; }
+    """
+    expect "line 1: error"
+  }
+  example clean css {
+    config """
+      [org]
+      class_case = "kebab"
+    """
+    file "a.css" """
+      .foo-bar__item--on { color: red; }
+    """
+  }
+  example notapplicable markdown """
+    Prose has no classes.
+  """
+  explain """
+    A class name must be written in the casing chosen under [org] class_case.
+    ## Remedy
+    Rename the class, or change class_case with a decision.
+  """
+}

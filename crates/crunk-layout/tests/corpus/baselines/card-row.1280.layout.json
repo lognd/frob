@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "viewport_width": 1280.0,
+  "viewport_height": 800.0,
+  "nodes": [
+    {
+      "id": "root",
+      "parent": null,
+      "kind": "box",
+      "x": 0.0,
+      "y": 0.0,
+      "width": 712.0,
+      "height": 168.0
+    },
+    {
+      "id": "a",
+      "parent": "root",
+      "kind": "box",
+      "x": 16.0,
+      "y": 16.0,
+      "width": 216.0,
+      "height": 136.0
+    },
+    {
+      "id": "a-t",
+      "parent": "a",
+      "kind": "text",
+      "x": 24.0,
+      "y": 24.0,
+      "width": 200.0,
+      "height": 19.203125,
+      "text": {
+        "content": "Alpha card",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    },
+    {
+      "id": "b",
+      "parent": "root",
+      "kind": "box",
+      "x": 248.0,
+      "y": 16.0,
+      "width": 216.0,
+      "height": 136.0
+    },
+    {
+      "id": "b-t",
+      "parent": "b",
+      "kind": "text",
+      "x": 256.0,
+      "y": 24.0,
+      "width": 200.0,
+      "height": 19.203125,
+      "text": {
+        "content": "Beta card",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    },
+    {
+      "id": "c",
+      "parent": "root",
+      "kind": "box",
+      "x": 480.0,
+      "y": 16.0,
+      "width": 216.0,
+      "height": 136.0
+    },
+    {
+      "id": "c-t",
+      "parent": "c",
+      "kind": "text",
+      "x": 488.0,
+      "y": 24.0,
+      "width": 200.0,
+      "height": 19.203125,
+      "text": {
+        "content": "Gamma card",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    }
+  ],
+  "focus_order": []
+}

@@ -10,8 +10,12 @@
 //!   for a tag, Unknown for no tag or `latest` (`docs/design/grimble/rule-families.md` section 3.2). `FROM stage`
 //!   naming an earlier stage, and `COPY --from=stage|index`, are dependency
 //!   references; `COPY --from=image` is an instantiate reference. `scratch` is skipped.
-//! - Instruction bodies (`RUN` shell regions, `USER`, `EXPOSE`) are not modelled, so
-//!   the adapter claims F2, not F3.
+//! - `USER`, `EXPOSE` and `HEALTHCHECK` are recorded in the stage's Attr facet as
+//!   `attr` nodes `user` (the last `USER`), `expose` (every `EXPOSE` port, space separated, in
+//!   order) and `healthcheck` (the last `HEALTHCHECK` arguments, `NONE` included).
+//!   A stage with none of them has no Attr facet content.
+//! - Other instruction bodies (`RUN` shell regions) are not modelled, so the
+//!   adapter claims F2, not F3.
 
 // frob:ticket 01M3Z71542Y6NZG3G8A83EFRF2
 
@@ -93,6 +97,7 @@ struct Stage {
     image: String,
     start: usize,
     end: usize,
+    attrs: Vec<(&'static str, String)>,
 }
 
 /// Splits `text` into logical instructions (continuation lines joined, comments dropped).
@@ -206,10 +211,38 @@ fn fold_stage(cx: &mut Cx<'_>, stage: &Stage) -> Result<NodeId, TermError> {
         ),
         &[],
     )?;
+    let mut kids = vec![sig, body];
+    for (key, value) in &stage.attrs {
+        let payload = cx.add(
+            NodeSpec::new(Operator::lit("text", value), loc.clone()),
+            &[],
+        )?;
+        kids.push(cx.add(NodeSpec::new(Operator::attr(key), loc.clone()), &[payload])?);
+    }
     cx.add(
         NodeSpec::new(Operator::unit("stage", "impl"), loc).named(&stage.name),
-        &[sig, body],
+        &kids,
     )
+}
+
+/// Records instruction `inst` (`USER`, `EXPOSE`, `HEALTHCHECK`) in `stage`'s attributes.
+fn record_attr(stage: &mut Stage, inst: &Instruction) {
+    let key = match inst.keyword.as_str() {
+        "USER" => "user",
+        "EXPOSE" => "expose",
+        "HEALTHCHECK" => "healthcheck",
+        _ => return,
+    };
+    let slot = stage.attrs.iter().position(|(k, _)| *k == key);
+    match (slot, key) {
+        (Some(i), "expose") => {
+            stage.attrs[i].1.push(' ');
+            stage.attrs[i].1.push_str(&inst.args);
+        }
+        (Some(i), _) => stage.attrs[i].1.clone_from(&inst.args),
+        (None, _) => stage.attrs.push((key, inst.args.clone())),
+    }
+    tracing::trace!(stage = %stage.name, key, "dockerfile attribute recorded");
 }
 
 /// Folds a Dockerfile into stage units with `FROM` and `COPY --from` references.
@@ -232,9 +265,11 @@ fn fold_text(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
                 image,
                 start: inst.start,
                 end: inst.end,
+                attrs: Vec::new(),
             });
         } else if let Some(s) = stages.last_mut() {
             s.end = inst.end;
+            record_attr(s, inst);
         }
     }
     let mut units = Vec::new();
@@ -311,6 +346,7 @@ fn refs_of(path: &str, insts: &[Instruction], stages: &[Stage]) -> Vec<RefSite> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::FacetDigest;
 
     // frob:tests crates/gob-symbols/src/docker_image.rs::is_dockerfile_path
     #[test]
@@ -327,5 +363,51 @@ mod tests {
         let i = instructions("FROM a AS b\nRUN x \\\n  && y\n# c\nCOPY . .\n");
         assert_eq!(i.len(), 3);
         assert_eq!(i[1].args, "x && y");
+    }
+
+    /// The Attr facet digest of the first stage of Dockerfile `text`.
+    fn attr_digest(text: &str) -> FacetDigest {
+        let input = FileInput {
+            path: "Dockerfile",
+            digest: "d",
+            size: u32::try_from(text.len()).unwrap(),
+        };
+        let folded = fold_text(text, &input).unwrap();
+        folded.file.symbols[0].digests.attr
+    }
+
+    // frob:tests crates/gob-symbols/src/docker_image.rs::record_attr
+    #[test]
+    fn user_changes_the_attr_facet() {
+        let plain = attr_digest("FROM a\nRUN x\n");
+        assert_ne!(plain, attr_digest("FROM a\nUSER app\n"));
+    }
+
+    // frob:tests crates/gob-symbols/src/docker_image.rs::record_attr
+    #[test]
+    fn expose_changes_the_attr_facet() {
+        let plain = attr_digest("FROM a\n");
+        assert_ne!(plain, attr_digest("FROM a\nEXPOSE 80\n"));
+    }
+
+    // frob:tests crates/gob-symbols/src/docker_image.rs::record_attr
+    #[test]
+    fn healthcheck_changes_the_attr_facet() {
+        let plain = attr_digest("FROM a\n");
+        assert_ne!(plain, attr_digest("FROM a\nHEALTHCHECK CMD true\n"));
+    }
+
+    // frob:tests crates/gob-symbols/src/docker_image.rs::record_attr
+    #[test]
+    fn last_user_wins() {
+        let a = attr_digest("FROM a\nUSER root\nUSER app\n");
+        assert_eq!(a, attr_digest("FROM a\nUSER app\n"));
+    }
+
+    // frob:tests crates/gob-symbols/src/docker_image.rs::record_attr
+    #[test]
+    fn expose_accumulates() {
+        let a = attr_digest("FROM a\nEXPOSE 80\nEXPOSE 443\n");
+        assert_eq!(a, attr_digest("FROM a\nEXPOSE 80 443\n"));
     }
 }

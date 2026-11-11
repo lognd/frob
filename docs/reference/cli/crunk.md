@@ -32,6 +32,8 @@
 | `preview` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the design spec as a terminal sheet. |
 | `query` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Ask a question of the project: find, component, dupes, unused, uses, color or violations. |
 | `rename` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Rename a token (`--color-ink`) and rewrite every reference in CSS, TSX and spec files. |
+| `render` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Solve the scenes of the selected cells and write their layout-solve JSON. |
 | `review` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the screen states that need a human review and what changed since the last ack. |
 | `rule catalog` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the std pack rules that `[packs]` in crunk.toml switches on. |
+| `snapshot` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Compare solved layouts with the committed baselines, or rewrite them with `--update`. |
 | `tokens` | yes | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Write, preview (`--target`) or drift-check (`--check`) the generated token files. |

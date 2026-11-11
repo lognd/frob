@@ -2,7 +2,7 @@
 source: crates/gob-symbols/tests/it/csharp_fixtures.rs
 expression: "render(\"solution\")"
 ---
-== src/App/Platform.cs (Partial { holes: 1 })
+== src/App/Platform.cs (Complete)
 symbol Namespace src/App/Platform.cs::Acme
 symbol Namespace src/App/Platform.cs::Acme.App
 symbol Class src/App/Platform.cs::Acme.App.Platform

@@ -26,6 +26,7 @@ the `crunk-check` crate with the rule set listed in [the rules index](../referen
 | `crunk export dtcg [--store PATH] [--out PATH]` | no | Prints the stored DTCG document, or writes it to `--out`; import then export equals the input up to key order. |
 | `crunk rename ID NEW` | no | Renames a `[palette]` colour, a `[layers]` token, a `[typography.stacks]` font family (`--font-family-mono` to `--font-family-code`) or a custom token defined in `design/tokens/*.toml` (`--brand-ink` to `--brand-text`; the new name must stay in the same group, and `{brand.ink}` aliases are retargeted, dotted and quoted keys included) and rewrites every reference in one all-or-nothing write: the `crunk.toml` key and role names, stylesheets under `css_root`, `[jsx] globs` sources, `design/**/*.toml` specs, `var(...)` uses in `design/**/*.html` scenes, and the regenerated token exports. CRLF files keep their line endings. Comments and unrelated strings are left alone and `--color-ink-bg` is not touched by renaming `--color-ink`. `--dry-run` previews. Derived tokens (colour `-rgb` channels, the base font stack, `--space-N` and `--font-size-N` scale steps) are refused with `E-RENAME-DERIVED` and a reason naming the source to change instead. Refusals: `E-RENAME-NAME`, `-MISSING`, `-SAME`, `-EXISTS`, `-KIND`, `-DEF`, `-DERIVED`. |
 | `crunk edit FILE --patch PATCH.json` | no | Applies an RFC 6902 JSON Patch to a `*.screen.toml`, `*.component.toml` or `design/content/*.toml` file. Array elements are addressed by `id` (else `name`), e.g. `/key/home.title/text`. The patch is applied in memory, the result is re-validated by the file's schema and written atomically; the output carries a unified diff and the findings of a fresh check restricted to the touched ids. Only the keys the patch changes are rewritten: comments, spacing, key order and line endings elsewhere stay byte-identical, and a file that is not valid TOML is refused unchanged. `--dry-run` previews (no findings). Refusals: `E-EDIT-PATH`, `-READ`, `-PATCH`, `-SCHEMA`, `-WRITE`. |
+| serve patch tool `crunk_edit_patch` | yes | The same engine as `crunk edit`, exposed as an opt-in write MCP tool (`crunk::serve_patch::PatchTool`): arguments `file`, `patch` (an array of RFC 6902 operations) and optional `dry_run`. The reply is the diff and the findings of the touched nodes only; a patch or schema failure returns an error result (`code`, `file`, located `message`, `written: false`) and writes nothing. In a read-only session the tool is not listed and a call is refused as an unknown tool. |
 | `crunk new component\|screen\|flow\|token NAME [--from FILE]` | no | Scaffolds one design file under `design/components`, `screens`, `flows` or `tokens` (`NAME.component.toml`, `NAME.screen.toml`, `NAME.flow.toml`, `NAME.toml`). NAME is a lowercase identifier (`a-z`, digits, `-`, `_`, starting with a letter, 64 characters at most). The skeleton, or the `--from` copy of an existing file of the same kind with its `name`/`id` set to NAME and `status`/`content_hash` dropped, is validated by the kind's schema before anything is written (a flow file is `name`, `nodes` as unique `screen:state` strings and `edges` with `from`, `to`, `trigger` and optional `action` and `motion`; a flow error names its code and key path, for example `E-FLOW-DANGLING at edges[1].to`, and cycles are allowed). An existing target is never overwritten; a refusal writes nothing. `--dry-run` previews. Refusals: `E-NEW-NAME`, `-EXISTS`, `-FROM`, `-PATH`, `-SCHEMA`, `-WRITE`. A file created in the instant between the existence check and the atomic rename can be replaced. |
 | `crunk extract-token LITERAL [--name KEY] [--scale SCALE]` | no | Promotes a hex colour (`#abc` or `#aabbcc`, any case) to a `[palette]` token (default key `c<hex>`), or a px/rem length (`16px`, `1rem`) to a `[scales]` step (`--scale spacing` (default), `font-sizes` or `radii`; rem is stored as px via `root_font_size`), and rewrites its uses in stylesheets and JSX sources to `var(--TOKEN)`. Lengths match the same unit only (`16px` does not rewrite `1rem`) and normalise case and number form (`16PX`, `1.0rem`, `.5rem`); negatives, identifier fragments, `url(...)`, `@media`/`@container`/`@supports`/`@import` preludes, comments and strings are skipped. Durations are refused because `crunk.toml` has no duration table. `--dry-run` previews. Refusals: `E-EXTRACT-LITERAL`, `-NAME`, `-EXISTS`, `-DEF`, `-SCALE` (flag with a colour), `-DURATION` (`ms`, `s`), `-UNIT` (`%`, `em`, ...), `-ZERO`, `-NEGATIVE`. |
 | `crunk map` | yes | The style inventory bucketed by `[org] buckets` order, plus strays. |
@@ -36,6 +37,8 @@ the `crunk-check` crate with the rule set listed in [the rules index](../referen
 | `crunk gallery check` | yes | Opt-in (`cargo install crunk --features gallery`): checks `gallery/manifest.json` (`--manifest`) against the spec's cells with GALLERY001 to GALLERY005 (`--route` repeats, feeding GALLERY005). The default build refuses with `E-GALLERY-NOT-BUILT` and that remedy. |
 | `crunk preview` | yes | Prints the palette, spacing, font-size and radius scales, font stacks and layers as a terminal sheet. `--color always` adds truecolor swatches; `NO_COLOR` set suppresses every escape code. |
 | `crunk diff OTHER` | yes | Compares the generated tokens with those of the spec in directory (or file) `OTHER`: `+ NAME VALUE` added, `- NAME VALUE` removed, `~ NAME CURRENT -> OTHER` changed, or `no differences`. Always exit 0. |
+| `crunk render` | yes | Solves each screen/state/platform scene (`design/scenes/<screen>.<state>.scene.html`, else `<screen>.scene.html`) and writes one layout-solve JSON per cell under `--out` (default `.crunk/render`). `--engine solve` is the default; `--engine browser` needs the gallery feature. A screen with no scene file exits 2 naming it. Output order is the same for every `--jobs`. |
+| `crunk snapshot` | no | Solves the same cells and compares them with the baselines under `--baselines` (default `design/baselines`). A missing baseline fails naming its path; a differing one lists each changed node id with field deltas. `--update` writes only the baselines whose bytes changed. |
 | `crunk init [--preset default\|mono] [--force]` | no | Scaffolds `crunk.toml` (the preset plus detected `[jsx]` and `[tailwind]` sections), the `[org] buckets` directories under `css_root`, a starter `base/reset.css` and the token files; the result passes `crunk check`. An existing `crunk.toml` is a usage error (exit 2) without `--force`. |
 | `crunk fix [--dry-run]` | yes | Applies the machine-applicable (Tier A) fixes of `crunk check` to stylesheets; `--dry-run` prints the diff and writes nothing. |
 | `crunk review` | yes | Lists the screen states that need a human review and what changed since the last ack. |
@@ -51,6 +54,21 @@ scores whole sheets by shared `(property, value)` declarations over the smaller 
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
+
+## Information architecture (opt-in UX pack)
+
+`design/ia/sitemap.toml` lists the project's routes: `home` (default `/`), `max_depth` (default 3, home
+is depth 0) and `[[pages]]` with `route`, `label`, optional `screen` (a screen id; without it the
+screen whose `entry` has the same route shape serves the page), optional `parent` and `links`.
+A dynamic segment is `:id`, `[id]` or `{id}`; only the position of dynamic segments matters.
+`design/ia/content-model.toml` lists content `[[types]]` with `name` and `fields`.
+
+The UX IA checks (`crunk_rules::ux::ia::check_ia`) report a route without a screen, a screen
+without a route, a code route absent from the sitemap, a page deeper than `max_depth` (once per
+deepest path), sibling labels equal ignoring case, and pages unreachable from home over parent and
+`links` edges. A parent cycle is a schema error (`E-IA-CYCLE`). When routes in code cannot be
+discovered the code comparison is reported as unresolved, never clean. A project with no sitemap
+gets no IA findings.
 
 ## Exit codes (docs/design/shared/cli-contract.md section 2)
 
@@ -75,6 +93,11 @@ waiver applies, the severity at the release gate) are `crunk_rules::family::FAMI
   no reason (or a blank one) grants nothing and is WAIVE001; organisation (ORG), waiver, token and
   gallery families cannot be waived. This differs from the Python crunk, where a reasonless waiver
   still silenced its rule.
+- Organisation rules (intentional extensions over the Python crunk): `[org] ignore` globs exempt only
+  files outside `css_root` (ORG005), never a stray inside it (ORG001) or the ORG002/ORG004 checks;
+  ORG001 is inapplicable under `[org] model = "utility-first"`; ORG004 is inapplicable (reported) when
+  `[org] tokens_only_custom_props = false` and always exempts the tokens sheet; ORG002 applies under
+  every model.
 - Findings are reported ordered by file, then position, then rule.
 
 ## CI
@@ -110,6 +133,10 @@ a follow-up ticket. Rendering is separate work (render orchestration).
 
 ## Scene ingest and layout solve
 
+The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002 findings come from `crunk_layout::findings` (`child_overflows`, `sibling_overlaps`), the same functions the crunk-rules LAYOUT001/002 rules call on the solver output of each `design/scenes/*.scene.html`, so the rules and the corpus cannot disagree; they are compared, with the RESP root-width and GX002-005 findings, against `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'binary(corpus)'`.
+
+Solver-vs-browser parity is a separate gate: `crates/crunk-gallery/src/parity.rs` compares the solver's boxes with the browser's by node id within a 1.0 px tolerance and names every node that differs or is missing on one side. It runs as the `crunk-parity` CI job; locally it skips when Playwright is unavailable, and `CRUNK_REQUIRE_PLAYWRIGHT=1` turns that skip into a failure.
+
 `crunk-ingest::scene` reads a JSON scene description of boxes and text runs and solves it with taffy into a layout-solve JSON. The LAYOUT and RESP rules read that solve; it does not render anything.
 
 ### Scene format
@@ -123,7 +150,7 @@ a follow-up ticket. Rendering is separate work (render orchestration).
 - `kind` is `box` or `text`; ids are unique strings.
 - `style` keys: `display` (`flex`, `block`, `none`), `direction` (`row`, `column`), `wrap`, `gap`, `padding`, `margin`, `width`, `height` (pixels, `"auto"` or `"N%"`), `grow`, `shrink`. Unknown keys are rejected.
 - `interactive` (default false) marks a pointer or touch target; LAYOUT005 sizes it and LAYOUT004 keeps it inside the safe area. A scene's top-level `safe_area` (pixels, default 0) is the inset from every viewport edge that text and targets must stay inside.
-- Project scene files live at `design/scenes/*.scene.json`; the LAYOUT rules solve each one and RESP001 matches their viewport widths to `[breakpoints]`.
+- Project scene files live at `design/scenes/*.scene.json`; LAYOUT003-005 solve each one. LAYOUT001/002 and RESP001 instead read the crunk-layout solve of the HTML scene documents at `design/scenes/*.scene.html`; RESP001 solves each at every `[breakpoints]` width.
 - A `text` node carries `text.content`, `text.font_size`, optional `line_height` (default 1.2) and `max_width`.
 
 ### HTML scene documents
@@ -142,6 +169,14 @@ There is no font engine, so the solve is identical everywhere: a character is `0
 ### Not yet
 
 Grid layout, per-side padding and margin, CSS-derived styles and a CLI verb are follow-up work.
+
+## GRL file attributes
+
+`crunk_rules::file_attrs` is the host side of the GRL input bridge. `stamp_styles` (and
+`host_stamped_files` for a `CrunkHost`) yields one `StampedFile` per ingested sheet and per
+ungoverned `.css` file, carrying `file.bucket`, `file.component` and `file.outside_css_root`
+(from `crunk_ingest::attrs`). The ORG001/003/004/005 GRL ports read these; the config tables and
+the generated-module runner are follow-up work.
 
 ## The crunk-web pack
 
@@ -165,6 +200,8 @@ is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `c
 | WEBPERF | WEBPERF103 | `img` elements carry a `loading` attribute (lazy loading) |
 | WEBPERF | WEBPERF104 | an external classic `script` carries `async` or `defer` (no render-blocking) |
 | WEBPERF | WEBPERF105 | a font `link rel="preload"` carries `crossorigin` |
+| WEBPERF | WEBPERF106 | an `src` attribute does not name a legacy image (`.png`, `.jpg`, `.jpeg`, `.gif`); serve WebP or AVIF |
+| WEBPERF | WEBPERF107 | a stylesheet `link` carries a `media` attribute (no render-blocking) |
 
 Each family ships worked rules; more land under the same prefixes. WEBPERF1xx covers markup and
 assets only (server-side WEBPERF lives in grimble-websec, 2xx). A file type with no adapter (for

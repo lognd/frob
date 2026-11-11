@@ -9,7 +9,9 @@ use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use frob_ledger::{Ledger, LedgerConfig};
 use frob_worktree::anyway::{Anyway, land_notices};
-use frob_worktree::claim::{E_CLAIM_LOST, W_CLAIM_UNPUBLISHED, remote_claim};
+use frob_worktree::claim::{
+    E_CLAIM_LOST, W_CLAIM_UNPUBLISHED, remote_claim, republish_unpublished,
+};
 use frob_worktree::{WorkOptions, Workspace, WorktreeConfig, WorktreeError};
 use gob_exec::{Limits, Outcome, Program, Runner, Spec};
 use gob_git::{CommitOptions, RelPath, Repo};
@@ -107,6 +109,14 @@ fn new_ticket(ledger: &Ledger) -> (String, String) {
     (id.to_string(), handle.trim_start_matches('~').to_owned())
 }
 
+/// Commit options authored by someone other than the fixture's `Test User`.
+fn rival_options() -> CommitOptions {
+    CommitOptions {
+        author: Some(("Rival".to_owned(), "rival@example.com".to_owned())),
+        ..CommitOptions::default()
+    }
+}
+
 fn remote_tip(fx: &Fixture, handle: &str) -> Option<String> {
     let repo = Repo::discover(&fx.root).expect("repo");
     remote_claim(
@@ -159,7 +169,7 @@ fn a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease() {
             Some(b"x\n".to_vec()),
         )],
         "rival work",
-        &CommitOptions::default(),
+        &rival_options(),
     )
     .expect("rival commit");
     let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
@@ -184,6 +194,68 @@ fn a_branch_already_on_the_remote_loses_the_claim_and_releases_the_lease() {
     assert!(fx.bare.exists());
 }
 
+// frob:tests crates/frob-worktree/src/claim_park.rs::handle_loss
+#[test]
+fn a_lost_claim_parks_local_commits_and_names_the_winner() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let (id, handle) = new_ticket(&ledger);
+    let repo = Repo::discover(&fx.root).expect("repo");
+    assert!(git(
+        &fx.root,
+        &["branch", &format!("ticket/{handle}"), "main"]
+    ));
+    let local = format!("refs/heads/ticket/{handle}");
+    repo.commit_paths(
+        &local,
+        &[(
+            RelPath::new("mine.txt").expect("path"),
+            Some(b"m\n".to_vec()),
+        )],
+        "my work",
+        &CommitOptions::default(),
+    )
+    .expect("local commit");
+    repo.commit_paths(
+        "refs/heads/rival",
+        &[(
+            RelPath::new("rival.txt").expect("path"),
+            Some(b"x\n".to_vec()),
+        )],
+        "rival work",
+        &rival_options(),
+    )
+    .expect("rival commit");
+    let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
+    assert!(git(&fx.root, &["push", "--quiet", "origin", &dst]));
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let err = ws.work(&id, &WorkOptions::default()).expect_err("lost");
+    let WorktreeError::Refused(r) = &err else {
+        panic!("not a refusal: {err}")
+    };
+    assert_eq!(r.code, E_CLAIM_LOST);
+    let text = r.message.clone();
+    assert!(text.contains("claim lost to Rival at"), "{text}");
+    assert!(text.contains(&format!("parked/{handle}-1")), "{text}");
+    let parked = remote_claim(
+        &repo,
+        "origin",
+        &format!("parked/{handle}-1"),
+        Duration::from_secs(30),
+    )
+    .expect("spawn")
+    .expect("answer");
+    assert_eq!(
+        parked,
+        Some(repo.rev_parse(&local).expect("local tip").to_string())
+    );
+}
+
 // frob:tests land_notices
 // frob:tests record
 #[test]
@@ -199,7 +271,7 @@ fn anyway_works_over_a_lost_claim_and_land_shows_the_reason() {
             Some(b"x\n".to_vec()),
         )],
         "rival work",
-        &CommitOptions::default(),
+        &rival_options(),
     )
     .expect("rival commit");
     let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
@@ -259,5 +331,188 @@ fn an_unreachable_remote_warns_and_proceeds_with_an_unpublished_claim() {
             .any(|w| w.starts_with(W_CLAIM_UNPUBLISHED)),
         "{:?}",
         started.warnings
+    );
+}
+
+// frob:tests crates/frob-worktree/src/claim.rs::republish_unpublished
+#[test]
+fn a_later_sync_publishes_the_claim_that_work_left_unpublished() {
+    let Some(fx) = Fixture::new(Some("/nonexistent/frob-claim-remote.git")) else {
+        return;
+    };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, handle) = new_ticket(&ledger);
+    ws.work(&id, &WorkOptions::default()).expect("work offline");
+    let still_down = republish_unpublished(&ledger, &leases).expect("republish");
+    assert_eq!(still_down, 0);
+
+    let bare = gob_path::Shown::with_home(&fx.bare, None).to_string();
+    assert!(git(&fx.root, &["remote", "set-url", "origin", &bare]));
+    assert_eq!(remote_tip(&fx, &handle), None);
+    let published = republish_unpublished(&ledger, &leases).expect("republish");
+    assert_eq!(published, 1);
+    assert!(remote_tip(&fx, &handle).is_some());
+}
+
+// frob:tests crates/frob-worktree/src/claim.rs::moved_by
+// frob:tests crates/frob-worktree/src/claim.rs::classify_rejection
+// frob:tests crates/frob-worktree/src/claim.rs::publish
+#[test]
+fn the_same_actor_resumes_a_claim_made_on_another_clone() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let (id, handle) = new_ticket(&ledger);
+    let repo = Repo::discover(&fx.root).expect("repo");
+    // Another clone, same actor (the fixture identity), pushed work on the claim branch.
+    assert!(git(&fx.root, &["branch", "elsewhere", "main"]));
+    repo.commit_paths(
+        "refs/heads/elsewhere",
+        &[(
+            RelPath::new("elsewhere.txt").expect("path"),
+            Some(b"x\n".to_vec()),
+        )],
+        "work from the other clone",
+        &CommitOptions::default(),
+    )
+    .expect("commit");
+    let dst = format!("refs/heads/elsewhere:refs/heads/ticket/{handle}");
+    assert!(git(&fx.root, &["push", "--quiet", "origin", &dst]));
+    let tip = remote_tip(&fx, &handle).expect("remote tip");
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    ws.work(&id, &WorkOptions::default()).expect("resumed");
+    assert!(
+        leases
+            .live_lease(ledger.resolve(&id).expect("id"))
+            .expect("lease")
+            .is_some()
+    );
+    let local = repo
+        .rev_parse(&format!("refs/heads/ticket/{handle}"))
+        .expect("local branch");
+    assert!(
+        repo.merge_base(&tip, &local.to_string())
+            .expect("mb")
+            .is_some_and(|mb| mb == tip),
+        "the local branch descends from the remote tip"
+    );
+    let events = ledger
+        .events(ledger.resolve(&id).expect("id"))
+        .expect("events");
+    let moved = events.iter().any(|e| {
+        matches!(&e.body, frob_ledger::event::EventBody::Lease(l)
+            if l.op == frob_ledger::event::LeaseOp::Move && l.tip.as_deref() == Some(tip.as_str()))
+    });
+    assert!(moved, "a lease move event was recorded");
+    assert_eq!(remote_tip(&fx, &handle), Some(tip), "nothing was pushed");
+}
+
+fn lease_events(ledger: &Ledger, id: &str) -> Vec<frob_ledger::event::LeaseData> {
+    ledger
+        .events(ledger.resolve(id).expect("id"))
+        .expect("events")
+        .into_iter()
+        .filter_map(|e| match e.body {
+            frob_ledger::event::EventBody::Lease(l) => Some(l),
+            _ => None,
+        })
+        .collect()
+}
+
+// frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+// frob:tests crates/frob-worktree/src/claim_record.rs::record
+// frob:tests crates/frob-worktree/src/work.rs::record_claim
+#[test]
+fn work_records_a_take_event_with_actor_clone_branch_and_oid() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, handle) = new_ticket(&ledger);
+    let base = Repo::discover(&fx.root)
+        .expect("repo")
+        .rev_parse(MAIN)
+        .expect("main")
+        .to_string();
+    ws.work(&id, &WorkOptions::default()).expect("work");
+    let takes: Vec<_> = lease_events(&ledger, &id)
+        .into_iter()
+        .filter(|l| l.op == frob_ledger::event::LeaseOp::Take)
+        .collect();
+    assert_eq!(takes.len(), 1, "one take event");
+    let take = &takes[0];
+    assert_eq!(take.holder.as_deref(), Some("Test User"));
+    assert_eq!(
+        take.branch.as_deref(),
+        Some(format!("ticket/{handle}").as_str())
+    );
+    assert_eq!(take.observed.as_deref(), Some(base.as_str()));
+    let repo = Repo::discover(&fx.root).expect("repo");
+    assert_eq!(
+        take.clone_id.as_deref(),
+        Some(frob_worktree::claim_record::clone_id(&repo).as_str()),
+        "the clone id is stable"
+    );
+}
+
+// frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+// frob:tests crates/frob-worktree/src/claim_record.rs::push_ledger
+#[test]
+fn the_orphan_ledger_is_pushed_after_the_claim() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let cfg_ledger = LedgerConfig {
+        mode: frob_ledger::RefMode::Orphan,
+        ..LedgerConfig::default()
+    };
+    let repo = Repo::discover(&fx.root).expect("repo");
+    frob_ledger::branch::init_branch(&repo, &cfg_ledger.branch, 5).expect("init branch");
+    let ledger = Ledger::open(
+        repo,
+        cfg_ledger.clone(),
+        std::sync::Arc::new(gob_time::SystemClock),
+    );
+    let leases = fx.leases();
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, _) = new_ticket(&ledger);
+    let started = ws.work(&id, &WorkOptions::default()).expect("work");
+    assert!(
+        started.warnings.iter().all(|w| !w.contains("ledger")),
+        "{:?}",
+        started.warnings
+    );
+    let repo = Repo::discover(&fx.root).expect("repo");
+    let local = repo
+        .rev_parse(&format!("refs/heads/{}", cfg_ledger.branch))
+        .expect("local ledger");
+    let remote = remote_claim(&repo, "origin", &cfg_ledger.branch, Duration::from_secs(30))
+        .expect("spawn")
+        .expect("answer");
+    // The `in-progress` transition is appended after the claim step, so the remote may trail by it.
+    let remote = remote.expect("the ledger branch reached the remote");
+    assert!(
+        git(
+            &fx.root,
+            &["merge-base", "--is-ancestor", &remote, &local.to_string()]
+        ),
+        "the remote ledger {remote} is an ancestor of the local {local}"
     );
 }

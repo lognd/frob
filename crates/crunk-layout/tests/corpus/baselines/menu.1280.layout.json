@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "viewport_width": 1280.0,
+  "viewport_height": 800.0,
+  "nodes": [
+    {
+      "id": "root",
+      "parent": null,
+      "kind": "box",
+      "x": 0.0,
+      "y": 0.0,
+      "width": 352.0,
+      "height": 204.79688
+    },
+    {
+      "id": "title",
+      "parent": "root",
+      "kind": "text",
+      "x": 16.0,
+      "y": 16.0,
+      "width": 320.0,
+      "height": 28.796875,
+      "text": {
+        "content": "Main menu",
+        "font_size": 24.0,
+        "lines": 1
+      }
+    },
+    {
+      "id": "play",
+      "parent": "root",
+      "kind": "text",
+      "x": 16.0,
+      "y": 52.796875,
+      "width": 320.0,
+      "height": 40.0,
+      "text": {
+        "content": "Play",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    },
+    {
+      "id": "options",
+      "parent": "root",
+      "kind": "text",
+      "x": 16.0,
+      "y": 100.796875,
+      "width": 320.0,
+      "height": 40.0,
+      "text": {
+        "content": "Options",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    },
+    {
+      "id": "quit",
+      "parent": "root",
+      "kind": "text",
+      "x": 16.0,
+      "y": 148.79688,
+      "width": 320.0,
+      "height": 40.0,
+      "text": {
+        "content": "Quit",
+        "font_size": 16.0,
+        "lines": 1
+      }
+    }
+  ],
+  "focus_order": [
+    "play",
+    "options",
+    "quit"
+  ]
+}

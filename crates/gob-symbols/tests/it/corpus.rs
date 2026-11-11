@@ -221,7 +221,7 @@ fn rust_depth_limit_collapses_into_opaque_and_keeps_calls() {
 }
 
 // frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-// frob:tests crates/gob-symbols/src/rust.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 #[test]
 fn rust_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
     let src = deep_source(5000);
@@ -301,7 +301,7 @@ fn python_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit
 }
 
 // frob:ticket 01M4VWZZ1R3MK67F1ZBB33SE5T
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 #[test]
 fn csharp_five_thousand_levels_lower_on_a_small_caller_stack_without_depth_limit() {
     let src = format!(

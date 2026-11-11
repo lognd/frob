@@ -105,17 +105,5 @@ ticket = "~G6YQBDT"
 [[matrix_gap]]
 product = "frob"
 rule = "COV001"
-cell = "csharp"
-ticket = "~VDJC1HF"
-
-[[matrix_gap]]
-product = "frob"
-rule = "COV001"
-cell = "text"
-ticket = "~VDJC1HF"
-
-[[matrix_gap]]
-product = "frob"
-rule = "COV001"
 cell = "island"
-ticket = "~HJBXNSN"
+ticket = "~VDJC1HF"

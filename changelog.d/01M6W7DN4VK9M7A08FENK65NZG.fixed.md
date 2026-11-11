@@ -1,0 +1,1 @@
+Test that byte-identical Rust files in different crates are each owned, cold and warm; the false SYS001 on crates/frob-worktree/src/pathtext.rs came from a stale pre-fix grimble sibling on PATH, not the current binder.

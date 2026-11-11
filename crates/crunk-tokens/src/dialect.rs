@@ -85,6 +85,39 @@ impl Ctx<'_> {
     }
 }
 
+/// The project directory holding the authored token files, relative to the root.
+pub const AUTHORED_DIR: &str = "design/tokens";
+
+/// Read and compile every `<root>/design/tokens/*.toml`, sorted by path; a missing directory
+/// gives no sets and an unreadable file is skipped with a warning. A file that does not compile
+/// comes back as its error, for the caller to skip or report.
+pub fn read_authored(root: &std::path::Path) -> Vec<(String, Result<TokenSet, DialectError>)> {
+    let dir = root.join(AUTHORED_DIR);
+    let mut paths: Vec<_> = match std::fs::read_dir(&dir) {
+        Ok(entries) => entries
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+            .collect(),
+        Err(_) => Vec::new(),
+    };
+    paths.sort();
+    paths
+        .into_iter()
+        .filter_map(|path| {
+            let text = std::fs::read_to_string(&path)
+                .inspect_err(|err| {
+                    tracing::warn!(path = %path.display(), %err, "token file unreadable; skipped");
+                })
+                .ok()?;
+            let name = path.file_name()?.to_string_lossy().into_owned();
+            let origin = format!("{AUTHORED_DIR}/{name}");
+            let set = parse(&text, &origin);
+            Some((origin, set))
+        })
+        .collect()
+}
+
 /// The custom property name of a dotted token path (`color.ink` is `--color-ink`).
 pub fn name_of_path(path: &str) -> String {
     format!("--{}", path.replace('.', "-"))

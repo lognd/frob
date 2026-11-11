@@ -14,6 +14,7 @@
 //! - Static events pair by their full target text (`GameManager.OnWin`).
 
 // frob:ticket 01M4D955ZSR7MHM6TXXD49JJ4V
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 
 use std::collections::HashSet;
 
@@ -22,6 +23,7 @@ use gob_text::TextRange;
 use tree_sitter::Node;
 
 use crate::res::{Certainty, ScanError, count_word, normalise, span, text};
+use crate::unity_model;
 
 /// How a release is tied to its acquire.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -648,12 +650,12 @@ fn is_partial(class: Node<'_>, src: &str) -> bool {
 }
 
 /// Scans one class declaration.
-fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Site>) {
+fn scan_class(class: Node<'_>, src: &str, spans: &[(usize, usize)], out: &mut Vec<Site>) {
     let Some(body) = class.child_by_field_name("body") else {
         return;
     };
     let partial = is_partial(class, src);
-    let methods = methods_of(body, src);
+    let methods = unity_model::gated(methods_of(body, src), spans);
     let facts = class_facts(body, src);
     let rels = releases(&methods, src);
     let teardown = methods
@@ -701,11 +703,12 @@ pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
+    let spans = unity_model::method_spans(text)?;
     let mut sites = Vec::new();
     let mut stack = vec![tree.root()];
     while let Some(n) = stack.pop() {
         if n.kind() == "class_declaration" {
-            scan_class(n, text, &mut sites);
+            scan_class(n, text, &spans, &mut sites);
         }
         stack.extend(named_children(n));
     }

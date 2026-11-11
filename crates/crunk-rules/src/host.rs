@@ -92,6 +92,15 @@ pub fn missing_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
     None
 }
 
+/// Why a scale rule cannot run on `host`: missing inputs, or `is_empty` says its scale is undeclared.
+pub fn missing_scale<H: CrunkHost + ?Sized>(
+    host: &H,
+    is_empty: impl FnOnce(&DesignSpec) -> bool,
+    why: &str,
+) -> Option<String> {
+    missing_inputs(host).or_else(|| host.spec().is_some_and(is_empty).then(|| why.to_owned()))
+}
+
 /// Why a TOKEN rule cannot run on `host`, if it cannot: no valid spec, or no authored token files.
 pub fn missing_token_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {
     if host.spec().is_none() {

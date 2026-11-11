@@ -132,7 +132,7 @@ pub fn stamp(ws: &Workspace, ticket: TicketId, record: &mut EvidenceRecord) {
 
 #[cfg(test)]
 mod tests {
-    use super::model_mentions;
+    use super::{bound_digests, model_mentions};
 
     // frob:ticket 01M6C6NBJSSAVBR59RBMPWW9VP
     // frob:tests crates/frob-evidence/src/design.rs::model_mentions
@@ -146,5 +146,32 @@ mod tests {
         std::fs::write(dir.path().join("sub/m.grmb"), "// frob:ticket T1\n").unwrap();
         assert!(model_mentions(dir.path(), "T1"));
         assert!(!model_mentions(dir.path(), "T2"));
+    }
+
+    // frob:ticket 01M6C5CMP9SFX0910Q9QAMB4T3
+    // frob:tests crates/frob-evidence/src/design.rs::bound_digests
+    #[test]
+    fn every_bound_entity_digest_is_found_in_the_serialized_design_list() {
+        let entities: Vec<serde_json::Value> = [("one", "aa"), ("two", "bb"), ("three", "cc")]
+            .iter()
+            .map(|(n, d)| {
+                serde_json::json!({"anchor": format!("a.md#{n}"), "body_digest": format!("blake3:{d}"),
+                    "directives": [{"verb": "ticket", "args": "T1"}]})
+            })
+            .collect();
+        let graph = serde_json::json!({"data": {"entities": entities}});
+        let list = serde_json::to_value(bound_digests(&graph, "T1")).expect("ser");
+        let read: Vec<(&str, &str)> = list
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|d| Some((d["entity"].as_str()?, d["body_digest"].as_str()?)))
+            .collect();
+        let want = [
+            ("a.md#one", "blake3:aa"),
+            ("a.md#two", "blake3:bb"),
+            ("a.md#three", "blake3:cc"),
+        ];
+        assert_eq!(read, want);
     }
 }

@@ -131,8 +131,20 @@ pub mod slop010;
 pub mod slop011;
 /// Rule `SLOP014`.
 pub mod slop014;
+/// Rule `SLOP020`.
+pub mod slop020;
+/// Rule `SLOP021`.
+pub mod slop021;
 /// Rule `SLOP022`.
 pub mod slop022;
+/// Rule `SLOP026`.
+pub mod slop026;
+/// Rule `SLOP027`.
+pub mod slop027;
+/// Rule `SLOP028`.
+pub mod slop028;
+/// Rule `SLOP029`.
+pub mod slop029;
 /// Rule `SLOP040`.
 pub mod slop040;
 /// Rule `SLOP060`.
@@ -254,7 +266,13 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <slop010::Slop010 as gob_rules::RuleDecl>::DEF,
     <slop011::Slop011 as gob_rules::RuleDecl>::DEF,
     <slop014::Slop014 as gob_rules::RuleDecl>::DEF,
+    <slop020::Slop020 as gob_rules::RuleDecl>::DEF,
+    <slop021::Slop021 as gob_rules::RuleDecl>::DEF,
     <slop022::Slop022 as gob_rules::RuleDecl>::DEF,
+    <slop026::Slop026 as gob_rules::RuleDecl>::DEF,
+    <slop027::Slop027 as gob_rules::RuleDecl>::DEF,
+    <slop028::Slop028 as gob_rules::RuleDecl>::DEF,
+    <slop029::Slop029 as gob_rules::RuleDecl>::DEF,
     <slop040::Slop040 as gob_rules::RuleDecl>::DEF,
     <slop060::Slop060 as gob_rules::RuleDecl>::DEF,
     <space001::Space001 as gob_rules::RuleDecl>::DEF,
@@ -363,7 +381,13 @@ where
     slop010::Slop010: gob_rules::RepoRule<P>,
     slop011::Slop011: gob_rules::RepoRule<P>,
     slop014::Slop014: gob_rules::RepoRule<P>,
+    slop020::Slop020: gob_rules::Measured<P>,
+    slop021::Slop021: gob_rules::Measured<P>,
     slop022::Slop022: gob_rules::RepoRule<P>,
+    slop026::Slop026: gob_rules::Measured<P>,
+    slop027::Slop027: gob_rules::Measured<P>,
+    slop028::Slop028: gob_rules::Measured<P>,
+    slop029::Slop029: gob_rules::Measured<P>,
     slop040::Slop040: gob_rules::RepoRule<P>,
     slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
@@ -457,7 +481,13 @@ where
     rules.push(gob_rules::BoundRule::repo(slop010::Slop010));
     rules.push(gob_rules::BoundRule::repo(slop011::Slop011));
     rules.push(gob_rules::BoundRule::repo(slop014::Slop014));
+    rules.push(gob_rules::BoundRule::measured(slop020::Slop020));
+    rules.push(gob_rules::BoundRule::measured(slop021::Slop021));
     rules.push(gob_rules::BoundRule::repo(slop022::Slop022));
+    rules.push(gob_rules::BoundRule::measured(slop026::Slop026));
+    rules.push(gob_rules::BoundRule::measured(slop027::Slop027));
+    rules.push(gob_rules::BoundRule::measured(slop028::Slop028));
+    rules.push(gob_rules::BoundRule::measured(slop029::Slop029));
     rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
     rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
     rules.push(gob_rules::BoundRule::measured(space001::Space001));

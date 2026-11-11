@@ -17,12 +17,10 @@ use super::imports::{ImportMode, encode_edge, encode_use};
 use super::{ATTR_TEST_FRAMEWORK, ATTR_TEST_LINE, ATTR_TEST_ROLE, ATTR_TEST_TITLE};
 use crate::adapter::{FileInput, FoldError, Folded};
 use crate::fold::{
-    Cx, base_file, call_text, children, failed_file, file_root_spec, leaves, line_of,
-    local_binding, text_of,
+    Collapse, Cx, Site, base_file, call_text, children, decorator_parts, failed_file,
+    file_root_spec, leaves, line_of, lower_children, push_site, span_of, text_of,
 };
-use crate::model::{
-    CallSite, FileSymbols, ImportEdge, Receiver, RefKind, RefSite, UseBinding, collapse_ws,
-};
+use crate::model::{FileSymbols, ImportEdge, Receiver, UseBinding, collapse_ws};
 use crate::python::UnitErrorFacts;
 use crate::symref::Symref;
 use crate::view::{self, ATTR_VISIBILITY, HOLE_MISSING, HOLE_PARSE_ERROR, HOLE_UNMODELLED, Naming};
@@ -162,21 +160,6 @@ fn fold_source_with(
         ParseResult::Parsed(t) => fold_tree(&t.text, t.root(), input, errors),
         ParseResult::Unresolved(u) => failed_file(input, LANG, u.reason),
     }
-}
-
-/// One call or value reference found while folding, before it has a `Symref`.
-struct Site {
-    caller: usize,
-    value: bool,
-    name: String,
-    qualifier: Option<String>,
-    method: bool,
-    receiver: Option<Receiver>,
-    node: Option<NodeId>,
-    args: usize,
-    qual_path: Vec<String>,
-    line: u32,
-    text: String,
 }
 
 /// An import or export binding waiting for its container's `Symref`.
@@ -877,6 +860,7 @@ pub(crate) fn fold_island(
     host.unnest(cx);
     for s in &mut sites {
         s.line = s.line.saturating_add(line_base);
+        s.span = (s.span.0 + base, s.span.1 + base);
     }
     tracing::debug!(
         path,
@@ -895,36 +879,6 @@ pub(crate) fn fold_island(
             heritage,
         },
     })
-}
-
-/// Files `s` (found in `caller`) as a call or a value reference of `file`.
-fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symref) {
-    if s.value {
-        file.refs.push(RefSite {
-            from: caller,
-            name: s.name,
-            qualifier: None,
-            kind: RefKind::Value,
-        });
-        return;
-    }
-    let local = local_binding(scopes, s.node, false);
-    file.calls.push(CallSite {
-        caller,
-        callee: s.name,
-        qualifier: s.qualifier,
-        method: s.method,
-        local,
-        in_macro: false,
-        receiver: s.receiver,
-        opaque_qualifier: false,
-        macro_exact: None,
-        args: Some(s.args),
-        qual_path: s.qual_path,
-        bound: Vec::new(),
-        line: s.line,
-        text: s.text,
-    });
 }
 
 /// The root of a member chain.
@@ -1138,31 +1092,6 @@ impl<'a> TsFold<'a> {
         self.cx.op(Operator::hole(kind), n, &[])
     }
 
-    fn collapse(&mut self, nodes: &[Node<'_>]) -> R<NodeId> {
-        let mut toks: Vec<&str> = Vec::new();
-        for n in nodes {
-            for l in leaves(*n, is_comment) {
-                toks.push(self.t(l));
-            }
-            self.scan_calls(*n);
-        }
-        let (start, end) = nodes
-            .first()
-            .zip(nodes.last())
-            .map_or((0, 0), |(a, b)| (a.start_byte(), b.end_byte()));
-        tracing::debug!(
-            path = self.path,
-            start,
-            end,
-            "depth limit: subtree collapsed"
-        );
-        let spec = NodeSpec::new(
-            Operator::opaque("depth-limit", toks.join(" ").as_bytes()),
-            self.cx.loc(start, end),
-        );
-        self.cx.add(spec, &[])
-    }
-
     /// Records the calls inside `root` without building term nodes (collapsed subtrees, decorators, defaults).
     fn scan_calls(&mut self, root: Node<'_>) {
         let mut stack = vec![root];
@@ -1312,15 +1241,13 @@ impl<'a> TsFold<'a> {
     }
 
     fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
-        let mut out = Vec::new();
-        for c in children(n) {
+        lower_children(n, |c| {
             if c.kind() == "identifier" && is_decl_ident(n, c) {
-                out.push(self.cx.lit("name", self.t(c), c)?);
+                self.cx.lit("name", self.t(c), c)
             } else {
-                out.push(self.tr(c, depth + 1)?);
+                self.tr(c, depth + 1)
             }
-        }
-        Ok(out)
+        })
     }
 
     /// `obj.name` in expression position: the object is an expression, the property a token.
@@ -1494,6 +1421,7 @@ impl<'a> TsFold<'a> {
             args: arg_nodes.len(),
             qual_path: target.path,
             line: line_of(n),
+            span: span_of(n),
             text: call_text(self.t(f)),
         });
     }
@@ -1516,6 +1444,7 @@ impl<'a> TsFold<'a> {
             args: 0,
             qual_path: Vec::new(),
             line: line_of(v),
+            span: (0, 0),
             text: String::new(),
         });
     }
@@ -2043,25 +1972,8 @@ impl<'a> TsFold<'a> {
 
     /// One `attr` node for decorator `d`: its name is the callee text, its payload the call arguments.
     fn decorator_attr(&mut self, d: Node<'_>) -> R<NodeId> {
-        let expr = children(d)
-            .into_iter()
-            .find(|c| c.is_named() && !is_comment(*c));
-        let (name, args) = match expr {
-            Some(e) if e.kind() == "call_expression" => (
-                e.child_by_field_name("function").map(|f| self.t(f)),
-                e.child_by_field_name("arguments"),
-            ),
-            Some(e) => (Some(self.t(e)), None),
-            None => (None, None),
-        };
-        let name: String = name.unwrap_or_default().split_whitespace().collect();
-        let mut payload = Vec::new();
-        if let Some(a) = args {
-            for l in leaves(a, is_comment) {
-                payload.push(self.cx.lit(l.kind(), self.t(l), l)?);
-            }
-        }
-        self.cx.op(Operator::attr(&name), d, &payload)
+        let (name, args) = decorator_parts(d, "call_expression", |n| self.t(n).to_owned());
+        self.cx.decorator_attr_node(d, &name, args)
     }
 
     /// The leaf tokens of the children of `n` other than those in `exclude`, in token mode.
@@ -2641,4 +2553,18 @@ fn base_name(b: Node<'_>, text: &str) -> Option<String> {
     };
     let raw = name.utf8_text(text.as_bytes()).ok()?;
     Some(raw.chars().filter(|c| !c.is_whitespace()).collect())
+}
+
+impl<'a> Collapse<'a> for TsFold<'a> {
+    fn cx_mut(&mut self) -> &mut Cx<'a> {
+        &mut self.cx
+    }
+
+    fn file_path(&self) -> &str {
+        self.path
+    }
+
+    fn scan(&mut self, root: Node<'_>) {
+        self.scan_calls(root);
+    }
 }

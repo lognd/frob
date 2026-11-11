@@ -84,6 +84,13 @@ fn is_var(src: &str, tok: &Tok) -> bool {
             .is_some_and(|p| p.eq_ignore_ascii_case("var("))
 }
 
+/// True when the function token `tok` has a nested `var()` (so its colour is a token use, not unreadable).
+fn contains_var(src: &str, tok: &Tok) -> bool {
+    let mut nested = Vec::new();
+    nested_var_refs(src, tok, &mut nested);
+    !nested.is_empty()
+}
+
 /// Extract the colors, lengths and `var()` references of the value `src`, spans shifted by
 /// `base` so they address the owning source file.
 ///
@@ -113,9 +120,13 @@ pub fn value_facts(src: &str, base: usize, root_font_size: f64) -> ValueFacts {
                     continue;
                 }
                 Err(error) if looks_like_color(tok.kind, tok.text(src)) => {
-                    tracing::debug!(%error, "value facts: unreadable colour literal");
                     // Falls through: a `var()` nested in the literal is still a reference.
-                    facts.unreadable_colors.push(shift(&tok));
+                    if tok.kind == Kind::Function && contains_var(src, &tok) {
+                        tracing::debug!(%error, "value facts: colour literal built from var(); a token use");
+                    } else {
+                        tracing::debug!(%error, "value facts: unreadable colour literal");
+                        facts.unreadable_colors.push(shift(&tok));
+                    }
                 }
                 Err(_) => {
                     tracing::trace!(kind = ?tok.kind, "value facts: token is not a colour literal");
@@ -210,6 +221,26 @@ mod tests {
         let f = value_facts("calc(var(--a) * 2) 1px/2px", 0, 16.0);
         assert_eq!(f.var_refs.len(), 1);
         assert_eq!(f.lengths.len(), 2);
+    }
+
+    // frob:tests crates/crunk-ingest/src/facts.rs::value_facts
+    #[test]
+    fn color_mix_over_var_is_a_token_use_not_unreadable() {
+        let f = value_facts(
+            "color-mix(in srgb, var(--color-ink) 50%, transparent)",
+            0,
+            16.0,
+        );
+        assert!(f.unreadable_colors.is_empty());
+        assert_eq!(f.var_refs.len(), 1);
+        assert_eq!(f.var_refs[0].name, "--color-ink");
+    }
+
+    // frob:tests crates/crunk-ingest/src/facts.rs::value_facts
+    #[test]
+    fn malformed_color_without_var_stays_unreadable() {
+        let g = value_facts("rgb(zz)", 0, 16.0);
+        assert_eq!(g.unreadable_colors.len(), 1);
     }
 
     // frob:tests crates/crunk-ingest/src/facts.rs::channel_triplet

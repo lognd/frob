@@ -1,5 +1,6 @@
 //! Files, rules, headers, examples and explain blocks, with item-level recovery.
 
+use gob_caps::Fidelity;
 use gob_text::Span;
 
 use super::clause::CLAUSE_WORDS;
@@ -149,6 +150,8 @@ const HEADER_WORDS: &[&str] = &[
     "must_measure",
     "needs",
     "reads",
+    "since",
+    "fidelity",
     "rollup",
     "knob",
 ];
@@ -320,7 +323,7 @@ impl Parser<'_> {
             "knob" => !self.is_nth(1, &TokenKind::Dot),
             "some" | "no" => self.at_quant(),
             // `reads` is also a relation verb (`a reads b`); it is a header only at a line start.
-            "where" | "reads" => self.starts_line(),
+            "where" | "reads" | "since" | "fidelity" => self.starts_line(),
             _ => {
                 HEADER_WORDS.contains(&w)
                     || CLAUSE_WORDS.contains(&w)
@@ -427,6 +430,20 @@ impl Parser<'_> {
                 ],
             )?),
             "must_measure" => HeaderKind::MustMeasure,
+            "since" => HeaderKind::Since(
+                self.plain_str("a release string such as \"0.5.0\" after `since`")?,
+            ),
+            "fidelity" => HeaderKind::Fidelity(self.choice(
+                "a fidelity",
+                "`f0` to `f4`",
+                &[
+                    ("f0", Fidelity::F0),
+                    ("f1", Fidelity::F1),
+                    ("f2", Fidelity::F2),
+                    ("f3", Fidelity::F3),
+                    ("f4", Fidelity::F4),
+                ],
+            )?),
             "needs" => {
                 let mut names = vec![self.need("a name after `needs`")?];
                 while self.eat(&TokenKind::Comma).is_some() {

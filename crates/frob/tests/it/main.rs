@@ -3,6 +3,9 @@
 mod agent;
 mod agent_brief;
 mod agent_digest;
+mod agent_heavy;
+mod agent_hook;
+mod agent_install;
 mod attestation;
 mod board;
 mod build_identity;
@@ -19,6 +22,7 @@ mod coverage_e2e;
 mod cycle;
 mod deprecated_aliases;
 mod dismiss;
+mod doable_remote_claims;
 mod doc_commands;
 mod doc_remap;
 mod e2e_init_loop;

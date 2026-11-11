@@ -76,6 +76,8 @@ struct RuleArgs {
     polarity: Option<Choice>,
     #[darling(default)]
     must_measure: bool,
+    #[darling(default)]
+    needs: Option<Choice>,
     version: u32,
     #[darling(default = "default_since")]
     since: String,
@@ -89,11 +91,11 @@ fn default_since() -> String {
     "2.0.0".to_owned()
 }
 
-/// True when `id` is 2..=8 uppercase letters followed by exactly 3 digits.
+/// True when `id` is 2..=12 uppercase letters followed by exactly 3 digits.
 fn valid_id(id: &str) -> Option<&str> {
     let split = id.len().checked_sub(3)?;
     let (fam, digits) = id.split_at_checked(split)?;
-    let ok = (2..=8).contains(&fam.len())
+    let ok = (2..=12).contains(&fam.len())
         && fam.bytes().all(|b| b.is_ascii_uppercase())
         && digits.bytes().all(|b| b.is_ascii_digit());
     ok.then_some(fam)
@@ -179,7 +181,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     let fam = valid_id(&args.id);
     if fam.is_none() {
         errors.push(darling::Error::custom(format!(
-            "invalid rule id `{}`; expected FAMILY (2-8 uppercase letters) + 3 digits, e.g. COV006",
+            "invalid rule id `{}`; expected FAMILY (2-12 uppercase letters) + 3 digits, e.g. COV006",
             args.id
         )));
     }
@@ -213,6 +215,13 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
             "#[derive(Rule)] does not support generic types",
         ));
     }
+    let needs = match &args.needs {
+        Some(c) => errors.handle(c.pick("needs", &["Structural", "Lexical"])),
+        None => Some(syn::Ident::new(
+            "Structural",
+            proc_macro2::Span::call_site(),
+        )),
+    };
     let docs = doc_lines(&args.attrs);
     let summary = docs
         .iter()
@@ -226,6 +235,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     }
     errors.finish()?;
     let polarity = polarity.unwrap_or_else(|| unreachable!("finish() errs when a pick failed"));
+    let needs = needs.unwrap_or_else(|| unreachable!("finish() errs when a pick failed"));
     let (severity, tier, scope, fix) = (
         severity.unwrap_or_else(|| unreachable!("finish() errs when a pick failed")),
         tier.unwrap_or_else(|| unreachable!("finish() errs when a pick failed")),
@@ -260,7 +270,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
                 fix: ::gob_rules::FixKind::#fix,
                 polarity: ::gob_rules::Polarity::#polarity,
                 must_measure: #must_measure,
-                needs: ::gob_rules::Needs::Structural,
+                needs: ::gob_rules::Needs::#needs,
                 version: #version,
                 since: #since,
                 module: ::core::module_path!(),
@@ -283,7 +293,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
 ///
 /// Attributes: `#[rule(id, slug, family, severity, tier, scope, fix, version)]`
 /// with optional `product` (default "frob"), `since` (default "2.0.0"),
-/// `polarity = Pplus | Pminus | P0 | Pn | Pc` and `must_measure = true`.
+/// `polarity = Pplus | Pminus | P0 | Pn | Pc`, `needs = Structural | Lexical` and `must_measure = true`.
 /// `polarity` defaults to `Pplus` and `must_measure` to false, so a rule that
 /// does not declare them is read as a presence rule that may examine nothing;
 /// declare both explicitly on every new rule (`docs/design/shared/rules.md section 2`).

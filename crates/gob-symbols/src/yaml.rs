@@ -38,7 +38,7 @@ use crate::adapter::{
     ParseStatus,
 };
 use crate::fold::{Cx, base_file, file_root_spec};
-use crate::model::{RefKind, RefSite};
+use crate::model::{FileSymbols, RefKind, RefSite};
 use crate::pipeline::EXTRACTOR_VERSION;
 use crate::symref::Symref;
 use crate::view::{self, Naming};
@@ -257,15 +257,37 @@ fn fold_key(
 // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ
 /// Folds `text` as YAML: from the syntax tree when it parses cleanly, else by line scan.
 pub(crate) fn fold_text(text: &str, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+    fold_with(text, input, false).map(|(folded, _)| folded)
+}
+
+// frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
+/// Folds a GitHub Actions workflow: YAML units plus `uses`, `run` and `${{ }}` region nodes.
+///
+/// The flag is true when the syntax tree was used, so `uses:` references came from term nodes.
+pub(crate) fn fold_workflow(
+    text: &str,
+    input: &FileInput<'_>,
+) -> Result<(Folded, bool), FoldError> {
+    fold_with(text, input, true)
+}
+
+/// Shared fold entry; `workflow` turns on the Actions region nodes of the tree path.
+fn fold_with(
+    text: &str,
+    input: &FileInput<'_>,
+    workflow: bool,
+) -> Result<(Folded, bool), FoldError> {
     match parse(Language::Yaml, text, &ParseLimits::default()) {
-        ParseResult::Parsed(t) if !t.has_errors() => fold_tree(&t, input),
+        ParseResult::Parsed(t) if !t.has_errors() => {
+            fold_tree(&t, input, workflow).map(|f| (f, workflow))
+        }
         ParseResult::Parsed(_) => {
             tracing::debug!(path = input.path, "yaml syntax errors; using the line scan");
-            fold_lines(text, input)
+            fold_lines(text, input).map(|f| (f, false))
         }
         ParseResult::Unresolved(u) => {
             tracing::debug!(path = input.path, reason = %u.reason, "yaml tree unavailable; using the line scan");
-            fold_lines(text, input)
+            fold_lines(text, input).map(|f| (f, false))
         }
     }
 }
@@ -291,6 +313,55 @@ struct TreeFold<'a, 'c> {
     aliases: Vec<AliasUse>,
     /// Indexes into `aliases` not yet attributed to a unit.
     loose: Vec<usize>,
+    /// True when workflow region nodes (`uses`, `run`, `${{ }}`) are built.
+    workflow: bool,
+    /// External `uses:` references as (byte offset, reference text).
+    uses: Vec<(usize, String)>,
+}
+
+/// The scalar leaf node under `n` (a flow or block node wrapper), if any.
+fn scalar_leaf(n: tree_sitter::Node<'_>) -> Option<tree_sitter::Node<'_>> {
+    if is_scalar(n.kind()) {
+        return Some(n);
+    }
+    let mut cur = n.walk();
+    n.named_children(&mut cur).find_map(scalar_leaf)
+}
+
+/// True for the node kinds that hold scalar text.
+fn is_scalar(kind: &str) -> bool {
+    matches!(
+        kind,
+        "plain_scalar" | "double_quote_scalar" | "single_quote_scalar" | "block_scalar"
+    )
+}
+
+/// The text a scalar node denotes: quotes and block-scalar header removed.
+fn scalar_body(kind: &str, raw: &str) -> String {
+    match kind {
+        "double_quote_scalar" | "single_quote_scalar" => raw
+            .get(1..raw.len().saturating_sub(1))
+            .unwrap_or(raw)
+            .to_owned(),
+        "block_scalar" => raw.split_once('\n').map_or("", |(_, rest)| rest).to_owned(),
+        _ => raw.to_owned(),
+    }
+}
+
+/// Byte ranges (start, end) and inner text of each `${{ ... }}` in `raw`.
+fn expressions(raw: &str) -> Vec<(usize, usize, &str)> {
+    let mut out = Vec::new();
+    let mut from = 0;
+    while let Some(open) = raw[from..].find("${{") {
+        let start = from + open;
+        let Some(close) = raw[start..].find("}}") else {
+            break;
+        };
+        let end = start + close + 2;
+        out.push((start, end, raw[start + 3..end - 2].trim()));
+        from = end;
+    }
+    out
 }
 
 /// The text of `n` in `text`.
@@ -350,6 +421,7 @@ impl TreeFold<'_, '_> {
                 self.loose.push(self.aliases.len() - 1);
                 Ok(())
             }
+            kind if self.workflow && is_scalar(kind) => self.expression_regions(text, node, out),
             _ => {
                 let mut cur = node.walk();
                 for c in node.named_children(&mut cur) {
@@ -358,6 +430,78 @@ impl TreeFold<'_, '_> {
                 Ok(())
             }
         }
+    }
+
+    /// Adds a `region(expr)` node for each `${{ }}` inside scalar `node`.
+    fn expression_regions(
+        &mut self,
+        text: &str,
+        node: tree_sitter::Node<'_>,
+        out: &mut Vec<NodeId>,
+    ) -> Result<(), TermError> {
+        let raw = slice(text, node);
+        for (start, end, inner) in expressions(raw) {
+            let loc = self
+                .cx
+                .loc(node.start_byte() + start, node.start_byte() + end);
+            let body = self.cx.add(
+                NodeSpec::new(Operator::lit("text", inner), loc.clone()),
+                &[],
+            )?;
+            out.push(
+                self.cx
+                    .add(NodeSpec::new(Operator::region("expr"), loc), &[body])?,
+            );
+            tracing::trace!(expr = inner, "workflow expression region");
+        }
+        Ok(())
+    }
+
+    /// Adds the `run` shell region or `uses` instantiate node for a pair named `name`.
+    fn step_regions(
+        &mut self,
+        text: &str,
+        name: &str,
+        value: Option<tree_sitter::Node<'_>>,
+        out: &mut Vec<NodeId>,
+    ) -> Result<(), TermError> {
+        let Some(leaf) = value.and_then(scalar_leaf) else {
+            return Ok(());
+        };
+        let body = scalar_body(leaf.kind(), slice(text, leaf));
+        let loc = self.cx.node_loc(leaf);
+        match name {
+            "run" => {
+                let script = self.cx.add(
+                    NodeSpec::new(Operator::lit("text", &body), loc.clone()),
+                    &[],
+                )?;
+                out.push(
+                    self.cx
+                        .add(NodeSpec::new(Operator::region("shell"), loc), &[script])?,
+                );
+                tracing::trace!(bytes = body.len(), "workflow shell region");
+            }
+            "uses" => {
+                let reference = body.trim();
+                if reference.is_empty() || reference.starts_with('.') {
+                    return Ok(());
+                }
+                let reference = reference.strip_prefix("docker://").unwrap_or(reference);
+                let target = self.cx.add(
+                    NodeSpec::new(Operator::reference(reference), loc.clone()),
+                    &[],
+                )?;
+                out.push(self.cx.add(
+                    NodeSpec::new(Operator::apply("instantiate"), loc),
+                    &[target],
+                )?);
+                self.uses.push((leaf.start_byte(), reference.to_owned()));
+                tracing::trace!(reference, "workflow instantiate node");
+            }
+            _ => {}
+        }
+        Ok(())
     }
 
     /// Fold `node` (a pair or item) as a unit named `name`, or pass its units up when unnamed.
@@ -382,6 +526,9 @@ impl TreeFold<'_, '_> {
             out.extend(nested);
             return Ok(());
         };
+        if self.workflow && node.kind() == "block_mapping_pair" {
+            self.step_regions(text, &name, value, &mut nested)?;
+        }
         let (start, end) = (node.start_byte(), node.end_byte());
         let loc = self.cx.loc(start, end);
         let key = self
@@ -417,6 +564,18 @@ impl TreeFold<'_, '_> {
     }
 }
 
+/// The job (`jobs.<name>`) of `file` containing byte `offset`, else the file itself.
+pub(crate) fn owner_of(file: &FileSymbols, offset: usize) -> Symref {
+    let at = u32::try_from(offset).unwrap_or(u32::MAX).into();
+    file.symbols
+        .iter()
+        .find(|s| {
+            let segs = s.symref.segments();
+            segs.len() == 2 && segs[0] == "jobs" && s.span.contains(at)
+        })
+        .map_or_else(|| Symref::file(&file.path), |s| s.symref.clone())
+}
+
 /// The node id of a pair's key child (skipped when folding the pair's value side).
 fn pair_key_id(pair: tree_sitter::Node<'_>) -> usize {
     pair.child_by_field_name("key")
@@ -424,7 +583,11 @@ fn pair_key_id(pair: tree_sitter::Node<'_>) -> usize {
 }
 
 /// Fold a clean syntax tree (fidelity F2 units, anchors and aliases as references).
-fn fold_tree(tree: &ParsedTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
+fn fold_tree(
+    tree: &ParsedTree,
+    input: &FileInput<'_>,
+    workflow: bool,
+) -> Result<Folded, FoldError> {
     let text: &str = &tree.text;
     let mut cx = Cx::new(input.path, "yaml", text);
     let mut tf = TreeFold {
@@ -432,10 +595,12 @@ fn fold_tree(tree: &ParsedTree, input: &FileInput<'_>) -> Result<Folded, FoldErr
         anchors: Vec::new(),
         aliases: Vec::new(),
         loose: Vec::new(),
+        workflow,
+        uses: Vec::new(),
     };
     let mut units = Vec::new();
     tf.walk(text, tree.root(), &mut units)?;
-    let (anchors, aliases) = (tf.anchors, tf.aliases);
+    let (anchors, aliases, uses) = (tf.anchors, tf.aliases, tf.uses);
     let root = cx.add(file_root_spec(&cx, input.size as usize), &units)?;
     let term = cx.b.finish(root)?;
     let scopes = ScopeGraph::from_term(&term);
@@ -466,6 +631,14 @@ fn fold_tree(tree: &ParsedTree, input: &FileInput<'_>) -> Result<Folded, FoldErr
     }
     file.symbols = v.symbols;
     file.extras = v.extras;
+    for (at, name) in uses {
+        file.refs.push(RefSite {
+            from: owner_of(&file, at),
+            name,
+            qualifier: None,
+            kind: RefKind::Instantiate,
+        });
+    }
     tracing::debug!(
         path = input.path,
         keys = file.symbols.len(),
@@ -568,6 +741,80 @@ mod tests {
         assert!(r.name.ends_with("base"), "{}", r.name);
         assert!(r.from.to_string().ends_with("prod"), "{}", r.from);
         assert_eq!(r.kind, RefKind::Depends);
+    }
+
+    /// Term operator tags under the whole fold of workflow `text`.
+    fn workflow_ops(text: &str) -> Vec<String> {
+        let size = u32::try_from(text.len()).expect("small");
+        let input = FileInput {
+            path: ".github/workflows/ci.yml",
+            digest: "d",
+            size,
+        };
+        let (folded, _) = fold_workflow(text, &input).expect("fold");
+        let term = &folded.term;
+        term.ids()
+            .map(|id| format!("{:?}", term.node(id).op()))
+            .collect()
+    }
+
+    const WF: &str =
+        "jobs:\n  b:\n    steps:\n      - uses: a/b@v1\n      - run: echo ${{ github.sha }}\n";
+
+    // frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_workflow
+    #[test]
+    fn uses_is_an_instantiate_apply_node() {
+        assert!(
+            workflow_ops(WF)
+                .iter()
+                .any(|t| t.contains("Apply") && t.contains("instantiate"))
+        );
+    }
+
+    // frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_workflow
+    #[test]
+    fn run_is_a_shell_region() {
+        assert!(
+            workflow_ops(WF)
+                .iter()
+                .any(|t| t.contains("Region") && t.contains("shell"))
+        );
+    }
+
+    // frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_workflow
+    #[test]
+    fn expression_is_an_expr_region() {
+        assert!(
+            workflow_ops(WF)
+                .iter()
+                .any(|t| t.contains("Region") && t.contains("expr"))
+        );
+    }
+
+    // frob:ticket 01M5CH6Z005WE93MXMAP17WEBJ
+    // frob:tests crates/gob-symbols/src/yaml.rs::fold_workflow
+    #[test]
+    fn plain_yaml_has_no_region_nodes() {
+        let ops = names_of_plain();
+        assert!(!ops.iter().any(|t| t.contains("Region")));
+    }
+
+    /// Operator tags of the plain (non-workflow) fold of [`WF`].
+    fn names_of_plain() -> Vec<String> {
+        let input = FileInput {
+            path: "ci.yml",
+            digest: "d",
+            size: u32::try_from(WF.len()).expect("small"),
+        };
+        let folded = fold_text(WF, &input).expect("fold");
+        folded
+            .term
+            .ids()
+            .map(|id| format!("{:?}", folded.term.node(id).op()))
+            .collect()
     }
 
     // frob:ticket 01M4MDH6NJXB6YK5NZFKC4NSBJ

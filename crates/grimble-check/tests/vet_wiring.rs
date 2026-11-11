@@ -96,3 +96,48 @@ fn check_with_base_reports_new_direct_dependency() {
     let plain = run_ids(root);
     assert!(!plain.iter().any(|r| r == "VET001"), "got {plain:?}");
 }
+
+/// A root `grimble-vet.toml` allowlist silences VET001 for a new dependency; the legacy file does too.
+// frob:ticket 01M73470XDYYF3D5BV77G165PS
+// frob:tests crates/grimble-check/src/product.rs::vet_report
+#[test]
+fn check_honours_root_and_legacy_allowlist() {
+    for path in ["grimble-vet.toml", ".grimble/vet.toml"] {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let root = dir.path();
+        std::fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname = \"app\"\nversion = \"0.1.0\"\n\n[dependencies]\nnewdep = \"1\"\n",
+        )
+        .expect("manifest");
+        let lock = |extra: &str| {
+            format!("version = 4\n\n[[package]]\nname = \"app\"\nversion = \"0.1.0\"\n{extra}")
+        };
+        std::fs::write(root.join("Cargo.lock"), lock("")).expect("lock");
+        git(root, &["init", "-q", "-b", "main"]);
+        git(root, &["add", "."]);
+        git(root, &["commit", "-q", "-m", "base"]);
+        std::fs::write(
+            root.join("Cargo.lock"),
+            lock("dependencies = [\"newdep\"]\n\n[[package]]\nname = \"newdep\"\nversion = \"1.0.0\"\nsource = \"registry+https://github.com/rust-lang/crates.io-index\"\n"),
+        )
+        .expect("lock");
+        std::fs::create_dir_all(root.join(path).parent().expect("parent")).expect("dir");
+        std::fs::write(root.join(path), "allow = [\"newdep\"]\n").expect("allow");
+        git(root, &["add", "-f", "."]);
+        git(root, &["commit", "-q", "-m", "add dep"]);
+        let opts = CheckOptions {
+            base: Some("HEAD~1".to_owned()),
+            ..CheckOptions::default()
+        };
+        let done = run(root, &opts).expect("run");
+        assert!(
+            done.report
+                .findings
+                .iter()
+                .all(|f| f.rule.as_str() != "VET001"),
+            "{path}: {:?}",
+            done.report.findings
+        );
+    }
+}

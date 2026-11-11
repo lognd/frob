@@ -282,6 +282,31 @@ impl Runner {
     }
 }
 
+/// Process-wide environment additions applied to every child, under the `Spec::env` ones.
+static AMBIENT_ENV: std::sync::Mutex<Vec<(String, String)>> = std::sync::Mutex::new(Vec::new());
+
+/// Set `name` to `value` in every child this process spawns from now on (a later call for the same name replaces it).
+///
+/// A caller cannot use `std::env::set_var` (unsafe, and racy under threads), so product code that
+/// wants a variable such as `CARGO_TARGET_DIR` in every tool stage records it here. `Spec::env`
+/// still wins for a name set in both.
+pub fn set_ambient_env(name: &str, value: &str) {
+    let mut guard = AMBIENT_ENV
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    guard.retain(|(k, _)| k != name);
+    guard.push((name.to_owned(), value.to_owned()));
+    debug!(name, value, "ambient child environment set");
+}
+
+/// A snapshot of the ambient environment additions.
+fn ambient_env() -> Vec<(String, String)> {
+    AMBIENT_ENV
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
 /// Build the command for `spec`: args, environment per `env`, pack hardening and cwd.
 fn base_command(exe: &std::path::Path, spec: &Spec, env: &EnvPolicy) -> Command {
     let mut cmd = Command::new(exe);
@@ -293,6 +318,7 @@ fn base_command(exe: &std::path::Path, spec: &Spec, env: &EnvPolicy) -> Command 
         // frob:ticket 01M3ZX7VPGRERTZNVS5VR437JY
         cmd.env("GIT_CONFIG_NOSYSTEM", "1");
     }
+    cmd.envs(ambient_env());
     cmd.envs(spec.env.iter().map(|(k, v)| (k, v)));
     if let Some(cwd) = &spec.cwd {
         cmd.current_dir(cwd);

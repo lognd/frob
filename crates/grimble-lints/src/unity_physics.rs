@@ -14,6 +14,7 @@
 //! (`GetKeyDown`, `wasPressedThisFrame`, ...) is exempt: it runs once per press, not per frame.
 
 // frob:ticket 01M4D94ZPDYBATXNCVY3XRQ6RM
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 
 use std::collections::HashSet;
 
@@ -22,7 +23,8 @@ use tree_sitter::Node;
 
 use crate::res::{Certainty, ScanError, span, text};
 use crate::unity::{arguments_of, declared_type, last_segment, member_call, named_children};
-use crate::unity_common::{Finding, live_named, walk};
+use crate::unity_common::{Finding, live_named, methods, walk};
+use crate::unity_model;
 
 /// The rule id reported on every finding.
 pub const RULE: &str = "UNITY302";
@@ -238,15 +240,11 @@ fn judge(
 }
 
 /// Scans one class declaration.
-fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Finding>) {
+fn scan_class(class: Node<'_>, src: &str, spans: &[(usize, usize)], out: &mut Vec<Finding>) {
     let Some(body) = class.child_by_field_name("body") else {
         return;
     };
-    let methods: Vec<(String, Node<'_>)> = live_named(body, src, &[])
-        .into_iter()
-        .filter(|m| m.kind() == "method_declaration")
-        .filter_map(|m| Some((text(m.child_by_field_name("name")?, src).to_owned(), m)))
-        .collect();
+    let methods = unity_model::gated(methods(body, src), spans);
     let facts = body_facts(class, src);
     let mut seen: HashSet<(String, bool)> = HashSet::new();
     let mut work: Vec<(Node<'_>, bool)> = methods
@@ -292,9 +290,10 @@ fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Finding>) {
 /// [`ScanError::Parse`] when the file does not parse within the limits.
 pub fn scan(language: Language, src: &str) -> Result<Vec<Finding>, ScanError> {
     let mut out = Vec::new();
+    let spans = unity_model::spans_for(language, src)?;
     walk(language, src, &[], |n| {
         if n.kind() == "class_declaration" {
-            scan_class(n, src, &mut out);
+            scan_class(n, src, &spans, &mut out);
         }
     })?;
     out.sort_by_key(|f| f.range.start());

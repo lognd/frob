@@ -1,0 +1,1 @@
+rules: a GRL rule, a Rust std rule and a pack rule now list with one `RuleRow` shape (`rules list --json` gains `fidelity`, `needs` and `reads`), and GRL accepts optional `since "X.Y.Z"` and `fidelity f0..f4` headers; `needs <side relation>` stays accepted as a deprecated alias of `reads`.

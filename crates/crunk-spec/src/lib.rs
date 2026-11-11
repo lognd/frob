@@ -57,6 +57,7 @@ pub mod content_file;
 mod dynamic;
 mod error;
 pub mod flow_file;
+pub mod ia;
 mod load;
 pub mod model;
 pub mod naming;

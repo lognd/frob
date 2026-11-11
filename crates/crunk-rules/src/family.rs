@@ -106,7 +106,7 @@ pub const FAMILIES: &[FamilyMeta] = &[
     fam(
         "SLOP",
         "unchosen defaults and generic copy, silenced by declared decisions",
-        &[T0],
+        &[T0, T1],
         true,
     ),
     fam(

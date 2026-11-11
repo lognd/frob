@@ -3,11 +3,12 @@
 use gob_directives::frob::Todo;
 use gob_directives::{Directive, DirectiveRecord, is_full_ulid};
 use gob_languages::Language;
-use gob_rules::Finding;
-use gob_text::{FileId, LineIndex, Span, TextRange, TextSize};
+use gob_rules::{Finding, Out};
+use gob_text::{FileId, FileInterner, LineIndex, Span, TextRange, TextSize};
 
 use crate::comments::comment_lines;
-use crate::legacy::{Todo001, Todo002};
+use crate::legacy::Todo001;
+use crate::rules::todo002::Todo002;
 use crate::tickets::{Standing, Tickets};
 use crate::util::{finding, is_marker};
 
@@ -103,8 +104,12 @@ pub(crate) fn todo001(
 }
 
 /// TODO002 over the whole repo: `frob:todo` directives whose ticket is terminal.
-pub(crate) fn todo002(directives: &[DirectiveRecord], tickets: &Tickets<'_>) -> Vec<Finding> {
-    let mut out = Vec::new();
+pub(crate) fn todo002(
+    directives: &[DirectiveRecord],
+    tickets: &Tickets<'_>,
+    files: &FileInterner,
+    out: &mut Out<'_, Todo002>,
+) {
     for d in directives
         .iter()
         .filter(|d| d.namespace == "frob" && d.verb == "todo")
@@ -113,16 +118,17 @@ pub(crate) fn todo002(directives: &[DirectiveRecord], tickets: &Tickets<'_>) -> 
             continue;
         };
         if let Standing::Terminal(outcome) = tickets.standing(&todo.id) {
-            out.push(finding(
-                &Todo002,
-                Some(d.span),
-                format!(
-                    "`frob:todo {}` points at a ticket that is already done ({outcome}); do the work, remove the marker or re-point it",
-                    todo.id
-                ),
-                &todo.id,
-            ));
+            let message = format!(
+                "`frob:todo {}` points at a ticket that is already done ({outcome}); do the work, remove the marker or re-point it",
+                todo.id
+            );
+            let (start, end) = crate::cov::bounds(d.span.range);
+            if let Some(path) = files.path(d.span.file) {
+                out.fire_range_in(path, start, end, message);
+            } else {
+                tracing::warn!(id = %todo.id, "TODO002 directive file is not interned; finding is spanless");
+                out.fire(0, message);
+            }
         }
     }
-    out
 }

@@ -190,6 +190,105 @@ against force pushes. Code branches never carry ledger commits.
   step, retrying on a lost race.
 - Liveness and eviction: section 4. Freshness: section 5.
 
+#### 3.3.0 Unrecorded claims in `doable` (implementation)
+
+`ticket doable` hides a ticket when `refs/remotes/<remote>/ticket/<handle>`
+exists, even though the ledger shows no claim. Read verbs never touch the
+network (section 5.2), so this uses the cached remote-tracking refs a sync
+already fetched (`claim::cached_remote_claim`), not `remote_claim`'s
+`ls-remote`. A claim not yet fetched is therefore invisible until the next
+refresh; `work` still catches it with the create-only push. Hidden tickets
+are reported in one warning naming their handles.
+
+#### 3.3.1 Publishing the claim (implementation)
+
+`crates/frob-worktree/src/claim.rs` (`publish`) is called by `frob work`
+after the lease is taken and before the worktree is built. It reads the
+remote name and probe timeout from `[sync]` in `frob.toml` (default
+`origin`, 2500 ms) and pushes the base tip to `refs/heads/ticket/<handle>`
+as a compare-and-swap against "absent". Outcomes (`Publication`):
+
+| Outcome | When | `work` does |
+|---|---|---|
+| `LocalOnly` | no remote is configured | proceeds silently; the claim is local |
+| `Published` | the create-only push succeeded | proceeds; this clone holds the claim |
+| `Resumed` | the push was rejected but the remote tip equals the pushed oid or is an ancestor of the local `ticket/<handle>` | proceeds; it is this clone's own earlier claim |
+| `Moved { tip }` | the push was rejected, the remote branch is not in this clone's history, but its tip was authored by the current actor (`ledger.actor()`) | fetches `ticket/<handle>`, creates the local branch at `tip` if absent, records a `lease` op `move` event and proceeds; the claim is this actor's, resumed on another clone |
+| `Unpublished(why)` | push or follow-up probe timed out, failed, or the remote answered nothing usable | proceeds with `W-CLAIM-UNPUBLISHED` |
+| `Lost { tip }` | the push was rejected and the remote branch is not in this clone's history | refuses with `E-CLAIM-LOST` unless `--anyway` |
+
+Offline is deliberately not an error (decision D-5): the claim stays
+local and `work` warns. A rejected push is classified by reading the
+remote tip (`remote_claim`, an `ls-remote` of the one ref), so a retry
+after a crash does not mistake its own claim for someone else's.
+
+**E-CLAIM-LOST** (refusal class `GuardNeedsAction`) fires only on
+`Lost`: another actor's create-only push won, and the message names the
+branch and the winner's oid. A claim the same actor made on another clone
+is not lost: `work` fetches it and records the `move` event (identity is
+the tip commit's author or committer name; a claim branch still at the bare
+base commit carries no author and reads as lost). Recovery: pick another
+ticket (`frob work --next` skips lost claims and retries); or rerun with
+`--anyway --reason <why>`, which records the reason, scope and expiry
+(see `anyway.rs`) and works over the claim.
+
+**W-CLAIM-UNPUBLISHED** is a warning, not a refusal. It fires on
+`Unpublished`: the ticket is claimed in this clone only, so another clone
+can take it until `ticket/<handle>` reaches the remote. The message
+carries the underlying reason (timeout, push failure, rejection with no
+readable remote tip). Recovery: restore connectivity and run a sync
+(section 5), which publishes the branch; if another clone published first
+in the meantime, the sync reports the lost claim as described above.
+
+The sync half is `claim::republish_unpublished`, called from `frob refresh`
+after the ledger sync: for each live lease whose `ticket/<handle>` branch
+exists locally but has no remote-tracking ref, it repeats the create-only
+push from the local branch tip. A rejected push is classified as in `publish`
+(resume or lost) and never forced; an unreachable remote leaves the claim
+unpublished for the next sync. The ledger push is retried by the ledger sync
+itself, which pushes whenever the local ledger ref is ahead of the remote.
+
+#### 3.3.2 Recording the claim (implementation)
+
+`crates/frob-worktree/src/claim_record.rs` (`record`) runs right after
+`publish`, from `Workspace::record_claim` in `work.rs`. It appends one
+`lease` event through `frob_ledger::claim_hold::claim_event` and then pushes
+the ledger. The event carries `holder` (the actor), `clone_id`, `agent` (the
+`FROB_AGENT` label, absent for a human), `branch` and `observed` (the oid the
+claim branch was observed at). `clone_id` is minted once per clone and kept in
+`<common_dir>/frob/clone-id`; it is never derived from a path or host name.
+
+| `Publication` | Event | `observed` |
+|---|---|---|
+| `Published`, `LocalOnly` | `take` | the base tip that was pushed |
+| `Resumed` (own earlier claim found on the remote) | `renew` | the local `ticket/<handle>` tip |
+| `Moved { tip }` | `move` (also sets `tip`) | the fetched remote tip |
+| `Unpublished`, `Lost` | none | not claimed; the sync writes the missing event once the branch is out (row 10) |
+
+The ledger push (`push_ledger`) is a compare-and-swap of the orphan ledger
+branch against the last fetched remote tip. It is best effort: a rejected,
+timed-out or failed push leaves the event local, adds a warning, and the
+claim stands (the branch is the claim); the next sync integrates and pushes.
+A ledger in trunk or branch mode rides the base branch and is not pushed
+here.
+
+#### 3.3.3 The claim loser (implementation)
+
+`crates/frob-worktree/src/claim_park.rs` (`handle_loss`) runs from
+`Workspace::claim` when `publish` returns `Publication::Lost` and no
+`--anyway` was given. If the local `ticket/<handle>` branch holds commits
+beyond both the winner's tip and the base, it is pushed create-only to
+`parked/<handle>-<n>`, where `n` is one past the highest index on the remote
+(retried at the next index when another loser took it first). Nothing is
+deleted or rewritten. A `note` comment event is appended to the ticket and the
+ledger is pushed (best effort). The refusal message reads
+`claim lost to <actor> at <oid>`, plus the parked ref when one was made; the
+actor is the winner's tip author.
+
+Gap: only the `work` loss path is implemented. Detecting a loss during a
+later sync (an unpublished claim that `republish_unpublished` finds taken) does
+not yet park or comment.
+
 ### 3.4 Land and push ordering
 
 Invariant: origin never shows a ticket `done` whose code is not on
@@ -418,7 +517,9 @@ worktrees): last probe time, result class, remote oids, backoff.
    `fetch_timeout` (10 s). Git updates refs only on success, so a
    killed fetch changes nothing.
 3. Integrate: plumbing union merge of the ledger (event paths unioned,
-   changed tickets refolded, derived paths and pages recomputed, one
+   changed tickets refolded, pm documents (`_cycles`, `_milestones`)
+   changed on both sides refolded from the union of both tips' events,
+   derived paths and pages recomputed, one
    two-parent commit; cost proportional to changed paths, not to ticket
    count); fast-forward the local base when safe; update
    claims-observed.
@@ -453,6 +554,11 @@ off exponentially (ttl doubling to 1 h) and reset on success.
 | frob refresh --status | never | one line from the cache for shell prompts (`frob:2h-stale 1-conflict`), under 10 ms |
 | frob refresh [--quiet] | always | exit 0 ok, 3 retryable (offline, auth, rate limit), 1 needs action (diverged, ledger conflict) |
 
+Refresh base policy (shipped): a base with a merge base that is neither
+tip is `diverged`; `frob refresh` still fills the report, then refuses
+`E-SYNC-DIVERGED` (exit 1). A local and remote base with no shared
+history are `unrelated` (independent-root clones): report only, exit 0.
+
 Message class: `<CODE>: <what> as of <age> (<cause>). <command to
 fix>. <how to silence>`, for example `W-SYNC-OFFLINE: ticket view is
 3h12m old (probe timed out after 2.5s). Run frob refresh when online.
@@ -467,9 +573,16 @@ a detached `frob refresh` when the cache is older than `[sync] ttl`
 in the foreground within `[sync] foreground_budget_ms` and appends the
 `W-SYNC-*` notice; `CI` disables both. `[sync]` gained `warn_after_secs`,
 `stale_error_secs` and `foreground_budget_ms`, and the refresh state
-records `last_ok_at`. Still open: `work`/`land` foreground sync and the
-`E-SYNC-STALE` gate (`sync_policy::stale_gate`), per-row "may be taken",
-read-verb footers, and `--background`/`--quiet` on `frob refresh`.
+records `last_ok_at`. Still open: `land` foreground sync and
+`--background`/`--quiet` on `frob refresh`. Landed: `work` (and
+`start`) probe in the foreground (`freshness::sync_then_gate`), then
+refuse `E-SYNC-STALE`; `--offline --reason TEXT` skips both, logs the
+reason and answers with a `W-SYNC-OFFLINE` warning carrying it; `doable` refuses
+`E-SYNC-STALE`; when `CI` tolerates a view past `stale_error`, every
+`doable` row carries `may_be_taken: true` (text marker `[may-be-taken]`);
+`ticket show` and `ticket list` carry the envelope `freshness` field and a
+one-line footer when the view is not fresh (`ticket board` and
+`ticket stats` do not exist yet).
 
 Implementation status (DT11, partial): `frob_worktree::activity`
 holds the classifier (hard: non-empty human commit, holder `evidence`
@@ -480,6 +593,13 @@ and zero-clamped idle. `frob refresh` sync now feeds it
 (`frob_worktree::claim_observe`): each live lease's claim branch is
 fetched and its new commits and holder events recorded. Still open:
 `claim touch` (DT12 consumes `idle_secs`).
+
+Implementation status (push_wip): `frob refresh` sync pushes each live
+lease's `ticket/<handle>` branch as WIP when `[sync] push_wip` is true
+(default; `frob_worktree::claim_wip`). It is a CAS push against the cached
+remote tip, so only a strictly-ahead branch moves; behind, diverged and
+unpublished branches are logged and left alone, and any failure is a
+logged warning that never changes the refresh exit code.
 
 Implementation status (DT14, partial): `frob_ledger::claim_hold` holds
 the pure rules: `Hold` (reason required, end date capped by
@@ -742,6 +862,6 @@ Decisions made by the owner (2026-10-20):
   The park branch and `claim restore` are the safety net. Scenario
   rows that mention a confirmation describe the optional
   `evict_human = "confirm"` mode.
-- D-5 offline `work` on an unclaimed ticket proceeds with a warning.
+- D-5 offline `work` on an unclaimed ticket proceeds with a warning; a stale view refuses unless `--offline --reason` is given.
 - D-6 this repository flips to orphan mode (DT04) ahead of the rest of
   the epic.

@@ -41,9 +41,11 @@ fn is_dunder(name: &str) -> bool {
 }
 
 // frob:ticket 01M43CVMKVBZ2WDZHJ3TCKEFKF
+// frob:ticket 01M5F1GJ558PJREF77B1769XWM
 /// DOC001 over one Rust, Python or C# file: public items of `graph` whose doc facet is empty.
 ///
 /// C# `///` XML doc comments (summary, param, returns, `<inheritdoc/>`) fill the doc facet.
+/// Namespaces (and modules) are skipped: C# cannot attach an XML doc comment to a namespace.
 pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) -> Vec<Finding> {
     let python = is_python_path(path);
     let supported =
@@ -55,7 +57,7 @@ pub(crate) fn doc001(graph: &SymbolGraph, file: FileId, path: &str, text: &str) 
     let mut out = Vec::new();
     for rec in graph.public_api() {
         if rec.symref.path() != path
-            || rec.kind == SymbolKind::Module
+            || matches!(rec.kind, SymbolKind::Module | SymbolKind::Namespace)
             || rec.implements.is_some()
             || rec.digests.doc != empty
         {
@@ -99,19 +101,20 @@ fn is_external(dest: &str) -> bool {
 
 /// `base_dir` joined with `rel`, normalized; `None` when it escapes the root.
 fn resolve(base_dir: &Path, rel: &str) -> Option<PathBuf> {
-    let joined = match rel.strip_prefix('/') {
-        Some(root_rel) => PathBuf::from(root_rel),
+    let start = match rel.strip_prefix('/') {
+        Some(root_rel) => Path::new(root_rel).to_path_buf(),
         None => base_dir.join(rel),
     };
-    let mut out = PathBuf::new();
-    for comp in joined.components() {
-        match comp {
-            Component::Normal(p) => out.push(p),
-            Component::ParentDir if !out.pop() => return None,
-            _ => {}
-        }
-    }
-    Some(out)
+    start
+        .components()
+        .try_fold(PathBuf::new(), |mut acc, comp| {
+            match comp {
+                Component::Normal(p) => acc.push(p),
+                Component::ParentDir if !acc.pop() => return None,
+                _ => {}
+            }
+            Some(acc)
+        })
 }
 
 /// Heading slugs of markdown `text` at `path`.

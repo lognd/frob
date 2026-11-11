@@ -64,7 +64,7 @@ pub struct WrittenFile {
 /// [`ExportError::Token`] for a colliding token name, [`ExportError::Write`] when a file cannot
 /// be written (files written before it stay written; each write is atomic).
 pub fn write_all(spec: &DesignSpec) -> Result<WriteReport, ExportError> {
-    let tokens = TokenSet::from_spec(spec)?;
+    let tokens = TokenSet::from_spec_with_authored(spec)?;
     let rendered = render_managed_with(spec, &tokens);
     let mut written = Vec::with_capacity(rendered.len());
     for file in &rendered {

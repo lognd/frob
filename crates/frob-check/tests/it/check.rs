@@ -1022,7 +1022,8 @@ fn cov001_counts_rust_files_and_is_not_required_without_a_test_capable_language_
         zero_subject_rules(&md).is_empty(),
         "no test capability, no required silence"
     );
-    assert_eq!(md.subjects_examined.get("COV001"), Some(&0));
+    // The rule is inapplicable here, so it reports no count at all (zero either way).
+    assert_eq!(md.subjects_examined.get("COV001").copied().unwrap_or(0), 0);
 }
 
 // frob:ticket 01M4069Z0HH5RV8TNPFVA936C5

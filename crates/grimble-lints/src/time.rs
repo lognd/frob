@@ -6,12 +6,19 @@
 //! zones (`TIME002`). Both need the clock roles of a language ([`has_clock_roles`], Rust and
 //! Python); for any other code language the [`Report`] lists them as unresolved instead of
 //! silently clean. Mapping a site to a severity belongs to the rule that consumes it.
+//!
+//! Scope discovery runs through the universal model (`gob_symbols::model_of_source_at`): the
+//! function and method scopes are the `unit(function|method)` nodes, read by byte span. The
+//! name-based def-use flow, the import aliases and the callee vocabulary still read the tree (see
+//! docs/design/grimble/lint-classification.md section 3).
 
 // frob:ticket 01M44R5W4WJEXFM000S8KVQQN5
 
 mod flow;
 
+use gob_ir::{Location, Operator, Universal};
 use gob_languages::{Language, ParseLimits, ParseResult, parse};
+use gob_symbols::model_of_source_at;
 use gob_text::TextRange;
 
 use crate::syntax::Lang;
@@ -61,6 +68,47 @@ pub enum ScanError {
     /// The file did not parse within the limits, or its grammar is not built in.
     #[error("E-TIME-PARSE: {0}")]
     Parse(String),
+    /// The universal model of the file could not be built (an adapter bug).
+    #[error("E-TIME-MODEL: {0}")]
+    Model(String),
+}
+
+/// The adapter path whose extension selects the universal-model fold for `language`.
+fn model_path(language: Language) -> &'static str {
+    match language {
+        Language::Rust => "time.rs",
+        _ => "time.py",
+    }
+}
+
+/// Byte ranges of every function and method unit of `text`, from the universal model.
+fn function_ranges(language: Language, text: &str) -> Result<Vec<(usize, usize)>, ScanError> {
+    let model = model_of_source_at(model_path(language), text)
+        .map_err(|e| ScanError::Model(e.to_string()))?;
+    let term = model.term();
+    let mut out = Vec::new();
+    for id in term.ids() {
+        let node = term.node(id);
+        let Operator::Universal(Universal::Unit { kind, .. }) = node.op() else {
+            continue;
+        };
+        if !matches!(kind.as_str(), "function" | "method") {
+            continue;
+        }
+        let Location::Text { range, .. } = node.location() else {
+            continue;
+        };
+        out.push((
+            u32::from(range.start()) as usize,
+            u32::from(range.end()) as usize,
+        ));
+    }
+    tracing::debug!(
+        language = language.name(),
+        functions = out.len(),
+        "time function scopes from model"
+    );
+    Ok(out)
 }
 
 /// True when `language` has the clock-read roles `TIME001` and `TIME002` need.
@@ -91,7 +139,8 @@ pub fn scan(language: Language, text: &str) -> Result<Report, ScanError> {
         ParseResult::Parsed(tree) => tree,
         ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
     };
-    let mut sites: Vec<Site> = flow::scan_time(lang, tree.root(), text)
+    let fns = function_ranges(language, text)?;
+    let mut sites: Vec<Site> = flow::scan_time(lang, tree.root(), text, &fns)
         .into_iter()
         .map(|r| Site {
             kind: r.kind,
@@ -129,6 +178,33 @@ mod tests {
         assert!(has_clock_roles(Language::Rust));
         assert!(has_clock_roles(Language::Python));
         assert!(!has_clock_roles(Language::TypeScript));
+    }
+
+    // frob:tests crates/grimble-lints/src/time.rs::scan
+    #[test]
+    fn every_adapter_language_scans_without_error() {
+        for language in Language::ALL {
+            scan(language, "x = 1\n").unwrap_or_else(|e| panic!("{}: {e}", language.name()));
+        }
+    }
+
+    // frob:tests crates/grimble-lints/src/time.rs::scan
+    #[test]
+    fn python_function_scope_is_found_through_the_model() {
+        let src =
+            "from datetime import datetime\n@d\ndef f():\n    t = datetime.now()\n    save(t)\n";
+        let r = scan(Language::Python, src).expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::LocalClockRead);
+    }
+
+    // frob:tests crates/grimble-lints/src/time.rs::scan
+    #[test]
+    fn rust_method_scope_is_found_through_the_model() {
+        let src = "impl A { fn m(&self) { let t = Local::now(); save(t); } }\n";
+        let r = scan(Language::Rust, src).expect("parses");
+        assert_eq!(r.sites.len(), 1);
+        assert_eq!(r.sites[0].kind, Kind::LocalClockRead);
     }
 
     // frob:tests crates/grimble-lints/src/time.rs::scan

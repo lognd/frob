@@ -84,6 +84,15 @@ pub struct RefreshState {
     pub next_attempt_at: i64,
     /// Human text of the last problem (empty when ok).
     pub detail: String,
+    /// The last `frob refresh` found a branch diverged from its remote copy.
+    #[serde(default)]
+    pub diverged: bool,
+    /// The last `frob refresh` left concurrent ledger edits unresolved.
+    #[serde(default)]
+    pub ledger_conflict: bool,
+    /// The last `frob refresh` could not fast-forward the base (dirty checkout).
+    #[serde(default)]
+    pub base_blocked: bool,
 }
 
 /// How eagerly [`probe`] may skip the network.

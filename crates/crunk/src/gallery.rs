@@ -28,6 +28,7 @@ use serde_json::Value;
 pub struct GalleryCheck {
     manifest: String,
     routes: Vec<String>,
+    router: Option<String>,
 }
 
 /// Output of `gallery check`: the check report (`crunk-gallery-check-v1.json`).
@@ -60,6 +61,12 @@ struct GalleryArgs {
         help = "A route the router declares, for GALLERY005 (repeatable)"
     )]
     routes: Vec<String>,
+    #[arg(
+        long,
+        value_name = "PATH",
+        help = "A router.tsx to read route paths from, for GALLERY005 (added to any --route)"
+    )]
+    router: Option<String>,
 }
 
 impl Command for GalleryCheck {
@@ -74,6 +81,7 @@ impl Command for GalleryCheck {
         Ok(Self {
             manifest: a.manifest,
             routes: a.routes,
+            router: a.router,
         })
     }
 
@@ -324,8 +332,30 @@ mod imp {
             refusal("E-GALLERY-MANIFEST", &e.to_string())
                 .with_remedy("fix the manifest at the located path, then rerun")
         })?;
+        let mut routes = cmd.routes.clone();
+        if let Some(router) = &cmd.router {
+            let rpath = root.join(router);
+            let src = std::fs::read_to_string(&rpath).map_err(|e| {
+                tracing::info!(path = %rpath.display(), error = %e, "gallery check: router unreadable");
+                refusal(
+                    "E-GALLERY-ROUTER",
+                    &format!("cannot read router {}: {e}", rpath.display()),
+                )
+                .with_remedy("check the --router path, or pass the routes with --route")
+            })?;
+            let found = crunk_gallery::router::parse_routes(&src).map_err(|e| {
+                tracing::info!(path = %rpath.display(), error = %e, "gallery check: router unsupported");
+                refusal("E-GALLERY-ROUTER", &e.to_string())
+            })?;
+            tracing::info!(path = %rpath.display(), routes = found.len(), "gallery check: routes from router");
+            for r in found {
+                if !routes.contains(&r) {
+                    routes.push(r);
+                }
+            }
+        }
         let report =
-            crunk_gallery::report::check_report(&spec, &manifest, &cmd.routes, ctx.clock.today());
+            crunk_gallery::report::check_report(&spec, &manifest, &routes, ctx.clock.today());
         let findings: Vec<Value> = report
             .findings
             .iter()

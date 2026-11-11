@@ -459,3 +459,28 @@ fn windows_timeout_kills_descendants() {
         "descendant {pid} survived the timeout"
     );
 }
+
+// frob:tests crates/gob-exec/src/runner.rs::set_ambient_env
+#[cfg(unix)]
+#[test]
+fn ambient_env_reaches_children_and_spec_env_wins() {
+    if !gob_exec::require_sh("ambient_env_reaches_children_and_spec_env_wins") {
+        return;
+    }
+    gob_exec::set_ambient_env("GOB_EXEC_AMBIENT_PROBE", "ambient");
+    gob_exec::set_ambient_env("GOB_EXEC_AMBIENT_BOTH", "ambient");
+    let runner = Runner::new(Limits { jobs: 1 });
+    let spec = Spec {
+        program: Program::Tool { name: "sh".into() },
+        args: vec![
+            "-c".into(),
+            "echo $GOB_EXEC_AMBIENT_PROBE $GOB_EXEC_AMBIENT_BOTH".into(),
+        ],
+        cwd: None,
+        env: vec![("GOB_EXEC_AMBIENT_BOTH".into(), "spec".into())],
+        timeout: Duration::from_secs(10),
+        capture: true,
+    };
+    let out = runner.run(&spec).unwrap();
+    assert_eq!(out.stdout.trim(), "ambient spec");
+}

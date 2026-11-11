@@ -25,7 +25,7 @@
 //! | `REF001` | files examined (needs a ledger) | a ledger is open or `frob.toml` has `[tickets]` |
 //! | `TODO002` | tickets in the ledger | the same |
 //! | `TICK002` | tickets in the ledger (scoped runs) | the same |
-//! | `COV001` | Rust file nodes in the graph | the walk holds a Rust file |
+//! | `COV001` | test-capable file nodes in the graph | the walk holds a Rust, Python, C# or TypeScript file |
 //!
 //! A repository with no ledger configured and no test-capable language is not
 //! failed for silence; a configured ledger that cannot be read is.
@@ -38,6 +38,7 @@ mod concurrent;
 mod filecheck;
 pub mod grl;
 mod host;
+mod ledger_protection;
 mod memo;
 mod options;
 mod packs;
@@ -56,11 +57,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 pub use baselined::BaselinedSection;
+pub use concurrent::{LockHolder, live_holder};
 pub use gob_check::{
     AppliedFix, CheckError, CheckReport, CheckTable, Counts, FailOn, FileCheck, FixOutcome,
     Perf001, PerfTable, Proc001, Proc002, StageTime, Stats, Timing, Tool001, Tool002, ToolParser,
     ToolStage,
 };
+pub use ledger_protection::{GithubProbe, branch_verdict};
 pub use memo::FileToolMemo;
 pub use options::{CheckOptions, TeachSelect};
 pub use product::Frob;
@@ -130,6 +133,8 @@ pub fn run_with_cone(
     ),
     CheckError,
 > {
+    // frob:ticket 01M4Y2XTH8Q817362APA13CTAJ
+    let _ = frob_worktree::shared_target::export_shared_target(root);
     let mut opts = opts.clone();
     opts.clock
         .get_or_insert_with(|| Arc::new(gob_time::SystemClock::pin()));

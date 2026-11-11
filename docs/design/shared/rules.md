@@ -1350,13 +1350,24 @@ attribute.
 
 ### 11.8 Std rule codegen
 
-`cargo dev gen std-rules` compiles each rule in `packs/std/rules/*.grl` to a Rust
-module `packs/std/generated/<rule>.rs` (packs-and-plugins.md 6). There is no build script:
+`cargo dev gen std-rules` compiles each rule in `packs/<pack>/rules/*.grl` to a Rust
+module `packs/<pack>/generated/<rule>.rs` (packs-and-plugins.md 6) for every target pack:
+`std` (the gob host) and `crunk-core` (the crunk host). The generated module takes the
+executor's `Input` and `Relations`, so it is host independent; a pack that names a config
+schema (`crunk-core`: `docs/schemas/crunk.json`) has each source type-checked against it first,
+and a column or key the schema lacks fails generation. There is no build script:
 the modules are checked in and `cargo dev gen all --check` reports a stale or
-missing one as GEN001.
+missing one as GEN001. `crunk-core` ships LAYER001 and ORG002 as GRL. `crunk_rules::grl_rules`
+runs them over a crunk host: the stamped files and sheet sources become one workspace model
+(`gob_plan::workspace::build`, per-file attributes included), the spec's `[layers]` and `[org]`
+become the `config.layers` and `config.org` side tables, and `gob_plan::exec::message::render_message`
+fills each report template. Parity with the Rust rules is tested in `crunk-rules/tests/grl_parity.rs`;
+the Rust rules stay until `is integer` reads `_` separators like Python (LAYER001) and the
+remaining ORG rules are ported.
 
 Each module carries `#![forbid(unsafe_code)]`, and `design/model.grmb` gives the
-`std_rules` node that owns `packs/std/generated/**` no grants, so any ambient effect
+`std_rules` node that owns `packs/std/generated/**` and `packs/crunk-core/generated/**` no
+grants, so any ambient effect
 in a generated module is CAP001.
 
 ## 12. Testing a rule

@@ -186,7 +186,7 @@ fn named_config_tables(plan: &Plan) -> Vec<(String, bool)> {
         .iter()
         .filter_map(|op| match op {
             Op::FindSide { table, .. } => Some((*table, false)),
-            Op::MatchGlobSet { table, .. } => Some((*table, true)),
+            Op::MatchGlobSet { table, .. } | Op::InSide { table, .. } => Some((*table, true)),
             _ => None,
         })
         .map(|(t, glob)| (p.strings[t as usize].clone(), glob))

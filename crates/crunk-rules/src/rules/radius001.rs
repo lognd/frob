@@ -3,12 +3,13 @@
 //! that declares no radii has no design law to judge against: the rule is then inapplicable (the
 //! Python rule returned nothing; here the skip is counted and reported).
 
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
 
 use crunk_spec::naming::radius_token;
 use gob_rules::{Measured, Out, RepoRule, rule};
 
-use crate::host::{CrunkHost, missing_inputs};
+use crate::host::{CrunkHost, missing_scale};
 use crate::scales::{RADIUS_PROPS, ScaleJudgment, check};
 use crate::sheets::examined_sheets;
 
@@ -21,7 +22,7 @@ use crate::sheets::examined_sheets;
     polarity = Pplus,
     must_measure = true,
     scope = Repo,
-    fix = Manual,
+    fix = Deterministic,
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 1,
@@ -44,12 +45,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Radius001 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        if let Some(why) = missing_inputs(host) {
-            return Some(why);
-        }
-        host.spec()
-            .is_some_and(|spec| spec.scales.radii.is_empty())
-            .then(|| "no [scales] radii are declared".to_owned())
+        missing_scale(
+            host,
+            |spec| spec.scales.radii.is_empty(),
+            "no [scales] radii are declared",
+        )
     }
 }
 

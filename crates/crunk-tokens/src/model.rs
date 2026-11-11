@@ -616,6 +616,35 @@ impl TokenSet {
         Ok(Self { tokens: b.tokens })
     }
 
+    /// The set of `crunk.toml` ([`TokenSet::from_spec`]) plus every compiling
+    /// `design/tokens/*.toml` file, which is what the exports render. A file that does not
+    /// compile is skipped with a warning (the TOKEN lints report it).
+    ///
+    /// # Errors
+    ///
+    /// [`TokenError::Collision`] naming both origins when an authored token has the name of
+    /// another authored token or of a `crunk.toml` entry.
+    pub fn from_spec_with_authored(spec: &DesignSpec) -> Result<Self, TokenError> {
+        let base = Self::from_spec(spec)?;
+        let mut b = Builder {
+            tokens: base.tokens,
+        };
+        for (origin, parsed) in crate::dialect::read_authored(&spec.root) {
+            match parsed {
+                Ok(set) => {
+                    tracing::debug!(%origin, count = set.len(), "merging authored tokens");
+                    for token in set.tokens.into_values() {
+                        b.push(token)?;
+                    }
+                }
+                Err(err) => {
+                    tracing::warn!(%origin, %err, "authored token file does not compile; not exported");
+                }
+            }
+        }
+        Ok(Self { tokens: b.tokens })
+    }
+
     /// Build a set from already-formed tokens, rejecting a repeated name.
     ///
     /// # Errors

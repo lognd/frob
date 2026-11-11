@@ -5,7 +5,7 @@ use std::sync::Arc;
 use frob_lease::LeaseConfig;
 use frob_ledger::guards::{LeaseCheck, NoLeases};
 use frob_ledger::legacy::{Tick007, Tick008, Tick009, Tick010};
-use frob_obligations::{Cov001, Todo002, apply_exceptions, cov001_subjects, evaluate_legacy_repo};
+use frob_obligations::apply_exceptions;
 use frob_pm::legacy::aging::{Pm008, Pm009};
 use frob_pm::legacy::cycle_plan::{Pm010, Pm011, Pm012};
 use frob_pm::legacy::good_first::Pm031;
@@ -192,6 +192,38 @@ fn ledger_findings(inputs: &FrobInputs) -> Vec<Finding> {
         // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
         tick006_ledger_findings(&state.ledger),
     ])
+}
+
+/// `TICK011` for the ledger branch; skipped (logged) with no GitHub token so offline and CI runs are not left permanently Unresolved.
+// frob:ticket 01M5BSTQWD096Z3AKQNNB0YFYT
+fn tick011_findings(inputs: &FrobInputs) -> Vec<Finding> {
+    let state = match ledger_of(inputs, &["TICK011"]) {
+        Ok(Some(state)) => state,
+        Ok(None) => return Vec::new(),
+        Err(e) => return settle([Err(e)]),
+    };
+    if crate::ledger_protection::github_token().is_none() {
+        tracing::warn!("TICK011 skipped: no GH_TOKEN or GITHUB_TOKEN to ask the hosting API");
+        return Vec::new();
+    }
+    let mirror = gob_config::ConfigDocument::read(&inputs.root, snapshot::PRODUCT)
+        .and_then(|doc| doc.table::<gob_config::MirrorTable>())
+        .map_err(|e| {
+            failed(
+                &["TICK011"],
+                format_args!("[mirror] config unreadable: {e}"),
+            )
+        });
+    match mirror {
+        Ok(table) => crate::ledger_protection::ledger_finding(
+            &state.ledger,
+            &table.value.repo,
+            &crate::GithubProbe,
+        )
+        .into_iter()
+        .collect(),
+        Err(e) => settle([Err(e)]),
+    }
 }
 
 /// `TICK010` over the ticket branch tip; the expected nudge is for the configured branch and the numeric `[mirror] bot_ids`.
@@ -413,19 +445,6 @@ impl Product for Frob {
     #[allow(clippy::too_many_lines)] // one declarative table of repo groups
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         vec![
-            // COV001 and TODO002 stay on the legacy derive: `Out` cannot carry their span ranges.
-            // frob:ticket 01M48R02V2J0R5ZXWP9MXXGNZ3
-            RepoGroup::new(
-                "repo:obligations",
-                vec![Cov001.meta(), Todo002.meta()],
-                |s: &Snapshot<Self>, f| evaluate_legacy_repo(&s.inputs.obligations(), f),
-            )
-            .counting(|s| {
-                vec![
-                    ("COV001", cov001_subjects(&s.inputs.ack.graph)),
-                    ("TODO002", s.inputs.ledger.as_ref().map_or(0, |l| l.tickets)),
-                ]
-            }),
             // frob:ticket 01M4CT0AF76FJTWFG10SKXJZAZ
             RepoGroup::new(
                 "repo:aging",
@@ -478,6 +497,13 @@ impl Product for Frob {
                 ledger_rule_metas(),
                 |s: &Snapshot<Self>, _| ledger_findings(&s.inputs),
             ),
+            // frob:ticket 01M5BSTQWD096Z3AKQNNB0YFYT
+            RepoGroup::new(
+                "repo:ledger-protection",
+                vec![frob_obligations::tick_protect::Tick011.meta()],
+                |s: &Snapshot<Self>, _| tick011_findings(&s.inputs),
+            )
+            .full_only(),
         ]
     }
 
@@ -650,12 +676,6 @@ impl Product for Frob {
             snap.shared.has_ledger
                 || snap.inputs.ledger_error.is_some()
                 || snap.inputs.tickets_configured
-        } else if meta.id == "COV001" {
-            // COV001 needs a language with a test capability; only Rust has one today.
-            snap.core
-                .entries
-                .iter()
-                .any(|e| Language::detect(&e.path) == Some(Language::Rust))
         } else {
             true
         }

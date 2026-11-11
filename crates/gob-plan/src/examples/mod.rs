@@ -13,7 +13,6 @@ mod model_reader;
 mod resolves;
 pub mod runner;
 mod side;
-mod workspace;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};

@@ -233,7 +233,7 @@ fn read_optional(path: &std::path::Path) -> Result<Option<String>, ExportError> 
 ///
 /// [`ExportError`] when the spec produces a colliding token name or a file cannot be read.
 pub fn check_parity(spec: &DesignSpec) -> Result<Vec<Divergence>, ExportError> {
-    let tokens = TokenSet::from_spec(spec)?;
+    let tokens = TokenSet::from_spec_with_authored(spec)?;
     let css = match Target::Css.exporter().path(spec) {
         Some(p) => read_optional(&p)?,
         None => None,

@@ -38,6 +38,15 @@ fn stub(files: &[(&str, &str)]) -> (tempfile::TempDir, Stub) {
     (dir, host)
 }
 
+// frob:tests crates/frob-obligations/src/host.rs::ObligationHost.has_test_capable_files
+// frob:tests crates/frob-obligations/src/host.rs::ObligationHost.ledger_facts
+#[test]
+fn the_host_defaults_assume_test_capable_files_and_keep_no_ledger() {
+    let (_dir, host) = stub(&[("docs/a.md", "# A\n")]);
+    assert!(ObligationHost::has_test_capable_files(&host));
+    assert!(ObligationHost::ledger_facts(&host).is_none());
+}
+
 // frob:tests crates/frob-obligations/src/host.rs::ObligationHost.obligations
 #[test]
 fn the_host_lends_the_inputs_of_the_tree_it_collected() {

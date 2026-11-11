@@ -1,0 +1,1 @@
+frob work: when the `ticket/<handle>` claim branch on the remote was made by the same actor on another clone, the branch is fetched, a `lease` op `move` event is recorded and the claim resumes here instead of failing with `E-CLAIM-LOST`.

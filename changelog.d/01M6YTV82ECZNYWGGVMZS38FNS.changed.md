@@ -1,0 +1,1 @@
+Platform and cell selection (`tag:<name>` expansion, `applies_to` narrowing) now lives in `crunk_spec::DesignSpec::platforms_for` and `cell_triples`; `crunk render` and `crunk-gallery` both call it instead of keeping separate copies.

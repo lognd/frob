@@ -12,7 +12,7 @@ use crate::id::TicketId;
 use crate::ledger::{LedgerConfig, RefMode};
 
 /// The product whose config file holds the ledger tables.
-const PRODUCT: &str = "frob";
+pub(crate) const PRODUCT: &str = "frob";
 
 /// Where ledger commits go (`[tickets] ref_mode`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -180,6 +180,12 @@ pub struct SyncTable {
     /// Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache.
     #[config(default = 3000)]
     pub foreground_budget_ms: u32,
+    /// Milliseconds a `frob refresh` fetch or push may run before it is killed.
+    #[config(default = 10000)]
+    pub fetch_timeout_ms: u32,
+    /// Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged).
+    #[config(default = true)]
+    pub push_wip: bool,
 }
 
 impl LedgerConfig {
@@ -259,5 +265,22 @@ mod tests {
         let bad = ConfigDocument::parse("[tickets]\nref_mode = \"nope\"\n", Path::new("frob.toml"))
             .expect("toml");
         assert!(ledger_config_from(&bad).is_err());
+    }
+
+    // frob:ticket 01M5D6XDTZ9ZBGRVV71YNH5KJJ
+    #[test]
+    fn fetch_timeout_ms_defaults_to_ten_seconds() {
+        let doc = ConfigDocument::parse("", Path::new("frob.toml")).expect("toml");
+        let sync = doc.table::<SyncTable>().expect("sync").value;
+        assert_eq!(sync.fetch_timeout_ms, 10_000);
+    }
+
+    // frob:ticket 01M5D6XDTZ9ZBGRVV71YNH5KJJ
+    #[test]
+    fn fetch_timeout_ms_is_overridden_by_the_sync_table() {
+        let doc = ConfigDocument::parse("[sync]\nfetch_timeout_ms = 42\n", Path::new("frob.toml"))
+            .expect("toml");
+        let sync = doc.table::<SyncTable>().expect("sync").value;
+        assert_eq!(sync.fetch_timeout_ms, 42);
     }
 }

@@ -14,15 +14,14 @@ use frob_tests::reach::{Sources, called_names, dynamic_calls, engine_roots};
 use gob_directives::Binding;
 use gob_directives::DirectiveRecord;
 use gob_languages::Language;
-use gob_rules::{Finding, Severity};
+use gob_rules::Out;
 use gob_symbols::{
-    Admit, CallEdge, CrateDeps, EdgeKind, Status, StatusEdge, SymbolGraph, SymbolKind,
+    Admit, CallEdge, CrateDeps, EdgeKind, Fidelity, Status, StatusEdge, SymbolGraph, SymbolKind,
     SymbolRecord, Symref, Target,
 };
-use gob_text::{FileInterner, Span};
+use gob_text::TextRange;
 
-use crate::legacy::Cov001;
-use crate::util::{finding, rule_id};
+use crate::rules::cov001::Cov001;
 
 /// True for functions and methods.
 fn is_callable(rec: &SymbolRecord) -> bool {
@@ -30,7 +29,8 @@ fn is_callable(rec: &SymbolRecord) -> bool {
 }
 
 // frob:ticket 01M43A5DJT8XBQYEK36F0KSGKF
-/// Number of test-capable source files (Rust, Python and C#) in `graph`: the subjects `COV001` examines.
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
+/// Number of test-capable source files (Rust, Python, C# and TypeScript) in `graph`: the subjects `COV001` examines.
 ///
 /// Zero while the walk holds Rust files means the graph came up empty, so a
 /// clean `COV001` would be silence, not a pass.
@@ -41,7 +41,13 @@ pub(crate) fn test_capable_files(graph: &SymbolGraph) -> usize {
         .filter(|r| {
             matches!(
                 Language::detect(r.symref.path()),
-                Some(Language::Rust | Language::Python | Language::CSharp)
+                Some(
+                    Language::Rust
+                        | Language::Python
+                        | Language::CSharp
+                        | Language::TypeScript
+                        | Language::Tsx
+                )
             )
         })
         .count()
@@ -342,18 +348,52 @@ fn unity_dynamic(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> Dyn
 }
 
 /// The COV001 caveat naming the files parsed partially, when there are any.
-fn partial_parse_finding(graph: &SymbolGraph) -> Option<Finding> {
+fn partial_parse_message(graph: &SymbolGraph) -> Option<String> {
     let partial = frob_ack::partial_parse_files(graph);
     let (first, _) = partial.first()?;
-    Some(Finding::new(
-        rule_id(&Cov001),
-        Severity::Unresolved,
-        None,
-        format!(
-            "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
-            partial.len()
-        ),
-        "partial-parse",
+    Some(format!(
+        "{} file(s) parsed partially (first `{first}`); callables inside a parse hole are unseen, so COV001 is undecided for them",
+        partial.len()
+    ))
+}
+
+/// The byte bounds of `range`, as the located `Out` emitters take them.
+pub(crate) fn bounds(range: TextRange) -> (usize, usize) {
+    (range.start().to_usize(), range.end().to_usize())
+}
+
+// frob:ticket 01M5AG2DZAMJP4MBZAZVDJC1HF
+/// True when the adapter of `path` stops short of F2 (resolved references), the level COV001 needs.
+fn below_reach_fidelity(graph: &SymbolGraph, path: &str) -> bool {
+    graph
+        .file_info(path)
+        .is_some_and(|i| !i.is_opaque() && i.fidelity < Fidelity::F2)
+}
+
+// frob:ticket 01M5AG2DZAMJP4MBZAZVDJC1HF
+/// The COV001 caveat naming the opaque text files (no adapter, so no symbols), when there are any.
+///
+/// Binary artifacts hold no text and are not counted.
+fn opaque_message(graph: &SymbolGraph, sources: &mut Sources) -> Option<String> {
+    let opaque: Vec<&str> = graph
+        .files()
+        .filter(|(_, i)| i.is_opaque())
+        .map(|(p, _)| p)
+        .filter(|p| {
+            sources
+                .get(p)
+                .is_some_and(|t| !gob_check::is_binary(p, t.as_bytes()))
+        })
+        .collect();
+    let first = opaque.first()?;
+    tracing::info!(
+        count = opaque.len(),
+        first,
+        "COV001 skips opaque text files"
+    );
+    Some(format!(
+        "{} opaque text file(s) (no adapter, first `{first}`) were not examined: no adapter provides test items or references",
+        opaque.len()
     ))
 }
 
@@ -362,8 +402,8 @@ pub(crate) fn cov001(
     root: &Path,
     graph: &SymbolGraph,
     directives: &[DirectiveRecord],
-    files: &mut FileInterner,
-) -> Vec<Finding> {
+    out: &mut Out<'_, Cov001>,
+) {
     let mut sources = Sources::new(root);
     let tests: BTreeSet<Symref> = graph
         .records()
@@ -394,7 +434,12 @@ pub(crate) fn cov001(
         declared = covered.len(),
         "COV001 reach computed"
     );
-    let mut out: Vec<Finding> = partial_parse_finding(graph).into_iter().collect();
+    if let Some(message) = partial_parse_message(graph) {
+        out.unresolved(message);
+    }
+    if let Some(message) = opaque_message(graph, &mut sources) {
+        out.unresolved(message);
+    }
     for rec in graph.public_api() {
         if !is_callable(rec)
             || rec.implements.is_some()
@@ -406,31 +451,43 @@ pub(crate) fn cov001(
         {
             continue;
         }
-        let file = files.intern(rec.symref.path());
+        let path = rec.symref.path();
+        let (start, end) = bounds(rec.span);
         let kind = format!("{:?}", rec.kind).to_lowercase();
         if let Some(why) = unresolved_reach(rec, &maybe, &maybe_sites, &poison) {
             tracing::info!(symref = %rec.symref, %why, "COV001 unresolved");
-            out.push(Finding::new(
-                rule_id(&Cov001),
-                Severity::Unresolved,
-                Some(Span::new(file, rec.span)),
+            out.unresolved_range_in(
+                path,
+                start,
+                end,
                 format!(
                     "public {kind} `{}`: cannot tell whether a test reaches it, {why}",
                     rec.symref
                 ),
-                &rec.symref.to_string(),
-            ));
+            );
             continue;
         }
-        out.push(finding(
-            &Cov001,
-            Some(Span::new(file, rec.span)),
+        if below_reach_fidelity(graph, path) {
+            tracing::info!(symref = %rec.symref, "COV001 unresolved: adapter fidelity below F2");
+            out.unresolved_range_in(
+                path,
+                start,
+                end,
+                format!(
+                    "public {kind} `{}`: the adapter resolves no references (below F2), so a test reaching it cannot be certified",
+                    rec.symref
+                ),
+            );
+            continue;
+        }
+        out.fire_range_in(
+            path,
+            start,
+            end,
             format!(
                 "public {kind} `{}` is reached by no test; add one or bind it with `frob:tests`",
                 rec.symref
             ),
-            &rec.symref.to_string(),
-        ));
+        );
     }
-    out
 }

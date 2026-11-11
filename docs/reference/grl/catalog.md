@@ -345,6 +345,9 @@ Query: Q04. Languages: code languages (not data, prose or style files).
 | Flag | Query | Unknown |
 |---|---|---|
 | `is async` | Q07 | never |
+| `is bem_camel` |  | never |
+| `is bem_kebab` |  | never |
+| `is bem_snake` |  | never |
 | `is exported` | Q33 | may |
 | `is integer` |  | never |
 | `is public` | Q07 | may |

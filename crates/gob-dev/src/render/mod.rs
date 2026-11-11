@@ -75,11 +75,24 @@ pub fn cell(text: &str) -> String {
     text.trim().replace('|', "\\|").replace(['\r', '\n'], " ")
 }
 
-/// Pretty JSON with a `$comment` header field and a trailing newline.
+/// Sort every object's keys recursively so generated JSON is stable under `serde_json`'s `preserve_order`.
+fn sort_keys(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            map.sort_keys();
+            map.values_mut().for_each(sort_keys);
+        }
+        serde_json::Value::Array(items) => items.iter_mut().for_each(sort_keys),
+        _ => {}
+    }
+}
+
+/// Pretty JSON with a `$comment` header field and a trailing newline, keys sorted.
 pub fn json_file(kind: &str, mut value: serde_json::Value) -> String {
     if let Some(obj) = value.as_object_mut() {
         obj.insert("$comment".to_owned(), marker_text(kind).into());
     }
+    sort_keys(&mut value);
     let mut text = serde_json::to_string_pretty(&value)
         .unwrap_or_else(|_| unreachable!("a serde_json Value always serializes"));
     text.push('\n');

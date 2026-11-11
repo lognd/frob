@@ -274,12 +274,12 @@ Fidelity F1; extensions `.html`, `.htm`, `.uxml`.
 
 ## github-actions
 
-Fidelity F2.
+Fidelity F3.
 
 | Capability | Cell | Precision |
 |---|---|---|
-| resolve_ref | Gap | none |
-| apply_targets | Gap | none |
+| resolve_ref | Implemented | syntactic |
+| apply_targets | Implemented | syntactic |
 | visibility | NotApplicable | not-applicable |
 | effects | Gap | none |
 | test_items | Gap | none |

@@ -716,6 +716,18 @@ budget_ms = 500
 args = ["agent", "digest", "--", "true"]
 budget_ms = 500
 
+[scenario."frob agent heavy"]
+skip = "runs an arbitrary build command under the shared build lock, so its cost is the wrapped command, not the verb; covered by the agent heavy tests in crates/frob"
+
+[scenario."frob agent hook"]
+skip = "is invoked by the agent harness with a hook payload on stdin, which the repo fixture does not provide; covered by the agent hook tests in crates/frob"
+
+[scenario."frob agent install"]
+skip = "writes agent settings and hooks under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
+
+[scenario."frob agent profile"]
+skip = "reads and writes the per-user command cost store under the home directory, so it is not repeatable on the repo fixture; covered by the agent cost tests in crates/frob"
+
 [scenario."frob agent uninstall"]
 skip = "removes agent settings under the home directory, so it is unsafe to profile against the repo fixture; covered by the agent sync tests in crates/frob"
 
@@ -748,6 +760,12 @@ skip = "grimble is in preview and needs a project config the repo fixture does n
 
 [scenario."grimble explain"]
 skip = "grimble is in preview and the verb is a single table lookup needing a rule id argument"
+
+[scenario."grimble show"]
+skip = "grimble is in preview and the verb is a single lookup needing a node argument and a project the repo fixture does not provide"
+
+[scenario."grimble trace"]
+skip = "grimble is in preview and the verb needs a project graph and a node argument the repo fixture does not provide"
 
 [scenario."grimble shrink"]
 skip = "grimble is in preview and the verb rewrites files, so it is unsafe to profile against the repo fixture"
@@ -791,3 +809,11 @@ args = ["why", "src/lib.rs:1"]
 readonly = true
 exit = [0, 1, 2]
 budget_ms = 2900
+
+# frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
+[scenario."crunk render"]
+skip = "needs a scene corpus beside the spec; covered by crates/crunk/tests/render_solve.rs"
+
+# frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
+[scenario."crunk snapshot"]
+skip = "needs a scene corpus and committed baselines; covered by crates/crunk/tests/render_solve.rs"

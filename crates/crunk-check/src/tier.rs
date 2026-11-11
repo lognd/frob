@@ -118,8 +118,18 @@ impl From<CheckTier> for Tier {
     }
 }
 
-/// The tier a rule declares: the lowest tier of its family, `T0` when the family is unknown.
+/// The SLOP rules that need the layout solve although their family also has static rules.
+const T1_RULES: [&str; 6] = [
+    "SLOP020", "SLOP021", "SLOP026", "SLOP027", "SLOP028", "SLOP029",
+];
+
+// frob:ticket 01M4CXTCXCKKPRDHXEEZ2NK7PP
+/// The tier a rule declares: `T1` for the SLOP layout tells, else the lowest tier of its family,
+/// `T0` when the family is unknown.
 pub fn rule_tier(def: &RuleDef) -> Tier {
+    if T1_RULES.contains(&def.id) {
+        return Tier::T1;
+    }
     family(def.family)
         .and_then(|f| f.tiers.iter().copied().min())
         .map_or(Tier::T0, Tier::from)

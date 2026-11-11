@@ -4,9 +4,12 @@
 
 // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
 
+pub mod findings;
 mod focus;
 pub mod output;
+pub mod solve;
 pub mod style;
+pub mod text;
 
 pub use focus::{
     Direction, FocusEdge, FocusGraph, FocusNode, GroupAxis, InvalidEdge, InvalidReason, WrapMode,

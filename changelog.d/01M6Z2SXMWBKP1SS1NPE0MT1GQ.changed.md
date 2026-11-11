@@ -1,0 +1,1 @@
+crunk-rules: RESP001 is now `root-wider-than-breakpoint`: it solves each `design/scenes/*.scene.html` with crunk-layout at every declared `[breakpoints]` width and fires when the root is wider than the viewport, instead of matching `scene.json` viewport widths to the breakpoints.

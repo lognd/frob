@@ -28,6 +28,34 @@ Nudges toward the frob equivalent of a raw command (PreToolUse, Bash|Edit).
 - A repeated `tool_use_id` does not increment the attempt counter, so a
   double registration cannot overcount.
 
+### frob agent hook
+
+`frob agent hook <event>` answers Claude Code hooks natively: it reads the hook JSON on stdin and
+prints the reply JSON as its only stdout line. Register it as `frob agent hook <event> --text` (the
+default piped format is the verb envelope, not the reply). Events: `pre-bash`, `pre-read`,
+`session-start`, `pre-compact`, `user-prompt`, `stop`.
+
+- `pre-read` denies a whole-file Read of a file over `[agent] hook_read_max_bytes` (default 200000)
+  and tells the agent to pass `offset` and `limit`.
+- `pre-bash` denies commands matching `[agent] hook_heavy_commands` with the route
+  `frob agent heavy -- <cmd>`, and appends `| head -n [agent] hook_bash_max_lines` to unbounded
+  output commands (`cat`, `find`, `git log`, `git diff`, `grep -r`, `ls -R`) that are not piped.
+- `session-start` and `pre-compact` carry the `frob agent brief` text; `user-prompt` carries a
+  one-line active-ticket reminder; `stop` reminds that the lease is still live (never blocks).
+- Fail open: unreadable stdin, bad JSON, a missing repo or an unreadable `frob.toml` gives the
+  reply `{}` and a warning on stderr, exit 0. The agent is never blocked by the hook itself.
+
+### frob agent heavy
+
+`frob agent heavy [--target-dir DIR] [--keep-tests] -- <cmd>` runs one heavy build or test command
+so sibling worktrees do not exhaust RAM. It takes an exclusive file lock `frob-heavy.lock` under the git
+common dir (shared by every worktree) and blocks until it is free, so concurrent invocations serialize.
+It sets `CARGO_TARGET_DIR` (`--target-dir`, else the inherited value, else `<main checkout>/target`), runs
+the command in the current directory, then deletes regenerable test executables
+(`<crate>-<16 hex>` files in `{debug,release}/deps`) unless `--keep-tests`. The lock is an OS lock, so it
+is released on success, on failure and when the process is interrupted or killed. A non-zero command exit
+is reported with exit 1 and the code in `data.exit_code`.
+
 ### Installing
 
 `scripts/claude-hooks/frob_hook_settings.py` provides `install(settings, script)`
@@ -38,8 +66,8 @@ only marked (or legacy frob-suggest.py) entries. Writes are atomic and keep a
 
 ### frob agent (sync, status, uninstall)
 
-`frob agent sync|status|uninstall --agent claude|all` installs the tracked,
-agent-neutral manifest into an agent's home. Claude is the only emitter today.
+`frob agent sync|status|uninstall --agent claude|codex|all` installs the tracked,
+agent-neutral manifest into an agent's home. Emitters: claude and codex (`~/.codex`, no hook registration); `--home` needs a single `--agent`.
 
 - Manifest: `[agent]` in `frob.toml`. `items` maps `<kind>:<name>` (kind is
   instruction, hook, agent, skill or support) to a repo path; `hooks` lists
@@ -55,6 +83,51 @@ agent-neutral manifest into an agent's home. Claude is the only emitter today.
 - Claude registration is in settings.json with the `# frob-owned:<name>` marker
   (same semantics as `frob_hook_settings.py`): only frob-owned entries are touched.
 - `--home` overrides the target home (default `$HOME/.claude`); tests use tmp dirs.
+
+#### Registering the native hooks
+
+`frob agent install --agent claude` appends the six `frob agent hook <event> --text` handlers to the
+agent's `settings.json`. Every entry ends in a `# frob-owned:native-<event>` marker; only marked entries
+are ever added, replaced or (by `frob agent uninstall`) removed, so user keys and entries survive.
+A second install writes nothing. `--check` (or `--dry-run`) prints the plan as a diff (`+` add, `~` update,
+`=` present, `!` conflict) and writes nothing. An unmarked entry that already calls the same handler is a
+conflict: it is reported and left as it is.
+
+#### Uninstalling
+
+`frob agent uninstall --agent claude` removes exactly the entries that end in a `# frob-owned:native-<event>`
+marker (and pristine synced files; user-edited ones are kept). Everything else in `settings.json` is left
+untouched, and rerunning it removes nothing more.
+
+#### The heavy profile
+
+The heavy profile is `pre-bash` plus `frob agent heavy`: `[agent] hook_heavy_commands` (for example
+`cargo test`) are denied with a route through `frob agent heavy -- <cmd>`, which serializes them under
+one lock, shares one target dir and deletes regenerable test executables afterwards.
+
+#### The measured heavy profile
+
+`frob agent heavy` also appends one `kind=command` row per run (`command` key, `wall_ms`, `disk_bytes` growth
+before cleanup) to `.frob/telemetry.jsonl`. `frob agent profile` folds those rows into the committed
+`heavy-profile.toml`: every command key whose worst run exceeded `[agent] heavy_wall_ms` (default 60000) or
+`heavy_disk_bytes` (default 500000000). The file has no timestamps and sorted keys, so a refresh from the same
+telemetry is byte-identical. `pre-bash` denies a command listed there with the same route through
+`frob agent heavy`. `frob agent profile --check` exits non-zero when the profile is stale (thresholds
+changed, or telemetry implies another command set); rule `TEST002` reports the same staleness in `frob check`.
+
+### Token-savings telemetry
+
+Each guard appends one `kind=guard` row to `.frob/telemetry.jsonl` (no paths, no command text):
+`at`, `guard`, `bytes_avoided` and `basis`. Writing is best effort and never changes a guard's reply.
+
+| guard | fires when | bytes_avoided | basis |
+| --- | --- | --- | --- |
+| `pre-read` | a whole-file read over the limit is denied | the file size | `file_size` |
+| `pre-bash-heavy` | a heavy command is denied | 0 (output never seen) | `unmeasured` |
+| `pre-bash-cap` | unbounded output gets a `head` cap | 0 (output never seen) | `unmeasured` |
+| `heavy-cleanup` | `frob agent heavy` deletes test executables | bytes deleted | `freed_bytes` |
+
+`unmeasured` rows count how often a guard fired; they are not a byte saving.
 
 #### Adding another agent
 

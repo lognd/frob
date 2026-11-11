@@ -256,7 +256,8 @@ fn sys001(cx: &Cx<'_>, out: &mut Output) {
             unowned.entry(dir).or_default().push(f.path.clone());
         }
     }
-    for (dir, files) in unowned {
+    for (dir, mut files) in unowned {
+        files.sort();
         out.fire(
             "SYS001",
             Severity::Error,
@@ -269,7 +270,8 @@ fn sys001(cx: &Cx<'_>, out: &mut Output) {
             None,
         );
     }
-    for ((dir, _), (reason, files)) in soft {
+    for ((dir, _), (reason, mut files)) in soft {
+        files.sort();
         out.unresolved(
             "SYS001",
             reason,

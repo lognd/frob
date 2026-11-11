@@ -1,0 +1,22 @@
+rule WEBPERF107 "render-blocking-stylesheet" {
+  lang [typescript, html]
+  severity error
+
+  find e: element where e.tag == "link" and e has attribute(name = "rel", value = "stylesheet") and not e has attribute(name = "media") and not e has attribute(name = "disabled")
+  report e "stylesheet blocks rendering: it has no media query to scope it"
+
+  example fire html """
+    <link rel="stylesheet" href="print.css">  <!--~ error -->
+  """
+  example clean html """
+    <link rel="stylesheet" href="print.css" media="print">
+  """
+  example notapplicable markdown """
+    A stylesheet is linked with <link rel="stylesheet"> in prose.
+  """
+  explain """
+    A stylesheet link without `media` blocks first paint until the file downloads and parses, even when only some devices need it.
+    ## Remedy
+    Add a `media` attribute so the browser loads it without blocking, or inline the critical rules and load the rest asynchronously.
+  """
+}

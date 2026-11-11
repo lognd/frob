@@ -11,7 +11,15 @@ use super::{
 };
 
 /// Words that test a string value (`l.target is relative`).
-const STRING_WORDS: &[&str] = &["relative", "valid_glob", "integer"];
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+const STRING_WORDS: &[&str] = &[
+    "relative",
+    "valid_glob",
+    "integer",
+    "bem_kebab",
+    "bem_snake",
+    "bem_camel",
+];
 /// Words that read a boolean field of a node (`f is public`).
 const FLAG_WORDS: &[&str] = &["public", "exported"];
 
@@ -46,22 +54,73 @@ fn preceded_by_directive(term: &gob_ir::Term, node: gob_ir::NodeId, key: &str) -
     hit
 }
 
+/// Whether `s` opens with a URL scheme (`name:`).
+fn has_scheme(s: &str) -> bool {
+    let Some((head, _)) = s.split_once(':') else {
+        return false;
+    };
+    head.starts_with(|c: char| c.is_ascii_alphabetic())
+        && head
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+}
+
 /// Whether `s` is a relative reference: no URL scheme and not rooted.
 fn is_relative(s: &str) -> bool {
-    let scheme = s.split_once(':').is_some_and(|(head, _)| {
-        !head.is_empty()
-            && head.starts_with(|c: char| c.is_ascii_alphabetic())
-            && head
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
-    });
-    !scheme && !s.starts_with('/') && !s.starts_with("//")
+    !s.starts_with('/') && !has_scheme(s)
 }
 
 /// Whether `s` parses as a whole integer: an optional sign and digits, surrounding blanks ignored.
 fn is_integer(s: &str) -> bool {
     let ok = s.trim().parse::<i64>().is_ok();
     tracing::trace!(value = %s, ok, "integer value predicate");
+    ok
+}
+
+/// Splits a BEM class name on its doubled `_` or `-` separators (block, element, modifier);
+/// empty parts, left by a leading or doubled separator, are dropped.
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+fn bem_segments(name: &str) -> Vec<&str> {
+    let mut segments = Vec::new();
+    let mut start = 0;
+    let mut chars = name.char_indices().peekable();
+    while let Some((at, c)) = chars.next() {
+        if (c == '_' || c == '-') && chars.peek().is_some_and(|&(_, next)| next == c) {
+            segments.push(&name[start..at]);
+            chars.next();
+            start = at + 2;
+        }
+    }
+    segments.push(&name[start..]);
+    segments.retain(|s| !s.is_empty());
+    segments
+}
+
+/// Whether one BEM segment is lowercase alphanumeric words joined by `joiner`.
+fn words_ok(segment: &str, joiner: char) -> bool {
+    segment.split(joiner).all(|w| {
+        !w.is_empty()
+            && w.chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+    })
+}
+
+/// Whether one BEM segment is camelCase: a lowercase first letter, then alphanumerics.
+fn camel_ok(segment: &str) -> bool {
+    let mut chars = segment.chars();
+    chars.next().is_some_and(|c| c.is_ascii_lowercase()) && chars.all(|c| c.is_ascii_alphanumeric())
+}
+
+/// Whether every BEM segment of `name` is written in the case `word` names (`bem_kebab`,
+/// `bem_snake`, `bem_camel`).
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+fn is_bem_case(name: &str, word: &str) -> bool {
+    let ok = bem_segments(name).into_iter().all(|seg| match word {
+        "bem_kebab" => words_ok(seg, '-'),
+        "bem_snake" => words_ok(seg, '_'),
+        _ => camel_ok(seg),
+    });
+    tracing::trace!(value = %name, word, ok, "bem case predicate");
     ok
 }
 
@@ -120,6 +179,7 @@ impl Eval<'_> {
                 Datum::Known(Scalar::Str(s)) => Verdict::certain(match word {
                     "relative" => is_relative(&s),
                     "integer" => is_integer(&s),
+                    "bem_kebab" | "bem_snake" | "bem_camel" => is_bem_case(&s, word),
                     _ => globset::Glob::new(&s).is_ok(),
                 }),
                 Datum::Absent | Datum::Known(_) | Datum::Node(_) => Verdict::no(),

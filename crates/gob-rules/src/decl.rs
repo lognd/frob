@@ -12,8 +12,9 @@ use gob_languages::Language;
 use gob_text::{FileId, FileInterner, Span, TextRange, TextSize};
 
 use crate::finding::Finding;
+use crate::finding::{Fix, TextEdit};
 use crate::id::RuleId;
-use crate::meta::{FixKind, Needs, Polarity, Scope, Severity};
+use crate::meta::{Applicability, FixKind, Needs, Polarity, Scope, Severity};
 
 /// Which files a rule applies to; maps 1:1 onto GRL `lang *`, `lang [..]` and `lang -`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -177,6 +178,32 @@ pub struct Emitted {
     pub message: String,
     /// True when the rule could not decide (an Unresolved finding), false for a violation.
     pub unresolved: bool,
+    /// The deterministic fix the rule attached (`Out::fire_in_with_fix`); its edits address `path`.
+    pub fix: Option<EmittedFix>,
+}
+
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
+/// One byte-range replacement of a fix, in the file the emission names.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmittedEdit {
+    /// Start byte offset replaced.
+    pub start: usize,
+    /// Exclusive end byte offset replaced.
+    pub end: usize,
+    /// Replacement text.
+    pub replacement: String,
+}
+
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
+/// A deterministic fix a repo rule attaches to an emission; it becomes a [`Fix`] when anchored.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmittedFix {
+    /// Short human title.
+    pub title: String,
+    /// How far the fix can be trusted without a human.
+    pub applicability: Applicability,
+    /// The edits, all in the emission's file.
+    pub edits: Vec<EmittedEdit>,
 }
 
 impl Emitted {
@@ -203,7 +230,28 @@ impl Emitted {
         } else {
             def.severity
         };
-        Finding::new(id, severity, span, self.message, anchor)
+        let fix = match (file, self.fix) {
+            (Some(file), Some(fix)) => Some(Fix {
+                kind: FixKind::Deterministic,
+                applicability: fix.applicability,
+                title: fix.title,
+                edits: fix
+                    .edits
+                    .into_iter()
+                    .map(|e| TextEdit {
+                        file,
+                        range: TextRange::new(size(e.start), size(e.end).max(size(e.start))),
+                        replacement: e.replacement,
+                    })
+                    .collect(),
+            }),
+            _ => None,
+        };
+        let finding = Finding::new(id, severity, span, self.message, anchor);
+        match fix {
+            Some(fix) => finding.with_fix(fix),
+            None => finding,
+        }
     }
 }
 
@@ -264,6 +312,7 @@ impl<'a, R: RuleDecl> Out<'a, R> {
             path: path.map(str::to_owned),
             message,
             unresolved,
+            fix: None,
         });
     }
 
@@ -286,6 +335,20 @@ impl<'a, R: RuleDecl> Out<'a, R> {
     /// repository root, forward slashes), so waivers and renderers can locate it.
     pub fn fire_in(&mut self, path: &str, offset: usize, message: impl Into<String>) {
         self.push(Some(path), Some(offset), None, message.into(), false);
+    }
+
+    /// Record a finding of a repo rule at byte `offset` of `path` carrying a deterministic `fix`.
+    pub fn fire_in_with_fix(
+        &mut self,
+        path: &str,
+        offset: usize,
+        message: impl Into<String>,
+        fix: EmittedFix,
+    ) {
+        self.push(Some(path), Some(offset), None, message.into(), false);
+        if let Some(last) = self.sink.last_mut() {
+            last.fix = Some(fix);
+        }
     }
 
     /// Record an Unresolved finding of a repo rule located at byte `offset` of the file `path`.

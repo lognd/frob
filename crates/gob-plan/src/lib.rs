@@ -14,5 +14,7 @@ pub mod limits;
 pub mod lower;
 pub mod plan;
 pub mod verbs;
+// frob:ticket 01M71T80ZZPW5Z00CKF3ANQ2X3
+pub mod workspace;
 // frob:ticket 01M3ZX7H8FPEAY1X1WVW1PNXXN
 pub mod why;

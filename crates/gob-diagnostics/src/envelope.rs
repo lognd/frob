@@ -32,6 +32,16 @@ pub struct EnvelopeError {
     pub requires_human: bool,
 }
 
+/// How fresh the verb's view of the shared ticket state was when it ran (`distributed-tickets.md` section 5.3).
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct EnvelopeFreshness {
+    /// `fresh`, `stale`, `degraded`, `unknown` or `local-only`.
+    pub state: String,
+    /// Seconds since the last probe the remote answered; `None` when never probed or local-only.
+    pub age_secs: Option<i64>,
+}
+
 /// The envelope wrapping every result; field order is the wire order.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Envelope<T> {
@@ -47,6 +57,9 @@ pub struct Envelope<T> {
     pub error: Option<EnvelopeError>,
     /// Envelope layout version.
     pub schema_version: u32,
+    /// Freshness of the shared ticket view; absent for verbs that do not read it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub freshness: Option<EnvelopeFreshness>,
 }
 
 impl<T> Envelope<T> {
@@ -59,7 +72,15 @@ impl<T> Envelope<T> {
             warnings: Vec::new(),
             error: None,
             schema_version: SCHEMA_VERSION,
+            freshness: None,
         }
+    }
+
+    /// Attach the freshness of the shared ticket view.
+    #[must_use]
+    pub fn with_freshness(mut self, freshness: Option<EnvelopeFreshness>) -> Self {
+        self.freshness = freshness;
+        self
     }
 
     /// A failed envelope carrying `error`.
@@ -72,6 +93,7 @@ impl<T> Envelope<T> {
             warnings: Vec::new(),
             error: Some(error),
             schema_version: SCHEMA_VERSION,
+            freshness: None,
         }
     }
 }
@@ -97,4 +119,22 @@ pub fn render_json<T: Serialize>(envelope: &Envelope<T>) -> String {
 pub fn envelope_schema() -> serde_json::Value {
     serde_json::to_value(schemars::schema_for!(Envelope<serde_json::Value>))
         .expect("schema serialization is infallible")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/gob-diagnostics/src/envelope.rs::Envelope.with_freshness
+    #[test]
+    fn freshness_is_omitted_until_attached_then_serialized() {
+        let bare = render_json(&Envelope::success(1, Vec::new()));
+        assert!(!bare.contains("freshness"));
+        let env = Envelope::success(1, Vec::new()).with_freshness(Some(EnvelopeFreshness {
+            state: "stale".to_owned(),
+            age_secs: Some(90),
+        }));
+        let wire = render_json(&env);
+        assert!(wire.contains(r#""freshness":{"state":"stale","age_secs":90}"#));
+    }
 }

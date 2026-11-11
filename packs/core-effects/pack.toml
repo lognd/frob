@@ -4,7 +4,7 @@
 # without a version bump is a PACK001 lock drift finding. ticket 01M5XNNHV9M8HCP76TD867GGVJ
 [pack]
 name = "core-effects"
-version = "1.1.0"
+version = "1.2.0"
 families = ["CAP"]
 
 [effects]

@@ -113,7 +113,10 @@ fn rival_claim(fx: &Fixture, handle: &str) {
             Some(b"x\n".to_vec()),
         )],
         "rival work",
-        &CommitOptions::default(),
+        &CommitOptions {
+            author: Some(("Rival".to_owned(), "rival@example.com".to_owned())),
+            ..CommitOptions::default()
+        },
     )
     .expect("rival commit");
     let dst = format!("refs/heads/rival:refs/heads/ticket/{handle}");
@@ -286,7 +289,11 @@ fn an_idle_agent_claim_is_evicted_and_parked() {
         .expect("events")
         .into_iter()
         .filter_map(|e| match e.body {
-            frob_ledger::event::EventBody::Lease(l) => Some(l),
+            frob_ledger::event::EventBody::Lease(l)
+                if l.op == frob_ledger::event::LeaseOp::Evict =>
+            {
+                Some(l)
+            }
             _ => None,
         })
         .collect();

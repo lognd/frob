@@ -20,6 +20,7 @@ const ALLOWED: &[(&str, &str, &str)] = &[
     ("frob-check", "grimble-check", "~M8WETW7"),
     ("frob-cli", "crunk-check", "~5ZZ33Y0"),
     ("frob-cli", "grimble", "~5ZZ33Y0"),
+    ("gob-trust", "gob-cli", "~4SGK80K"),
 ];
 
 /// Crates the table lists ahead of their code (charter.md: Milestone 2 or later, D36); each

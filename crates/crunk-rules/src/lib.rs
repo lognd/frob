@@ -25,6 +25,7 @@
 //! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
 //! - [`phase_profile`]: the lint profile `phase` in `crunk.toml` selects (structure, then A11Y and HUMAN001, then metrics).
 //! - [`scene_files`]: the solved `design/scenes/*.scene.json` files LAYOUT001-005 and RESP001 read.
+//! - [`grl_rules`]: runs the GRL-generated LAYER001 and ORG002 (`packs/crunk-core`) over the host's files.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
@@ -40,6 +41,9 @@ pub mod content_files;
 pub mod contrast;
 pub mod craft;
 pub mod family;
+pub mod file_attrs;
+pub mod fixes;
+pub mod grl_rules;
 pub mod host;
 pub mod lint;
 pub mod mode;
@@ -54,10 +58,12 @@ pub mod scene_files;
 pub mod screen_files;
 pub mod sheets;
 pub mod slop;
+pub mod slop_layout;
 pub mod tailwind;
 pub mod token_files;
 pub mod tokens_drift;
 pub mod typography;
+pub mod ux;
 pub mod waiver;
 
 pub use host::CrunkHost;

@@ -247,8 +247,43 @@ pub fn plan(root: &Path, old: &str, new: &str) -> Result<Vec<Change>, PlanError>
             replacements: def.edits + refs,
         },
     );
-    changes.extend(generated_changes(&generated));
+    let renamed = regenerate(root, def.spec.as_ref().unwrap_or(&spec), &changes)?;
+    changes.extend(generated_changes(&renamed));
     Ok(changes)
+}
+
+/// Render the generated exports as they will be once `changes` land, so authored tokens that were
+/// renamed or re-aliased are exported under their new names rather than the on-disk ones.
+fn regenerate(
+    root: &Path,
+    spec: &DesignSpec,
+    changes: &[Change],
+) -> Result<Vec<crunk_tokens::export::Rendered>, PlanError> {
+    let spec_err = |e: crunk_tokens::TokenError| PlanError::Spec(e.to_string());
+    let mut tokens: Vec<Token> = TokenSet::from_spec(spec)
+        .map_err(spec_err)?
+        .iter()
+        .cloned()
+        .collect();
+    for (origin, parsed) in dialect::read_authored(root) {
+        let text = changes
+            .iter()
+            .find(|c| c.path == root.join(&origin))
+            .map(|c| c.after.as_str());
+        let parsed = match text {
+            Some(after) => dialect::parse(after, &origin),
+            None => parsed,
+        };
+        match parsed {
+            Ok(set) => tokens.extend(set.iter().cloned()),
+            Err(err) => {
+                tracing::warn!(%origin, %err, "rename: authored token file does not compile; not exported");
+            }
+        }
+    }
+    let set = TokenSet::from_tokens(tokens).map_err(spec_err)?;
+    tracing::debug!(tokens = set.len(), "rename: regenerating exports");
+    Ok(crunk_tokens::export::render_managed_with(spec, &set))
 }
 
 /// Plan the edit of a `crunk.toml` token (palette color, layer or font stack).

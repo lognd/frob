@@ -1,6 +1,6 @@
 //! `Binding` exposes the capability matrix cells: grant cells plus CAP001 undeclared ones.
 
-// frob:ticket 01M6S4ZMB1Y6CCH144TVNC5A27
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 
 use grimble_bind::{BindInput, Binding};
 use grimble_capabilities::Cell;
@@ -31,7 +31,7 @@ fn bind_one(src: &str, grants: &str) -> Binding {
     })
 }
 
-// frob:ticket 01M6S4ZMB1Y6CCH144TVNC5A27
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 // frob:tests crates/grimble-bind/src/caps.rs::push_flagged
 // frob:tests crates/grimble-bind/src/caps.rs::grant_cells
 #[test]

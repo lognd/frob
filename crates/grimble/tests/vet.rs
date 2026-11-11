@@ -116,3 +116,31 @@ fn vet_reads_registry_metadata_for_licence_and_yanked() {
     assert!(text.contains("Licence") || text.contains("licen"), "{text}");
     assert!(text.contains("Yanked") || text.contains("yanked"), "{text}");
 }
+
+/// The allowlist at the repo root vets a new dependency, and the legacy `.grimble/vet.toml` still does.
+// frob:ticket 01M73470XDYYF3D5BV77G165PS
+// frob:tests crates/grimble/src/vet_cmd.rs::run_vet
+#[test]
+fn vet_honours_root_allowlist_and_legacy_fallback() {
+    for (path, name) in [
+        ("grimble-vet.toml", "root"),
+        (".grimble/vet.toml", "legacy"),
+    ] {
+        let dir = tempfile::tempdir().unwrap();
+        let d = dir.path();
+        git(d, &["init", "-q", "-b", "main"]);
+        write(d, "Cargo.lock", &lock(&[("old", "1.0.0")]));
+        git(d, &["add", "-A"]);
+        git(d, &["commit", "-q", "-m", "base"]);
+        write(
+            d,
+            "Cargo.lock",
+            &lock(&[("old", "1.0.0"), ("fresh", "2.0.0")]),
+        );
+        let (code, env) = grimble(d, &["vet", "--base", "HEAD", "--json"]);
+        assert_eq!(code, 1, "{name}: {env}");
+        write(d, path, "allow = [\"fresh\"]\n");
+        let (code, env) = grimble(d, &["vet", "--base", "HEAD", "--json"]);
+        assert_eq!(code, 0, "{name}: {env}");
+    }
+}

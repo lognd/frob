@@ -4,8 +4,8 @@ digest_scheme = 1
 
 [[pack]]
 name = "core-effects"
-version = "1.1.0"
-tree = "blake3:509c92e10d4c18b6190ec4566214fe1e9673af9a0e83adab7b8157b24a0e1e0a"
+version = "1.2.0"
+tree = "blake3:465dad02dc68bccabd45648dddfe5660f8248feaccae0ea793e4ed77159faca2"
 
 [pack.effects]
 
@@ -67,6 +67,7 @@ tree = "blake3:509c92e10d4c18b6190ec4566214fe1e9673af9a0e83adab7b8157b24a0e1e0a"
 "detector:ffi/css/notapplicable" = "blake3:960f2bfb2fd7b82109f18a2d79ec370f86eb448dfc1570eaf91a3875d1db7947"
 "detector:ffi/json/notapplicable" = "blake3:abdb4c873b7ec0bb01475545a85f62a4710e22c49f2916a0a98f41b46510ca25"
 "detector:ffi/markdown/notapplicable" = "blake3:92b9515dee0913f46c9689b8cb77be5bf97868f02b26a96316ffd71163aa65b6"
+"detector:ffi/python/callee" = "blake3:f365ee1b2ee442b3bfdb6f8bfa1e044215ebe7964db8ecb04139cd3d88839be5"
 "detector:ffi/rust/callee" = "blake3:8057faf5c4cdc3bb6595404b6f3039750f72d33bb23ec977f74be040c279edc3"
 "detector:ffi/toml/notapplicable" = "blake3:a8d65e4d128347825091aefc9088f5b5d6c468f208f1ee2e90e298d2b905b359"
 "detector:ffi/typescript/callee" = "blake3:6a4ac33a751cec37b414dd38af807afdd8a215858e6f6222dc25a78af746a71a"
@@ -143,6 +144,7 @@ tree = "blake3:509c92e10d4c18b6190ec4566214fe1e9673af9a0e83adab7b8157b24a0e1e0a"
 "vocab:python/env.read" = "blake3:e7b3b16321f6c44e1ac114023d23e3d37d49a4ae5697a79d3ce51cd24bbf4729"
 "vocab:python/env.write" = "blake3:8b506043087f0d96dda0c194fd3ee0d745c4b3f416fd12c4421232d12c6c52fa"
 "vocab:python/exit" = "blake3:044e0d6ccc719b8e7de8e3808aea7e691616833c13678d880c40e821d3ac1844"
+"vocab:python/ffi" = "blake3:819dcf3dca84a130c826cb2d6941428a542386050d5b7280814787eff61342f0"
 "vocab:python/fs.read" = "blake3:dab4f2a78b7adb9969c443ddd3b7b4de7a31343e15e8c90a0cc6ae94e1fcdd95"
 "vocab:python/fs.write" = "blake3:b853b6f5b707f25390d3057c3641a25e579ba27a958a939925258b729bee6f9a"
 "vocab:python/net.connect" = "blake3:c7000f2fdda3973f8151532ba9398213670742903f60c96b03692516d88325b4"

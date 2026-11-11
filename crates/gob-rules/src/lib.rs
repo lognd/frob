@@ -40,8 +40,8 @@ pub use baseline::{
     migrate_ratchet_lock,
 };
 pub use decl::{
-    Applies, Corpus, Emitted, FileCx, FileRule, Measured, Out, RelayRule, RepoRule, RuleDecl,
-    RuleDef, run_file, run_file_at, run_relay, run_repo,
+    Applies, Corpus, Emitted, EmittedEdit, EmittedFix, FileCx, FileRule, Measured, Out, RelayRule,
+    RepoRule, RuleDecl, RuleDef, run_file, run_file_at, run_relay, run_repo,
 };
 pub use digest::{metas_digest, rules_digest};
 pub use exception::{

@@ -23,6 +23,7 @@ use tree_sitter::Node;
 
 use super::{R, Root, Site, TsFold, call_text, children, is_comment, line_of};
 use crate::css::tokens::{Token, declaration_node, tokens};
+use crate::fold::Collapse;
 use crate::model::collapse_ws;
 use crate::typescript::style::{css_property, numeric_raw};
 use crate::typescript::{
@@ -125,6 +126,7 @@ impl TsFold<'_> {
             args: 1,
             qual_path: target.path,
             line,
+            span: (0, 0),
             text: call_text(self.t(nm)),
         });
     }

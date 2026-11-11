@@ -25,20 +25,20 @@ use crate::workspace::{Located, config_refusal};
 /// The shared `--agent` and `--home` flags.
 #[derive(Debug, Clone, clap::Args)]
 #[command(about = None, long_about = None)]
-struct AgentArgs {
+pub(crate) struct AgentArgs {
     #[arg(
         long,
         value_name = "AGENT",
         default_value = "all",
         help = "Agent to act on: an emitter id such as claude, or all"
     )]
-    agent: String,
+    pub(crate) agent: String,
     #[arg(
         long,
         value_name = "DIR",
         help = "Target directory (single agent only; default: the agent's usual home)"
     )]
-    home: Option<PathBuf>,
+    pub(crate) home: Option<PathBuf>,
 }
 
 /// The flags of `agent sync`.
@@ -62,13 +62,13 @@ pub(crate) fn agent_refusal(e: &AgentError) -> CliError {
 }
 
 /// An emitter paired with the home directory it acts on.
-struct Target {
-    em: Box<dyn Emitter>,
-    home: PathBuf,
+pub(crate) struct Target {
+    pub(crate) em: Box<dyn Emitter>,
+    pub(crate) home: PathBuf,
 }
 
 /// Resolve `--agent` / `--home` into targets; `--home` needs exactly one agent.
-fn targets(agent: &str, home: Option<&Path>) -> Result<Vec<Target>, CliError> {
+pub(crate) fn targets(agent: &str, home: Option<&Path>) -> Result<Vec<Target>, CliError> {
     let picked = agent::select(agent).map_err(|e| agent_refusal(&e))?;
     if home.is_some() && picked.len() != 1 {
         return Err(CliError::Usage(
@@ -92,13 +92,19 @@ fn targets(agent: &str, home: Option<&Path>) -> Result<Vec<Target>, CliError> {
         .collect()
 }
 
-/// The repository, its root and its parsed, non-empty manifest.
-fn setup(ctx: &Context) -> Result<(Repo, PathBuf, FrobConfig, Manifest), CliError> {
+/// The repository, its root and its parsed manifest (possibly empty).
+fn load(ctx: &Context) -> Result<(Repo, PathBuf, FrobConfig, Manifest), CliError> {
     let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
     let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
     let manifest =
         Manifest::parse(&cfg.agent.items, &cfg.agent.hooks).map_err(|e| agent_refusal(&e))?;
-    if manifest.is_empty() {
+    Ok((repo, root, cfg, manifest))
+}
+
+/// Like [`load`], but refuses a manifest with nothing to manage.
+fn setup(ctx: &Context) -> Result<(Repo, PathBuf, FrobConfig, Manifest), CliError> {
+    let loaded = load(ctx)?;
+    if loaded.3.is_empty() {
         return Err(Refusal::new(
             "E-AGENT-NO-MANIFEST",
             RefusalClass::GuardNeedsAction,
@@ -107,7 +113,7 @@ fn setup(ctx: &Context) -> Result<(Repo, PathBuf, FrobConfig, Manifest), CliErro
         .with_remedy("add `items = [\"hook:NAME = SRC\"]` under [agent] in frob.toml")
         .into());
     }
-    Ok((repo, root, cfg, manifest))
+    Ok(loaded)
 }
 
 /// Source files whose worktree copy equals the merge-base copy while `base` holds a newer one.
@@ -162,7 +168,7 @@ pub struct PerAgent<R> {
     pub report: R,
 }
 
-fn per<R>(t: &Target, report: R) -> PerAgent<R> {
+pub(crate) fn per<R>(t: &Target, report: R) -> PerAgent<R> {
     PerAgent {
         agent: t.em.id().to_owned(),
         home: Shown::of(&t.home).to_string(),
@@ -201,6 +207,7 @@ impl Command for AgentSync {
         gob_cli::augment::<SyncArgs>(cmd)
     }
 
+    // frob:accept DUP004 because="clap glue: parse args and copy the shared target fields, shape-identical across agent verbs"
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
         let a = gob_cli::parse::<SyncArgs>(m)?;
         Ok(Self {
@@ -356,7 +363,7 @@ impl Command for AgentUninstall {
     }
 
     fn run(&self, ctx: &Context) -> Outcome<UninstallData> {
-        let (_repo, root, _cfg, manifest) = setup(ctx)?;
+        let (_repo, root, _cfg, manifest) = load(ctx)?;
         let targets = targets(&self.agent, self.home.as_deref())?;
         let mut agents = Vec::new();
         for t in &targets {
@@ -495,7 +502,7 @@ impl Command for AgentBrief {
 }
 
 /// Collect the active ticket (the live lease held from this worktree), scope and rules; a ledger failure degrades to a warning.
-fn gather(
+pub(crate) fn gather(
     ctx: &Context,
     root: &Path,
     cfg: &FrobConfig,

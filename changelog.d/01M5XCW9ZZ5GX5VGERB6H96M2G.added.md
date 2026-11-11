@@ -1,0 +1,1 @@
+crunk gains a serve patch tool: edit --patch as an opt-in write MCP tool (crunk_edit_patch) that returns the diff and the touched nodes' findings, writes nothing when the patch or schema fails, and is absent in a read-only session.

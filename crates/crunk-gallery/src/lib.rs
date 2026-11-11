@@ -17,9 +17,13 @@
 //!   file), so these are plain functions rather than `#[rule]` declarations.
 //! - [`render`]: [`render::render`] turns cells into hashed PNGs via Playwright (`web`) or the
 //!   platform's own command (`command`), with a timeout per cell.
+//! - [`router`]: [`router::parse_routes`] reads the route paths out of a `router.tsx` for GALLERY005.
 //! - [`report`]: [`report::check_report`] runs every rule and counts the result; the shape is
 //!   `docs/schemas/crunk-gallery-check-v1.json`.
 //! - [`visual`]: VIS001, the perceptual diff of a build against its design over RGBA buffers.
+//! - [`boxes`]: browser per-data-id boxes in the layout-solve shape (T2/T3).
+//! - [`parity`]: solver-browser box comparison within a pixel tolerance; the CI parity gate.
+//! - [`flashing`]: FLASH001, the WCAG 2.3.1 three-flashes check over timestamped frame sequences.
 //! - [`a11y`]: the T3 axe-core check; findings carry the axe rule id and the offending node.
 //! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
 //!   manifest; no async runtime.
@@ -27,10 +31,14 @@
 // frob:ticket 01M43ATDG0RG5DP9PVFAKETJJH
 
 pub mod a11y;
+pub mod boxes;
 pub mod cells;
+pub mod flashing;
 pub mod manifest;
+pub mod parity;
 pub mod render;
 pub mod report;
+pub mod router;
 pub mod rules;
 pub mod schema;
 pub mod triage;

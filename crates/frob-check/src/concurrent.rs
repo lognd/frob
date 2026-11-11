@@ -15,6 +15,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use gob_exec::pid_alive;
 use serde::{Deserialize, Serialize};
 
 /// Lock file name under `<root>/.frob/`.
@@ -107,16 +108,6 @@ impl Drop for CheckLock {
     }
 }
 
-/// True when process `pid` exists (Linux `/proc`; elsewhere assumed alive, like the land lock).
-#[must_use]
-pub fn pid_alive(pid: u32) -> bool {
-    if cfg!(target_os = "linux") {
-        Path::new(&format!("/proc/{pid}")).exists()
-    } else {
-        true
-    }
-}
-
 /// Write the holder record into the freshly claimed lock file.
 fn write_body(mut file: std::fs::File, body: &[u8]) -> std::io::Result<()> {
     file.write_all(body)
@@ -138,6 +129,17 @@ fn read_holder(path: &Path) -> Option<LockHolder> {
         .read_to_string(&mut text)
         .ok()?;
     serde_json::from_str(&text).ok()
+}
+
+/// The live full-check holder in the worktree at `root`, or `None` when no lock exists or its holder is dead.
+///
+/// Read-only: unlike [`acquire`] it never reclaims a stale lock.
+#[must_use]
+pub fn live_holder(root: &Path) -> Option<LockHolder> {
+    let holder = read_holder(&root.join(".frob").join(LOCK_FILE))?;
+    let alive = pid_alive(holder.pid);
+    tracing::debug!(pid = holder.pid, alive, root = ?root, "check lock inspected");
+    alive.then_some(holder)
 }
 
 /// Take the full-check lock for `root` as process `pid`; refuses within one read when a live holder exists.

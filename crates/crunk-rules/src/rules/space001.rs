@@ -4,9 +4,10 @@
 //! The judgment is [`crate::scales`]: px and rem lengths only, relative tolerance, the nearest and
 //! the two bracketing steps in the message. Divergences from the Python rule: the finding is
 //! located at the length token and names the nearest step; token names follow `[tokens]` prefixes
-//! (Python hard-coded `--space` in the message); the fix payload is the autofix ticket's, so
-//! `fix = Manual`; waivers are the pipeline's exceptions.
+//! (Python hard-coded `--space` in the message); a Tier A fix snaps to the nearest step within
+//! `fix_tolerance`; waivers are the pipeline's exceptions.
 
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
 
 use crunk_spec::naming::space_token;
@@ -25,7 +26,7 @@ use crate::sheets::examined_sheets;
     polarity = Pplus,
     must_measure = true,
     scope = Repo,
-    fix = Manual,
+    fix = Deterministic,
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 1,

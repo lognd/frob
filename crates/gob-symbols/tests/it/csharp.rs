@@ -66,7 +66,7 @@ const EDITOR: &str = "Assets/Editor/HudPrefabBuilder.cs";
 const GAPS: &str = "Assets/Scripts/Gaps.cs";
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn namespaces_types_and_members_are_units_with_kinds() {
     let fs = files();
     let got: Vec<(String, SymbolKind)> = file(&fs, KINDS)
@@ -113,7 +113,7 @@ fn namespaces_types_and_members_are_units_with_kinds() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn fields_events_and_properties_carry_visibility_and_declarators() {
     let fs = files();
     let ship = file(&fs, SHIP);
@@ -354,22 +354,14 @@ fn elif_and_else_branches_negate_the_earlier_conditions() {
 
 #[test]
 // frob:tests crates/gob-symbols/src/csharp.rs::CsFold.tr
-fn a_conditional_inside_a_member_body_is_unresolved_for_that_member_only() {
-    let fs = files();
-    let f = file(&fs, GAPS);
-    assert!(matches!(f.parse_status, ParseStatus::Partial { .. }));
-    let unknown = |tail: &str| {
-        let i = f
-            .symbols
-            .iter()
-            .position(|s| s.symref.to_string().ends_with(tail))
-            .expect("unit");
-        f.extras[i].unknown.clone()
-    };
-    assert!(unknown("WithConditional.Pick").contains(&"body".to_owned()));
-    assert!(unknown("WithConditional.Stable").is_empty());
-    // Pick still exists as a unit: nothing is dropped.
-    assert_eq!(f.symbols.len(), 3);
+// frob:ticket 01M5F1GHZYYC90BNTF9TGMC3A2
+fn a_conditional_inside_a_member_body_folds_whole_with_no_hole() {
+    let f = extract(
+        "A.cs",
+        "class C {\n int Pick() {\n#if A\n return 1;\n#elif B\n return 2;\n#else\n return 3;\n#endif\n }\n}\n",
+    );
+    assert!(matches!(f.parse_status, ParseStatus::Complete));
+    assert!(f.extras.iter().all(|e| e.unknown.is_empty()));
 }
 
 #[test]
@@ -381,7 +373,7 @@ fn top_level_statements_are_unmodelled_and_the_gate_reads_partial() {
     assert_eq!(info.fidelity, Fidelity::F1);
     assert!(matches!(
         info.parse_status,
-        ParseStatus::Partial { holes: 2 }
+        ParseStatus::Partial { holes: 1 }
     ));
     let clean = g.file_info(SHIP).expect("file info");
     assert!(clean.parse_status.is_complete());
@@ -396,7 +388,7 @@ fn a_syntax_error_is_a_hole_never_a_clean_file() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn comments_and_layout_never_change_digests() {
     let a = extract("A.cs", "class C {\n  void M() { var x = 1; }\n}\n");
     let b = extract(
@@ -682,7 +674,7 @@ fn unknown_receivers_are_unresolved_and_never_clean() {
 }
 
 #[test]
-// frob:tests crates/gob-symbols/src/csharp.rs::fold_tree
+// frob:tests crates/gob-symbols/src/fold.rs::fold_adapter_tree
 fn global_and_alias_usings_are_listed_with_kind_and_target() {
     let src = "global using System.Linq;
 global using static System.Math;
@@ -1209,5 +1201,23 @@ fn implicit_system_makes_core_types_framework_clean() {
         calls_from(&without, "A.cs", "N.C.Run")
             .iter()
             .all(|e| e.status == Status::Unknown)
+    );
+}
+
+#[test]
+// frob:ticket 01M5F1GJ2FJC4CPAM2SDKZXTCN
+// frob:tests crates/gob-symbols/src/model.rs::merge_partials
+fn a_call_in_one_partial_part_resolves_to_a_method_of_the_other_part() {
+    let part1 =
+        "namespace Acme.App { public partial class Widget { public void Run() { Decorate(); } } }";
+    let part2 = "namespace Acme.App { public partial class Widget { public void Decorate() { } } }";
+    let g = graph_of(&[("Widget.Part1.cs", part1), ("Widget.Part2.cs", part2)]);
+    let callees = g.reach(
+        &sym("Widget.Part1.cs::Acme.App.Widget.Run"),
+        EdgeKind::Calls,
+    );
+    assert!(
+        callees.contains(&sym("Widget.Part2.cs::Acme.App.Widget.Decorate")),
+        "{callees:?}"
     );
 }

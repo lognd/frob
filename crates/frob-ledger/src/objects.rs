@@ -12,7 +12,7 @@
 // frob:ticket 01M4069QWSJEH5KW8K0YR8CA0D
 use gob_git::{CommitOptions, Oid, RelPath};
 
-pub mod integrate;
+pub use crate::integrate;
 
 use crate::error::Result;
 use crate::ledger::Ledger;

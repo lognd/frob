@@ -38,8 +38,8 @@ use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
 use crate::fold::{
-    Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, local_binding,
-    text_of,
+    Cx, base_file, call_text, children, file_root_spec, line_of, local_binding, lower_children,
+    span_of, text_of,
 };
 use crate::model::{
     CallRef, CallSite, DeriveDecl, FieldDecl, FileSymbols, ImportEdge, MapKind, Receiver, RefKind,
@@ -96,15 +96,7 @@ impl Adapter for RustAdapter {
     }
 
     fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-        match tree {
-            ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
-            ConcreteTree::Unparsed(reason) => failed_file(input, "rust", *reason),
-            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
-                input,
-                "rust",
-                gob_languages::UnresolvedReason::GrammarUnavailable,
-            ),
-        }
+        crate::fold::fold_adapter_tree("rust", tree, input, fold_tree_inline)
     }
 }
 
@@ -650,6 +642,8 @@ struct Site {
     bound: Vec<String>,
     /// One-based source line.
     line: u32,
+    /// Byte span of the call expression.
+    span: (usize, usize),
     /// The callee expression as written.
     text: String,
 }
@@ -925,14 +919,6 @@ fn leaves(n: Node<'_>) -> Vec<Node<'_>> {
     crate::fold::leaves(n, is_comment)
 }
 
-/// Lowers a tree, moving to a depth-sized stack when the syntax is deeply nested.
-// frob:ticket 01M3ZTAV8SXD9C6G4A42WY14K9
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    crate::fold::with_sized_stack("rust", input.path, root, || {
-        fold_tree_inline(text, root, input)
-    })
-}
-
 fn fold_tree_inline(
     text: &str,
     root: Node<'_>,
@@ -1088,6 +1074,8 @@ fn push_site(file: &mut FileSymbols, scopes: &ScopeGraph, s: Site, caller: Symre
                 bound: s.bound,
                 line: s.line,
                 text: s.text,
+                start: s.span.0,
+                end: s.span.1,
             });
         }
         SiteKind::Value => file.refs.push(RefSite {
@@ -1205,6 +1193,7 @@ impl<'a> RustFold<'a> {
                         qual_path: t.path,
                         bound: t.bound,
                         line: line_of(n),
+                        span: span_of(n),
                         text: call_text(self.t(f)),
                     });
                 }
@@ -1262,11 +1251,7 @@ impl<'a> RustFold<'a> {
     }
 
     fn gen_children(&mut self, n: Node<'_>, depth: usize) -> R<Vec<NodeId>> {
-        let mut out = Vec::new();
-        for c in children(n) {
-            out.push(self.tr(c, depth + 1)?);
-        }
-        Ok(out)
+        lower_children(n, |c| self.tr(c, depth + 1))
     }
 
     fn ident_ref(&mut self, n: Node<'_>) -> R<NodeId> {
@@ -1320,6 +1305,7 @@ impl<'a> RustFold<'a> {
             qual_path: Vec::new(),
             bound: Vec::new(),
             line: 0,
+            span: (0, 0),
             text: String::new(),
         });
     }
@@ -2405,6 +2391,7 @@ impl<'a> RustFold<'a> {
                 qual_path: target.path,
                 bound: target.bound,
                 line: line_of(n),
+                span: span_of(n),
                 text: call_text(self.t(f)),
             });
         }
@@ -2785,6 +2772,7 @@ impl<'a> RustFold<'a> {
             qual_path: t.path,
             bound: t.bound,
             line: line_of(x),
+            span: span_of(x),
             text: call_text(self.t(f)),
         });
     }
@@ -2878,6 +2866,7 @@ impl<'a> RustFold<'a> {
                                 (None, false) => name.clone(),
                             }),
                             line: line_of(*k),
+                            span: span_of(*k),
                             name,
                             qualifier,
                             node: None,

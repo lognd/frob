@@ -3,12 +3,25 @@
 //! The pairs live in the [`PAIRS`] table, so a new acquire/release API is a data change, not a new
 //! detector. The check is structural (no taint, no path sensitivity): a release call anywhere in
 //! the acquire's scope pairs it.
+//!
+//! Discovery runs through the universal model (`gob_symbols::model_of_source_at`): calls and
+//! `new` expressions are `apply` nodes classified by their head `ref`, a receiver is the first
+//! child of a method `apply`, the bound name comes from the enclosing declarator / assignment /
+//! field node, and the class / function scopes are `unit(class)`, `unit(function|method)` and
+//! `anon(function)` ancestors. The tree-sitter helpers below remain only for the sibling
+//! detectors that still read the tree (see docs/design/grimble/lint-classification.md section 3).
 
 // frob:ticket 01M1T07NY615PQ6RAEB4CESXMT
 
-use gob_languages::{Language, ParseLimits, ParseResult, parse};
+use std::collections::HashMap;
+
+use gob_ir::{Location, NodeId, Operator, Term, Universal};
+use gob_languages::Language;
+use gob_symbols::model_of_source_at;
 use gob_text::{TextRange, TextSize};
 use tree_sitter::Node;
+
+use crate::effect::model_path;
 
 /// Where a release must appear to pair with an acquire.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -135,6 +148,9 @@ pub enum ScanError {
     /// The file did not parse within the limits, or its grammar is not built in.
     #[error("E-RES-PARSE: {0}")]
     Parse(String),
+    /// The universal model of the file could not be built (an adapter bug).
+    #[error("E-RES-MODEL: {0}")]
+    Model(String),
 }
 
 /// Test-framework callbacks whose bodies are exempt.
@@ -194,17 +210,6 @@ pub(crate) fn is_function(kind: &str) -> bool {
     )
 }
 
-fn is_class(kind: &str) -> bool {
-    matches!(
-        kind,
-        "class_declaration" | "class" | "abstract_class_declaration"
-    )
-}
-
-fn range(n: Node<'_>) -> (usize, usize) {
-    (n.start_byte(), n.end_byte())
-}
-
 /// The name an expression's value is bound to, if its parent binds it.
 pub(crate) fn bound_name(node: Node<'_>, src: &str) -> Option<String> {
     let mut cur = node;
@@ -236,20 +241,120 @@ pub(crate) fn bound_name(node: Node<'_>, src: &str) -> Option<String> {
     }
 }
 
-/// Scope ranges (see [`ScopeKind`] order) of the expression `node`.
-fn scopes_of(node: Node<'_>, file: (usize, usize)) -> [(usize, usize); 3] {
+/// The adapter nodes that wrap a value without changing which binding receives it.
+fn is_wrapper(term: &Term, id: NodeId) -> bool {
+    matches!(
+        term.node(id).op(),
+        Operator::Adapter(a) if matches!(a.name.as_str(), "await_expression" | "parenthesized_expression")
+    )
+}
+
+/// The source slice node `id` covers, with its byte bounds.
+fn slice<'t>(term: &Term, id: NodeId, src: &'t str) -> Option<(usize, usize, &'t str)> {
+    let Location::Text { range, .. } = term.node(id).location() else {
+        return None;
+    };
+    let (lo, hi) = (
+        u32::from(range.start()) as usize,
+        u32::from(range.end()) as usize,
+    );
+    Some((lo, hi, src.get(lo..hi)?))
+}
+
+/// True when `id` is a `Lit` of one of `kinds`.
+fn is_lit(term: &Term, id: NodeId, kinds: &[&str]) -> bool {
+    matches!(term.node(id).op(), Operator::Universal(Universal::Lit { kind, .. }) if kinds.contains(&kind.as_str()))
+}
+
+/// The normalised name the value `id` is bound to, if its enclosing node binds it.
+fn bound_in_model(
+    term: &Term,
+    parents: &HashMap<NodeId, NodeId>,
+    id: NodeId,
+    src: &str,
+) -> Option<String> {
+    let mut cur = id;
+    let mut parent = *parents.get(&cur)?;
+    while is_wrapper(term, parent) {
+        cur = parent;
+        parent = *parents.get(&cur)?;
+    }
+    let Operator::Adapter(a) = term.node(parent).op() else {
+        return bound_const_unit(term, parents, cur, parent, src);
+    };
+    let kids = term.node(parent).children();
+    let value_follows_eq = kids.last() == Some(&cur)
+        && kids
+            .len()
+            .checked_sub(2)
+            .is_some_and(|i| is_lit(term, kids[i], &["="]));
+    if !value_follows_eq {
+        return None;
+    }
+    let name = match a.name.as_str() {
+        "variable_declarator" | "assignment_expression" => *kids.first()?,
+        "public_field_definition" | "field_definition" => kids
+            .iter()
+            .copied()
+            .find(|k| is_lit(term, *k, &["name", "property"]))
+            .or_else(|| kids.first().copied())?,
+        _ => return None,
+    };
+    Some(normalise(slice(term, name, src)?.2))
+}
+
+/// The name of a top-level `const name = value`, which the model folds to `unit(const)` over a
+/// name group and a value group; `value` is `cur` inside the group `group`.
+fn bound_const_unit(
+    term: &Term,
+    parents: &HashMap<NodeId, NodeId>,
+    cur: NodeId,
+    group: NodeId,
+    src: &str,
+) -> Option<String> {
+    let unit = *parents.get(&group)?;
+    let Operator::Universal(Universal::Unit { kind, .. }) = term.node(unit).op() else {
+        return None;
+    };
+    let [names, values] = term.node(unit).children() else {
+        return None;
+    };
+    if kind != "const" || *values != group || term.node(group).children().last() != Some(&cur) {
+        return None;
+    }
+    let name = *term.node(*names).children().first()?;
+    Some(normalise(slice(term, name, src)?.2))
+}
+
+/// Scope ranges (see [`ScopeKind`] order) of the node `id`, from its class / function ancestors.
+fn scopes_in_model(
+    term: &Term,
+    parents: &HashMap<NodeId, NodeId>,
+    id: NodeId,
+    src: &str,
+    file: (usize, usize),
+) -> [(usize, usize); 3] {
     let mut outer_fn = None;
     let mut class = None;
-    let mut cur = node.parent();
+    let mut cur = parents.get(&id).copied();
     while let Some(n) = cur {
-        if is_class(n.kind()) {
-            class = Some(range(n));
-            break;
+        let bounds = slice(term, n, src).map(|(lo, hi, _)| (lo, hi));
+        match term.node(n).op() {
+            Operator::Universal(Universal::Unit { kind, .. }) if kind == "class" => {
+                class = bounds;
+                break;
+            }
+            Operator::Universal(Universal::Unit { kind, .. })
+                if matches!(kind.as_str(), "function" | "method") =>
+            {
+                outer_fn = bounds.or(outer_fn);
+            }
+            Operator::Universal(Universal::Anon { kind }) if kind == "function" => {
+                outer_fn = bounds.or(outer_fn);
+            }
+            _ => {}
         }
-        if is_function(n.kind()) {
-            outer_fn = Some(range(n));
-        }
-        cur = n.parent();
+        cur = parents.get(&n).copied();
     }
     [
         class.or(outer_fn).unwrap_or(file),
@@ -258,62 +363,80 @@ fn scopes_of(node: Node<'_>, file: (usize, usize)) -> [(usize, usize); 3] {
     ]
 }
 
-/// True when some ancestor call is a test-framework callee such as `it(...)`.
-fn under_test_call(node: Node<'_>, src: &str) -> bool {
-    let mut cur = node.parent();
+/// True when some ancestor of `id` is a call to a test-framework callee such as `it(...)`.
+fn under_test_call(term: &Term, parents: &HashMap<NodeId, NodeId>, id: NodeId) -> bool {
+    let mut cur = parents.get(&id).copied();
     while let Some(n) = cur {
-        if n.kind() == "call_expression"
-            && let Some(f) = n.child_by_field_name("function")
-            && f.kind() == "identifier"
-            && TEST_CALLEES.contains(&text(f, src))
+        if matches!(term.node(n).op(), Operator::Universal(Universal::Apply { kind }) if kind == "call")
+            && let Some(head) = term.node(n).children().first()
+            && matches!(term.node(*head).op(), Operator::Universal(Universal::Ref { name }) if TEST_CALLEES.contains(&name.as_str()))
         {
             return true;
         }
-        cur = n.parent();
+        cur = parents.get(&n).copied();
     }
     false
 }
 
-fn collect(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
-    collect_call(node, src, file, out);
-    collect_children(node, src, file, out);
+/// The [`Call`] an `apply` node of the model is, if it is a call, method call or `new`.
+fn call_of(
+    term: &Term,
+    parents: &HashMap<NodeId, NodeId>,
+    id: NodeId,
+    src: &str,
+    file: (usize, usize),
+) -> Option<Call> {
+    let Operator::Universal(Universal::Apply { kind }) = term.node(id).op() else {
+        return None;
+    };
+    let kids = term.node(id).children();
+    let Operator::Universal(Universal::Ref { name: head }) = term.node(*kids.first()?).op() else {
+        return None;
+    };
+    let (start, end, _) = slice(term, id, src)?;
+    let (callee, member, is_new) = match kind.as_str() {
+        "new" => (normalise(head), None, true),
+        "method" => {
+            let recv = normalise(slice(term, *kids.get(1)?, src)?.2);
+            let prop = head.strip_prefix('.')?.to_owned();
+            (format!("{recv}.{prop}"), Some((prop, recv)), false)
+        }
+        "call" => {
+            let member = head
+                .rsplit_once('.')
+                .map(|(obj, prop)| (prop.to_owned(), normalise(obj)));
+            (normalise(head), member, false)
+        }
+        _ => return None,
+    };
+    Some(Call {
+        start,
+        end,
+        callee,
+        member,
+        is_new,
+        bound: bound_in_model(term, parents, id, src),
+        scopes: scopes_in_model(term, parents, id, src, file),
+        in_test: under_test_call(term, parents, id),
+    })
 }
 
-/// Record `node` when it is a call or `new` expression.
-fn collect_call(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
-    let kind = node.kind();
-    if kind == "call_expression" || kind == "new_expression" {
-        let is_new = kind == "new_expression";
-        let callee_node = node.child_by_field_name(if is_new { "constructor" } else { "function" });
-        if let Some(c) = callee_node {
-            let member = (!is_new && c.kind() == "member_expression")
-                .then(|| {
-                    let obj = c.child_by_field_name("object")?;
-                    let prop = c.child_by_field_name("property")?;
-                    Some((text(prop, src).to_owned(), normalise(text(obj, src))))
-                })
-                .flatten();
-            let scopes = scopes_of(node, file);
-            out.push(Call {
-                start: node.start_byte(),
-                end: node.end_byte(),
-                callee: normalise(text(c, src)),
-                member,
-                is_new,
-                bound: bound_name(node, src),
-                scopes,
-                in_test: under_test_call(node, src),
-            });
+/// Every call, method call and `new` of the universal model of `text`, in term order.
+fn collect(language: Language, text: &str) -> Result<Vec<Call>, ScanError> {
+    let model = model_of_source_at(model_path(language), text)
+        .map_err(|e| ScanError::Model(e.to_string()))?;
+    let term = model.term();
+    let mut parents = HashMap::new();
+    for id in term.ids() {
+        for child in term.node(id).children() {
+            parents.insert(*child, id);
         }
     }
-}
-
-/// Collect the calls under every named child of `node`.
-fn collect_children(node: Node<'_>, src: &str, file: (usize, usize), out: &mut Vec<Call>) {
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        collect(child, src, file, out);
-    }
+    let file = (0, text.len());
+    Ok(term
+        .ids()
+        .filter_map(|id| call_of(term, &parents, id, text, file))
+        .collect())
 }
 
 /// Receivers built by `new <ctor>` anywhere in the file, as normalised names.
@@ -365,11 +488,11 @@ fn acquires<'a>(pair: &Pair, c: &'a Call, maps: &[String]) -> Option<&'a str> {
 
 /// Every acquire in `text` parsed as `language` with no paired release in scope, in source order.
 ///
-/// A language without a detector yields no sites; a tree with syntax errors is still scanned.
+/// A language without a detector yields no sites; source with syntax errors is still scanned.
 ///
 /// # Errors
 ///
-/// [`ScanError::Parse`] when the file does not parse within the limits.
+/// [`ScanError::Model`] when the universal model of the file cannot be built.
 pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
     if !matches!(
         language,
@@ -377,13 +500,7 @@ pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
     ) {
         return Ok(Vec::new());
     }
-    let tree = match parse(language, text, &ParseLimits::default()) {
-        ParseResult::Parsed(tree) => tree,
-        ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
-    };
-    let file = (0, text.len());
-    let mut calls = Vec::new();
-    collect(tree.root(), text, file, &mut calls);
+    let calls = collect(language, text)?;
     let mut sites = Vec::new();
     for pair in PAIRS {
         let maps = match pair.acquire {
@@ -571,5 +688,19 @@ mod tests {
                 .expect("scan")
                 .is_empty()
         );
+    }
+
+    // frob:tests crates/grimble-lints/src/res.rs::scan
+    #[test]
+    fn every_adapter_language_scans_and_only_the_js_family_yields_the_site() {
+        let src = "performance.mark('a');\n";
+        for language in Language::ALL {
+            let sites = scan(language, src).expect("scan never errors on a built-in language");
+            let js_family = matches!(
+                language,
+                Language::TypeScript | Language::Tsx | Language::JavaScript | Language::Jsx
+            );
+            assert_eq!(sites.len(), usize::from(js_family), "{}", language.name());
+        }
     }
 }

@@ -19,7 +19,8 @@
 //! - Preprocessor: every `#if`, `#elif` and `#else` branch is scanned. A unit declared under a
 //!   branch carries the condition stack in [`UnitFacts::conditions`] (`UNITY_EDITOR`, then
 //!   `!(UNITY_EDITOR)` in the `#else`). Other directives (`#region`, `#define`, `#pragma`) are
-//!   tokens. A conditional that is not wholly a member list (inside a member body, around an
+//!   tokens. A conditional inside a member body is folded whole (every branch is in the body
+//!   digest). A conditional that is not wholly a member list (around an
 //!   attribute list) is a `hole(unmodelled)`: the file reads as a partial parse and the enclosing
 //!   member's digests are unknown, never silently stable.
 //! - Constructs this adapter does not model (top-level statements, unknown member kinds, syntax
@@ -40,7 +41,7 @@ use tree_sitter::Node;
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of};
+use crate::fold::{Cx, base_file, children, file_root_spec, text_of};
 use crate::model::{
     AttributeFact, CallSite, FieldDecl, ImportEdge, LocalBinding, Receiver, RetType, UnitFacts,
     UnitSpan, UseBinding, collapse_ws,
@@ -88,15 +89,7 @@ impl Adapter for CSharpAdapter {
     }
 
     fn fold(&self, tree: &ConcreteTree, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-        match tree {
-            ConcreteTree::Parsed(t) => fold_tree(&t.text, t.root(), input),
-            ConcreteTree::Unparsed(reason) => failed_file(input, "csharp", *reason),
-            ConcreteTree::Leaf | ConcreteTree::Source(_) => failed_file(
-                input,
-                "csharp",
-                gob_languages::UnresolvedReason::GrammarUnavailable,
-            ),
-        }
+        crate::fold::fold_adapter_tree("csharp", tree, input, fold_tree_inline)
     }
 }
 
@@ -465,12 +458,6 @@ fn safe(text: &str) -> String {
         .collect()
 }
 
-fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
-    crate::fold::with_sized_stack("csharp", input.path, root, || {
-        fold_tree_inline(text, root, input)
-    })
-}
-
 fn fold_tree_inline(
     text: &str,
     root: Node<'_>,
@@ -655,7 +642,12 @@ impl<'a> CsFold<'a> {
                     kids.push(self.tr(c, depth + 1)?);
                 }
                 if kind.starts_with("preproc_if") {
-                    kids.push(self.unmodelled(n, "conditional inside a member body")?);
+                    // Every branch is a child above, so the digest covers all of them and nothing is lost.
+                    tracing::trace!(
+                        path = self.path,
+                        at = n.start_byte(),
+                        "conditional inside a member body folded whole"
+                    );
                 }
                 self.cx.op(
                     Operator::adapter("csharp", kind, gob_ir::Sort::Exp),
@@ -1395,6 +1387,8 @@ struct RawCall {
     qual_path: Vec<String>,
     line: u32,
     text: String,
+    start: usize,
+    end: usize,
 }
 
 /// One `using` directive and the namespace segments it sits in.
@@ -1691,6 +1685,8 @@ fn collect_calls(text: &str, n: Node<'_>, out: &mut Vec<RawCall>) {
             qual_path: Vec::new(),
             line,
             text: site_text(text, x),
+            start: x.start_byte(),
+            end: x.end_byte(),
         };
         match x.kind() {
             "invocation_expression" => {
@@ -1817,6 +1813,8 @@ fn file_sites(
             bound: Vec::new(),
             line: c.line,
             text: c.text,
+            start: c.start,
+            end: c.end,
         });
     }
     for u in uses {
@@ -1858,5 +1856,45 @@ fn file_sites(
                 },
             });
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::adapter::FileInput;
+
+    fn fold_src(src: &str) -> Folded {
+        let a = CSharpAdapter;
+        let tree = a.parse(src, &ParseLimits::default());
+        let input = FileInput {
+            path: "A.cs",
+            digest: "d",
+            size: u32::try_from(src.len()).expect("small"),
+        };
+        a.fold(&tree, &input).expect("fold")
+    }
+
+    // frob:tests crates/gob-symbols/src/csharp.rs::collect_calls
+    // frob:tests crates/gob-symbols/src/csharp.rs::file_sites
+    #[test]
+    fn call_sites_carry_byte_spans() {
+        let src = "class A { void F() { Console.WriteLine(1); Console.Write(2); new B(); } }";
+        let f = fold_src(src);
+        let c = f
+            .file
+            .calls
+            .iter()
+            .find(|c| c.callee == "WriteLine")
+            .expect("WriteLine");
+        assert_eq!(&src[c.start..c.end], "Console.WriteLine(1)");
+        let w = f
+            .file
+            .calls
+            .iter()
+            .find(|c| c.callee == "Write")
+            .expect("Write");
+        assert_eq!(&src[w.start..w.end], "Console.Write(2)");
+        assert!(f.file.calls.iter().all(|c| c.end > c.start));
     }
 }

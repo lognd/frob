@@ -16,6 +16,11 @@ Materialized: no.
 |---|---|---|---|---|
 | `brief_max_bytes` | `u64` | `2048` | no | Byte budget of `frob agent brief`; longer output is cut and marked. |
 | `brief_rules` | `Vec<String>` | `["Edit only files inside the lease scope; widen it with `frob lease widen`.", "Verify with `frob check --ticket` before landing.", "Log with tracing, never print; ASCII only."]` | no | Standing rules `frob agent brief` prints, one line each. |
+| `heavy_disk_bytes` | `u64` | `500000000` | no | Peak disk growth (bytes) above which a recorded command counts as heavy in `heavy-profile.toml`. |
+| `heavy_wall_ms` | `u64` | `60000` | no | Wall time (ms) above which a recorded command counts as heavy in `heavy-profile.toml`. |
+| `hook_bash_max_lines` | `u64` | `200` | no | Line cap the `pre-bash` hook appends (`\| head -n N`) to an unbounded-output command. |
+| `hook_heavy_commands` | `Vec<String>` | `["cargo build", "cargo test", "cargo nextest", "cargo clippy", "cargo check", "npm test", "pytest"]` | no | Command prefixes the `pre-bash` hook sends through `frob agent heavy`. |
+| `hook_read_max_bytes` | `u64` | `200000` | no | Largest file (bytes) the `pre-read` hook lets an agent read whole; bigger ones need offset/limit. |
 | `hooks` | `Vec<String>` | `[]` | no | Hook registrations, each `"NAME:EVENT:MATCHER"` naming a `hook` item. |
 | `items` | `Vec<String>` | `[]` | no | Canonical items, each `"KIND:NAME = SRC"` (kind: instruction, hook, agent, skill, support). |
 
@@ -400,8 +405,10 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `backoff_max_secs` | `u32` | `3600` | no | Ceiling in seconds of the exponential backoff after failed probes. |
+| `fetch_timeout_ms` | `u32` | `10000` | no | Milliseconds a `frob refresh` fetch or push may run before it is killed. |
 | `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
 | `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
+| `push_wip` | `bool` | `true` | no | Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged). |
 | `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
 | `stale_error_secs` | `u32` | `86400` | no | Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached. |
 | `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |
@@ -480,3 +487,4 @@ Materialized: yes.
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
 | `dir` | `String` | `"../{repo}-wt"` | no | Parent directory of ticket worktrees; relative paths resolve against the primary checkout and `{repo}` stands for its directory name. |
+| `shared_target` | `bool` | `true` | no | Export one cargo target directory per toolchain, under the git common dir, as `CARGO_TARGET_DIR` to every cargo stage `frob check` and `frob land` run, so a second worktree reuses the first one's fingerprints; an explicit `CARGO_TARGET_DIR` always wins and `false` keeps each checkout's own `target/`. |

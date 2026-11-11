@@ -5,7 +5,7 @@
 //! a local-zone or zone-less clock read whose value escapes display (`TIME001`) and a comparison
 //! or subtraction between a naive and an aware value, or between naive values of two zones
 //! (`TIME002`). Imports are resolved first, so `from datetime import datetime as dt` still reads
-//! as `datetime.datetime`. A language without these roles is Unresolved in the caller.
+//! as `datetime.datetime`. Function scopes come from the universal model. A language without these roles is Unresolved in the caller.
 //!
 //! Known limits: Rust macro arguments are unparsed token trees, so a read written inside a macro
 //! other than a display macro is not seen; a binding is classified by its last assignment in
@@ -177,19 +177,38 @@ fn is_function(lang: Lang, n: Node<'_>) -> bool {
     }
 }
 
-/// Every site in `root`, one scope at a time.
-pub(super) fn scan_time<'t>(lang: Lang, root: Node<'t>, src: &str) -> Vec<Raw<'t>> {
+/// The function node of `root` that the model unit spanning `start..end` stands for, if any.
+///
+/// A decorated Python function's unit starts at its decorator, so the function node is searched
+/// among the descendants that end where the unit ends.
+fn function_node(lang: Lang, root: Node<'_>, start: usize, end: usize) -> Option<Node<'_>> {
+    let mut stack = vec![root.descendant_for_byte_range(start, end)?];
+    while let Some(n) = stack.pop() {
+        if is_function(lang, n) && n.end_byte() == end {
+            return Some(n);
+        }
+        stack.extend(children(n).into_iter().filter(|c| c.end_byte() == end));
+    }
+    None
+}
+
+/// Every site in `root`, one scope at a time; `fns` are the model's function unit spans.
+pub(super) fn scan_time<'t>(
+    lang: Lang,
+    root: Node<'t>,
+    src: &str,
+    fns: &[(usize, usize)],
+) -> Vec<Raw<'t>> {
     let aliases = collect_aliases(lang, root, src);
     let mut scopes = vec![root];
-    let mut stack = vec![root];
-    while let Some(n) = stack.pop() {
-        for c in children(n) {
-            if is_function(lang, c) {
-                scopes.push(c);
-            }
-            stack.push(c);
+    for &(start, end) in fns {
+        if let Some(n) = function_node(lang, root, start, end) {
+            scopes.push(n);
+        } else {
+            tracing::trace!(start, end, "time: model unit is not a bodied function");
         }
     }
+    scopes.dedup_by_key(|n| n.id());
     let mut out = Vec::new();
     for scope in scopes {
         let mut f = Flow {
@@ -276,6 +295,7 @@ struct Flow<'t, 's, 'a> {
 }
 
 impl<'t, 's> Flow<'t, 's, '_> {
+    // frob:accept DUP004 because="per-family scope walk: the same descent skeleton dispatches to a family-specific at_* visitor"
     fn visit_time(&mut self, node: Node<'t>) {
         if node != self.scope && is_function(self.lang, node) {
             return;

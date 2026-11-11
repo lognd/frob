@@ -21,6 +21,7 @@ use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
+use gob_exec::pid_alive;
 use gob_time::{Clock, SystemClock};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -514,15 +515,6 @@ fn replace_lock(path: &Path, sidecar: &Path, file: &File) -> Result<File, LandEr
     std::fs::remove_file(path).ok();
     std::fs::remove_file(sidecar).ok();
     open_lock(path)
-}
-
-/// True when process `pid` exists.
-pub(crate) fn pid_alive(pid: u32) -> bool {
-    if cfg!(target_os = "linux") {
-        Path::new(&format!("/proc/{pid}")).exists()
-    } else {
-        true
-    }
 }
 
 /// True when process `pid` has a live child (any thread's children list is non-empty); Linux only.

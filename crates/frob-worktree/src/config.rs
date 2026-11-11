@@ -16,6 +16,9 @@ pub struct WorktreeConfig {
     /// primary checkout and `{repo}` stands for its directory name.
     #[config(default = "../{repo}-wt".to_owned())]
     pub dir: String,
+    /// Export one cargo target directory per toolchain, under the git common dir, as `CARGO_TARGET_DIR` to every cargo stage `frob check` and `frob land` run, so a second worktree reuses the first one's fingerprints; an explicit `CARGO_TARGET_DIR` always wins and `false` keeps each checkout's own `target/`.
+    #[config(default = true)]
+    pub shared_target: bool,
 }
 
 impl WorktreeConfig {

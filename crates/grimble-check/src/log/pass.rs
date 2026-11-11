@@ -13,8 +13,9 @@ use gob_rules::{Severity, UnresolvedReason};
 use gob_walk::Glob;
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 
-use super::catalogue::Catalogue;
+use super::catalogue::{Catalogue, Group};
 use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
+use super::universal::{UCall, mode_unresolved_calls, output_calls};
 use super::{
     LOG001, LOG002, lang_bash, lang_c, lang_csharp, lang_java, lang_js, lang_python, lang_rust,
     lang_zig,
@@ -116,6 +117,142 @@ fn scan_one(p: &Prepared<'_>, ctx: &FileCtx<'_>, cat: &Catalogue) -> Option<File
         "zig" => lang_zig::scan(st, root),
         _ => lang_csharp::scan(st, root),
     })
+}
+
+/// True when the half-open byte range `[start, end)` overlaps any range in `covered`; a call with
+/// no known span (`end <= start`) never counts as covered, so it is reported rather than hidden.
+pub(crate) fn is_covered(covered: &[(usize, usize)], start: usize, end: usize) -> bool {
+    end > start
+        && covered
+            .iter()
+            .any(|&(a, b)| a < end && start < b.max(a + 1))
+}
+
+/// True when a call with no byte span (`end <= start`) sits on a line that any `covered` range
+/// touches; the finest overlap available for an adapter that records lines but no spans.
+pub(crate) fn line_covered(text: &str, covered: &[(usize, usize)], line: u32) -> bool {
+    let line_of = |at: usize| {
+        text.get(..at).map_or(0, |t| {
+            u32::try_from(t.matches('\n').count())
+                .unwrap_or(u32::MAX)
+                .saturating_add(1)
+        })
+    };
+    covered
+        .iter()
+        .any(|&(a, b)| (line_of(a)..=line_of(b.max(a))).contains(&line))
+}
+
+/// Cross-check a scanner against the universal model: a call `U` resolves to direct output at a
+/// byte range the scanner neither hit nor flagged is reported Unresolved, never silently clean.
+/// Matching is by byte overlap, so a second call on a line the scanner reported is still caught.
+fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut PathReport) {
+    let text = p.file.text;
+    let covered: Vec<(usize, usize)> = scan
+        .hits
+        .iter()
+        .map(|h| (h.start, h.end))
+        .chain(scan.unresolved.iter().map(|u| (u.start, u.end)))
+        .collect();
+    for (i, u) in output_calls(p.gid, p.file.path, text, group)
+        .into_iter()
+        .filter(|u| {
+            if u.end > u.start {
+                !is_covered(&covered, u.start, u.end)
+            } else {
+                !line_covered(text, &covered, u.line)
+            }
+        })
+        .enumerate()
+    {
+        let (start, end) = (u.start, u.end.min(text.len()));
+        tracing::debug!(
+            file = p.file.path,
+            line = u.line,
+            start,
+            end,
+            path = %u.path.join("."),
+            "scanner and U disagree"
+        );
+        report.findings.push(PathFinding {
+            rule: LOG001,
+            severity: Severity::Unresolved,
+            file: p.file.path.to_owned(),
+            range: (start, end),
+            message: format!(
+                "the universal model resolves this call to `{}` ({}) but the scanner did not report it; \
+                 Agents: route it through the logging layer or make the target explicit. \
+                 Humans: waive with `frob:waive LOG001 <reason>`.",
+                u.path.join("."),
+                group.atoms[u.atom].id
+            ),
+            reason: Some(UnresolvedReason::Fidelity),
+            anchor: format!("{}:universal:{i}", p.file.path),
+        });
+    }
+    cross_check_modes(p, &covered, group, report);
+}
+
+/// True when the scanner already hit or flagged the model call `u` (by byte span, or by line
+/// when the adapter records no span).
+fn call_covered(text: &str, covered: &[(usize, usize)], u: &UCall) -> bool {
+    if u.end > u.start {
+        is_covered(covered, u.start, u.end)
+    } else {
+        line_covered(text, covered, u.line)
+    }
+}
+
+/// Mode-aware calls with an undecidable mode that the scanner has neither hit nor flagged.
+fn uncovered_mode_calls(
+    gid: &str,
+    path: &str,
+    text: &str,
+    group: &Group,
+    covered: &[(usize, usize)],
+) -> Vec<UCall> {
+    mode_unresolved_calls(gid, path, text, group)
+        .into_iter()
+        .filter(|u| !call_covered(text, covered, u))
+        .collect()
+}
+
+/// Report mode-aware calls whose mode argument `U` cannot decide as LOG001 Unresolved, unless the
+/// scanner already accounts for them: whether they open for writing is unknown, never clean.
+fn cross_check_modes(
+    p: &Prepared<'_>,
+    covered: &[(usize, usize)],
+    group: &Group,
+    report: &mut PathReport,
+) {
+    let text = p.file.text;
+    for (i, u) in uncovered_mode_calls(p.gid, p.file.path, text, group, covered)
+        .into_iter()
+        .enumerate()
+    {
+        let (start, end) = (u.start, u.end.min(text.len()));
+        tracing::debug!(
+            file = p.file.path,
+            line = u.line,
+            path = %u.path.join("."),
+            "mode argument undecidable"
+        );
+        report.findings.push(PathFinding {
+            rule: LOG001,
+            severity: Severity::Unresolved,
+            file: p.file.path.to_owned(),
+            range: (start, end),
+            message: format!(
+                "`{}` ({}) takes a mode argument the analysis cannot decide, so whether it opens \
+                 for writing is unresolved; Agents: pass a literal mode or route output through \
+                 the logging layer. Humans: waive with `frob:waive LOG001 <reason>`.",
+                u.path.join("."),
+                group.atoms[u.atom].id
+            ),
+            reason: Some(UnresolvedReason::Fidelity),
+            anchor: format!("{}:universal-mode:{i}", p.file.path),
+        });
+    }
 }
 
 /// Run LOG001 and LOG002 over `files` with `opts`.
@@ -272,6 +409,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         if p.module {
             continue;
         }
+        cross_check(p, s, group, &mut report);
         for (i, u) in s.unresolved.iter().enumerate() {
             report.findings.push(PathFinding {
                 rule: LOG001,
@@ -316,4 +454,121 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         .sort_by(|a, b| (&a.file, a.rule, &a.anchor).cmp(&(&b.file, b.rule, &b.anchor)));
     tracing::debug!(findings = report.findings.len(), examined, "log pass done");
     report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::is_covered
+    #[test]
+    fn coverage_is_by_byte_overlap_not_line() {
+        // `print(1); print(2)`: the scanner hit only the first call, bytes 0..8.
+        let covered = [(0, 8)];
+        assert!(is_covered(&covered, 0, 8));
+        assert!(!is_covered(&covered, 10, 18), "same line, other bytes");
+        assert!(
+            !is_covered(&covered, 8, 10),
+            "touching ranges do not overlap"
+        );
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::line_covered
+    #[test]
+    fn spanless_calls_are_covered_by_line() {
+        let text = "a\nbb\nccc\n";
+        assert!(line_covered(text, &[(2, 4)], 2));
+        assert!(!line_covered(text, &[(2, 4)], 3));
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn csharp_console_calls_are_not_double_reported_by_the_cross_check() {
+        let text = "using System;\nclass A { void F() {\n Console.WriteLine(1);\n } }\n";
+        let files = [PathFile {
+            path: "A.cs",
+            language: Language::CSharp,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let uni = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(uni, 0, "{:?}", r.findings);
+        assert!(
+            r.findings.iter().any(|f| f.rule == LOG001),
+            "{:?}",
+            r.findings
+        );
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn csharp_second_call_on_a_line_is_byte_precise() {
+        let text =
+            "using System;\nclass A { void F() {\n Console.WriteLine(1); Console.Write(2);\n } }\n";
+        let files = [PathFile {
+            path: "A.cs",
+            language: Language::CSharp,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let uni = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(uni, 0, "{:?}", r.findings);
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::is_covered
+    #[test]
+    fn unknown_span_is_never_covered() {
+        assert!(!is_covered(&[(0, 100)], 5, 5));
+        assert!(!is_covered(&[(0, 100)], 0, 0));
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+    #[test]
+    fn analyze_runs_the_byte_precise_cross_check_without_panic() {
+        let text = "def f():\n    print(1); print(2)\n";
+        let files = [PathFile {
+            path: "a.py",
+            language: Language::Python,
+            text,
+        }];
+        let r = analyze(&files, &LogOptions::default());
+        let universal = r
+            .findings
+            .iter()
+            .filter(|f| f.anchor.contains(":universal:"))
+            .count();
+        assert_eq!(universal, 0, "scanner reports both calls: {:?}", r.findings);
+        let hits = r.findings.iter().filter(|f| f.rule == LOG001).count();
+        assert!(hits >= 2, "{:?}", r.findings);
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::uncovered_mode_calls
+    #[test]
+    fn undecidable_mode_is_listed_unless_scanner_covers_it() {
+        let cat = Catalogue::builtin().expect("catalogue");
+        let group = cat.groups.get("python").expect("python group");
+        let text = "def f(p, m):\n    open(p, m)\n";
+        let all = uncovered_mode_calls("python", "a.py", text, group, &[]);
+        assert_eq!(all.len(), 1, "undecidable mode must be listed");
+        let covered = [(all[0].start, all[0].end)];
+        let none = uncovered_mode_calls("python", "a.py", text, group, &covered);
+        assert!(none.is_empty(), "scanner-covered call is not duplicated");
+    }
+
+    // frob:tests crates/grimble-check/src/log/pass.rs::uncovered_mode_calls
+    #[test]
+    fn literal_mode_is_not_listed() {
+        let cat = Catalogue::builtin().expect("catalogue");
+        let group = cat.groups.get("python").expect("python group");
+        let text = "def f(p):\n    open(p, \"r\")\n";
+        assert!(uncovered_mode_calls("python", "a.py", text, group, &[]).is_empty());
+    }
 }

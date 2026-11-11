@@ -1109,3 +1109,18 @@ fn palette_modes_overlay_declared_names_and_reject_unknown_ones() {
 fn a_rules_table_loads_without_error() {
     ok(&with("[rules]\nramp = false"));
 }
+
+// frob:tests crates/crunk-spec/src/model.rs::DesignSpec.platforms_for
+// frob:tests crates/crunk-spec/src/model.rs::DesignSpec.cell_triples
+#[test]
+fn cell_triples_expand_tags_in_declaration_order() {
+    let screen = "[[screen]]\nid = \"home\"\nentry = \"/\"\napplies_to = [\"tag:d\", \"mob\"]\n[[screen.states]]\nid = \"a\"\n[[screen.states]]\nid = \"b\"\napplies_to = [\"tag:m\"]\ndiff_against = \"a\"\n";
+    let spec = ok(&gallery(screen));
+    let cell = |s: &str, p: &str| ("home".to_owned(), s.to_owned(), p.to_owned());
+    assert_eq!(
+        spec.cell_triples(),
+        [cell("a", "desk"), cell("a", "mob"), cell("b", "mob")]
+    );
+    assert_eq!(spec.platforms_for(None), ["desk", "mob"]);
+    assert_eq!(spec.platforms_for(Some(&vec!["tag:m".to_owned()])), ["mob"]);
+}

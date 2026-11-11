@@ -90,7 +90,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [COLOR001](COLOR001.md) | color-off-palette | error | manual | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
+| [COLOR001](COLOR001.md) | color-off-palette | error | deterministic | P+ | true | A colour literal in a stylesheet, a custom property or a JSX style prop must be a palette colour. |
 | [COLOR002](COLOR002.md) | undefined-token-reference | error | manual | P- | true | A `var(--color-x)` that looks like a design token must name a custom property that exists. Each |
 
 ## COMP
@@ -294,8 +294,8 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [LAYOUT001](LAYOUT001.md) | child-overflows-parent | error | manual | P+ | true | A scene node stays inside its parent's rectangle. Each block is one scene file under `design/scenes/` of a default-preset project; the scene is solved with the deterministic layout engine (T1) and every node's absolute rectangle is compared with its parent's. |
-| [LAYOUT002](LAYOUT002.md) | siblings-overlap | error | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene file under `design/scenes/`; siblings share a parent and their solved rectangles are compared pairwise. |
+| [LAYOUT001](LAYOUT001.md) | child-overflows-parent | error | manual | P+ | true | A scene node stays inside its parent's rectangle. Each block is one scene document (`design/scenes/*.scene.html`) of a default-preset project; the scene is solved with the crunk-layout solver (T1) and every node's absolute rectangle is compared with its parent's. |
+| [LAYOUT002](LAYOUT002.md) | siblings-overlap | error | manual | P+ | true | Sibling scene nodes do not cover one another. Each block is one scene document (`design/scenes/*.scene.html`) solved with the crunk-layout solver; siblings share a parent and their solved rectangles are compared pairwise. |
 | [LAYOUT003](LAYOUT003.md) | node-clipped-by-viewport | error | manual | P+ | true | No scene node extends past the viewport edge. Each block is one scene file under `design/scenes/`; every node's rectangle, the root included, is compared with the viewport the scene is solved against. |
 | [LAYOUT004](LAYOUT004.md) | content-outside-safe-area | error | manual | P+ | true | Text and interactive targets stay inside the safe area. Each block is one scene file under `design/scenes/`; the scene's `safe_area` is the inset from every viewport edge (notches, rounded corners, home indicators) that content must respect. |
 | [LAYOUT005](LAYOUT005.md) | target-below-minimum-size | error | manual | P+ | true | Interactive targets are large enough to hit. Each block is one scene file under `design/scenes/`; a node marked `"interactive": true` is a pointer or touch target. |
@@ -457,7 +457,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RADIUS001](RADIUS001.md) | radius-off-scale | error | manual | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
+| [RADIUS001](RADIUS001.md) | radius-off-scale | error | deterministic | P+ | true | Corner radii must be steps of the radius scale. Each block is one source file in a project whose |
 
 ## READ
 
@@ -489,7 +489,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [RESP001](RESP001.md) | breakpoint-without-scene | error | manual | P+ | true | Every declared breakpoint is solved by some scene. Each block is one scene file under `design/scenes/` of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the case's `config` selects whether scenes for the other breakpoints exist. |
+| [RESP001](RESP001.md) | root-wider-than-breakpoint | error | manual | P+ | true | A scene root fits every declared breakpoint. Each block is one scene document (`design/scenes/*.scene.html`) of a project whose `crunk.toml` declares `[breakpoints]` (`sm` 640, `md` 768, `lg` 1024); the scene is solved with the crunk-layout solver (T1) at each of those widths. |
 
 ## SCENE
 
@@ -517,7 +517,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SIZE001](SIZE001.md) | size-off-scale | error | manual | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
+| [SIZE001](SIZE001.md) | size-off-scale | error | deterministic | P+ | true | Box sizes must be steps of the sizes scale. Each block is one source file in a project whose |
 
 ## SLOP
 
@@ -529,7 +529,13 @@
 | [SLOP010](SLOP010.md) | font-unchosen | error | manual | P+ | false | Flags a literal `font-family` led by Inter, Roboto, Arial, system-ui or a second-wave default (Space Grotesk, Geist, Instrument Serif, Fraunces, Syne). `[decisions] fonts` records the rationale and silences it. Advisory: a chosen Inter is fine. |
 | [SLOP011](SLOP011.md) | font-not-shipped | error | manual | P+ | false | Flags a literal `font-family` or `--font-*` whose first family is not a generic or system face and that no `@font-face` defines. A project that loads fonts through Google Fonts, Bunny, `next/font` or `@fontsource` is exempt, as is a `[decisions] fonts` project. Warn. |
 | [SLOP014](SLOP014.md) | eyebrow-chrome | error | manual | P+ | false | Flags three or more short (four words or fewer) labels in an element marked `uppercase`, `eyebrow`, `kicker` or `overline` that sit directly above an `h1` or `h2`. `[decisions] eyebrows` silences it. Advisory. |
+| [SLOP020](SLOP020.md) | identical-icon-cards | error | manual | P+ | true | Three or more sibling cards that each run icon, heading, paragraph with one structure and one size. |
+| [SLOP021](SLOP021.md) | card-nesting | error | manual | P+ | true | A card nested three deep in cards, or a section whose children are mostly cards. |
 | [SLOP022](SLOP022.md) | uniform-radius | error | manual | P+ | false | Flags, once, three or more literal radii that share one value or that are 16px and larger in more than 60 percent of cases. Zero, percentages and `var()` radii are ignored. `[decisions] radius` silences it. Advisory. |
+| [SLOP026](SLOP026.md) | centred-long-text | error | manual | P+ | true | Running text over three lines (or 160 characters, unsolved) with `text-align: center`. |
+| [SLOP027](SLOP027.md) | one-section-layout | error | manual | P+ | true | Four or more consecutive sections with one layout fingerprint. |
+| [SLOP028](SLOP028.md) | flat-spacing-rhythm | error | manual | P+ | true | Identical vertical padding on four or more consecutive sections, or one spacing value on over 80 percent of spacing declarations. |
+| [SLOP029](SLOP029.md) | uniform-density | error | manual | P+ | true | Four or more consecutive sections whose solved heights differ by less than 1.75x. |
 | [SLOP040](SLOP040.md) | emoji-as-icon | error | manual | P+ | false | Flags a pictograph as the first character of an `li`, heading, `button` or `a` label in a JSX source, or at the start of a CSS `content` or `list-style` string. Numeric character references and CSS escapes are read as the character they name. `[decisions] emoji` silences it. Warn. |
 | [SLOP060](SLOP060.md) | buzzword-density | error | manual | P+ | false | Scores the literal text of a JSX source against a buzzword lexicon (seamless, unlock, elevate, supercharge, world-class and similar). Three or more hits at three or more per 100 words, over at least 30 words, fires once per source; a single hit never fires. `[decisions] voice` silences it. Advisory. |
 
@@ -537,7 +543,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SPACE001](SPACE001.md) | spacing-off-scale | error | manual | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
+| [SPACE001](SPACE001.md) | spacing-off-scale | error | deterministic | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
 
 ## STATE
 
@@ -574,6 +580,7 @@
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
 | [TEST001](TEST001.md) | tests-target-missing | error | manual | P+ | false | A `frob:tests` directive must name something the symbol graph can find. |
+| [TEST002](TEST002.md) | heavy-profile-stale | error | manual | P- | false | The committed `heavy-profile.toml` no longer matches the command telemetry it is derived from. |
 
 ## TESTQ
 
@@ -653,7 +660,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [TYPE001](TYPE001.md) | font-size-off-scale | error | manual | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
+| [TYPE001](TYPE001.md) | font-size-off-scale | error | deterministic | P+ | true | Font sizes must be steps of the type ramp. Each block is one source file in a project whose |
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | error | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 

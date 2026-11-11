@@ -21,6 +21,7 @@
 //! contested, hence the rules are Advisory and the callers decide severity.
 
 // frob:ticket 01M4D94YT06MB8AJ41XCC940D3
+// frob:ticket 01M6VRR46TR8D8C4TG0GYNK2NK
 
 use std::collections::{HashSet, VecDeque};
 
@@ -29,7 +30,8 @@ use tree_sitter::Node;
 
 use crate::res::{Certainty, ScanError, span, text};
 use crate::unity::named_children;
-use crate::unity_common::{Finding, live_named, walk};
+use crate::unity_common::{Finding, live_named, methods, walk};
+use crate::unity_model;
 
 /// The rule id of a lookup in hot code.
 pub const RULE_LOOKUP: &str = "UNITY201";
@@ -263,15 +265,6 @@ fn is_lazy_cache(n: Node<'_>, lazy: bool, field_types: &[(String, String)], src:
     field_types.iter().any(|(name, _)| name == left) && (op == "??=" || (lazy && op == "="))
 }
 
-/// The class's methods, in source order, as `(name, node)`.
-fn methods<'t>(body: Node<'t>, src: &str) -> Vec<(String, Node<'t>)> {
-    live_named(body, src, &[])
-        .into_iter()
-        .filter(|m| m.kind() == "method_declaration")
-        .filter_map(|m| Some((text(m.child_by_field_name("name")?, src).to_owned(), m)))
-        .collect()
-}
-
 /// True for a `static` method or an `IEnumerator` coroutine.
 fn is_static(m: Node<'_>, src: &str) -> bool {
     named_children(m)
@@ -286,14 +279,14 @@ fn is_coroutine(m: Node<'_>, src: &str) -> bool {
 }
 
 /// Scans one class declaration.
-fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Finding>) {
+fn scan_class(class: Node<'_>, src: &str, spans: &[(usize, usize)], out: &mut Vec<Finding>) {
     let Some(body) = class.child_by_field_name("body") else {
         return;
     };
     if is_static(class, src) {
         return;
     }
-    let methods = methods(body, src);
+    let methods = unity_model::gated(methods(body, src), spans);
     let own: HashSet<String> = methods.iter().map(|(n, _)| n.clone()).collect();
     let field_types = fields(body, src);
     let mut seen: HashSet<usize> = HashSet::new();
@@ -379,9 +372,10 @@ fn scan_class(class: Node<'_>, src: &str, out: &mut Vec<Finding>) {
 /// [`ScanError::Parse`] when the file does not parse within the limits.
 pub fn scan(language: Language, src: &str) -> Result<Vec<Finding>, ScanError> {
     let mut out = Vec::new();
+    let spans = unity_model::spans_for(language, src)?;
     walk(language, src, &[], |n| {
         if n.kind() == "class_declaration" {
-            scan_class(n, src, &mut out);
+            scan_class(n, src, &spans, &mut out);
         }
     })?;
     out.sort_by_key(|f| f.range.start());

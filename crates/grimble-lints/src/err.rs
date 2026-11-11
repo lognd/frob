@@ -1,13 +1,21 @@
 //! Swallowed-error sites: `ERR001`, `ERR002` and `ERR003` (lint catalogue row K01).
+//!
+//! Discovery runs through the universal model (`gob_symbols::model_of_source_at`): handlers are
+//! the `except_clause` / `catch_clause` nodes, a Rust `Err(..) => ..` arm is a `bind(pattern)`,
+//! an `if let Err(..)` is an `if_expression`, a `let _ = ..` is a `bind(let)` whose rhs is an
+//! `apply`, and the functions that declare fallibility are `unit(function|method)` nodes. The
+//! judgements the model cannot express yet stay on the text of the node's span (see
+//! docs/design/grimble/lint-classification.md section 3): whether a handler header catches
+//! everything, whether a body is empty, rethrows or logs, and whether a signature returns a
+//! `Result`.
 
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
 
 use std::collections::BTreeMap;
 
-use gob_languages::{
-    Capture, Language, ParseLimits, ParseResult, ParsedTree, QueryError, captures, compiled_query,
-    parse,
-};
+use gob_ir::{Location, NodeId, Operator, Term, Universal};
+use gob_languages::Language;
+use gob_symbols::model_of_source_at;
 use gob_text::TextRange;
 
 /// Which swallowed-error shape a site is.
@@ -55,50 +63,58 @@ pub struct Site {
 /// Why a file could not be scanned.
 #[derive(Debug, thiserror::Error)]
 pub enum ScanError {
-    /// The file did not parse within the limits, or its grammar is not built in.
-    #[error("E-ERR-PARSE: {0}")]
-    Parse(String),
-    /// A built-in query failed to compile.
-    #[error("E-ERR-QUERY: {0}")]
-    Query(#[from] QueryError),
+    /// The universal model of the file could not be built (an adapter bug).
+    #[error("E-ERR-MODEL: {0}")]
+    Model(String),
 }
 
-/// Handlers and `let` statements, one query per language.
-fn query_for(language: Language) -> Option<&'static str> {
+/// The adapter path whose extension selects the fold for `language`, if a detector exists.
+fn model_path(language: Language) -> Option<&'static str> {
     match language {
-        Language::Rust => Some(
-            "(match_arm) @handler (if_expression) @handler (let_declaration) @let (function_item) @fn",
-        ),
-        Language::Python => Some("(except_clause) @handler"),
-        Language::TypeScript | Language::CSharp => Some("(catch_clause) @handler"),
+        Language::Rust => Some("err.rs"),
+        Language::Python => Some("err.py"),
+        Language::TypeScript => Some("err.ts"),
+        Language::CSharp => Some("err.cs"),
         _ => None,
     }
 }
 
+/// A node of the universal term with the text its span covers.
+#[derive(Clone, Copy)]
+struct Span<'t> {
+    range: TextRange,
+    text: &'t str,
+}
+
+/// The span of node `id` in `text`, if it carries a text location that slices `text`.
+fn span_of<'t>(term: &Term, id: NodeId, text: &'t str) -> Option<Span<'t>> {
+    let Location::Text { range, .. } = term.node(id).location() else {
+        return None;
+    };
+    let slice = text.get(u32::from(range.start()) as usize..u32::from(range.end()) as usize)?;
+    Some(Span {
+        range: *range,
+        text: slice,
+    })
+}
+
 /// Every swallowed-error site of `text` parsed as `language`, in source order.
 ///
-/// A language without a detector yields no sites. A tree with syntax errors is still scanned.
+/// A language without a detector yields no sites. Source with syntax errors is still scanned.
 ///
 /// # Errors
 ///
-/// [`ScanError`] when the file does not parse or a query does not compile.
+/// [`ScanError`] when the universal model cannot be built.
 pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
-    let Some(source) = query_for(language) else {
+    let Some(path) = model_path(language) else {
         return Ok(Vec::new());
     };
-    let tree = match parse(language, text, &ParseLimits::default()) {
-        ParseResult::Parsed(tree) => tree,
-        ParseResult::Unresolved(u) => return Err(ScanError::Parse(u.reason.to_string())),
-    };
-    let query = compiled_query(language, source)?;
-    let caps: Vec<Capture> = captures(query, &tree).collect();
+    let model = model_of_source_at(path, text).map_err(|e| ScanError::Model(e.to_string()))?;
+    let term = model.term();
     let mut sites = if language == Language::Rust {
-        rust_sites(&tree, &caps)
+        rust_sites(term, text)
     } else {
-        caps.iter()
-            .filter(|c| c.name == "handler")
-            .filter_map(|c| handler_site(language, c))
-            .collect()
+        handler_sites(language, term, text)
     };
     sites.sort_by_key(|s| (s.range.start(), s.kind));
     sites.dedup();
@@ -110,10 +126,24 @@ pub fn scan(language: Language, text: &str) -> Result<Vec<Site>, ScanError> {
     Ok(sites)
 }
 
-fn site(kind: Kind, c: &Capture, certainty: Certainty) -> Site {
+/// The Python, TypeScript or C# handlers of the model that swallow the error.
+fn handler_sites(language: Language, term: &Term, text: &str) -> Vec<Site> {
+    term.ids()
+        .filter(|id| {
+            matches!(
+                term.node(*id).op(),
+                Operator::Adapter(a) if matches!(a.name.as_str(), "except_clause" | "catch_clause")
+            )
+        })
+        .filter_map(|id| span_of(term, id, text))
+        .filter_map(|sp| handler_site(language, sp))
+        .collect()
+}
+
+fn site(kind: Kind, sp: Span<'_>, certainty: Certainty) -> Site {
     Site {
         kind,
-        range: c.node_range,
+        range: sp.range,
         certainty,
     }
 }
@@ -207,8 +237,8 @@ fn catch_all(language: Language, header: &str) -> bool {
 }
 
 /// The site of one Python, TypeScript or C# handler, if it swallows the error.
-fn handler_site(language: Language, c: &Capture) -> Option<Site> {
-    let (header, body) = split(language, &c.text);
+fn handler_site(language: Language, sp: Span<'_>) -> Option<Site> {
+    let (header, body) = split(language, sp.text);
     if !catch_all(language, header) {
         return None;
     }
@@ -220,9 +250,9 @@ fn handler_site(language: Language, c: &Capture) -> Option<Site> {
                 .lines()
                 .all(|l| matches!(l.trim(), "pass" | "..." | "")));
     if empty {
-        Some(site(Kind::EmptyHandler, c, Certainty::Certain))
+        Some(site(Kind::EmptyHandler, sp, Certainty::Certain))
     } else if !rethrows_or_logs(&body) {
-        Some(site(Kind::SilentCatchAll, c, Certainty::Certain))
+        Some(site(Kind::SilentCatchAll, sp, Certainty::Certain))
     } else {
         None
     }
@@ -253,10 +283,20 @@ const KNOWN_FALLIBLE: &[&str] = &[
     "writeln!",
 ];
 
-fn declared_fns(caps: &[Capture]) -> BTreeMap<String, Declared> {
+/// The declared fallibility of every function and method unit of the model, by name.
+fn declared_fns(term: &Term, text: &str) -> BTreeMap<String, Declared> {
     let mut out: BTreeMap<String, Declared> = BTreeMap::new();
-    for c in caps.iter().filter(|c| c.name == "fn") {
-        let sig = c.text.split(['{', ';']).next().unwrap_or("");
+    for id in term.ids() {
+        let Operator::Universal(Universal::Unit { kind, .. }) = term.node(id).op() else {
+            continue;
+        };
+        if !matches!(kind.as_str(), "function" | "method") {
+            continue;
+        }
+        let Some(sp) = span_of(term, id, text) else {
+            continue;
+        };
+        let sig = sp.text.split(['{', ';']).next().unwrap_or("");
         let Some(name) = sig.split("fn ").nth(1).and_then(|s| {
             s.split(|ch: char| !ch.is_alphanumeric() && ch != '_')
                 .next()
@@ -342,38 +382,79 @@ fn rust_empty_err(text: &str) -> bool {
     inner.is_some_and(str::is_empty) || arm == "()"
 }
 
-fn rust_sites(tree: &ParsedTree, caps: &[Capture]) -> Vec<Site> {
-    let declared = declared_fns(caps);
-    let mut out = Vec::new();
-    for c in caps {
-        match c.name.as_str() {
-            "handler" if rust_empty_err(&c.text) => {
-                out.push(site(Kind::EmptyHandler, c, Certainty::Certain));
+/// The last path segment of a callee head name (`a::b` and `.send` both end in their member).
+fn last_segment(head: &str) -> &str {
+    head.rsplit(['.', ':']).next().unwrap_or(head)
+}
+
+/// The name the right-hand side `id` of a `let` calls: a call or method head from the model, or
+/// `name!` for a macro (read from the macro's text, which the model keeps as a `phase`).
+fn rhs_callee(term: &Term, id: NodeId, text: &str) -> Option<String> {
+    match term.node(id).op() {
+        Operator::Universal(Universal::Apply { kind }) if kind != "new" => {
+            let head = *term.node(id).children().first()?;
+            match term.node(head).op() {
+                Operator::Universal(Universal::Ref { name }) => Some(last_segment(name).to_owned()),
+                _ => None,
             }
-            "let" => {
-                let Some(rest) = c.text.strip_prefix("let _") else {
-                    continue;
-                };
-                if !rest.starts_with([' ', ':', '=']) {
-                    continue;
+        }
+        Operator::Universal(Universal::Phase { kind }) if kind == "macro" => {
+            callee(span_of(term, id, text)?.text)
+        }
+        Operator::Adapter(a) if a.name == "await_expression" => {
+            rhs_callee(term, *term.node(id).children().first()?, text)
+        }
+        _ => None,
+    }
+}
+
+/// The `ERR002` site of the `bind(let)` node `id`, if it discards a call's result.
+fn discarded_let(
+    term: &Term,
+    id: NodeId,
+    text: &str,
+    declared: &BTreeMap<String, Declared>,
+) -> Option<Site> {
+    let sp = span_of(term, id, text)?;
+    let rest = sp.text.strip_prefix("let _")?;
+    if !rest.starts_with([' ', ':', '=']) {
+        return None;
+    }
+    let rhs_group = *term.node(id).children().get(1)?;
+    let rhs = *term.node(rhs_group).children().last()?;
+    let name = rhs_callee(term, rhs, text)?;
+    let certainty = match declared.get(&name) {
+        Some(Declared::Fallible) => Certainty::Certain,
+        Some(Declared::Infallible) => return None,
+        None if KNOWN_FALLIBLE.contains(&name.as_str()) => Certainty::Certain,
+        Some(Declared::Mixed) | None => Certainty::Unknown,
+    };
+    Some(site(Kind::DiscardedResult, sp, certainty))
+}
+
+/// The Rust sites of the model: empty `Err` arms and `if let Err`, and discarded results.
+fn rust_sites(term: &Term, text: &str) -> Vec<Site> {
+    let declared = declared_fns(term, text);
+    let mut out = Vec::new();
+    for id in term.ids() {
+        match term.node(id).op() {
+            Operator::Universal(Universal::Bind { kind, .. }) if kind == "pattern" => {
+                if let Some(sp) = span_of(term, id, text).filter(|sp| rust_empty_err(sp.text)) {
+                    out.push(site(Kind::EmptyHandler, sp, Certainty::Certain));
                 }
-                let Some((_, expr)) = rest.split_once('=') else {
-                    continue;
-                };
-                let expr = expr.trim().trim_end_matches(';').trim();
-                let Some(name) = callee(expr) else { continue };
-                let certainty = match declared.get(&name) {
-                    Some(Declared::Fallible) => Certainty::Certain,
-                    Some(Declared::Infallible) => continue,
-                    None if KNOWN_FALLIBLE.contains(&name.as_str()) => Certainty::Certain,
-                    Some(Declared::Mixed) | None => Certainty::Unknown,
-                };
-                out.push(site(Kind::DiscardedResult, c, certainty));
+            }
+            Operator::Adapter(a) if a.name == "if_expression" => {
+                if let Some(sp) = span_of(term, id, text).filter(|sp| rust_empty_err(sp.text)) {
+                    out.push(site(Kind::EmptyHandler, sp, Certainty::Certain));
+                }
+            }
+            Operator::Universal(Universal::Bind { kind, .. }) if kind == "let" => {
+                out.extend(discarded_let(term, id, text, &declared));
             }
             _ => {}
         }
     }
-    tracing::trace!(bytes = tree.text.len(), found = out.len(), "rust sites");
+    tracing::trace!(bytes = text.len(), found = out.len(), "rust sites");
     out
 }
 
@@ -514,6 +595,52 @@ mod tests {
     fn a_discarded_result_is_certain_when_known_and_unknown_otherwise_part_4() {
         let plain = "fn count() -> u8 { 1 }\nfn f() { let _ = count(); let _ = value; }\n";
         assert!(kinds(Language::Rust, plain).is_empty());
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn a_discarded_method_and_macro_call_are_certain() {
+        let certain = [(Kind::DiscardedResult, Certainty::Certain)];
+        let method = "struct S;\nimpl S { fn save(&self) -> Result<(), E> { Ok(()) } }\nfn f(s: S) { let _ = s.save(); }\n";
+        assert_eq!(kinds(Language::Rust, method), certain);
+        let mac = "fn f(w: W) { let _ = writeln!(w, \"x\"); }\n";
+        assert_eq!(kinds(Language::Rust, mac), certain);
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn a_discarded_awaited_call_is_unknown() {
+        let unknown = [(Kind::DiscardedResult, Certainty::Unknown)];
+        let awaited = "async fn f() { let _ = mystery().await; }\n";
+        assert_eq!(kinds(Language::Rust, awaited), unknown);
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn a_qualified_call_is_certain_and_a_propagated_one_is_not_flagged() {
+        let qualified = "fn f() { let _ = std::fs::remove_file(p); }\n";
+        assert_eq!(
+            kinds(Language::Rust, qualified),
+            [(Kind::DiscardedResult, Certainty::Certain)]
+        );
+        let propagated = "fn f() -> Result<(), E> { let _ = mystery()?; Ok(()) }\n";
+        assert!(kinds(Language::Rust, propagated).is_empty());
+    }
+
+    // frob:tests crates/grimble-lints/src/err.rs::scan
+    #[test]
+    fn an_empty_if_let_err_is_flagged_and_one_with_an_else_is_not() {
+        assert_eq!(
+            kinds(Language::Rust, "fn f(r: R) { if let Err(_) = r { } }\n"),
+            ONE_EMPTY
+        );
+        assert!(
+            kinds(
+                Language::Rust,
+                "fn f(r: R) { if let Err(_) = r { } else { g(); } }\n"
+            )
+            .is_empty()
+        );
     }
 
     #[test]

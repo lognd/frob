@@ -105,6 +105,9 @@ pub enum EditError {
     /// The patched file no longer satisfies its schema.
     #[error("the patched file is invalid, nothing written: {0}")]
     Schema(String),
+    /// The write failed and the file was rolled back.
+    #[error("{0}")]
+    Write(String),
 }
 
 impl EditError {
@@ -116,6 +119,7 @@ impl EditError {
             Self::Read(..) => "E-EDIT-READ",
             Self::Patch(_) => "E-EDIT-PATCH",
             Self::Schema(_) => "E-EDIT-SCHEMA",
+            Self::Write(_) => "E-EDIT-WRITE",
         }
     }
 }
@@ -148,39 +152,58 @@ impl Command for Edit {
         let root = gob_product::workspace::locate_root(PRODUCT, &ctx.cwd);
         let path = crunk_spec::normalize_join(&ctx.cwd, &self.file);
         let patch_path = crunk_spec::normalize_join(&ctx.cwd, &self.patch);
-        let plan = plan(&root, &path, &patch_path)?;
-        let mut data = plan.data(&root, &path, ctx.dry_run);
-        if plan.changed && !ctx.dry_run {
-            let change = Change {
-                path: path.clone(),
-                before: Some(plan.before.clone()),
-                after: plan.after.clone(),
-                kind: "edit",
-                replacements: plan.ops,
-            };
-            commit_atomic(&[change]).map_err(|e| {
-                Refusal::new(
-                    "E-EDIT-WRITE",
-                    RefusalClass::GuardNeedsAction,
-                    e.to_string(),
-                )
-                .with_remedy("fix the file permissions; the file was rolled back")
-            })?;
-            tracing::info!(file = %data.file, ops = plan.ops, "edit: written");
-            data.findings_checked = true;
-            match touched_findings(&root, &data.file, &plan.after, &plan.touched) {
-                Ok(f) => data.findings = f,
-                Err(e) => {
-                    tracing::warn!(error = %e, "edit: check failed after write");
-                    data.check_error = Some(e);
-                }
-            }
-        } else {
-            tracing::info!(changed = plan.changed, "edit: nothing written");
-        }
+        let patch_text = read_text(&patch_path)?;
+        let data = apply_patch_text(&root, &path, &patch_text, ctx.dry_run)?;
         let lines = data.lines();
         Ok(Payload::new(data).with_rendered(lines))
     }
+}
+
+/// Read a file as text, naming the path in the error.
+fn read_text(path: &Path) -> Result<String, EditError> {
+    std::fs::read_to_string(path)
+        .map_err(|e| EditError::Read(path.to_string_lossy().into_owned(), e.to_string()))
+}
+
+/// Apply the RFC 6902 patch `patch_text` to the design file `path` under `root`.
+///
+/// The one edit engine: the CLI verb and the serve patch tool both call it. Nothing is written
+/// when the patch does not apply or the result fails the file kind's schema; a dry run plans and
+/// reports without writing.
+///
+/// # Errors
+///
+/// [`EditError`] for a bad target, unreadable file, failing patch, schema failure or write failure.
+pub fn apply_patch_text(
+    root: &Path,
+    path: &Path,
+    patch_text: &str,
+    dry_run: bool,
+) -> Result<EditData, EditError> {
+    let plan = plan(root, path, patch_text)?;
+    let mut data = plan.data(root, path, dry_run);
+    if plan.changed && !dry_run {
+        let change = Change {
+            path: path.to_path_buf(),
+            before: Some(plan.before.clone()),
+            after: plan.after.clone(),
+            kind: "edit",
+            replacements: plan.ops,
+        };
+        commit_atomic(&[change]).map_err(|e| EditError::Write(e.to_string()))?;
+        tracing::info!(file = %data.file, ops = plan.ops, "edit: written");
+        data.findings_checked = true;
+        match touched_findings(root, &data.file, &plan.after, &plan.touched) {
+            Ok(f) => data.findings = f,
+            Err(e) => {
+                tracing::warn!(error = %e, "edit: check failed after write");
+                data.check_error = Some(e);
+            }
+        }
+    } else {
+        tracing::info!(changed = plan.changed, "edit: nothing written");
+    }
+    Ok(data)
 }
 
 impl EditData {
@@ -502,14 +525,10 @@ fn tabulate(table: &mut toml_edit::Table) {
 }
 
 /// Read, patch and validate; nothing is written.
-fn plan(root: &Path, path: &Path, patch_path: &Path) -> Result<Plan, EditError> {
+fn plan(root: &Path, path: &Path, patch_text: &str) -> Result<Plan, EditError> {
     let kind = kind_of(root, path)?;
-    let read = |p: &Path| {
-        std::fs::read_to_string(p)
-            .map_err(|e| EditError::Read(p.to_string_lossy().into_owned(), e.to_string()))
-    };
-    let before = read(path)?;
-    let ops = patch::parse_ops(&read(patch_path)?)?;
+    let before = read_text(path)?;
+    let ops = patch::parse_ops(patch_text)?;
     let doc: Node = toml_edit::de::from_str(&before)
         .map_err(|e| EditError::Schema(format!("the file is not valid TOML: {e}")))?;
     let (patched, touched) = patch::apply(&doc, &ops)?;

@@ -83,6 +83,9 @@ fn list_cells(row: &ListRow) -> Vec<String> {
     if s.blocked {
         cells.push("[blocked]".to_owned());
     }
+    if row.may_be_taken {
+        cells.push("[may-be-taken]".to_owned());
+    }
     if let Some(until) = &row.snoozed_until {
         cells.push(format!("[snoozed until {}]", day(&until.to_string())));
     }

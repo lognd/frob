@@ -176,7 +176,7 @@ impl LogTable {
 }
 
 /// The warning printed when packs are requested but not loaded.
-pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs and the lock are not loaded, and only PACK005 and PACK006 are evaluated";
+pub const PACKS_NOT_LOADED: &str = "packs are enabled in grimble.toml but this build loads only local/ packs (atoms); external packs and the lock are not loaded, and only PACK005, PACK006 and the core-effects PACK001 lock drift are evaluated";
 
 /// The conventional model root `grimble init` seeds and the `models` knob defaults to.
 pub const DEFAULT_MODEL_ROOT: &str = "design/model.grmb";

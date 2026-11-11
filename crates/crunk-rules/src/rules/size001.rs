@@ -3,6 +3,7 @@
 //! `[scales] sizes` falls back to `spacing` when empty, and the suggested token names follow the
 //! scale in use (`--size-*` or `--space-*`). Warn by default.
 
+// frob:ticket 01M54H34N0CPKAZ7TP91EYXGVV
 // frob:ticket 01M43ATBDWVSJBXP7TEQ6DBW3W
 
 use crunk_spec::naming::{size_token, space_token};
@@ -21,7 +22,7 @@ use crate::sheets::examined_sheets;
     polarity = Pplus,
     must_measure = true,
     scope = Repo,
-    fix = Manual,
+    fix = Deterministic,
     applies = universal(needs = [Style], min_fidelity = F1),
     host = CrunkHost,
     version = 1,

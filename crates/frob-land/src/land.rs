@@ -111,9 +111,22 @@ fn settled_by_a_racing_land(
     opts: &LandOptions,
 ) -> Option<LandOutcome> {
     let site = Workspace::open_repo(repo.clone(), clock.clone()).ok()?;
-    let view = site.ledger.show(id).ok()?;
+    let mut view = site.ledger.show(id).ok()?;
     if view.summary.category != Category::Done {
-        return None;
+        // The winner may still be mid-land (the close staged in the shared worktree, so a loser's
+        // cleanliness check failed): queue on the land lock until it finishes, then judge again.
+        let held = LandLock::acquire(
+            repo.common_dir(),
+            Duration::from_secs(opts.wait_secs),
+            "settling a failed land",
+        )
+        .ok()?;
+        tracing::info!(ticket = %id, "land failed; re-reading the ledger once the land lock is free");
+        view = site.ledger.show(id).ok()?;
+        drop(held);
+        if view.summary.category != Category::Done {
+            return None;
+        }
     }
     tracing::info!(ticket = %id, "land failed but the ticket is done: a racing land won; reporting a no-op");
     Some(already_done(&view, id, &view.summary.handle, base, opts))

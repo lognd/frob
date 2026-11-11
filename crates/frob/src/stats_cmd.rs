@@ -146,8 +146,7 @@ pub(crate) fn ticket_facts(ledger: &frob_ledger::Ledger) -> Result<Vec<TicketFac
             created: s.created.unix(),
             started: transition_to(Category::InProgress).min(),
             done_at: transition_to(Category::Done).max(),
-            // frob:todo 01M59VC5Y4HWJYV4KWSM02ESM8 token spend is not recorded on tickets yet; cost reports wall-clock only.
-            tokens: None,
+            tokens: frob_ledger::event::usage_total(&evs),
         });
     }
     tracing::debug!(count = out.len(), "ticket facts gathered");

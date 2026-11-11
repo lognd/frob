@@ -197,6 +197,43 @@ fn org004_flags_definitions_outside_tokens_only() {
     assert!(Org004.inapplicable(&off).is_some());
 }
 
+// frob:tests crates/crunk-rules/src/rules/org001.rs::Org001
+#[test]
+fn org001_is_not_exempted_by_org_ignore() {
+    // [org].ignore feeds only the outside-css_root scan (ORG005); a stray inside css_root fires.
+    let host = support::project_with_spec(
+        &with_org("ignore = [\"styles/**\"]"),
+        "styles/misc/stray.css",
+        ".a { margin: 0; }\n",
+    );
+    assert_eq!(support::run::<Org001>(&host).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/org004.rs::Org004
+#[test]
+fn org004_exempts_the_tokens_sheet_and_ignores_org_ignore() {
+    let tokens = css("styles/tokens.css", ":root { --space-12: 12px; }\n");
+    assert!(support::run::<Org004>(&tokens).is_empty());
+    let ignored = support::project_with_spec(
+        &with_org("ignore = [\"styles/**\"]"),
+        "styles/components/card.css",
+        ".card { --gap: 4px; }\n",
+    );
+    assert_eq!(support::run::<Org004>(&ignored).len(), 1);
+}
+
+// frob:tests crates/crunk-rules/src/rules/org002.rs::Org002
+#[test]
+fn org002_ignores_model_and_org_ignore() {
+    let host = support::project_with_spec(
+        &with_org("model = \"utility-first\"\nignore = [\"styles/**\"]"),
+        "styles/components/card.css",
+        ".Card_Title { margin: 0; }\n",
+    );
+    assert!(Org002.inapplicable(&host).is_none());
+    assert_eq!(support::run::<Org002>(&host).len(), 1);
+}
+
 // frob:tests crates/crunk-rules/src/rules/org005.rs::Org005
 #[test]
 fn org005_names_the_file_and_the_css_root() {

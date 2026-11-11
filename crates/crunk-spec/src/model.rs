@@ -273,6 +273,40 @@ pub fn normalize_join(base: &Path, rel: &str) -> PathBuf {
 }
 
 impl DesignSpec {
+    // frob:ticket 01M6YTV82ECZNYWGGVMZS38FNS
+    /// The platform ids `names` selects (ids or `tag:<tag>`) in declaration order; `None` selects all.
+    pub fn platforms_for(&self, names: Option<&Vec<String>>) -> Vec<String> {
+        let picked = |p: &PlatformConfig| {
+            names.is_none_or(|ns| {
+                ns.iter().any(|n| match n.strip_prefix("tag:") {
+                    Some(tag) => p.tags.iter().any(|t| t == tag),
+                    None => *n == p.id,
+                })
+            })
+        };
+        self.platforms
+            .values()
+            .filter(|p| picked(p))
+            .map(|p| p.id.clone())
+            .collect()
+    }
+
+    // frob:ticket 01M6YTV82ECZNYWGGVMZS38FNS
+    /// Every `(screen, state, platform)` id triple: screens, then states, then platforms, in declaration order.
+    pub fn cell_triples(&self) -> Vec<(String, String, String)> {
+        let mut out = Vec::new();
+        for screen in self.screens.values() {
+            for state in &screen.states {
+                let names = state.applies_to.as_ref().or(screen.applies_to.as_ref());
+                for platform in self.platforms_for(names) {
+                    out.push((screen.id.clone(), state.id.clone(), platform));
+                }
+            }
+        }
+        tracing::debug!(cells = out.len(), "spec cell triples enumerated");
+        out
+    }
+
     /// The effective severity of `rule`: catalog default, overridden by `[lint]`.
     pub fn severity(&self, rule: &str) -> Severity {
         self.lint

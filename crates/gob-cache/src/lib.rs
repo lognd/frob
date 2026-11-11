@@ -236,7 +236,10 @@ fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
     for (i, sql) in MIGRATIONS.iter().enumerate().skip(current) {
         tx.execute_batch(sql)?;
         tx.execute("DELETE FROM schema_version", [])?;
-        tx.execute("INSERT INTO schema_version(version) VALUES (?1)", [i + 1])?;
+        tx.execute(
+            "INSERT INTO schema_version(version) VALUES (?1)",
+            [i64::try_from(i + 1).unwrap_or(i64::MAX)],
+        )?;
         tracing::info!(from = i, to = i + 1, "cache schema migrated");
     }
     tx.commit()
@@ -642,7 +645,9 @@ impl Cache {
     /// Row counts per table (zeros and `null = true` for the null cache).
     pub fn stats(&self) -> CacheStats {
         let count = |c: &Connection, t: &str| -> rusqlite::Result<u64> {
-            c.query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))
+            let n: i64 = c.query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))?;
+            // COUNT(*) is never negative.
+            Ok(u64::try_from(n).unwrap_or(0))
         };
         self.with("stats", |c| {
             Ok(CacheStats {

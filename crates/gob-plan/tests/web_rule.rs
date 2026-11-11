@@ -9,9 +9,9 @@ mod support;
 
 use gob_ir::markup::{self, ELEMENT, TAG};
 use gob_ir::style;
-use gob_ir::{NodeId, Operator, Truth};
+use gob_ir::{GroupOrder, Model, NodeId, NodeSpec, Operator, Truth};
 use gob_plan::catalog;
-use gob_plan::exec::{Input, run};
+use gob_plan::exec::{BUCKET_ATTR, COMPONENT_ATTR, Input, run};
 use gob_plan::plan::{CmpOp, Polarity, Quant};
 use support::{Doc, PlanBuilder};
 
@@ -198,4 +198,61 @@ fn bucket_and_component_read_the_file_path_parts() {
     )
     .unwrap();
     assert_eq!(out.rows.len(), 1, "the stem is the component");
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+// frob:ticket 01M5ETSE6D7CPPAVBD4KEM6AX5
+#[test]
+fn host_stamped_bucket_and_component_override_the_path() {
+    let build = |bucket: &str, component: &str| {
+        let mut d = Doc::new("css/nested/deep/card.css", "css");
+        let prop = d.add(style::class_selector_op(), Some("gap"), &[]);
+        d.at += 1;
+        let (lo, hi) = (d.at, d.at + 1);
+        let root = d.at_range(
+            |loc| {
+                NodeSpec::new(Operator::group(GroupOrder::Sequence), loc)
+                    .attr(BUCKET_ATTR, bucket)
+                    .attr(COMPONENT_ATTR, component)
+            },
+            lo,
+            hi,
+            &[prop],
+        );
+        let term = d.tb.finish(root).unwrap();
+        Model::lexical(term)
+    };
+    let rows = |model: &Model, field: &str, want: &str| {
+        let mut b = PlanBuilder::new("ORG003", Polarity::Pplus);
+        let p = b.find("class_selector");
+        let (f, lit) = (b.field(p, field), b.str_lit(want));
+        let eq = b.cmp(f, CmpOp::Eq, lit);
+        b.clause(eq);
+        b.report(None, p, "matched");
+        let input = Input {
+            model,
+            source: None,
+        };
+        run(&b.build(), &input).unwrap().rows.len()
+    };
+
+    let placed = build("components", "card");
+    assert_eq!(
+        rows(&placed, "file.bucket", "components"),
+        1,
+        "stamp beats the parent dir"
+    );
+    assert_eq!(rows(&placed, "file.component", "card"), 1);
+
+    let stray = build("", "");
+    assert_eq!(
+        rows(&stray, "file.bucket", "deep"),
+        0,
+        "empty stamp means no bucket"
+    );
+    assert_eq!(
+        rows(&stray, "component", "card"),
+        0,
+        "empty stamp means no component"
+    );
 }

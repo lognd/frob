@@ -2,25 +2,19 @@
 # cannot express them yet. Each names the missing construct (feeds the owner decision on
 # value-domain predicates). Shared blockers, true for every rule below:
 #   host-input  the rules read CrunkHost (spec + stylesheet index), not a code-model node tree
-#   side-schema (typing resolved: ConfigSchema types config.layers and config.org from
-#               docs/schemas/crunk.json when passed that schema; wiring it into the pack remains)
-#   gen-target  cargo dev gen rules emits only the std pack against the gob host
-
-[[exception]]
-rule = "LAYER001"
-missing = "value-domain predicate: parse a declaration value as an integer (with the keyword auto exempt) and test membership in the config.layers value set"
+#               (the executor's Input and Relations are host independent; the crunk host must
+#               still stamp the relations a rule reads, tracked by the follow-up ticket)
+# Ported to GRL (packs/crunk-core/rules): LAYER001, ORG002.
+# Resolved: side-schema (crunk.json types config.layers and config.org and is wired into
+# `gen std-rules` for this pack) and gen-target (`gen std-rules` now emits per pack).
 
 [[exception]]
 rule = "ORG001"
-missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column, no css_root-relative path attribute)"
-
-[[exception]]
-rule = "ORG002"
-missing = "a BEM segment-split plus per-segment case predicate keyed by config.org.class_case (value-domain predicate over an enum-selected grammar)"
+missing = "stylesheet-path predicate: a file under css_root that sits in no config.org.buckets directory (no glob-membership over a side-relation column; the css_root-relative bucket now exists as the host-stamped file.bucket attribute)"
 
 [[exception]]
 rule = "ORG003"
-missing = "the component-prefix test (name equals file.component or starts with component__ or component--) has no GRL form; file.bucket and file.component exist now"
+missing = "the component-prefix test (name equals file.component or starts with component__ or component--) has no GRL form; file.bucket and file.component exist now, css_root-relative when the host stamps them"
 
 [[exception]]
 rule = "ORG004"

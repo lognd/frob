@@ -26,6 +26,16 @@ impl ObligationHost for FrobInputs {
     fn obligations(&self) -> ObligationInputs<'_> {
         FrobInputs::obligations(self)
     }
+
+    // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
+    fn has_test_capable_files(&self) -> bool {
+        self.test_capable_files > 0
+    }
+
+    // frob:ticket 01M561ZF9TSJF59M2CAXW3KTP0
+    fn ledger_facts(&self) -> Option<LedgerView<'_>> {
+        Some(LedgerHost::ledger_view(self))
+    }
 }
 
 impl AckHost for FrobInputs {
@@ -45,6 +55,11 @@ impl TestsHost for FrobInputs {
 
     fn read_source(&self, path: &str) -> Option<String> {
         self.test_sources.get(path).cloned()
+    }
+
+    // frob:ticket 01M4P2N1XMDZAGS1EAZPR6WQMQ
+    fn repo_root(&self) -> Option<&std::path::Path> {
+        Some(&self.root)
     }
 }
 

@@ -253,6 +253,28 @@ restart-on-exit), so it relaunches after `wsl --shutdown`, a crash or a
 Windows update restart. A boot-only trigger is the defect that caused
 the outage.
 
+Hardening procedure (manual, once per helper Windows host, from an
+elevated PowerShell; `<task>`, `<distro>` and `<user>` are placeholders,
+never commit real host names):
+
+```powershell
+$action  = New-ScheduledTaskAction -Execute 'wsl.exe' -Argument '-d <distro> -u root -- sleep infinity'
+$boot    = New-ScheduledTaskTrigger -AtStartup
+$repeat  = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 5)
+$set     = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
+             -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero) -StartWhenAvailable
+Register-ScheduledTask -TaskName '<task>' -Action $action -Trigger @($boot,$repeat) `
+  -Settings $set -User '<user>' -RunLevel Highest -Force
+```
+
+`MultipleInstances IgnoreNew` makes the 5-minute repeat a no-op while the
+distro is held open, and relaunches it within 5 minutes after
+`wsl --shutdown` or a crash; `RestartCount` covers the task itself
+exiting. Verify with `Get-ScheduledTask -TaskName '<task>' | Select -Expand Triggers`
+(expect two triggers), then `wsl --shutdown` and confirm the WSL sshd
+port answers again within about 5 minutes. This step needs Windows-side
+access and cannot be verified from this repository.
+
 Status of the pieces (this repository owns only the documentation and
 any frob-side warning; goway and the Windows task live elsewhere):
 
@@ -261,7 +283,7 @@ any frob-side warning; goway and the Windows task live elsewhere):
   three-way `goway status` distinction: tracked in the goway ledger
   (kept free of host names).
 - Keepalive task trigger hardening: a per-helper manual change on the
-  Windows host, listed under `goway doctor`.
+  Windows host, documented as the hardening procedure above.
 - frob-side warning when a configured helper has been down for more than
   a few minutes: not implemented; needs `gob-dev` (`ci.rs`) and is filed
   as a follow-up outside this docs-only scope.

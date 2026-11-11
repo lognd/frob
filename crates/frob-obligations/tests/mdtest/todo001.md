@@ -120,11 +120,15 @@ class A {}
 TODO tidy this
 ```
 
-```text expect=notapplicable cell=binary reason=binary file=logo.png
-TODO tidy this
+```hex expect=notapplicable cell=binary reason=binary file=logo.png
+89504e47 0d0a1a0a 0000000d 49484452
 ```
 
-````markdown expect=fire cell=island file=notes.md
+## A fire inside an opaque island still fires
+
+The rule reads only comment text, so the island around a fenced block does not hide the offender.
+
+````markdown expect=fire cell=island region=notes file=notes.md
 # Title
 
 ```text

@@ -28,6 +28,7 @@ use frob_mirror::projection;
 use frob_mirror::shardstore::BranchShardStore;
 use gob_cli::clap::{self, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_trust::prompt::{Presence, presence};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -227,13 +228,22 @@ pub(crate) fn resolve_repo(
     }
 }
 
-/// The login whose issues are listed: the first `[mirror] bot_ids` entry, else the token's login.
+/// The login whose issues are listed: the first `[mirror] bot_ids` entry (a numeric user id is
+/// looked up via `by_id`, any other entry is taken as a login), else the token's login.
+// frob:ticket 01M5BY28D120GDA00N4VANXQRD
 fn resolve_bot(
     bot_ids: &[String],
+    by_id: impl FnOnce(u64) -> Result<String, CliError>,
     token_login: impl FnOnce() -> Result<String, CliError>,
 ) -> Result<String, CliError> {
     match bot_ids.first() {
-        Some(b) => Ok(b.clone()),
+        Some(b) => match b.parse::<u64>() {
+            Ok(id) => {
+                tracing::debug!(user_id = id, "bot_ids entry is a user id; resolving login");
+                by_id(id)
+            }
+            Err(_) => Ok(b.clone()),
+        },
         None => token_login(),
     }
 }
@@ -268,7 +278,17 @@ struct NoHistory;
 
 impl HistorySource for NoHistory {
     fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
-        Err(AdapterError::Other(format!("no history for {}", i.0)))
+        let mut state = IssueState {
+            issue: IssueRef(String::new()),
+            title: String::new(),
+            body: String::new(),
+            labels: Vec::new(),
+            assignees: Vec::new(),
+            closed: false,
+        };
+        state.issue.0.clone_from(&i.0);
+        tracing::trace!(issue = %i.0, "recreate: blank issue state");
+        Ok(state)
     }
     fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
         Ok(vec![])
@@ -293,7 +313,7 @@ fn gate(
                 RefusalClass::GuardNeedsAction,
                 "mirror recreate is a decision a person makes at a terminal",
             )
-            .with_remedy("ask the user to run `frob mirror recreate` in their own terminal")
+            .with_command(RemedyCommand::new("frob", "mirror recreate"))
             .requiring_human())
         }
     }
@@ -371,9 +391,17 @@ impl Command for MirrorRecreate {
             "node_id",
             "repository node id",
         )?;
-        let bot = resolve_bot(&cfg.bot_ids, || {
-            field(&get_json(&http, "/user")?, "login", "token login")
-        })?;
+        let bot = resolve_bot(
+            &cfg.bot_ids,
+            |id| {
+                field(
+                    &get_json(&http, &format!("/user/{id}"))?,
+                    "login",
+                    "bot login",
+                )
+            },
+            || field(&get_json(&http, "/user")?, "login", "token login"),
+        )?;
         let keyring = Keyring::from_env(&cfg.kid, KEY_VAR, &[])
             .map_err(|e| refuse(format!("marker key: {e}")))?;
 
@@ -431,7 +459,6 @@ mod tests {
         Inventory, IssueState, IssueSummary, MarkdownDialect, StateReasons,
     };
     use frob_mirror::cursor::begin_read;
-    use frob_mirror::github::read::{BodyRevisions, HistorySource, TimelineEvent};
     use frob_mirror::mapfile::{Shard, content_hash};
     use frob_mirror::projection::{
         Category, Classification, Identity, People, RelationKind, State, TicketFacts, project,
@@ -539,36 +566,16 @@ mod tests {
         }
     }
 
-    struct NoHistory;
-
-    impl HistorySource for NoHistory {
-        fn issue(&self, i: &IssueRef) -> AdapterResult<IssueState> {
-            Ok(IssueState {
-                issue: i.clone(),
-                title: String::new(),
-                body: String::new(),
-                labels: vec![],
-                assignees: vec![],
-                closed: false,
-            })
-        }
-        fn timeline(&self, _: &IssueRef) -> AdapterResult<Vec<TimelineEvent>> {
-            Ok(vec![])
-        }
-        fn body_revisions(&self, _: &IssueRef) -> AdapterResult<BodyRevisions> {
-            Ok(BodyRevisions::default())
-        }
-    }
-
     fn projection() -> IssueProjection {
+        let identity = Identity {
+            ulid: "U1".into(),
+            handle: "~U1".into(),
+            aliases: vec![],
+            repository: "https://example.invalid/r".into(),
+            ledger_path: "tickets/U1.md".into(),
+        };
         let facts = TicketFacts {
-            identity: Identity {
-                ulid: "U1".into(),
-                handle: "~U1".into(),
-                aliases: vec![],
-                repository: "https://example.invalid/r".into(),
-                ledger_path: "tickets/U1.md".into(),
-            },
+            identity,
             title: "t".into(),
             summary: "s".into(),
             acceptance: vec![],
@@ -700,10 +707,25 @@ mod tests {
     }
 
     #[test]
-    fn bot_comes_from_config_before_the_token() {
+    fn bot_login_comes_from_config_before_the_token() {
         // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
         let ids = vec!["cfgbot".to_owned()];
-        assert_eq!(resolve_bot(&ids, || panic!("no lookup")).unwrap(), "cfgbot");
-        assert_eq!(resolve_bot(&[], || Ok("tok".into())).unwrap(), "tok");
+        let got = resolve_bot(&ids, |_| panic!("no id lookup"), || panic!("no token"));
+        assert_eq!(got.unwrap(), "cfgbot");
+    }
+
+    #[test]
+    fn bot_falls_back_to_the_token_login() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
+        let got = resolve_bot(&[], |_| panic!("no id lookup"), || Ok("tok".into()));
+        assert_eq!(got.unwrap(), "tok");
+    }
+
+    #[test]
+    fn bot_numeric_id_is_resolved_to_a_login() {
+        // frob:tests crates/frob/src/mirror_recreate_cmd.rs::resolve_bot
+        let nums = vec!["42".to_owned()];
+        let got = resolve_bot(&nums, |id| Ok(format!("bot{id}")), || panic!("no token"));
+        assert_eq!(got.unwrap(), "bot42");
     }
 }

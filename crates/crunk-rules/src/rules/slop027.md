@@ -1,0 +1,40 @@
+<!-- mdtest: rule=SLOP027 -->
+# SLOP027 one-section-layout
+
+Four or more consecutive sections with one layout fingerprint.
+
+## What it does
+
+Fires for a run of four or more sibling `section`s whose display, grid columns, flex flow, alignment, padding, gap, child count and solved column count are all identical.
+
+## Why it matters
+
+A page whose every band has the same shape reads as one block repeated; the structure carries no hierarchy.
+
+## Remedy
+
+Change the structure of at least one section: columns, alignment or the number of parts.
+
+## Examples
+
+### Fires
+
+```html expect=fire file=design/scenes/page.scene.html
+<main data-id="page" style="width:600px">
+  <section data-id="s1" style="display:flex;padding:32px"><div data-id="s1a" style="width:100px;height:40px"></div><div data-id="s1b" style="width:100px;height:40px"></div></section>
+  <section data-id="s2" style="display:flex;padding:32px"><div data-id="s2a" style="width:100px;height:40px"></div><div data-id="s2b" style="width:100px;height:40px"></div></section>
+  <section data-id="s3" style="display:flex;padding:32px"><div data-id="s3a" style="width:100px;height:40px"></div><div data-id="s3b" style="width:100px;height:40px"></div></section>
+  <section data-id="s4" style="display:flex;padding:32px"><div data-id="s4a" style="width:100px;height:40px"></div><div data-id="s4b" style="width:100px;height:40px"></div></section>
+</main>
+```
+
+### Clean
+
+```html expect=clean file=design/scenes/page.scene.html
+<main data-id="page" style="width:600px">
+  <section data-id="s1" style="display:flex;padding:32px"><div data-id="s1a" style="width:100px;height:40px"></div><div data-id="s1b" style="width:100px;height:40px"></div></section>
+  <section data-id="s2" style="display:flex;padding:32px"><div data-id="s2a" style="width:100px;height:40px"></div><div data-id="s2b" style="width:100px;height:40px"></div></section>
+  <section data-id="s3" style="display:block;padding:32px;text-align:center"><div data-id="s3a" style="width:100px;height:40px"></div></section>
+  <section data-id="s4" style="display:flex;padding:32px"><div data-id="s4a" style="width:100px;height:40px"></div><div data-id="s4b" style="width:100px;height:40px"></div></section>
+</main>
+```

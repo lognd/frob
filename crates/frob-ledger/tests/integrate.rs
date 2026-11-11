@@ -47,7 +47,7 @@ fn put(repo: &Repo, ref_name: &str, path: &str, body: &str) {
     .expect("commit");
 }
 
-// frob:tests crates/frob-ledger/src/objects/integrate.rs::Ledger.integrate
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate
 #[test]
 fn integrate_creates_fast_forwards_merges_and_reports_conflicts() {
     let (ledger, repo) = fresh();
@@ -89,7 +89,7 @@ fn integrate_creates_fast_forwards_merges_and_reports_conflicts() {
     assert_eq!(c[0].path, "notes/a.md");
 }
 
-// frob:tests crates/frob-ledger/src/objects/integrate.rs::Ledger.integrate
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate
 #[test]
 fn integrate_creates_the_local_ref_from_the_remote() {
     let (ledger, repo) = fresh();
@@ -99,4 +99,58 @@ fn integrate_creates_the_local_ref_from_the_remote() {
         .expect("seed");
     let r = ledger.integrate(OURS, THEIRS);
     assert!(matches!(r, Ok(Integration::Created(_))), "{r:?}");
+}
+
+const PM_DOC: &str = "_cycles/01M5CW049SPSRGGP5ENQD7BPB3/cycle.md";
+
+fn diverge_pm_doc() -> (Ledger, Repo) {
+    let (ledger, repo) = fresh();
+    init_branch(&repo, "frob-tickets", 5).expect("init");
+    let root = repo.rev_parse(OURS).expect("root");
+    repo.update_ref_cas(THEIRS, None, root, "seed")
+        .expect("seed");
+    put(&repo, OURS, PM_DOC, "base\n");
+    put(&repo, THEIRS, "notes/x.md", "x\n");
+    ledger.integrate(OURS, THEIRS).expect("merge base");
+    repo.update_ref_cas(THEIRS, None, repo.rev_parse(OURS).expect("ours"), "sync")
+        .ok();
+    put(&repo, OURS, PM_DOC, "ours\n");
+    put(&repo, THEIRS, PM_DOC, "theirs\n");
+    (ledger, repo)
+}
+
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate_with
+#[test]
+fn pm_docs_changed_on_both_sides_are_refolded_not_conflicted() {
+    let (ledger, repo) = diverge_pm_doc();
+    let refold = |_: &Ledger, path: &str, _: &str, _: &str| -> Result<String, String> {
+        assert_eq!(path, PM_DOC);
+        Ok("refolded\n".to_owned())
+    };
+    let r = ledger.integrate_with(OURS, THEIRS, Some(&refold));
+    let Ok(Integration::Merged { refolded, .. }) = r else {
+        panic!("expected a merge, got {r:?}");
+    };
+    assert_eq!(refolded, 1);
+    let blob = repo.read_blob_at(OURS, PM_DOC).expect("read");
+    assert_eq!(blob.as_deref(), Some(b"refolded\n".as_slice()));
+}
+
+// frob:tests crates/frob-ledger/src/integrate.rs::Ledger.integrate_with
+#[test]
+fn pm_doc_refold_failure_is_a_conflict() {
+    let (ledger, _repo) = diverge_pm_doc();
+    let refold = |_: &Ledger, _: &str, _: &str, _: &str| -> Result<String, String> {
+        Err("no create event".to_owned())
+    };
+    let r = ledger.integrate_with(OURS, THEIRS, Some(&refold));
+    let Ok(Integration::Conflicts(c)) = r else {
+        panic!("expected a conflict, got {r:?}");
+    };
+    assert_eq!(c[0].path, PM_DOC);
+    assert!(c[0].reason.contains("no create event"));
+    assert!(matches!(
+        ledger.integrate(OURS, THEIRS),
+        Ok(Integration::Conflicts(_))
+    ));
 }

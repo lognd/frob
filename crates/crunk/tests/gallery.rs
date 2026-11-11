@@ -228,3 +228,46 @@ fn default_build_refuses_triage_and_render_and_enumerate() {
         );
     }
 }
+
+#[cfg(feature = "gallery")]
+// frob:ticket 01M4YZCC0PBYFW8CSBB8ERKFXE
+// frob:tests crates/crunk/src/gallery.rs::GalleryCheck
+#[test]
+fn router_flag_feeds_gallery005_and_bad_router_is_refused() {
+    let dir = gallery_project();
+    std::fs::write(
+        dir.path().join("gallery/manifest.json"),
+        r#"{"version":3,"cells":[]}"#,
+    )
+    .expect("manifest");
+    std::fs::write(
+        dir.path().join("router.tsx"),
+        r#"export const r = createBrowserRouter([{ path: "/", element: <A /> }, { path: "/ghost", element: <G /> }]);"#,
+    )
+    .expect("router");
+    let (_, out, err) = crunk(
+        dir.path(),
+        &["gallery", "check", "--router", "router.tsx", "--json"],
+    );
+    let env: Value = serde_json::from_str(&out).expect("json");
+    let messages = env["data"]["findings"].to_string();
+    assert!(
+        messages.contains("route /ghost has no [[screen]]"),
+        "{messages} {err}"
+    );
+
+    std::fs::write(
+        dir.path().join("bad.tsx"),
+        "const r = [{ path: X, element: 1 }];",
+    )
+    .expect("bad");
+    let (code, out, err) = crunk(
+        dir.path(),
+        &["gallery", "check", "--router", "bad.tsx", "--json"],
+    );
+    assert_eq!(code, 3, "{out} {err}");
+    assert!(
+        format!("{out}{err}").contains("E-GALLERY-ROUTER"),
+        "{out} {err}"
+    );
+}

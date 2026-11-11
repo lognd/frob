@@ -233,3 +233,17 @@ pub(crate) fn walk(
     }
     Ok(())
 }
+
+/// The class body's live methods, in source order, as `(name, node)`.
+pub(crate) fn methods<'t>(body: Node<'t>, src: &str) -> Vec<(String, Node<'t>)> {
+    live_named(body, src, &[])
+        .into_iter()
+        .filter(|m| m.kind() == "method_declaration")
+        .filter_map(|m| {
+            Some((
+                src[m.child_by_field_name("name")?.byte_range()].to_owned(),
+                m,
+            ))
+        })
+        .collect()
+}

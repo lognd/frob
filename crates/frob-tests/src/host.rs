@@ -15,4 +15,9 @@ pub trait TestsHost {
 
     /// The text of the repository-relative file `path` (the `#[test]` attribute scan); `None` when unreadable.
     fn read_source(&self, path: &str) -> Option<String>;
+
+    /// The repository root, for rules that read committed state files (`TEST002`); `None` when the host has no disk.
+    fn repo_root(&self) -> Option<&std::path::Path> {
+        None
+    }
 }

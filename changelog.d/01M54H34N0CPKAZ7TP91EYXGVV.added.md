@@ -1,0 +1,1 @@
+`crunk-rules`: COLOR001, SPACE001, TYPE001, RADIUS001 and SIZE001 attach a Tier A machine fix (the literal becomes its `var(--token)`, a translucent colour `color-mix(in srgb, var(--token) N%, transparent)`) when the nearest token is within `fix_tolerance` / `color_tolerance`; `gob_rules::Out::fire_in_with_fix` carries a fix on an emission.

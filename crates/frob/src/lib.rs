@@ -5,17 +5,22 @@
 //! modules: [`doctor`], [`init`], [`config_cmd`] (`config show`, `config
 //! sync`), [`ticket`] (`ticket ...` and the hidden `merge-driver`) and the
 //! built-in `schema` from `gob-cli`; the lease, worktree, evidence, tests and
-//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`; [`doc_cmd`] holds `doc remap`; [`agent_cmd`] holds `agent sync/status/uninstall/brief` over the emitters in [`agent`]. Config knobs are the
+//! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`; [`doc_cmd`] holds `doc remap`; [`agent_cmd`] holds `agent sync/status/install/uninstall/brief` over the emitters in [`agent`]. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
 pub mod agent;
 pub mod agent_cmd;
 pub mod agent_digest_cmd;
+pub mod agent_heavy_cmd;
+pub mod agent_hook_cmd;
+pub mod agent_install_cmd;
+pub mod agent_profile_cmd;
 pub mod baseline_cmd;
 pub mod board_cmd;
 mod check_view;
 pub mod config;
 pub mod config_cmd;
+pub mod coord_cmd;
 pub mod cycle_cmd;
 pub mod dismiss_cmd;
 pub mod doc_cmd;
@@ -23,6 +28,7 @@ pub mod doctor;
 pub mod explain_cmd;
 pub mod first_run;
 mod forecast_view;
+pub(crate) use frob_ledger::freshness;
 pub mod init;
 pub mod lease_cmd;
 pub mod migrate_cmd;
