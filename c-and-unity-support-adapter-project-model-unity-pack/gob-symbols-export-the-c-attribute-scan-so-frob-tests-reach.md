@@ -8,12 +8,12 @@ points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T12:58:06Z"
-updated = "2026-11-11T05:24:31Z"
+updated = "2026-11-11T05:29:56Z"
 scope = ["crates/gob-symbols/**", "crates/frob-tests/**"]
 
 [[acceptance]]
 text = "gob-symbols exports leading_attributes and leading_attribute_specs and frob-tests reach re-exports them, leaving one C# attribute scan"
-bound = false
+bound = true
 +++
 
 found while working ~YR0STJ5: reach.rs copies leading_attribute_names/skip_trivia from gob-symbols csharp.rs
