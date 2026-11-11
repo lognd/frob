@@ -2,7 +2,8 @@
 id = "01M5F8MNTSHY6YQSRAMC8624FR"
 title = "document enabling the unity pack in the generated config reference"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 parent = "01M44YQS4CNZM54P067GJVPDC0"
