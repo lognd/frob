@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the Dockerfile matrix row, when read, then its comment matches the measured F2 and the resolve_ref/imports cell is justified"]
+moved = []
+at = "2026-11-11T01:41:29Z"
+actor = "lognd"
+rev = 1
