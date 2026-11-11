@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["measure() counts file.refs so the actions adapter measures F2 and the PINNED entry is removed"]
+moved = []
+at = "2026-11-11T00:54:59Z"
+actor = "lognd"
+rev = 1
