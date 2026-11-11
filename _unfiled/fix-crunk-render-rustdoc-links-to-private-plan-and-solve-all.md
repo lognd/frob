@@ -7,10 +7,10 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T15:08:47Z"
-updated = "2026-11-11T15:08:55Z"
+updated = "2026-11-11T15:09:07Z"
 scope = ["crates/crunk/src/render.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "crunk render.rs module doc no longer intra-doc-links private Plan or solve_all, so the rustdoc docs step passes"
-bound = false
+bound = true
 +++
