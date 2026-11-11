@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-24T04:02:05Z"
-updated = "2026-10-27T02:58:42Z"
-scope = ["crates/crunk/tests/**"]
+updated = "2026-11-11T03:21:34Z"
+scope = ["crates/crunk/tests/**", "changelog.d/**"]
 +++
 
 found while working ~MJZYWH9: crates/crunk/tests/parity/compare.rs and crates/crunk/tests/query_parity.rs carry duplicated RUST_ONLY_RULES lists; extract one shared constant.
