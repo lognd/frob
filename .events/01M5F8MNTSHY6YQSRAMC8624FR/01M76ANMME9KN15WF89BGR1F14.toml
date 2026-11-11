@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-check/src/config.rs", "docs/reference/config/frob.md", "changelog.d/01M5F8MNTSHY6YQSRAMC8624FR.changed.md"]
+new = ["crates/grimble-check/src/config.rs", "docs/reference/config/frob.md", "changelog.d/01M5F8MNTSHY6YQSRAMC8624FR.changed.md", "docs/schemas/config.json"]
+at = "2026-11-11T22:11:49Z"
+actor = "lognd"
+rev = 1
