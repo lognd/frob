@@ -1,0 +1,8 @@
+kind = "create"
+title = "CI nextest: insta snapshots, render colours, verb tables, token fixtures"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-11T17:36:22Z"
+actor = "lognd"
+rev = 1
