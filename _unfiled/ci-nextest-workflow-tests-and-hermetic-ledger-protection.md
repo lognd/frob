@@ -2,7 +2,8 @@
 id = "01M75TX8PSHNHRPXMCYM4CH9FK"
 title = "CI nextest: workflow tests and hermetic ledger-protection tests"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
