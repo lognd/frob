@@ -2,7 +2,8 @@
 id = "01M5EKM08ZM45RZ1JBHC68F156"
 title = "mirror: persist read-back and retained tracker event values in the map shard"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
