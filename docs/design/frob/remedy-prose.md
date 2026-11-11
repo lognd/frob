@@ -1,6 +1,6 @@
 # Prose remedies in refusals
 
-Status: proposed
+Status: draft
 Owner: frob
 Decisions: D79
 Audience: contributor
