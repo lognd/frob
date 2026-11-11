@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob claim notices lists claim idle notices and --ack acknowledges them via Workspace::ack_claim_notices, with an integration test", "docs/design/frob/distributed-tickets.md 4.4 documents acknowledgement and generated CLI docs are current"]
+moved = []
+at = "2026-11-11T14:31:45Z"
+actor = "lognd"
+rev = 1
