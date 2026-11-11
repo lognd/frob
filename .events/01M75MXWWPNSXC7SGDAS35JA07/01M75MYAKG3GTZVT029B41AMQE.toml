@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T15:52:05Z"
+digest = "b2ff8492296f30d57a27347b5fe02c741a9afb84062db27a890167d1859c1320"
+head = "8b6eb7e876fce2b514ea3bf3cf19778cdabd5d17"
+provider = "file"
+ref = "crates/frob-check/src/concurrent.rs"
+size = 15966
+status = "measured"
+at = "2026-11-11T15:52:05Z"
+actor = "lognd"
+rev = 1
