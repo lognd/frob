@@ -2,17 +2,18 @@
 allow = [
   "darling@0.24.1",
   "globset@0.4.21",
+  "hashlink@0.12.2",
   "ignore@0.4.34",
   "insta@1.49.0",
   "inventory@0.3.25",
   "jiff@0.2.42",
   "jsonschema@0.58.6",
+  "libsqlite3-sys@0.39.1",
   "proptest@1.12.0",
+  "rsqlite-vfs@0.2.0",
   "rusqlite@0.41.1",
   "schemars@1.2.3",
-  # transitive deps of rusqlite 0.41.1 (VET003)
-  "hashlink@0.12.2",
-  "libsqlite3-sys@0.39.1",
-  "rsqlite-vfs@0.2.0",
   "sqlite-wasm-rs@0.6.3",
+  "tree-sitter-cuda@0.21.2",
+  "tree-sitter-zig@1.1.2",
 ]
