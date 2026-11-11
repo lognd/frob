@@ -2,7 +2,8 @@
 id = "01M5EKM0DB2Y27ZQEH74YB3CNA"
 title = "ledger: public single-commit multi-event append for mirror proposals"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
