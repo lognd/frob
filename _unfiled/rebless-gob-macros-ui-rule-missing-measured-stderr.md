@@ -2,7 +2,8 @@
 id = "01M66JFKRYBBNJQVRSCA4E305J"
 title = "Rebless gob-macros ui_rule missing_measured stderr"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 1
 reporter = "lognd"

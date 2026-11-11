@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Already passes: ui_rule_attr is green on experimental with no stderr changes needed"
+at = "2026-11-11T03:48:16Z"
+actor = "lognd"
+rev = 1
