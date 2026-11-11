@@ -4,7 +4,13 @@ title = "Fix gob-plan workspace rustdoc links to pub(crate) attrs"
 type = "bug"
 category = "todo"
 priority = "high"
+points = 1
 reporter = "lognd"
 created = "2026-11-11T16:22:16Z"
-updated = "2026-11-11T16:22:16Z"
+updated = "2026-11-11T16:22:21Z"
+scope = ["crates/gob-plan/src/workspace.rs", "changelog.d/**"]
+
+[[acceptance]]
+text = "gob-plan workspace docs no longer link to pub(crate) PATH_ATTR/WORKSPACE_ATTR"
+bound = false
 +++
