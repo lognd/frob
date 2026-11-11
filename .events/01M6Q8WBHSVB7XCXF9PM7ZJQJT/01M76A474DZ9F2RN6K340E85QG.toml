@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["docs/design/frob/remedy-prose.md classifies every remaining text-only with_remedy site in frob-land, frob-worktree and frob-lease and specifies the gob-diagnostics prose-with-command design"]
+moved = []
+at = "2026-11-11T22:02:18Z"
+actor = "lognd"
+rev = 1
