@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M68YK32M30DKPTJ8XYKHZ9AH"
+committed = 594
+text = "small re-export"
+capacity = 406
+at = "2026-11-11T03:51:32Z"
+actor = "lognd"
+rev = 1
