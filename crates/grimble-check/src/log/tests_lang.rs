@@ -104,7 +104,8 @@ fn c_stdio_calls_and_stream_arguments() {
 #[test]
 fn c_fd_writes_macros_shadowing_and_noise() {
     assert_eq!(c("void f(void){ write(2, \"x\", 1); }"), ["c.fd-write"]);
-    assert!(c("void f(int fd){ write(fd, \"x\", 1); }").is_empty());
+    // A non-constant fd cannot be decided statically, so it is reported unresolved.
+    assert_eq!(c("void f(int fd){ write(fd, \"x\", 1); }"), ["universal"]);
     assert_eq!(
         c("#define LOG(m) fprintf(stderr, \"%s\", m)\n"),
         ["c.stdio-stream"]
