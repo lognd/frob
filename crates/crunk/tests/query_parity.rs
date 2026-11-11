@@ -4,40 +4,16 @@
 
 use std::path::{Path, PathBuf};
 
+#[path = "common/mod.rs"]
+mod common;
+
+use common::RUST_ONLY_RULES;
 use gob_cli::run_for_test;
 use serde_json::Value;
 
 fn parity_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/crunk-parity")
 }
-
-/// Rules added after the Python captures; absent from every golden by design.
-// frob:ticket 01M5JHRGF0BKG6ZGNXBZR3F5DB
-const RUST_ONLY_RULES: &[&str] = &[
-    "EXPORT001",
-    "EXPORT002",
-    "TOKEN002",
-    "TOKEN003",
-    "TOKEN004",
-    "TOKEN005",
-    "TOKEN006",
-    "TOKEN007",
-    "TOKEN008",
-    "TOKEN009",
-    "CRAFT001",
-    "CRAFT002",
-    "CRAFT003",
-    "CRAFT004",
-    "CRAFT005",
-    "CRAFT006",
-    "CRAFT007",
-    "CRAFT008",
-    "CRAFT009",
-    "CRAFT010",
-    "CRAFT011",
-    "CRAFT012",
-    "CRAFT013",
-];
 
 fn golden(path: &Path) -> Value {
     let text = std::fs::read_to_string(path).expect("read golden");

@@ -165,3 +165,31 @@ fn css_root_of(root: &Path) -> String {
         })
         .unwrap_or_else(|| "styles".to_string())
 }
+
+/// Rules the Rust crunk added after the Python captures; absent from every golden by design.
+// frob:ticket 01M5JHRGF0BKG6ZGNXBZR3F5DB
+pub const RUST_ONLY_RULES: &[&str] = &[
+    "EXPORT001",
+    "EXPORT002",
+    "TOKEN002",
+    "TOKEN003",
+    "TOKEN004",
+    "TOKEN005",
+    "TOKEN006",
+    "TOKEN007",
+    "TOKEN008",
+    "TOKEN009",
+    "CRAFT001",
+    "CRAFT002",
+    "CRAFT003",
+    "CRAFT004",
+    "CRAFT005",
+    "CRAFT006",
+    "CRAFT007",
+    "CRAFT008",
+    "CRAFT009",
+    "CRAFT010",
+    "CRAFT011",
+    "CRAFT012",
+    "CRAFT013",
+];
