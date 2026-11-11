@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Advisory/Warn severity retired (rules.md 6.1.1); emitting advisory atoms as Error would flood findings (rust.panic, std::fs::write). Revisit only as an opt-in rule if wanted."
+at = "2026-11-11T02:31:26Z"
+actor = "lognd"
+rev = 1
