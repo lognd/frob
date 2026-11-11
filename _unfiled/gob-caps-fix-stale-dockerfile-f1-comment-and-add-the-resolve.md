@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T01:10:05Z"
-updated = "2026-11-11T01:54:22Z"
+updated = "2026-11-11T01:54:23Z"
 scope = ["crates/gob-caps/**", "changelog.d/**", "docs/reference/languages.md"]
 
 [[acceptance]]
