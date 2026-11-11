@@ -2,7 +2,8 @@
 id = "01M75TX8ZZ2DH0WEVY758DP0H3"
 title = "CI nextest: csharp, fidelity, equivalence, mdtest corpus, log rules, measured"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
