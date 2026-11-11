@@ -1,4 +1,4 @@
-//! The `TICK004` repair: one forward commit that scrubs absolute home paths and keeps the fold identical.
+//! The `TICK004` repair: one forward commit that scrubs absolute home paths and keeps the fold identical. (folded into the one `it` test binary)
 // frob:ticket 01M41RHBJ03PGD6JY0J6JTAH9Q
 
 use frob_ledger::event::{Event, EventBody, EvidenceData};

@@ -1,4 +1,4 @@
-//! `TICK004`: the home-path byte scan and its ledger walk.
+//! `TICK004`: the home-path byte scan and its ledger walk. (folded into the one `it` test binary)
 // frob:ticket 01M41PM9TCJ8MJQREJ733PZ67A
 
 use frob_ledger::model::TicketType;
