@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T15:08:47Z"
-updated = "2026-11-11T15:09:07Z"
+updated = "2026-11-11T15:09:08Z"
 scope = ["crates/crunk/src/render.rs", "changelog.d/**"]
 
 [[acceptance]]
