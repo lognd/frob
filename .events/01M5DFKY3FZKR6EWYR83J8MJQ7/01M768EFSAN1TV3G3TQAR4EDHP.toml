@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Eviction writes the lease op evict event and the in-progress to todo transition naming the previous holder", "complete_crashed_eviction finishes a crashed eviction using needs_completion and read_park_record"]
+moved = []
+at = "2026-11-11T21:32:57Z"
+actor = "lognd"
+rev = 1
