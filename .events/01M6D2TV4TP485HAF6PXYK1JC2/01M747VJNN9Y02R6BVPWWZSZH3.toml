@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Already fixed by 5af933027e; keywords tests pass (4 passed)."
+at = "2026-11-11T02:44:09Z"
+actor = "lognd"
+rev = 1

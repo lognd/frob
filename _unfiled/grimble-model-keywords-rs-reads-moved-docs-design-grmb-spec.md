@@ -2,7 +2,8 @@
 id = "01M6D2TV4TP485HAF6PXYK1JC2"
 title = "grimble-model: keywords.rs reads moved docs/design/grmb-spec.md (3 tests fail)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 1
 reporter = "lognd"
