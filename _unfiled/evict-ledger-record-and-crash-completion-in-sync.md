@@ -2,7 +2,8 @@
 id = "01M5DFKY3FZKR6EWYR83J8MJQ7"
 title = "evict ledger record and crash completion in sync"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
