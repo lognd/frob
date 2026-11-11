@@ -267,6 +267,7 @@ fn cuda(text: &str) -> Vec<String> {
 }
 
 // frob:tests crates/grimble-check/src/log/pass.rs::analyze
+// frob:tests crates/grimble-check/src/log/engine.rs::name_field
 #[test]
 fn zig_debug_print_is_direct_output() {
     let hits =
