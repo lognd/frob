@@ -2,12 +2,12 @@
 id = "01M5P15B93BTSR4HSWS6C5QDQC"
 title = "Dedupe RUST_ONLY_RULES lists in crunk parity tests"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-24T04:02:05Z"
-updated = "2026-11-11T03:21:34Z"
+updated = "2026-11-11T03:21:37Z"
 scope = ["crates/crunk/tests/**", "changelog.d/**"]
 
 [[acceptance]]
