@@ -8,13 +8,13 @@ points = 2
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T13:55:18Z"
+updated = "2026-11-11T14:10:34Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/**", "crates/frob-worktree/**"]
 
 [[acceptance]]
 text = "Frontmatter accepts claim_idle_days, a ledger verb sets it, and frob-worktree next.rs feeds it as ticket_days into claim_status"
-bound = false
+bound = true
 +++
 
 Follow-up of ~JFEYB9S: Frontmatter (frob-ledger) has no claim_idle_days field (deny_unknown_fields); add it plus a field-set verb, then feed it as ticket_days in frob-worktree next.rs claim_status. no-story: internal ledger plumbing with no standalone user-visible story.

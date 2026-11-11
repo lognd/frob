@@ -1,0 +1,116 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T14:10:34Z"
+digest = "ca4a10147d333807a16e104c4b4777dc616fb439dc10540b8ff8ab9229c46e06"
+exit_code = 0
+head = "63308916ebf2b942fcbdd5d56c159e611ff4306f"
+inline = """
+
+running 10 tests
+test schema::tests::description_lists_every_field_with_doc_and_default ... ok
+test schema::tests::field_table_marks_settable_names ... ok
+test schema::tests::inner_type_strips_one_option_layer ... ok
+test schema::tests::free_docs_table_has_a_row_per_settable_or_read_only_field ... ok
+test schema::tests::docs_table_has_a_row_per_field ... ok
+test schema::tests::field_map_has_a_key_for_every_schema_field ... ok
+test schema::tests::registry_lists_the_schema ... ok
+test schema::tests::parse_text_value_validates_by_field_kind ... ok
+test schema::tests::json_schema_has_one_property_per_field ... ok
+test schema::tests::mirror_keys_equal_serialized_frontmatter_keys ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 172 filtered out; finished in 0.00s
+
+   Compiling unicode-normalization v0.1.25
+   Compiling gix-path v0.12.6
+   Compiling gix-utils v0.3.6
+   Compiling serde v1.0.229
+   Compiling gix-features v0.49.1
+   Compiling gix-quote v0.8.0
+   Compiling gix-command v0.10.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-glob v0.27.1
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-attributes v0.35.0
+   Compiling zerocopy-derive v0.8.59
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-traverse v0.61.0
+   Compiling zerocopy v0.8.59
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling gix-packetline v0.22.2
+   Compiling gix-config-value v0.19.1
+   Compiling gix-index v0.55.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-ignore v0.22.1
+   Compiling gix-worktree v0.56.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gix-filter v0.34.0
+   Compiling gix-url v0.38.0
+   Compiling schemars v1.2.2
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gix-zlib v0.1.0
+   Compiling gix-diff v0.67.1
+   Compiling gix-discover v0.55.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling tracing-serde v0.2.0
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling rand_chacha v0.9.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gix-pack v0.74.2
+   Compiling gix-dir v0.29.1
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gix-transport v0.59.2
+   Compiling gix-config v0.60.0
+   Compiling half v2.7.1
+   Compiling gix-revision v0.49.1
+   Compiling gix-shallow v0.13.0
+   Compiling gix-refspec v0.45.1
+   Compiling clap_builder v4.6.7
+   Compiling gix-merge v0.20.1
+   Compiling ciborium-ll v0.2.2
+   Compiling gix-worktree-state v0.34.1
+   Compiling gix-protocol v0.65.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gix-status v0.34.1
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling rand v0.9.5
+   Compiling wait-timeout v0.2.1
+   Compiling bit-vec v0.8.0
+   Compiling quick-error v1.2.3
+   Compiling rusty-fork v0.3.1
+   Compiling bit-set v0.8.0
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gix v0.87.1
+   Compiling clap v4.6.7
+   Compiling ciborium v0.2.2
+   Compiling rand_xorshift v0.4.0
+   Compiling tinytemplate v1.2.1
+   Compiling unarray v0.1.4
+   Compiling criterion v0.5.1
+   Compiling proptest v1.11.0
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling ulid v1.2.1
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling gob-git v0.532.0 (<worktree>/crates/gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 19s
+     Running unittests src/lib.rs (target/debug/deps/frob_ledger-9d354de460290a5a)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-ledger --lib schema"
+size = 4020
+status = "measured"
+at = "2026-11-11T14:10:34Z"
+actor = "lognd"
+rev = 1
