@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["COH002 effects tables live in gob-caps (Capability::Effects provided per language adapter) and grimble-check reads them from there; effects.rs holds no per-language tables"]
+moved = []
+at = "2026-11-11T05:51:32Z"
+actor = "lognd"
+rev = 1
