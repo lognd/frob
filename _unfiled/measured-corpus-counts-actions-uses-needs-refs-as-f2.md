@@ -2,7 +2,8 @@
 id = "01M5CQERZ8JATBXZ3KBDPWJ77V"
 title = "Measured corpus counts actions uses/needs refs as F2 evidence"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
