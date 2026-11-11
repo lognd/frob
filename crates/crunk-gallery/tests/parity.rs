@@ -103,7 +103,7 @@ fn solver_and_real_browser_agree_on_an_absolute_page() {
          [typography]\nfamilies = [\"x\"]\nweights = [400]\n\n[org]\nbuckets = [\"b\"]\n\n\
          [[platform]]\nid = \"desk\"\nrenderer = \"web\"\nengine = \"chromium\"\n\
          viewport = {{ width = 400, height = 300 }}\n\n\
-         [[screen]]\nid = \"home\"\nentry = \"{entry}\"\n\n[[screen.states]]\nid = \"default\"\n",
+         [[screen]]\nid = \"home\"\nentry = '{entry}'\n\n[[screen.states]]\nid = \"default\"\n",
     );
     let root = workspace_root();
     let spec = parse_spec(&text, &root.join("design.toml"), &root).expect("spec");

@@ -116,9 +116,13 @@ mod tests {
         let body = |pid: u32| {
             format!(r#"{{"pid":{pid},"started":7,"argv":["frob","check"],"speculative":false}}"#)
         };
-        // pid u32::MAX - 1 is never a live process.
+        // pid u32::MAX - 1 is never a live process. Liveness is only probed on Linux (elsewhere
+        // every holder is assumed alive so a lock is never stolen), so the dead-holder half
+        // of this check applies there only.
         std::fs::write(dir.path().join(".frob/check.lock"), body(u32::MAX - 1)).unwrap();
-        assert!(live_check(dir.path(), None).is_none());
+        if cfg!(target_os = "linux") {
+            assert!(live_check(dir.path(), None).is_none());
+        }
         std::fs::write(
             dir.path().join(".frob/check.lock"),
             body(std::process::id()),

@@ -1,0 +1,1 @@
+CI nextest failures in the csharp, fidelity, equivalence and log-rule suites are fixed: advisory terminal queries are no longer cross-check disagreements, opaque COV001 notices merge, and stale C# and snapshot expectations match current behaviour.

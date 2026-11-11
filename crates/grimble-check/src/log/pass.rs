@@ -153,6 +153,7 @@ fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut Pa
         .iter()
         .map(|h| (h.start, h.end))
         .chain(scan.unresolved.iter().map(|u| (u.start, u.end)))
+        .chain(scan.cleared.iter().copied())
         .collect();
     for (i, u) in output_calls(p.gid, p.file.path, text, group)
         .into_iter()

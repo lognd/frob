@@ -124,7 +124,8 @@ fn snapshot_without_update_fails_on_missing_baseline_naming_the_path() {
     let dir = project(None);
     let (code, out, err) = crunk(dir.path(), &["snapshot", "--json"]);
     assert_eq!(code, 1, "{out} {err}");
-    let text = format!("{out}{err}");
+    // The reported path uses the platform separator; compare it separator-insensitively.
+    let text = format!("{out}{err}").replace("\\\\", "/").replace('\\', "/");
     assert!(
         text.contains("design/baselines/landing/default/chromium-desktop.layout.json"),
         "{text}"
