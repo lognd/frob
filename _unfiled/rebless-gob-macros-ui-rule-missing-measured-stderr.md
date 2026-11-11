@@ -2,12 +2,12 @@
 id = "01M66JFKRYBBNJQVRSCA4E305J"
 title = "Rebless gob-macros ui_rule missing_measured stderr"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:12:38Z"
-updated = "2026-11-11T03:41:32Z"
+updated = "2026-11-11T03:41:35Z"
 scope = ["crates/gob-macros/tests/ui_rule/**", "changelog.d/**"]
 
 [[acceptance]]
