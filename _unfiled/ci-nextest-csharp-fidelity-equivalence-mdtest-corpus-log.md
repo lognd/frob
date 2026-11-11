@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-11T17:36:22Z"
-updated = "2026-11-11T20:27:51Z"
+updated = "2026-11-11T20:39:01Z"
 scope = ["crates/**", "changelog.d/**", ".github/**"]
 
 [[acceptance]]
