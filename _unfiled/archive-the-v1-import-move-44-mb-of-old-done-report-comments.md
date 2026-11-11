@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-11-09T09:52:27Z"
+updated = "2026-11-11T01:10:50Z"
+scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Imported comments live in a compressed archive that frob ticket show can still read on demand"
