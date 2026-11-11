@@ -2,12 +2,12 @@
 id = "01M75MXWWPNSXC7SGDAS35JA07"
 title = "Fix frob-check concurrent rustdoc link to non-public acquire"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T15:51:51Z"
-updated = "2026-11-11T15:51:55Z"
+updated = "2026-11-11T15:51:59Z"
 scope = ["crates/frob-check/src/concurrent.rs", "changelog.d/**"]
 
 [[acceptance]]
