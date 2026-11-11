@@ -2,13 +2,14 @@
 id = "01M5EF4AC7V53WKDZXV4CZ4F62"
 title = "crunk: STATE001 over real component files"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-10-28T12:55:42Z"
+updated = "2026-11-11T13:46:15Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 
