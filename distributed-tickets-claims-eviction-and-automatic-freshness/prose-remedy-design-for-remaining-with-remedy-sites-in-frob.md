@@ -2,13 +2,13 @@
 id = "01M6Q8WBHSVB7XCXF9PM7ZJQJT"
 title = "Prose-remedy design for remaining with_remedy sites in frob-land, frob-worktree, frob-lease"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-11-06T01:51:55Z"
-updated = "2026-11-06T06:46:38Z"
+updated = "2026-11-11T22:01:42Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**", "crates/frob-worktree/**", "crates/frob-lease/**"]
 +++
