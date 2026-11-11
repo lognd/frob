@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the moved grmb-spec path, when grimble-model keywords tests run, then they read the new location and pass"]
+moved = []
+at = "2026-11-11T02:41:34Z"
+actor = "lognd"
+rev = 1

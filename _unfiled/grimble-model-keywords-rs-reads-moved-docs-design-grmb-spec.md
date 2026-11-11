@@ -7,6 +7,10 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-02T02:53:50Z"
-updated = "2026-11-02T02:53:50Z"
-scope = ["crates/grimble-model/tests/keywords.rs"]
+updated = "2026-11-11T02:41:34Z"
+scope = ["crates/grimble-model/tests/keywords.rs", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given the moved grmb-spec path, when grimble-model keywords tests run, then they read the new location and pass"
+bound = false
 +++
