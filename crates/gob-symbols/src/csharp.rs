@@ -172,10 +172,20 @@ fn skip_trivia(b: &[u8], mut i: usize) -> usize {
     }
 }
 
-/// The attribute names in the attribute lists that start at byte `start` of `text` (each list is `[A, B(1), target: C]`).
+/// The attribute names of the lists starting at byte `start` of `text`, and the offset after them.
 ///
-/// `Attribute` suffixes and namespace qualifiers are dropped (`[NUnit.Framework.TestAttribute]` is `Test`).
-fn leading_attribute_names(text: &str, start: usize) -> Vec<String> {
+/// Namespace qualifiers and the `Attribute` suffix are dropped (`[Foo.BarAttribute(1)]` is `Bar`).
+/// A target (`[field: X]`) is dropped too; [`leading_attribute_specs`] keeps it.
+pub fn leading_attributes(text: &str, start: usize) -> (Vec<String>, usize) {
+    let (specs, end) = leading_attribute_specs(text, start);
+    (specs.into_iter().map(|(_, name)| name).collect(), end)
+}
+
+// frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
+/// The `(target, name)` pairs of the attribute lists starting at byte `start` of `text`, and the offset after them.
+///
+/// The target is the `field` of `[field: SerializeField]`, `None` when the list names none.
+pub fn leading_attribute_specs(text: &str, start: usize) -> (Vec<(Option<String>, String)>, usize) {
     let b = text.as_bytes();
     let mut out = Vec::new();
     let mut i = skip_trivia(b, start);
@@ -194,7 +204,7 @@ fn leading_attribute_names(text: &str, start: usize) -> Vec<String> {
                 }
                 b'[' | b'(' | b'{' => depth += 1,
                 b']' | b')' | b'}' => {
-                    depth -= 1;
+                    depth = depth.saturating_sub(1);
                     if depth == 0 {
                         items.push(&text[item_start..j]);
                         break;
@@ -208,24 +218,29 @@ fn leading_attribute_names(text: &str, start: usize) -> Vec<String> {
             }
             j += 1;
         }
-        for item in items {
+        // A target (`field:`) is written once, on the first item, and covers the whole list.
+        let mut target: Option<String> = None;
+        for (n, item) in items.into_iter().enumerate() {
             let mut item = item.trim();
-            if let Some((target, rest)) = item.split_once(':')
+            if let Some((t, rest)) = item.split_once(':')
                 && !rest.starts_with(':')
-                && target.trim().chars().all(char::is_alphanumeric)
+                && t.trim().chars().all(char::is_alphanumeric)
             {
+                if n == 0 {
+                    target = Some(t.trim().to_owned());
+                }
                 item = rest.trim();
             }
             let head = item.split('(').next().unwrap_or_default().trim();
             let last = head.rsplit('.').next().unwrap_or_default();
             let last = last.strip_suffix("Attribute").unwrap_or(last);
             if !last.is_empty() {
-                out.push(last.to_owned());
+                out.push((target.clone(), last.to_owned()));
             }
         }
         i = skip_trivia(b, (j + 1).min(b.len()));
     }
-    out
+    (out, i)
 }
 
 /// The test `rec` is, read from the attributes at the start of its span in `text`; `None` for a fixture method or a non-test.
@@ -237,7 +252,7 @@ pub fn csharp_test(rec: &crate::model::SymbolRecord, text: &str) -> Option<Cshar
         return None;
     }
     let start = usize::try_from(u32::from(rec.span.start())).ok()?;
-    let names = leading_attribute_names(text, start);
+    let (names, _) = leading_attributes(text, start);
     if names
         .iter()
         .any(|n| FIXTURE_ATTRIBUTES.contains(&n.as_str()))
@@ -268,7 +283,8 @@ pub fn is_csharp_test_fn(rec: &crate::model::SymbolRecord, text: &str) -> bool {
 /// True when `text` carries a C# test attribute, so a file is a test file by content and not by path alone.
 pub fn is_csharp_test_text(text: &str) -> bool {
     text.match_indices('[').any(|(at, _)| {
-        leading_attribute_names(text, at)
+        leading_attributes(text, at)
+            .0
             .iter()
             .any(|n| TEST_ATTRIBUTES.contains(&n.as_str()))
     })

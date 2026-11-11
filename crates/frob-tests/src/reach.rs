@@ -16,6 +16,9 @@ use gob_symbols::{
     CsharpDynamicCall, SymbolGraph, SymbolKind, SymbolRecord, Symref, csharp_dynamic_calls,
     extract_file,
 };
+
+/// The one C# attribute scan, owned by gob-symbols and re-exported for existing callers.
+pub use gob_symbols::{leading_attribute_specs, leading_attributes};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
 /// Lazily read file text, shared by the attribute scan and the body scan.
@@ -146,100 +149,6 @@ pub fn name_callers(
         "name-based reach computed"
     );
     found
-}
-
-// frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
-/// Byte offset past trivia (whitespace and comments) at or after `i` in `b`.
-fn skip_trivia(b: &[u8], mut i: usize) -> usize {
-    loop {
-        match b.get(i) {
-            Some(c) if c.is_ascii_whitespace() => i += 1,
-            Some(b'/') if b.get(i + 1) == Some(&b'/') => {
-                while b.get(i).is_some_and(|c| *c != b'\n') {
-                    i += 1;
-                }
-            }
-            Some(b'/') if b.get(i + 1) == Some(&b'*') => {
-                i += 2;
-                while i < b.len() && !(b[i] == b'*' && b.get(i + 1) == Some(&b'/')) {
-                    i += 1;
-                }
-                i = (i + 2).min(b.len());
-            }
-            _ => return i,
-        }
-    }
-}
-
-/// The attribute names of the lists starting at byte `start` of `text`, and the offset after them.
-///
-/// Namespace qualifiers and the `Attribute` suffix are dropped (`[Foo.BarAttribute(1)]` is `Bar`).
-/// A target (`[field: X]`) is dropped too; [`leading_attribute_specs`] keeps it.
-pub fn leading_attributes(text: &str, start: usize) -> (Vec<String>, usize) {
-    let (specs, end) = leading_attribute_specs(text, start);
-    (specs.into_iter().map(|(_, name)| name).collect(), end)
-}
-
-// frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
-/// The `(target, name)` pairs of the attribute lists starting at byte `start` of `text`, and the offset after them.
-///
-/// The target is the `field` of `[field: SerializeField]`, `None` when the list names none.
-pub fn leading_attribute_specs(text: &str, start: usize) -> (Vec<(Option<String>, String)>, usize) {
-    let b = text.as_bytes();
-    let mut out = Vec::new();
-    let mut i = skip_trivia(b, start);
-    while b.get(i) == Some(&b'[') {
-        let mut depth = 0usize;
-        let mut item_start = i + 1;
-        let mut j = i;
-        let mut items: Vec<&str> = Vec::new();
-        while j < b.len() {
-            match b[j] {
-                b'"' => {
-                    j += 1;
-                    while j < b.len() && b[j] != b'"' {
-                        j += usize::from(b[j] == b'\\') + 1;
-                    }
-                }
-                b'[' | b'(' | b'{' => depth += 1,
-                b']' | b')' | b'}' => {
-                    depth = depth.saturating_sub(1);
-                    if depth == 0 {
-                        items.push(&text[item_start..j]);
-                        break;
-                    }
-                }
-                b',' if depth == 1 => {
-                    items.push(&text[item_start..j]);
-                    item_start = j + 1;
-                }
-                _ => {}
-            }
-            j += 1;
-        }
-        // A target (`field:`) is written once, on the first item, and covers the whole list.
-        let mut target: Option<String> = None;
-        for (n, item) in items.into_iter().enumerate() {
-            let mut item = item.trim();
-            if let Some((t, rest)) = item.split_once(':')
-                && !rest.starts_with(':')
-                && t.trim().chars().all(char::is_alphanumeric)
-            {
-                if n == 0 {
-                    target = Some(t.trim().to_owned());
-                }
-                item = rest.trim();
-            }
-            let head = item.split('(').next().unwrap_or_default().trim();
-            let last = head.rsplit('.').next().unwrap_or_default();
-            let last = last.strip_suffix("Attribute").unwrap_or(last);
-            if !last.is_empty() {
-                out.push((target.clone(), last.to_owned()));
-            }
-        }
-        i = skip_trivia(b, (j + 1).min(b.len()));
-    }
-    (out, i)
 }
 
 /// The base type names in a type header (`class A<T> : B, I where T : C`), last `.` segment, no generics.
