@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Either no text-only with_remedy command sites remain and the remedies.rs text scan is deleted, or the ticket is dropped with the remaining sites listed"]
+moved = []
+at = "2026-11-11T01:10:12Z"
+actor = "lognd"
+rev = 1
