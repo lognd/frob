@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T16:22:30Z"
+digest = "a25b4cf799c2cfecea268fd2726f66c37ba9c87b6b6b2b6cbda316ed3a0430e8"
+head = "71211286cdb0c07bb57e1bd335285498b641b4ce"
+provider = "file"
+ref = "crates/gob-plan/src/workspace.rs"
+size = 8783
+status = "measured"
+at = "2026-11-11T16:22:30Z"
+actor = "lognd"
+rev = 1

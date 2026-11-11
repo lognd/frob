@@ -7,10 +7,10 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T16:22:16Z"
-updated = "2026-11-11T16:22:25Z"
+updated = "2026-11-11T16:22:30Z"
 scope = ["crates/gob-plan/src/workspace.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "gob-plan workspace docs no longer link to pub(crate) PATH_ATTR/WORKSPACE_ATTR"
-bound = false
+bound = true
 +++
