@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-04T16:08:21Z"
-updated = "2026-11-11T02:56:15Z"
+updated = "2026-11-11T03:05:19Z"
 idempotency_key = "followup-websec-dbquery-comments"
 scope = ["packs/grimble-websec/pack.toml", "crates/grimble-check/src/websec_pack.rs", "changelog.d/**", "crates/gob-packs/src/sysdesign.rs"]
 
