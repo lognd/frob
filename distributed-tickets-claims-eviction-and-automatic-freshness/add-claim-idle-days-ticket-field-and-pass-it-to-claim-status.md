@@ -8,9 +8,9 @@ points = 2
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T14:23:02Z"
+updated = "2026-11-11T14:23:03Z"
 labels = ["no-story"]
-scope = ["crates/frob-ledger/src/**", "crates/frob-worktree/**", "crates/frob-ledger/benches/**"]
+scope = ["crates/frob-ledger/src/**", "crates/frob-worktree/**", "crates/frob-ledger/benches/**", "crates/frob-ledger/tests/**"]
 
 [[acceptance]]
 text = "Frontmatter accepts claim_idle_days, a ledger verb sets it, and frob-worktree next.rs feeds it as ticket_days into claim_status"
