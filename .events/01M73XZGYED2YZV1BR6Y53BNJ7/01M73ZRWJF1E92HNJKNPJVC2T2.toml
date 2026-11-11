@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "ulid 3 pulls rand 0.10 while dev-dep proptest 1.11 pins rand 0.9; VET004 forbids two locked versions. Revisit when proptest moves to rand 0.10."
+at = "2026-11-11T00:22:52Z"
+actor = "lognd"
+rev = 1
