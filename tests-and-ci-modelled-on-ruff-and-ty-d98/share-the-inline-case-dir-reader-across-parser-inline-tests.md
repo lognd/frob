@@ -2,7 +2,8 @@
 id = "01M5FEF9785BFG86935HYZ7H5P"
 title = "Share the inline-case dir reader across parser inline tests"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
