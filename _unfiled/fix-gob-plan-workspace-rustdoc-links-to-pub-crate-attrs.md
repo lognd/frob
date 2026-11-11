@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T16:22:16Z"
-updated = "2026-11-11T16:22:30Z"
+updated = "2026-11-11T16:22:31Z"
 scope = ["crates/gob-plan/src/workspace.rs", "changelog.d/**"]
 
 [[acceptance]]
