@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ['The generated config reference documents that packs.enabled = ["unity"] opts in to the Unity pack']
+moved = []
+at = "2026-11-11T22:10:43Z"
+actor = "lognd"
+rev = 1
