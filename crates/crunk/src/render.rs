@@ -6,8 +6,8 @@
 //! spec's design tokens, and written to `<out>/<screen>/<state>/<platform>.layout.json`. Cells
 //! are solved on `--jobs` worker threads but always reported and written in cell order, so the
 //! output is identical for every `--jobs` value. `--engine browser` needs the `gallery` feature
-//! and refuses with `E-GALLERY-NOT-BUILT` and the remedy in the default build. [`Plan`] and
-//! [`solve_all`] are shared with `snapshot`.
+//! and refuses with `E-GALLERY-NOT-BUILT` and the remedy in the default build. `Plan` and
+//! `solve_all` are shared with `snapshot`.
 
 // frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
 
