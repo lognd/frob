@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-06T21:47:35Z"
-updated = "2026-11-11T00:38:29Z"
+updated = "2026-11-11T00:47:11Z"
 scope = ["crates/gob-languages/**", "crates/grimble-check/src/log/**", "Cargo.lock", "docs/design/grimble/output-atoms.md", "crates/gob-symbols/src/lang.rs", "grimble-vet.toml"]
 
 [[acceptance]]
