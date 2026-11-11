@@ -1,0 +1,8 @@
+kind = "create"
+title = "Add Warn severity to gob_ir Severity (prereq for ~WXW0P9A advisory LOG atoms)"
+type = "task"
+category = "todo"
+priority = "medium"
+at = "2026-11-11T01:36:16Z"
+actor = "lognd"
+rev = 1
