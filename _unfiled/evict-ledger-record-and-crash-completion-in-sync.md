@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:33Z"
-updated = "2026-11-11T21:56:01Z"
+updated = "2026-11-11T21:56:02Z"
 scope = ["crates/frob-worktree/src/claim_evict.rs", "docs/design/frob/distributed-tickets.md", "crates/frob-worktree/tests/claim_evict.rs"]
 
 [[acceptance]]
