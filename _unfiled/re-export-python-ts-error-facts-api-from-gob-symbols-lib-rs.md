@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T12:22:44Z"
-updated = "2026-11-11T03:51:35Z"
+updated = "2026-11-11T03:53:27Z"
 scope = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given the gob-symbols crate, when built, then python_error_facts, typescript_error_facts and UnitErrorFacts are re-exported and the expect(dead_code) attrs are gone"
-bound = false
+bound = true
 +++
 
 Found while working ~2J7R2HK (lib.rs leased by another ticket).
