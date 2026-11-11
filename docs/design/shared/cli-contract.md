@@ -322,6 +322,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the triage category of the ticket noun |
 | `ticket evidence` | frob | frob-evidence | yes | 0 2 3 4 | 1 | effect: writes evidence and the done report |
 | `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: writes the done report |
+| `ticket usage` | frob | frob (bin) | no, each call appends an audit event | 0 2 3 4 | 1 | effect: appends a token-usage event to the ticket ledger for `stats` cost per token |
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: fetches evidence into the ledger |
 | `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 | effect: takes a lease and creates a worktree |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 | effect: closes, drops or reopens a ticket |
@@ -374,12 +375,15 @@ described in their own files, and are Milestone 2 or later (D36).
 | `agent status\|sync\|uninstall\|brief\|digest` (install, inspect and undo the agent integration; the brief verb prints a byte-capped session summary; the digest verb runs a command, stores its full output as an artifact and prints a bounded summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files; `digest` writes the command output under `.frob/artifacts/` |
 | `agent install\|hook\|heavy\|profile` (install registers frob's hook handlers in each agent's settings; hook answers the agent's hook JSON; heavy runs one heavy command under a shared lock and records its cost; profile folds those cost rows into a per-command summary) | frob | frob (bin) | yes; hook and profile are read-only, install adds only frob-marked entries, heavy repeats its command | 0 1 2 3 4 | 1 | effect: install writes the agent settings and heavy records command cost rows; hook and profile are the object noun `agent` answering and summarising those rows |
 | `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
+| `claim notices` | frob | frob-worktree | yes, read-only; `--ack` records only the caller's own acknowledgement and a repeat is a no-op | 0 2 3 4 | 1 | object: the idle-window notices of the claim noun |
 | `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
 | `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |
 | `lease release\|widen\|rekind` | frob | frob-lease | yes, same request | 0 2 3 4 | 1 | effect: rewrites a lease file |
 | `milestone new\|add\|list\|show` | frob | frob (bin) | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the milestone noun |
+| `coord status` | frob | frob (bin) | yes, read-only | 0 2 3 4 | 1 | object: the live full `frob check` runs across worktrees, the coordination noun |
 | `milestone criterion add\|remove`, `milestone evidence add\|list` | frob | frob (bin) | `criterion add` yes, the others no; `evidence list` is read-only | 0 2 3 4 | 1 | effect: writes milestone criteria and their evidence |
 | `mirror render\|recreate` | frob | frob (bin) | `render` yes, read-only; `recreate` no | 0 2 3 4 | 1 | effect: `recreate` rewrites the tickets mirror |
+| `mirror alias` | frob | frob (bin) | yes, a repeat reports `added: false` | 0 2 3 4 | 1 | effect: records a tracker key as an alias of a ticket in the ledger |
 | `profile` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: writes the measured verb timings |
 | `refresh` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: rebuilds the derived caches |
 | `release adopt\|bump\|cut\|notes` | frob | frob (bin) | `cut` no, the others yes | 0 2 3 4 | 1 | object: the release noun |

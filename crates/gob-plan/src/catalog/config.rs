@@ -126,15 +126,16 @@ fn columns_of(root: &Value, prop: &Value) -> Option<Vec<Column>> {
     }
     let row = row_schema(root, prop.get("items")?)?;
     let props = row.get("properties")?.as_object()?;
-    Some(
-        props
-            .iter()
-            .map(|(name, p)| Column {
-                name: name.clone(),
-                ty: scalar(p),
-            })
-            .collect(),
-    )
+    // Sorted by name so the catalog is identical whether or not `preserve_order` is unified in.
+    let mut cols: Vec<Column> = props
+        .iter()
+        .map(|(name, p)| Column {
+            name: name.clone(),
+            ty: scalar(p),
+        })
+        .collect();
+    cols.sort_by(|a, b| a.name.cmp(&b.name));
+    Some(cols)
 }
 
 impl ConfigSchema {

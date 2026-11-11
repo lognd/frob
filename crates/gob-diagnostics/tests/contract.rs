@@ -145,8 +145,22 @@ fn finding_record_schema_shows_reason() {
     let props = serde_json::to_value(&schema).unwrap()["properties"].clone();
     insta::assert_snapshot!(
         "finding_record_reason_schema",
-        serde_json::to_string_pretty(&props["reason"]).unwrap()
+        serde_json::to_string_pretty(&sorted(props["reason"].clone())).unwrap()
     );
+}
+
+/// Rebuild a JSON value with sorted object keys, stable whether or not `preserve_order` is unified in.
+fn sorted(value: serde_json::Value) -> serde_json::Value {
+    use serde_json::Value;
+    match value {
+        Value::Object(map) => {
+            let mut entries: Vec<_> = map.into_iter().collect();
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            Value::Object(entries.into_iter().map(|(k, v)| (k, sorted(v))).collect())
+        }
+        Value::Array(items) => Value::Array(items.into_iter().map(sorted).collect()),
+        other => other,
+    }
 }
 
 #[test]

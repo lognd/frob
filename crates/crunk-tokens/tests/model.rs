@@ -85,12 +85,13 @@ fn every_fixture_equals_the_python_token_list_and_theme_mapping() {
             assert_eq!(got_entries, want_entries, "{name} {label}: entries");
             // serde_json sorts object keys, so the mapping is compared as a sorted set; the
             // merge order only matters for collisions, which the values themselves reveal.
-            let want_theme: Vec<(String, String)> = py["theme"]
+            let mut want_theme: Vec<(String, String)> = py["theme"]
                 .as_object()
                 .unwrap()
                 .iter()
                 .map(|(k, v)| (k.clone(), v.as_str().unwrap().to_owned()))
                 .collect();
+            want_theme.sort();
             let mut got_theme: Vec<(String, String)> =
                 tokens.theme_mapping(ns, alpha).into_iter().collect();
             got_theme.sort();

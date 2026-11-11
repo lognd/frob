@@ -35,7 +35,11 @@ pub const VERBS: &[(&str, &[&str])] = &[
         ],
     ),
     ("lease", &["widen", "release", "rekind", "list"]),
-    ("claim", &["touch", "restore", "evict", "hold", "resume"]),
+    (
+        "claim",
+        &["touch", "restore", "evict", "hold", "resume", "notices"],
+    ),
+    ("coord", &["status"]),
     ("board", &[]),
     (
         "ticket",
@@ -63,6 +67,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
             "evidence",
             "brief",
             "contention",
+            "usage",
         ],
     ),
     (
@@ -78,7 +83,7 @@ pub const VERBS: &[(&str, &[&str])] = &[
     ("stats", &[]),
     ("plan", &[]),
     ("refresh", &[]),
-    ("mirror", &["render", "recreate"]),
+    ("mirror", &["render", "recreate", "alias"]),
     ("profile", &[]),
     ("tour", &[]),
     ("trust", &[]),

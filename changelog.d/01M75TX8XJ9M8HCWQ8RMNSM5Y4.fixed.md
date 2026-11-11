@@ -1,0 +1,1 @@
+CI nextest failures repaired: key-order-independent schema output and tests under serde_json preserve_order, the four newer verbs in the verb tables and profile, the Dockerfile matrix snapshot, and TODO001 in the opaque-region lexical list.

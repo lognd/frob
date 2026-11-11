@@ -817,3 +817,21 @@ skip = "needs a scene corpus beside the spec; covered by crates/crunk/tests/rend
 # frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
 [scenario."crunk snapshot"]
 skip = "needs a scene corpus and committed baselines; covered by crates/crunk/tests/render_solve.rs"
+
+[scenario."frob claim notices"]
+args = ["claim", "notices"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob coord status"]
+args = ["coord", "status"]
+readonly = true
+exit = [0, 3]
+budget_ms = 500
+
+[scenario."frob mirror alias"]
+skip = "writes a tracker-key alias event onto a ticket and needs a ticket and key argument; the cost is a single ledger write"
+
+[scenario."frob ticket usage"]
+skip = "appends a token-usage audit event and needs token counts; the cost is a single ledger write"

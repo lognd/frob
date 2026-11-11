@@ -3,7 +3,7 @@ source: crates/gob-symbols/tests/it/measured.rs
 expression: matrix_of(a)
 ---
 dockerfile F2
-resolve_ref Gap none
+resolve_ref Implemented syntactic
 apply_targets Gap none
 visibility Gap none
 effects Gap none

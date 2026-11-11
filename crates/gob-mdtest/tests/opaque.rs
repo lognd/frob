@@ -66,6 +66,10 @@ fn regions_in_different_sections_do_not_pair() {
 fn the_workspace_corpus_has_no_dangling_opaque_region() {
     // The shipped lexical rules whose island fires live in product corpora, beside the fixture id.
     let mut ids = lexical();
-    ids.extend(["TICK004".to_owned(), "TICK005".to_owned()]);
+    ids.extend(
+        ["TICK004", "TICK005", "TODO001"]
+            .into_iter()
+            .map(str::to_owned),
+    );
     gob_mdtest::opaque::assert_opaque(env!("CARGO_MANIFEST_DIR"), &ids);
 }

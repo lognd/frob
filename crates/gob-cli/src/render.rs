@@ -449,7 +449,7 @@ mod tests {
     // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
     fn value_lines_colours_keys_and_status_only_with_a_style() {
-        let v = serde_json::json!({"state": "closed", "n": 1});
+        let v = serde_json::json!({"n": 1, "state": "closed"});
         let mut plain = String::new();
         value_lines(&v, 1, &mut plain);
         assert_eq!(plain, "  n: 1\n  state: closed\n");

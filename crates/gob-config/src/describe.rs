@@ -142,5 +142,26 @@ pub fn schema_of<T: JsonSchema>() -> serde_json::Value {
     if let (serde_json::Value::Object(map), false) = (&mut node, defs.is_empty()) {
         map.insert("$defs".to_owned(), serde_json::Value::Object(defs));
     }
-    node
+    sort_keys(node)
+}
+
+/// Rebuild `value` with every object's keys sorted, so output is identical whether or not
+/// `serde_json`'s `preserve_order` feature is unified into the build.
+pub(crate) fn sort_keys(value: serde_json::Value) -> serde_json::Value {
+    match value {
+        serde_json::Value::Object(map) => {
+            let mut entries: Vec<_> = map.into_iter().collect();
+            entries.sort_by(|a, b| a.0.cmp(&b.0));
+            serde_json::Value::Object(
+                entries
+                    .into_iter()
+                    .map(|(k, v)| (k, sort_keys(v)))
+                    .collect(),
+            )
+        }
+        serde_json::Value::Array(items) => {
+            serde_json::Value::Array(items.into_iter().map(sort_keys).collect())
+        }
+        other => other,
+    }
 }
