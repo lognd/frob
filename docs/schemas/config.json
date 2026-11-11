@@ -1462,7 +1462,7 @@
       "properties": {
         "enabled": {
           "default": [],
-          "description": "Enabled pack ids in load order.",
+          "description": "Enabled pack ids in load order. Built-in packs are opt-in: add `\"unity\"` (`enabled = [\"unity\"]`) to turn on the Unity engine vocabulary pack; only the root `grimble.toml` enables it, never an adapter.",
           "items": {
             "type": "string"
           },

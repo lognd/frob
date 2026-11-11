@@ -308,7 +308,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `enabled` | `Vec<String>` | `[]` | yes | Enabled pack ids in load order. |
+| `enabled` | `Vec<String>` | `[]` | yes | Enabled pack ids in load order. Built-in packs are opt-in: add `"unity"` (`enabled = ["unity"]`) to turn on the Unity engine vocabulary pack; only the root `grimble.toml` enables it, never an adapter. |
 | `external` | `Vec<ExternalPack>` | `[]` | no | External packs (`[[packs.external]]`). |
 | `lock` | `String` | `"grimble.packs.lock"` | yes | Path of the pack lock, relative to the repository root. |
 | `severity` | `std::collections::BTreeMap<String, std::collections::BTreeMap<

@@ -39,7 +39,7 @@ pub struct ExternalPack {
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "packs", materialize)]
 pub struct PacksTable {
-    /// Enabled pack ids in load order.
+    /// Enabled pack ids in load order. Built-in packs are opt-in: add `"unity"` (`enabled = ["unity"]`) to turn on the Unity engine vocabulary pack; only the root `grimble.toml` enables it, never an adapter.
     #[config(default = Vec::new(), enforcement)]
     pub enabled: Vec<String>,
     /// Path of the pack lock, relative to the repository root.
