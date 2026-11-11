@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-31T12:22:44Z"
-updated = "2026-11-11T03:53:27Z"
+updated = "2026-11-11T03:56:13Z"
 scope = ["crates/gob-symbols/src/lib.rs", "crates/gob-symbols/src/python.rs", "crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/src/typescript/mod.rs", "changelog.d/**"]
 
 [[acceptance]]
