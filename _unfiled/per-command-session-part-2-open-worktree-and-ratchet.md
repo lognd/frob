@@ -7,13 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-18T04:27:10Z"
-updated = "2026-11-11T23:17:23Z"
+updated = "2026-11-11T23:17:25Z"
 labels = ["no-story"]
 scope = ["crates/frob-check/**", "crates/gob-git/**", "crates/frob/**", "crates/frob-evidence/**", "crates/frob-worktree/**"]
 
 [[acceptance]]
 text = "Repo::discover_shared opens each path once inside a DiscoverScope (test gob-git discover_scope)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A frob-check run opens its work tree fewer times inside a DiscoverScope than without (test frob-check opens_once)"
