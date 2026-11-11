@@ -1,0 +1,8 @@
+kind = "create"
+title = "Fix gob-plan workspace rustdoc links to pub(crate) attrs"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-11T16:22:16Z"
+actor = "lognd"
+rev = 1
