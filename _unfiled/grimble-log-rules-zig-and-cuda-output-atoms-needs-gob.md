@@ -2,7 +2,8 @@
 id = "01M6SD9NZJ8XPWYNGTB233F9ZV"
 title = "Grimble LOG rules: Zig and CUDA output atoms (needs gob_languages variants)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
