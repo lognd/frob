@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["rules.md documents the gob-pattern [[test]] format and next_id"]
+moved = []
+at = "2026-11-11T04:21:44Z"
+actor = "lognd"
+rev = 1

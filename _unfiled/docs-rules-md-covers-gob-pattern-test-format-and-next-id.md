@@ -7,5 +7,10 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-05T00:49:07Z"
-updated = "2026-11-05T00:49:07Z"
+updated = "2026-11-11T04:21:44Z"
+scope = ["docs/design/shared/rules.md", "changelog.d/**"]
+
+[[acceptance]]
+text = "rules.md documents the gob-pattern [[test]] format and next_id"
+bound = false
 +++
