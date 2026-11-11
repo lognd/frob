@@ -2,7 +2,8 @@
 id = "01M5HWMZ5CEY7CETNK4NDSKWGM"
 title = "Switch frob.toml cargo fmt stage to formatter-list parser"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
