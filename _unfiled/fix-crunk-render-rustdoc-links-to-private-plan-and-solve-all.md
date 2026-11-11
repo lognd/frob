@@ -2,7 +2,8 @@
 id = "01M75JF1F1GKATFSDDPDF55K00"
 title = "Fix crunk render rustdoc links to private Plan and solve_all"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
