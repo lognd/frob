@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = [".github/actions/install-linker/action.yml", "changelog.d/**"]
+at = "2026-11-11T16:11:31Z"
+actor = "lognd"
+rev = 1
