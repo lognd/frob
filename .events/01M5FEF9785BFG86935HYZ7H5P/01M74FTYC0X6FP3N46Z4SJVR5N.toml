@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T05:03:35Z"
+digest = "ad25dc6af2bd1809b93d78ff0efcd57baa6145e5f56890c8dd88037a4682e924"
+exit_code = 0
+head = "80bf83ba3c07efc40e851cb19843d761eca2b1c5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 59eb2184-2f48-4714-a20f-2d4fbf40c929 with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.138s] crunk-spec::inline err_cases_report_errors
+        PASS [   0.140s] crunk-spec::inline ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.140s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test inline"
+size = 580
+status = "measured"
+test_count = 2
+tests_digest = "29ac82bb2dd31c95daf495a447b9a3214b99915f59265bbebb86589299281f01"
+at = "2026-11-11T05:03:35Z"
+actor = "lognd"
+rev = 1
