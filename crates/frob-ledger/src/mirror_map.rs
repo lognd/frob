@@ -111,16 +111,7 @@ impl Ledger {
     /// [`LedgerError::NotFound`] when the ticket is absent, [`LedgerError`] (malformed) for a
     /// shard whose `issue` is not a positive integer, or store failures.
     pub fn mirror_issue(&self, id: TicketId) -> Result<Option<u64>> {
-        let s = self.synced()?;
-        Self::load(&s, id)?;
-        let Some(tip) = s.tip else {
-            return Ok(None);
-        };
-        let path = shard_path(id);
-        self.text(&tip.to_string(), &path)?
-            .map(|t| parse_shard(&path, &t))
-            .transpose()
-            .map(Option::flatten)
+        self.read_shard(id, parse_shard)
     }
 
     /// The mirror's JSON record stored in the map shard of `id`, `None` when it has no shard or payload.
@@ -131,6 +122,15 @@ impl Ledger {
     /// shard that is not TOML or whose `payload` is not a string, or store failures.
     // frob:ticket 01M5EKM08ZM45RZ1JBHC68F156
     pub fn mirror_payload(&self, id: TicketId) -> Result<Option<String>> {
+        self.read_shard(id, parse_payload)
+    }
+
+    /// Reads the map shard of `id` at the ledger tip and decodes it with `parse`; `None` when absent.
+    fn read_shard<T>(
+        &self,
+        id: TicketId,
+        parse: impl FnOnce(&str, &str) -> Result<Option<T>>,
+    ) -> Result<Option<T>> {
         let s = self.synced()?;
         Self::load(&s, id)?;
         let Some(tip) = s.tip else {
@@ -138,7 +138,7 @@ impl Ledger {
         };
         let path = shard_path(id);
         self.text(&tip.to_string(), &path)?
-            .map(|t| parse_payload(&path, &t))
+            .map(|t| parse(&path, &t))
             .transpose()
             .map(Option::flatten)
     }
