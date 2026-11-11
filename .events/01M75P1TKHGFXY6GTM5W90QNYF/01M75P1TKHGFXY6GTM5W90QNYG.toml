@@ -1,0 +1,8 @@
+kind = "create"
+title = "Make install-linker action retry apt on mirror outages"
+type = "bug"
+category = "todo"
+priority = "high"
+at = "2026-11-11T16:11:28Z"
+actor = "lognd"
+rev = 1
