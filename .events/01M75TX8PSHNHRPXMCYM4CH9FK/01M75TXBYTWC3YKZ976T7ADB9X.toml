@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The named nextest failures from CI run 43059372958 pass on ubuntu-latest and windows-latest"]
+moved = []
+at = "2026-11-11T17:36:25Z"
+actor = "lognd"
+rev = 1
