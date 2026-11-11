@@ -2,7 +2,8 @@
 id = "01M68YK32M30DKPTJ8XYKHZ9AH"
 title = "Re-export Python/TS error-facts API from gob-symbols lib.rs"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
