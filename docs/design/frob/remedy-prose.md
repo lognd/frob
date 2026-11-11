@@ -1,5 +1,10 @@
 # Prose remedies in refusals
 
+Status: proposed
+Owner: frob
+Decisions: D79
+Audience: contributor
+
 Ticket: ~M7ZJQJT (child of the remedy-quality epic). Scope: `frob-land`,
 `frob-worktree`, `frob-lease` callers of `Refusal::with_remedy`.
 
