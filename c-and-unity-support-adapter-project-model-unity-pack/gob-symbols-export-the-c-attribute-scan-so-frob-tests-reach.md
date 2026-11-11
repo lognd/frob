@@ -2,7 +2,8 @@
 id = "01M5F8MNH6QGSXPJDHWB2BJB30"
 title = "gob-symbols: export the C# attribute scan so frob-tests reach stops duplicating it"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
