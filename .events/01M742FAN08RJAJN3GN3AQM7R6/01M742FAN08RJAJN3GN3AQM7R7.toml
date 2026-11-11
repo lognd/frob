@@ -1,0 +1,8 @@
+kind = "create"
+title = "gob-caps: fix stale Dockerfile F1 comment and add the resolve_ref/imports cell justifying F2"
+type = "task"
+category = "todo"
+priority = "low"
+at = "2026-11-11T01:10:05Z"
+actor = "lognd"
+rev = 1
