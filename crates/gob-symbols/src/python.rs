@@ -415,6 +415,10 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
 }
 
 /// Parses and folds `text`, returning the per-unit error facts (raise sites and callee errors).
+///
+/// # Errors
+///
+/// Returns a [`FoldError`] when the source cannot be parsed or folded.
 // frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
 pub fn python_error_facts(
     text: &str,

@@ -131,6 +131,10 @@ pub(super) fn fold_source(text: &str, input: &FileInput<'_>) -> Result<Folded, F
 }
 
 /// Parses and folds `text`, returning the per-unit error facts: a unit that throws is Unknown (untyped throws).
+///
+/// # Errors
+///
+/// Returns a [`FoldError`] when the source cannot be parsed or folded.
 // frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
 pub fn typescript_error_facts(
     text: &str,
