@@ -2808,7 +2808,6 @@ dependencies = [
  "gob-languages",
  "gob-macros",
  "gob-mdtest",
- "gob-path",
  "gob-rules",
  "gob-symbols",
  "gob-testsupport",
