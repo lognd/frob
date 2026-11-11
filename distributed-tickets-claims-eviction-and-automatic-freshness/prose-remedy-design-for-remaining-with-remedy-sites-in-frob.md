@@ -2,7 +2,8 @@
 id = "01M6Q8WBHSVB7XCXF9PM7ZJQJT"
 title = "Prose-remedy design for remaining with_remedy sites in frob-land, frob-worktree, frob-lease"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
