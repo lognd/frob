@@ -2,12 +2,12 @@
 id = "01M5CVQCHZNZF5W5MZRAJ3BPBX"
 title = "Drop the remedies.rs text scan once no text-only with_remedy command sites remain"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-20T14:33:55Z"
-updated = "2026-11-11T01:10:12Z"
+updated = "2026-11-11T01:10:15Z"
 labels = ["no-story"]
 scope = ["crates/frob/tests/siblings/remedies.rs", "changelog.d/**", "crates/frob/tests/siblings/**"]
 
