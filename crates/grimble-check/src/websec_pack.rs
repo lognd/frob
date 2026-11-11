@@ -194,7 +194,11 @@ fn family_of(rule: &str) -> &str {
 /// # Errors
 /// [`PackBuildError`] if the pack does not compile.
 pub fn catalog() -> Result<Vec<CatalogRow>, PackBuildError> {
-    Ok(gob_packs::sysdesign::catalog_rows(NAME, &plans()?, family_of))
+    Ok(gob_packs::sysdesign::catalog_rows(
+        NAME,
+        &plans()?,
+        family_of,
+    ))
 }
 
 /// Confirms the tree at `root` holds exactly the embedded sources and returns its digest.
