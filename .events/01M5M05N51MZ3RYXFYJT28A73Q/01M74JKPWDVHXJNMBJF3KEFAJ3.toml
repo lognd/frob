@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "blocked: gob-caps cannot read gob-ir registry without a dependency cycle; needs registry vocabulary moved into gob-caps (gob-ir + gob-caps redesign)"
+at = "2026-11-11T05:52:06Z"
+actor = "lognd"
+rev = 1
