@@ -8,13 +8,13 @@ points = 3
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T14:31:49Z"
+updated = "2026-11-11T14:45:59Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/lease_cmd.rs", "crates/frob/**", "docs/**"]
 
 [[acceptance]]
 text = "frob claim notices lists claim idle notices and --ack acknowledges them via Workspace::ack_claim_notices, with an integration test"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "docs/design/frob/distributed-tickets.md 4.4 documents acknowledgement and generated CLI docs are current"
