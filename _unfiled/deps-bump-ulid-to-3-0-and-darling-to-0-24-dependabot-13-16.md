@@ -7,10 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-10T23:51:33Z"
-updated = "2026-11-10T23:55:13Z"
+updated = "2026-11-10T23:57:26Z"
 scope = ["Cargo.toml", "Cargo.lock", "grimble-vet.toml", "crates/gob-macros/**", "crates/frob-ledger/**", "crates/frob-evidence/**", "crates/frob-release/**"]
 
 [[acceptance]]
 text = "ulid 3 and darling 0.24 build and their unit tests pass"
-bound = false
+bound = true
 +++
