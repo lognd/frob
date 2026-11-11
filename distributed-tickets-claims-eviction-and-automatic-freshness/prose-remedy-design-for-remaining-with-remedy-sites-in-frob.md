@@ -8,7 +8,7 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-11-06T01:51:55Z"
-updated = "2026-11-11T22:15:37Z"
+updated = "2026-11-11T22:15:38Z"
 labels = ["no-story", "creates:docs/design/frob/remedy-prose.md", "creates:changelog.d/01M6Q8WBHSVB7XCXF9PM7ZJQJT.*"]
 scope = ["crates/frob-land/**", "crates/frob-worktree/**", "crates/frob-lease/**", "docs/design/frob/remedy-prose.md", "changelog.d/01M6Q8WBHSVB7XCXF9PM7ZJQJT.*"]
 
