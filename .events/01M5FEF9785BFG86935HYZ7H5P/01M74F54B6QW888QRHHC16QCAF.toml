@@ -1,0 +1,67 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T04:49:03Z"
+digest = "8a39945246ac0b518cc83ca615d1b04400098dda65940bcce543dcaf66502543"
+exit_code = 0
+head = "80bf83ba3c07efc40e851cb19843d761eca2b1c5"
+inline = '''
+   Compiling tracing-core v0.1.36
+   Compiling regex-syntax v0.8.11
+   Compiling syn v3.0.6
+   Compiling indexmap v2.14.2
+   Compiling log v0.4.34
+   Compiling serde_spanned v1.1.1
+   Compiling libc v0.2.189
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling tracing v0.1.44
+   Compiling serde_json v1.0.151
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling getrandom v0.4.3
+   Compiling console v0.16.6
+   Compiling tempfile v3.27.0
+   Compiling tree-sitter v0.27.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling thiserror-impl v2.0.21
+   Compiling ref-cast-impl v1.0.27
+   Compiling serde_derive v1.0.229
+   Compiling insta v1.48.0
+   Compiling ref-cast v1.0.27
+   Compiling regex-automata v0.4.18
+   Compiling thiserror v2.0.21
+   Compiling schemars_derive v1.2.2
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling serde v1.0.229
+   Compiling schemars v1.2.2
+   Compiling globset v0.4.20
+   Compiling regex v1.13.1
+   Compiling ignore v0.4.33
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.85s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cb2c8bb6-cf56-417b-8bcd-c2d2ca53c89a with nextest profile: default
+    Starting 2 tests across 1 binary
+        PASS [   0.136s] crunk-spec::inline err_cases_report_errors
+        PASS [   0.138s] crunk-spec::inline ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.139s] 2 tests run: 2 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec --test inline"
+size = 2261
+status = "measured"
+test_count = 2
+tests_digest = "29ac82bb2dd31c95daf495a447b9a3214b99915f59265bbebb86589299281f01"
+at = "2026-11-11T04:49:03Z"
+actor = "lognd"
+rev = 1
