@@ -2,13 +2,13 @@
 id = "01M6Q1JHTF77GRJRN0BDE3BN99"
 title = "Add frob claim notices verb (list and --ack) and update distributed-tickets.md 4.4"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T14:31:45Z"
+updated = "2026-11-11T14:31:49Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/lease_cmd.rs", "crates/frob/**", "docs/**"]
 
