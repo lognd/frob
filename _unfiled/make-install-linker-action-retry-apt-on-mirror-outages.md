@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T16:11:28Z"
-updated = "2026-11-11T16:11:57Z"
+updated = "2026-11-11T16:11:58Z"
 scope = [".github/actions/install-linker/action.yml", "changelog.d/**"]
 
 [[acceptance]]
