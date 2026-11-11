@@ -2,9 +2,9 @@
 //! file texts are joined, so the single-model executor sees all files at once. Shared by the
 //! example runner and by hosts (crunk) that run a GRL rule over a whole project.
 //!
-//! Each grafted file root carries the [`PATH_ATTR`](crate::exec::PATH_ATTR) attribute (its repository path)
+//! Each grafted file root carries the `PATH_ATTR` attribute (its repository path)
 //! plus any per-file attributes the caller supplies (crunk's `file.bucket`, `file.component`,
-//! `file.outside_css_root`); the workspace root carries [`WORKSPACE_ATTR`](crate::exec::WORKSPACE_ATTR).
+//! `file.outside_css_root`); the workspace root carries `WORKSPACE_ATTR`.
 //! The `file` kind and `.file.path` read those attributes.
 
 // frob:ticket 01M4XJMM949EHC6X13TYJPYE5V
@@ -25,7 +25,7 @@ pub enum WorkspaceError {
 /// One file of a workspace: its repository path, text and the attributes stamped on its root.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct WorkspaceFile {
-    /// The repository path, carried as [`PATH_ATTR`].
+    /// The repository path, carried as `PATH_ATTR`.
     pub path: String,
     /// The file text.
     pub text: String,
