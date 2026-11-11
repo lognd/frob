@@ -450,7 +450,11 @@ Steps, ordered so a crash anywhere is safe:
    recovery command; push by CAS.
 4. A crash between 2 and 3 leaves "ticket in-progress, branch absent,
    parked ref present": every sync recognises that state and completes
-   step 3 from the metadata commit, attributing it to the evictor.
+   step 3 from the metadata commit, attributing it to the evictor
+   (`Workspace::complete_crashed_eviction`, built on `needs_completion`
+   and `read_park_record`). The normal path and the recovery write the
+   same record: the `lease` op `evict` event, then the transition whose
+   reason names the previous holder.
 
 Then the evictor (or anyone) claims normally; `frob work ~X --from
 parked/<handle>-<n>` starts from the parked work.
