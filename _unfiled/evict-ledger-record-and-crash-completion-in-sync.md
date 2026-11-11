@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:33Z"
-updated = "2026-11-11T21:32:57Z"
+updated = "2026-11-11T21:37:23Z"
 scope = ["crates/frob-worktree/src/claim_evict.rs", "docs/design/frob/distributed-tickets.md"]
 
 [[acceptance]]
 text = "Eviction writes the lease op evict event and the in-progress to todo transition naming the previous holder"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "complete_crashed_eviction finishes a crashed eviction using needs_completion and read_park_record"
