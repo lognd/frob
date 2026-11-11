@@ -2,7 +2,8 @@
 id = "01M6Q1JHTF77GRJRN0BDE3BN99"
 title = "Add frob claim notices verb (list and --ack) and update distributed-tickets.md 4.4"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
