@@ -365,6 +365,27 @@ output:
    fix = "_log.info($$$ARGS)"
    ```
 
+   A rule file may carry embedded `[[test]]` tables, run by
+   `RuleFile::run_tests` (`gob-pattern` `authoring`; unknown keys are
+   rejected). `source` is run through the rule; `matches` lists the exact
+   source text of each expected finding in order (empty or absent means the
+   rule must stay quiet); `fixed` is the expected output after applying
+   every fix, for rules that have a `fix`; `name` is an optional label shown
+   in failures:
+
+   ```toml
+   [[test]]
+   name = "flags a bare print"
+   source = "print('hi')"
+   matches = ["print('hi')"]
+   fixed = "_log.info('hi')"
+   ```
+
+   New ids come from `gob_pattern::authoring::next_id(dir)`: one past the
+   highest `GPOLnnn` declared by the `*.grl.toml` files in `dir`, zero
+   padded to at least three digits. Unreadable or malformed files are
+   skipped (logged), and a missing dir yields `GPOL001`.
+
 2. Universal rule files, same syntax, `language = "*"`, where
    `pattern` and `kind` address U operators and role attributes
    (universal-model.md 2.3 and 2.4) instead of a grammar:
