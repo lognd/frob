@@ -2,7 +2,8 @@
 id = "01M6KN33275NHTQFQ9JC5P7YJN"
 title = "grimble websec: fix comments claiming db.query comes from core-effects"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
