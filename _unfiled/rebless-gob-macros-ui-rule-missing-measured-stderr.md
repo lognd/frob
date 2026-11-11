@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:12:38Z"
-updated = "2026-10-30T14:12:38Z"
-scope = ["crates/gob-macros/tests/ui_rule/**"]
+updated = "2026-11-11T03:41:32Z"
+scope = ["crates/gob-macros/tests/ui_rule/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "ui_rule_attr passes; stderr no longer lists unrelated Measured implementors (or is blessed with Base001/Base002)"

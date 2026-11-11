@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-macros/tests/ui_rule/**"]
+new = ["crates/gob-macros/tests/ui_rule/**", "changelog.d/**"]
+at = "2026-11-11T03:41:32Z"
+actor = "lognd"
+rev = 1
