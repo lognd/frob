@@ -105,18 +105,7 @@ pub const RULES: [(&str, &str); 20] = [
     ),
 ];
 
-/// One `grimble rule catalog` row of the pack: a family, its namespace and its rule.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CatalogRow {
-    /// The pack name.
-    pub pack: String,
-    /// The family label (`WEBSEC`, `SQL`).
-    pub family: String,
-    /// The registry namespace the rule id lives in (`SEC` for WEBSEC).
-    pub namespace: String,
-    /// The rule id (`SEC101`).
-    pub rule: String,
-}
+pub use gob_packs::sysdesign::CatalogRow;
 
 /// Why the pack does not build.
 #[derive(Debug, thiserror::Error)]
@@ -205,15 +194,7 @@ fn family_of(rule: &str) -> &str {
 /// # Errors
 /// [`PackBuildError`] if the pack does not compile.
 pub fn catalog() -> Result<Vec<CatalogRow>, PackBuildError> {
-    Ok(plans()?
-        .iter()
-        .map(|p| CatalogRow {
-            pack: NAME.to_owned(),
-            family: family_of(p.rule()).to_owned(),
-            namespace: namespace_of(p.rule()).to_owned(),
-            rule: p.rule().to_owned(),
-        })
-        .collect())
+    Ok(gob_packs::sysdesign::catalog_rows(NAME, &plans()?, family_of))
 }
 
 /// Confirms the tree at `root` holds exactly the embedded sources and returns its digest.
