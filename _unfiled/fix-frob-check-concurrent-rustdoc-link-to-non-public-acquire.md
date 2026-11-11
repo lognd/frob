@@ -2,7 +2,8 @@
 id = "01M75MXWWPNSXC7SGDAS35JA07"
 title = "Fix frob-check concurrent rustdoc link to non-public acquire"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
