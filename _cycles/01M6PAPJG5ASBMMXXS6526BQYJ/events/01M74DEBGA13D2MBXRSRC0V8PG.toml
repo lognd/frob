@@ -1,0 +1,9 @@
+kind = "cycle"
+op = "over-commit"
+ticket = "01M6MJWMMWKEW43R3B5DPSYQ38"
+committed = 595
+text = "docs gap"
+capacity = 406
+at = "2026-11-11T04:21:44Z"
+actor = "lognd"
+rev = 1
