@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-11T14:51:14Z"
+digest = "40122108469650e213f0e1accd421cb30e9dcbb920010cd57065c062d87468e5"
+head = "b537198b05f604bc8422cc06018857b1a3faa492"
+provider = "file"
+ref = "docs/design/frob/distributed-tickets.md"
+size = 55828
+status = "measured"
+at = "2026-11-11T14:51:14Z"
+actor = "lognd"
+rev = 1

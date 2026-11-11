@@ -8,7 +8,7 @@ points = 3
 parent = "01M5DCZ3PVHP2ZNP9SVYFFQSVP"
 reporter = "lognd"
 created = "2026-11-05T23:44:14Z"
-updated = "2026-11-11T14:45:59Z"
+updated = "2026-11-11T14:51:14Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/lease_cmd.rs", "crates/frob/**", "docs/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "docs/design/frob/distributed-tickets.md 4.4 documents acknowledgement and generated CLI docs are current"
-bound = false
+bound = true
 +++
 
 Follow-up of ~JFEYB9S: Workspace::ack_claim_notices exists in frob-worktree; expose it as 'frob claim notices [--ack]' in crates/frob and document acknowledgement in docs/design/frob/distributed-tickets.md 4.4 (blocked by lease P21FHB9 on docs/**).
