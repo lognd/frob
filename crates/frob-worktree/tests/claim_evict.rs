@@ -268,6 +268,9 @@ fn an_idle_claim_is_evicted_with_the_rate_reported_and_a_repeat_needs_yes() {
     // Nothing left to evict.
     let again = ws.evict_claim(&t, "stalled", false, &policy).unwrap_err();
     assert_eq!(code(again), E_EVICT_NO_CLAIM);
+    // A completed eviction leaves no crash to complete.
+    // frob:tests crates/frob-worktree/src/claim_evict.rs::complete_crashed_eviction
+    assert_eq!(ws.complete_crashed_eviction(&t).expect("complete"), None);
     // The same holder claims again and idles again: a repeat inside 14 days.
     agent_claim(&fx, &leases, &handle);
     let ledger = ledger_ahead(&fx, 10 * 3600);
