@@ -217,7 +217,7 @@ pub(crate) fn resolve_diff(
     base: &str,
     ledger: &LedgerConfig,
 ) -> Result<TicketScope, CheckError> {
-    let repo = Repo::discover(&snap.core.root)
+    let repo = Repo::discover_shared(&snap.core.root)
         .map_err(|e| CheckError::Ticket(format!("diff base `{base}`: {e}")))?;
     repo.rev_parse(base)
         .map_err(|e| CheckError::Ticket(format!("diff base `{base}` does not resolve: {e}")))?;
@@ -464,7 +464,7 @@ pub(crate) fn ticket_rules(
     let Some(state) = &snap.inputs.ledger else {
         return Vec::new();
     };
-    let repo = match Repo::discover(&snap.core.root) {
+    let repo = match Repo::discover_shared(&snap.core.root) {
         Ok(r) => r,
         Err(err) => {
             let msg = format!("repository unreadable ({err}); SCOPE001 and TICK002 not evaluated");

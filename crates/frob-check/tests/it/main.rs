@@ -8,6 +8,7 @@ mod evaluation;
 mod fidelity;
 mod ledger_inert;
 mod ledger_missing;
+mod opens_once;
 mod perf;
 mod proc001;
 mod proc002;

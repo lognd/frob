@@ -147,7 +147,7 @@ fn export_unless_explicit(root: &Path, explicit: bool) -> Exported {
             return Exported::Skipped;
         }
     }
-    let Ok(repo) = gob_git::Repo::discover(root) else {
+    let Ok(repo) = gob_git::Repo::discover_shared(root) else {
         tracing::debug!(root = %Shown::of(root), "not a git checkout; no shared cargo target");
         return Exported::Skipped;
     };

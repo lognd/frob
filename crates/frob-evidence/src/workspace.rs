@@ -46,7 +46,7 @@ impl Workspace {
     /// [`EvidenceError::NotARepo`] outside a work tree, [`EvidenceError::Config`]
     /// for an unreadable or invalid `frob.toml`.
     pub fn open(cwd: &Path, clock: std::sync::Arc<dyn gob_time::Clock>) -> Result<Self> {
-        let repo = Repo::discover(cwd).map_err(|e| {
+        let repo = Repo::discover_shared(cwd).map_err(|e| {
             tracing::debug!(error = %e, "no repository");
             EvidenceError::NotARepo(Shown::of(cwd).to_string())
         })?;

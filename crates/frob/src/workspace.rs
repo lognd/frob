@@ -20,7 +20,7 @@ pub(crate) struct Located {
 impl Located {
     /// Discover the repository containing `cwd`.
     pub(crate) fn discover(cwd: &Path) -> Self {
-        match Repo::discover(cwd) {
+        match Repo::discover_shared(cwd) {
             Ok(repo) => {
                 let root = repo
                     .work_dir()

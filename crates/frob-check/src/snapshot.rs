@@ -179,7 +179,7 @@ fn open_ledger(
     clock: Arc<dyn gob_time::Clock>,
     configured: bool,
 ) -> LedgerOpen {
-    let repo = match gob_git::Repo::discover(root) {
+    let repo = match gob_git::Repo::discover_shared(root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
             tracing::info!(root = %root.display(), "no git work tree: ledger rules are skipped");

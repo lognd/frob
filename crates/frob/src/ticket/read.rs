@@ -820,7 +820,7 @@ pub(super) fn build_lease_guard(
     cwd: &std::path::Path,
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<frob_lease::LeaseGuard, String> {
-    let repo = gob_git::Repo::discover(cwd).map_err(|e| e.to_string())?;
+    let repo = gob_git::Repo::discover_shared(cwd).map_err(|e| e.to_string())?;
     let root = repo
         .work_dir()
         .map(std::path::Path::to_path_buf)
