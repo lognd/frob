@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "wont-fix"
+reason = "Text-only with_remedy sites naming frob commands remain (frob/refresh_cmd.rs, frob-land/error.rs, release_cmd.rs, frob-worktree, frob-ledger and others); the scan cannot be dropped until they migrate to with_command. Reopen as a migration ticket."
+at = "2026-11-11T01:10:44Z"
+actor = "lognd"
+rev = 1
