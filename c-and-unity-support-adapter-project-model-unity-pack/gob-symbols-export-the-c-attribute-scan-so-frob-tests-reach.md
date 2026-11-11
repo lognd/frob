@@ -2,13 +2,13 @@
 id = "01M5F8MNH6QGSXPJDHWB2BJB30"
 title = "gob-symbols: export the C# attribute scan so frob-tests reach stops duplicating it"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T12:58:06Z"
-updated = "2026-11-11T05:24:27Z"
+updated = "2026-11-11T05:24:31Z"
 scope = ["crates/gob-symbols/**", "crates/frob-tests/**"]
 
 [[acceptance]]
