@@ -8,7 +8,7 @@ points = 2
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T14:40:01Z"
-updated = "2026-11-11T05:03:35Z"
+updated = "2026-11-11T05:03:37Z"
 scope = ["crates/gob-testsupport/**", "crates/crunk-spec/tests/inline.rs", "crates/crunk-spec/Cargo.toml", "crates/gob-plan/tests/inline.rs", "crates/gob-plan/Cargo.toml", "crates/gob-directives/tests/inline.rs", "crates/gob-directives/Cargo.toml", "crates/grimble-model/tests/inline.rs", "crates/grimble-model/Cargo.toml", "Cargo.lock"]
 
 [[acceptance]]
