@@ -96,20 +96,7 @@ pub(crate) fn ledger_finding(
 mod tests {
     use super::*;
 
-    struct Fixed(Result<Reply, String>);
-
-    impl ProtectionProbe for Fixed {
-        fn get(&self, path: &str) -> Result<Reply, String> {
-            if path.contains("/rules/branches/") {
-                // No ruleset covers the branch, so the classic verdict stands.
-                return Ok(Reply {
-                    status: 200,
-                    body: "[]".to_owned(),
-                });
-            }
-            self.0.clone()
-        }
-    }
+    use frob_obligations::tick_protect::ClassicOnly as Fixed;
 
     fn open_reply() -> Fixed {
         Fixed(Ok(Reply {
