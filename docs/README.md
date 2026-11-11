@@ -32,6 +32,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/frob/migration.md](design/frob/migration.md) | Migration from v1 and rollout | draft | frob |
 | [design/frob/output.md](design/frob/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
+| [design/frob/remedy-prose.md](design/frob/remedy-prose.md) | Prose remedies in refusals | draft | frob |
 | [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/grimble/conformance.md](design/grimble/conformance.md) | The .grmb language: conformance, example and milestones | draft | grimble |
