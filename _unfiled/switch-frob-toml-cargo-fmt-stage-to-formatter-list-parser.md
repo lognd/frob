@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-22T13:26:16Z"
-updated = "2026-11-11T05:11:42Z"
+updated = "2026-11-11T05:12:12Z"
 labels = ["no-story"]
 scope = ["frob.toml"]
 
 [[acceptance]]
 text = 'frob.toml cargo fmt stage sets parser = "formatter-list" so unformatted files surface as FMT001 findings'
-bound = false
+bound = true
 +++
 
 found while working ~H36992B
