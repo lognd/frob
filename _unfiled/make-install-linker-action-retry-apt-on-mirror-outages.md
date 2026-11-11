@@ -2,12 +2,12 @@
 id = "01M75P1TKHGFXY6GTM5W90QNYF"
 title = "Make install-linker action retry apt on mirror outages"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-11T16:11:28Z"
-updated = "2026-11-11T16:11:31Z"
+updated = "2026-11-11T16:11:34Z"
 scope = [".github/actions/install-linker/action.yml", "changelog.d/**"]
 
 [[acceptance]]
