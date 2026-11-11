@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Repo::discover_shared opens each path once inside a DiscoverScope (test gob-git discover_scope)", "A frob-check run opens its work tree fewer times inside a DiscoverScope than without (test frob-check opens_once)", "The frob binary holds one DiscoverScope for the whole command"]
+moved = []
+at = "2026-11-11T23:17:23Z"
+actor = "lognd"
+rev = 1
