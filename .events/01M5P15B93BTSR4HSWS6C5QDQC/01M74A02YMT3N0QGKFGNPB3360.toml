@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["RUST_ONLY_RULES is defined once in crates/crunk/tests/common/mod.rs and both parity tests use it"]
+moved = []
+at = "2026-11-11T03:21:34Z"
+actor = "lognd"
+rev = 1
