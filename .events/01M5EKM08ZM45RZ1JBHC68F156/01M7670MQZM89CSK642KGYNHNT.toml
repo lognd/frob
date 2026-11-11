@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["LedgerTickets::state returns the persisted read-back and retained tracker event values from the map shard"]
+moved = []
+at = "2026-11-11T21:07:55Z"
+actor = "lognd"
+rev = 1
