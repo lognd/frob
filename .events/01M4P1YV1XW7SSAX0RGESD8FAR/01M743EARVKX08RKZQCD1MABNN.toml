@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-11T01:27:00Z"
+digest = "70ca20a558741959442831090d38faa6e0c1c95f7f17e5bfab3049457f33539e"
+exit_code = 0
+head = "3bce373181947cde021d3d160c7b3e0bce21d894"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 80d4f954-ce79-41be-ab2b-aa05d6b4457d with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.006s] frob-ledger::archive format_round_trips_and_rejects_damage
+        PASS [   0.007s] frob-ledger::archive predicate_matches_only_import_done_reports
+        PASS [   0.029s] frob-ledger::archive dry_run_reports_and_writes_nothing
+        PASS [   0.034s] frob-ledger::archive archive_moves_done_reports_and_stays_clean
+        PASS [   0.037s] frob-ledger::archive archived_events_read_back_on_demand
+        PASS [   0.038s] frob-ledger::archive later_import_merges_into_the_archive
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.039s] 6 tests run: 6 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger --test archive"
+size = 953
+status = "measured"
+test_count = 6
+tests_digest = "a650cf2fe6588c958b1364fe096906f5f2468d2b141c0590992906edfc149fde"
+at = "2026-11-11T01:27:00Z"
+actor = "lognd"
+rev = 1
