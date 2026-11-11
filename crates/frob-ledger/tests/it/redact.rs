@@ -153,4 +153,5 @@ fn fragment_findings_flags_private_terms_in_fragment_files() {
 fn mention_local_files_tolerates_absent_files() {
     let dir = tempfile::tempdir().expect("tempdir");
     RuleSet::mention_local_files(dir.path());
+    assert_eq!(std::fs::read_dir(dir.path()).expect("read").count(), 0);
 }

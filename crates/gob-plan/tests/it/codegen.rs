@@ -66,6 +66,9 @@ fn the_generated_rule_and_its_plan_find_the_same_things() {
 /// Rewrites the checked-in module; run with `GEN_CODEGEN=1` after changing the generator.
 #[test]
 fn regenerate_when_asked() {
-    let wanted = std::env::var_os("GEN_CODEGEN").is_some();
-    wanted.then(|| std::fs::write("tests/codegen/danger001.rs", generate(&plan())).unwrap());
+    let generated = generate(&plan());
+    assert!(!generated.is_empty());
+    if std::env::var_os("GEN_CODEGEN").is_some() {
+        std::fs::write("tests/codegen/danger001.rs", generated).unwrap();
+    }
 }
