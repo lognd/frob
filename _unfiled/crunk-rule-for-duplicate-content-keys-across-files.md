@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-22T06:44:59Z"
-updated = "2026-11-12T07:03:45Z"
+updated = "2026-11-12T12:30:09Z"
 scope = ["crates/crunk-rules/**", "changelog.d/01M5H5P5KF5WHTPQVJ4WM2DDBN.*", "docs/reference/rules/CONTENT004.md", "docs/reference/rules/README.md", "docs/README.md"]
 
 [[acceptance]]
