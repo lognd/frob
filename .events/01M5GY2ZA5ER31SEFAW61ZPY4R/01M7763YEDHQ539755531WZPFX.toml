@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given two DTCG token paths that map to the same CSS custom property name, when tokens are loaded, then a collision error names both paths and the property"]
+moved = []
+at = "2026-11-12T06:11:29Z"
+actor = "lognd"
+rev = 1
