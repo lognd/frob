@@ -6,11 +6,11 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-11-12T21:10:07Z"
-updated = "2026-11-12T21:10:18Z"
+updated = "2026-11-12T21:10:34Z"
 labels = ["no-story"]
 scope = ["Cargo.toml", "crates/gob-product/Cargo.toml"]
 
 [[acceptance]]
 text = "cargo shear exits 0 with no warnings"
-bound = false
+bound = true
 +++
