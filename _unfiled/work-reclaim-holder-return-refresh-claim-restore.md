@@ -2,12 +2,12 @@
 id = "01M5DFKY6K8AH7K75XGTQMVAVA"
 title = "work --reclaim, holder-return refresh, claim restore"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-11-12T15:31:35Z"
+updated = "2026-11-12T15:31:40Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**", "crates/frob/src/**", "docs/**", "changelog.d/**"]
 
