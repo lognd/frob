@@ -2,7 +2,8 @@
 id = "01M5FA5EHT4NSJZP7JVFCZTVFB"
 title = "Instruction-count benches for cold and warm check and the other parsers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
