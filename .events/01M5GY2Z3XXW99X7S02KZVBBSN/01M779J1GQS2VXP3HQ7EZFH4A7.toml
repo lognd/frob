@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a valid DTCG document, when it is compiled, then a TokenSet holding every token with its resolved value is returned"]
+moved = []
+at = "2026-11-12T07:11:37Z"
+actor = "lognd"
+rev = 1
