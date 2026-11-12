@@ -23,7 +23,7 @@ bound = true
 
 [[acceptance]]
 text = "Given fmt run twice, when compared, then output is identical"
-bound = false
+bound = true
 +++
 
 Repro 19-fmt-comment-reattachment (~/projects/frob-v2-repros/logand-grimble-20261009/19-fmt-comment-reattachment): fmt sorts clauses by key and entities by name and a comment binds to the next item, so a banner or a 'the clauses below' comment is detached. Friction rather than a spec violation (grmb-spec 8.1/9.3): decide a floating-comment rule (blank-line-separated comment sticks to its section or keeps position) and document it in grmb-spec 9.3.
