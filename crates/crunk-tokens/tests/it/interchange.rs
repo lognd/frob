@@ -171,3 +171,45 @@ fn compile_refuses_a_type_the_model_cannot_hold() {
         Document::parse(r#"{"g": {"$type": "gradient", "a": {"$value": []}}}"#).expect("parses");
     assert!(matches!(doc.compile(), Err(DtcgError::Unsupported { .. })));
 }
+
+const POINTER_DOC: &str = r##"{
+  "color": {"$type": "color", "ink": {"$value": "#e6e8ef"}, "link": {"$value": {"$ref": "#/color/ink/$value"}}},
+  "a~b": {"c/d": {"$type": "number", "$value": 7}},
+  "esc": {"$type": "number", "$value": {"$ref": "#/a~0b/c~1d/$value"}}
+}"##;
+
+fn by_key(set: &crunk_tokens::TokenSet, key: &str) -> crunk_tokens::TokenValue {
+    set.iter().find(|t| t.key == key).expect(key).value.clone()
+}
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::compile
+#[test]
+fn compile_resolves_ref_json_pointer() {
+    let set = Document::parse(POINTER_DOC)
+        .expect("parses")
+        .compile()
+        .expect("compiles");
+    assert_eq!(by_key(&set, "color.link"), by_key(&set, "color.ink"));
+    assert_eq!(by_key(&set, "esc"), by_key(&set, "a~b.c/d"));
+}
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::compile
+#[test]
+fn compile_refuses_unresolvable_ref_pointer() {
+    let text = r##"{"n": {"$type": "number", "$value": {"$ref": "#/missing/token/$value"}}}"##;
+    let err = Document::parse(text).expect_err("refused");
+    assert!(
+        matches!(&err, DtcgError::BrokenReference { target, .. } if target == "#/missing/token/$value"),
+        "{err}"
+    );
+}
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::compile
+#[test]
+fn compile_refuses_cyclic_ref_pointer() {
+    let text = r##"{"a": {"$type": "number", "$value": {"$ref": "#/b/$value"}}, "b": {"$value": {"$ref": "#/a/$value"}}}"##;
+    let err = Document::parse(text)
+        .and_then(|d| d.compile().map(|_| ()))
+        .expect_err("refused");
+    assert!(err.to_string().contains("cyclic"), "{err}");
+}

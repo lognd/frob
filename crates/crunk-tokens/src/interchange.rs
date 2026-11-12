@@ -5,7 +5,7 @@
 //! inherited one), `$description`, `$extensions`, every unknown key and every `$value` verbatim
 //! (so `16` and `16.0`, a legacy `"16px"` string and a `{value, unit}` object all survive).
 //! Parsing validates what a consumer relies on: names, a resolvable `$type` per token, the
-//! shape of the known value types and that every `{a.b}` reference resolves without a cycle.
+//! shape of the known value types and that every `{a.b}` or `{"$ref": "#/a/b/$value"}` reference resolves without a cycle.
 
 // frob:ticket 01M4CXQYFA9ACDVWF4R62C50FH
 
@@ -48,7 +48,7 @@ pub enum DtcgError {
     BrokenReference {
         /// The referencing token.
         path: String,
-        /// The `{...}` target path as written.
+        /// The reference as written: the `{...}` path or the `$ref` JSON pointer.
         target: String,
     },
     /// The file could not be read or written.
@@ -334,16 +334,51 @@ fn parse_node(raw: Raw, path: &mut Vec<String>) -> Result<Node, DtcgError> {
     }
 }
 
-/// The `{a.b}` target of a string that is wholly one reference.
-fn whole_reference(value: &Value) -> Option<&str> {
-    let inner = value.as_str()?.strip_prefix('{')?.strip_suffix('}')?;
-    (!inner.is_empty() && !inner.contains(['{', '}'])).then_some(inner)
+/// A whole-value reference: the dotted token path it names and the text as written.
+struct Reference {
+    /// The dotted path looked up in the document (the raw text when a pointer is malformed).
+    target: String,
+    /// The reference as written (`a.b` for `{a.b}`, the pointer for a `$ref`).
+    written: String,
 }
 
-/// Every whole-string reference nested anywhere in `value`.
-fn references<'a>(value: &'a Value, out: &mut Vec<&'a str>) {
+/// Decode a `#/a/b/$value` JSON pointer (RFC 6901, `~0` and `~1` escapes) to a dotted path.
+fn pointer_target(pointer: &str) -> Option<String> {
+    let rest = pointer.strip_prefix("#/")?;
+    let rest = rest.strip_suffix("/$value").unwrap_or(rest);
+    let parts: Vec<String> = rest
+        .split('/')
+        .map(|p| p.replace("~1", "/").replace("~0", "~"))
+        .collect();
+    (parts.iter().all(|p| !p.is_empty() && !p.contains('.'))).then(|| parts.join("."))
+}
+
+/// The target of a value that is wholly one reference: `{a.b}` or `{"$ref": "#/a/b/$value"}`.
+fn whole_reference(value: &Value) -> Option<Reference> {
+    if let Value::Object(map) = value {
+        let (1, Some(Value::String(pointer))) = (map.len(), map.get("$ref")) else {
+            return None;
+        };
+        let target = pointer_target(pointer).unwrap_or_else(|| pointer.clone());
+        return Some(Reference {
+            target,
+            written: pointer.clone(),
+        });
+    }
+    let inner = value.as_str()?.strip_prefix('{')?.strip_suffix('}')?;
+    (!inner.is_empty() && !inner.contains(['{', '}'])).then(|| Reference {
+        target: inner.to_owned(),
+        written: inner.to_owned(),
+    })
+}
+
+/// Every whole-value reference nested anywhere in `value`.
+fn references(value: &Value, out: &mut Vec<Reference>) {
+    if let Some(reference) = whole_reference(value) {
+        out.push(reference);
+        return;
+    }
     match value {
-        Value::String(_) => out.extend(whole_reference(value)),
         Value::Array(items) => items.iter().for_each(|v| references(v, out)),
         Value::Object(map) => map.values().for_each(|v| references(v, out)),
         _ => {}
@@ -523,8 +558,8 @@ impl Document {
             }
         }
         inherited.or_else(|| {
-            let target = whole_reference(&token.value)?;
-            let (resolved, _) = self.target(target)?;
+            let reference = whole_reference(&token.value)?;
+            let (resolved, _) = self.target(&reference.target)?;
             self.resolve_type(&resolved, seen)
         })
     }
@@ -625,12 +660,12 @@ impl Document {
         value: &Value,
         seen: &mut BTreeSet<String>,
     ) -> Result<TokenValue, String> {
-        if let Some(target) = whole_reference(value) {
+        if let Some(Reference { target, written }) = whole_reference(value) {
             let (path, node) = self
-                .target(target)
-                .ok_or_else(|| format!("reference `{target}` does not resolve"))?;
+                .target(&target)
+                .ok_or_else(|| format!("reference `{written}` does not resolve"))?;
             if !seen.insert(path.clone()) {
-                return Err(format!("reference `{target}` is cyclic"));
+                return Err(format!("reference `{written}` is cyclic"));
             }
             let target_ty = self.resolved_type(&path).unwrap_or_else(|| ty.to_owned());
             let out = self.convert(&target_ty, &node.value, seen);
@@ -702,11 +737,11 @@ impl Document {
 
     /// Convert a composite member, whose type is read from its shape.
     fn member(&self, value: &Value, seen: &mut BTreeSet<String>) -> Result<TokenValue, String> {
-        if let Some(target) = whole_reference(value) {
+        if let Some(Reference { target, written }) = whole_reference(value) {
             let ty = self
-                .target(target)
+                .target(&target)
                 .and_then(|(path, _)| self.resolved_type(&path))
-                .ok_or_else(|| format!("reference `{target}` does not resolve"))?;
+                .ok_or_else(|| format!("reference `{written}` does not resolve"))?;
             return self.convert(&ty, value, seen);
         }
         match value {
@@ -740,18 +775,19 @@ impl Document {
             let parts: Vec<String> = path.split('.').map(str::to_owned).collect();
             let Some(ty) = self.resolved_type(&path) else {
                 return Err(match whole_reference(&token.value) {
-                    Some(target) if self.target(target).is_some() => DtcgError::Cycle { path },
+                    Some(r) if self.target(&r.target).is_some() => DtcgError::Cycle { path },
                     _ => DtcgError::MissingType { path },
                 });
             };
             check_shape(&ty, &token.value, &parts)?;
             let mut refs = Vec::new();
             references(&token.value, &mut refs);
-            for target in refs {
-                if self.target(target).is_none() {
+            for reference in refs {
+                if self.target(&reference.target).is_none() {
+                    tracing::warn!(%path, target = %reference.written, "dtcg: unresolvable reference");
                     return Err(DtcgError::BrokenReference {
                         path,
-                        target: target.to_owned(),
+                        target: reference.written,
                     });
                 }
             }
