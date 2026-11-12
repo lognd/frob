@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
 updated = "2026-11-12T01:29:31Z"
 labels = ["no-story"]
-scope = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml", "crates/crunk-gallery/README.md"]
+scope = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml", "crates/crunk-gallery/README.md", "crates/gob-dev/src/ci.rs"]
 +++
 
 found while working ~ZM1HA1J: finishes the consolidation and closes the 3 GB acceptance measurement.
