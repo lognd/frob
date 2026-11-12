@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
 updated = "2026-11-12T03:53:02Z"
 labels = ["no-story"]
-scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/**", "changelog.d/01M48Q2D1S4AC9RQE8HPNPTY6C.*", "crates/gob-dev/src/wheel_smoke.rs", "changelog.d/01M5XNNHN8RQ6486GS073YMCSS.security.md", "changelog.d/01M5XNNHRFE1K2DHBD7S9HQ7A6.security.md"]
+scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/**", "changelog.d/01M48Q2D1S4AC9RQE8HPNPTY6C.*", "crates/gob-dev/src/wheel_smoke.rs", "changelog.d/01M5XNNHN8RQ6486GS073YMCSS.security.md", "changelog.d/01M5XNNHRFE1K2DHBD7S9HQ7A6.security.md", "changelog.d/01M5XNNHV9M8HCP76TD867GGVJ.changed.md"]
 
 [[links]]
 kind = "blocked-by"
