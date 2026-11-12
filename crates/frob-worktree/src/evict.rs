@@ -490,7 +490,7 @@ pub fn reclaim_plan(
         .ok_or(ReclaimRefusal::NothingParked)
 }
 
-/// Days within which a second eviction of the same holder on the same ticket is a flap (section 4.7).
+/// Default days within which a second eviction of the same holder on the same ticket is a flap (section 4.7); `[claims] flap_repeat_days` overrides it.
 pub const FLAP_REPEAT_DAYS: u64 = 14;
 
 /// Seconds in a day.
@@ -501,17 +501,19 @@ const DAY_SECS: i64 = 86_400;
 pub enum FlapReview {
     /// No recent eviction of this holder here: the normal rules apply.
     Normal,
-    /// A repeat inside [`FLAP_REPEAT_DAYS`]: a human must confirm, and the board flags the ticket.
+    /// A repeat inside the configured flap window: a human must confirm, and the board flags the ticket.
     NeedsHuman,
 }
 
-/// Review a pending eviction against `prior_evictions`, the ages in seconds of earlier evictions of this holder on this ticket.
+/// Review a pending eviction against `prior_evictions`, the ages in seconds of earlier evictions of this holder on this ticket, using a window of `repeat_days`.
+// frob:ticket Q9SKQ2Q
 #[must_use]
-pub fn flap_review(prior_evictions: &[u64]) -> FlapReview {
-    let limit = FLAP_REPEAT_DAYS * 86_400;
+pub fn flap_review(prior_evictions: &[u64], repeat_days: u64) -> FlapReview {
+    let limit = repeat_days.saturating_mul(86_400);
     if prior_evictions.iter().any(|age| *age < limit) {
         tracing::info!(
             prior = prior_evictions.len(),
+            repeat_days,
             "repeat eviction inside the flap window needs a human"
         );
         FlapReview::NeedsHuman
@@ -890,9 +892,16 @@ mod tests {
     #[test]
     fn repeat_eviction_within_fourteen_days_needs_a_human() {
         let day = 86_400;
-        assert_eq!(flap_review(&[]), FlapReview::Normal);
-        assert_eq!(flap_review(&[15 * day]), FlapReview::Normal);
-        assert_eq!(flap_review(&[15 * day, 13 * day]), FlapReview::NeedsHuman);
+        let d = FLAP_REPEAT_DAYS;
+        assert_eq!(flap_review(&[], d), FlapReview::Normal);
+        assert_eq!(flap_review(&[15 * day], d), FlapReview::Normal);
+        assert_eq!(
+            flap_review(&[15 * day, 13 * day], d),
+            FlapReview::NeedsHuman
+        );
+        // A configured window replaces the default.
+        assert_eq!(flap_review(&[5 * day], 3), FlapReview::Normal);
+        assert_eq!(flap_review(&[5 * day], 7), FlapReview::NeedsHuman);
         assert_eq!(since_reclaim(None, 100), None);
         assert_eq!(since_reclaim(Some(40), 100), Some(60));
         assert_eq!(since_reclaim(Some(200), 100), Some(0));

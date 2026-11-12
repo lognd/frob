@@ -834,6 +834,13 @@
           "minimum": 0,
           "type": "integer"
         },
+        "flap_repeat_days": {
+          "default": 14,
+          "description": "Days within which a second eviction of the same holder on the same ticket needs a human to confirm (the flap guard).",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
         "idle_days": {
           "default": 3,
           "description": "Calendar days a human claim may sit idle before it is evictable; 0 means never evict.",

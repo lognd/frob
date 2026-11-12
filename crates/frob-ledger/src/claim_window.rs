@@ -76,6 +76,9 @@ pub struct ClaimsTable {
     /// Most automatic evictions one clone performs per local calendar day.
     #[config(default = 5)]
     pub evict_rate: u32,
+    /// Days within which a second eviction of the same holder on the same ticket needs a human to confirm (the flap guard).
+    #[config(default = 14)]
+    pub flap_repeat_days: u64,
 }
 
 /// Per-class idle windows in days (`[claims.class]`); they override `idle_days`, and 0 means never evict.
@@ -114,6 +117,7 @@ pub struct ClaimWindows {
     evict_agent: EvictKnob,
     evict_human: EvictKnob,
     evict_rate: u32,
+    flap_repeat_days: u64,
 }
 
 impl Default for ClaimWindows {
@@ -131,6 +135,7 @@ impl Default for ClaimWindows {
             evict_agent: EvictKnob::Auto,
             evict_human: EvictKnob::Auto,
             evict_rate: 5,
+            flap_repeat_days: 14,
         }
     }
 }
@@ -166,6 +171,7 @@ impl ClaimWindows {
             evict_agent: claims.evict_agent,
             evict_human: claims.evict_human,
             evict_rate: claims.evict_rate,
+            flap_repeat_days: claims.flap_repeat_days,
         })
     }
 
@@ -188,6 +194,13 @@ impl ClaimWindows {
     #[must_use]
     pub fn evict_rate(&self) -> u32 {
         self.evict_rate
+    }
+
+    /// Days a repeat eviction of one holder on one ticket counts as a flap (`[claims] flap_repeat_days`).
+    // frob:ticket Q9SKQ2Q
+    #[must_use]
+    pub fn flap_repeat_days(&self) -> u64 {
+        self.flap_repeat_days
     }
 
     /// How many consecutive windows soft-only activity may extend a claim (`[claims] soft_max_windows`).
@@ -577,6 +590,31 @@ mod tests {
             !ClaimWindows::from_tables(&c, &k)
                 .expect("confirm")
                 .evict_human_auto()
+        );
+    }
+
+    // frob:ticket Q9SKQ2Q
+    // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.flap_repeat_days
+    #[test]
+    fn flap_repeat_days_defaults_to_fourteen_and_follows_the_table() {
+        let k = ClaimsClassTable::default();
+        let d = ClaimWindows::from_tables(&ClaimsTable::default(), &k).expect("defaults");
+        assert_eq!(d.flap_repeat_days(), 14);
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("frob.toml"),
+            "[claims]\nflap_repeat_days = 3\n",
+        )
+        .unwrap();
+        let c = gob_config::load::<ClaimsTable>(dir.path(), "frob")
+            .unwrap()
+            .value;
+        assert_eq!(c.flap_repeat_days, 3);
+        assert_eq!(
+            ClaimWindows::from_tables(&c, &k)
+                .unwrap()
+                .flap_repeat_days(),
+            3
         );
     }
 

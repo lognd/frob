@@ -310,7 +310,8 @@ impl Workspace<'_> {
         }
         checked.map_err(|why| precondition_refusal(why, &handle))?;
         let ages = prior_eviction_ages(&self.ledger.events(id)?, &holder, now);
-        let flapped = flap_review(&ages) == FlapReview::NeedsHuman;
+        let flap_days = policy.windows.flap_repeat_days();
+        let flapped = flap_review(&ages, flap_days) == FlapReview::NeedsHuman;
         let confirm_human =
             lease.holder_kind() == HolderKind::Human && !policy.windows.evict_human_auto();
         let needs_confirm = flapped || confirm_human;
@@ -324,7 +325,7 @@ impl Workspace<'_> {
             let why = if flapped {
                 format!(
                     "was already evicted in the last {} days; a repeat needs a human to confirm",
-                    crate::evict::FLAP_REPEAT_DAYS
+                    flap_days
                 )
             } else {
                 "is held by a human and `[claims] evict_human = \"confirm\"`".to_owned()

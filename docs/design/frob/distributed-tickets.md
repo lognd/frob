@@ -343,6 +343,7 @@ paused_max_days = 14       # blocked, in review or queued: pause at most this lo
 evict_human = "auto"       # "auto" (decision D-4) or "confirm" (TTY prompt or --yes --reason)
 evict_agent = "auto"       # work --next may evict idle agent claims without asking
 evict_rate = 5             # evictions one actor may perform per day
+flap_repeat_days = 14      # a repeat eviction of one holder within this many days needs a human
 bot_identities = ["*[bot]", "github-actions*"]
 
 [claims.class]             # per class of service; overrides idle_days
@@ -495,7 +496,8 @@ parked/<handle>-<n>` starts from the parked work.
   is visible before it becomes evictable (see `claim_notice.rs`).
 - Flap guard: after a reclaim the claim cannot be evicted for one full
   window; a second eviction of the same holder on the same ticket
-  within 14 days always needs human confirmation and is flagged.
+  within `[claims] flap_repeat_days` (default 14) always needs human
+  confirmation and is flagged.
 - Griefing: evictions are rate limited, always parked, always
   recorded, need the evictor's own observed window, and are reversible
   by `frob claim restore ~X` (holder or anyone, while nobody else has
