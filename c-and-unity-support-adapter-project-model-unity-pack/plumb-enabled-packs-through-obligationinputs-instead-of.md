@@ -2,7 +2,8 @@
 id = "01M5F8MNQZMR2YA5Y1BEVX8AZR"
 title = "plumb enabled packs through ObligationInputs instead of cov001 re-reading frob.toml"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
