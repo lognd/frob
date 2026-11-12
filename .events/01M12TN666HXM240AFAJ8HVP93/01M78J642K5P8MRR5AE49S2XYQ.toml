@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Legacy Python-era report: scope files src/frob/tickets/_land.py and _land_cmd.py no longer exist; the Rust land has its own --wait handling."
+at = "2026-11-12T19:01:38Z"
+actor = "lognd"
+rev = 1
