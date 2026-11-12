@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope crates/crunk-cli does not exist; needs crates/crunk + crunk-rules and a decision on which tokens a screen hash covers"
+at = "2026-11-12T05:14:30Z"
+actor = "lognd"
+rev = 1
