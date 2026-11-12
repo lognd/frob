@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Legacy Python-era report: scope file src/frob/verify/_attribution.py no longer exists; the Rust TICK006 (crates/frob-obligations/src/tick_paths.rs) is a different check (ticket-branch path links), so the described bug cannot occur."
+at = "2026-11-12T18:52:24Z"
+actor = "lognd"
+rev = 1

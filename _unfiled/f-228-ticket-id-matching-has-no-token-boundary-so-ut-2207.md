@@ -2,12 +2,13 @@
 id = "01M1T07NXF3MCHHKJ1R0G7VZJ5"
 title = "F-228: ticket-id matching has no token boundary, so UT-2207 reads as a citation of T-2207 and the sweep auto-files tickets about the phantoms"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:44Z"
+updated = "2026-11-12T18:52:24Z"
 aliases = ["T-4015"]
 labels = ["v1-cluster:G1", "triage:accepted"]
 scope = ["src/frob/verify/_attribution.py"]
