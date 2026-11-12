@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T04:32:10Z"
-updated = "2026-11-12T06:11:39Z"
+updated = "2026-11-12T06:14:34Z"
 labels = ["no-story"]
 scope = ["crates/crunk-tokens/**", "changelog.d/01M5GY2ZA5ER31SEFAW61ZPY4R.*"]
 
 [[acceptance]]
 text = "Given two DTCG token paths that map to the same CSS custom property name, when tokens are loaded, then a collision error names both paths and the property"
-bound = false
+bound = true
 +++
 
 found while working ~62C50FH
