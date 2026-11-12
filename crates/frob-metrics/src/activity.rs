@@ -354,7 +354,7 @@ impl Journal {
             .open(&path)
             .map_err(io)?;
         f.write_all(line.as_bytes()).map_err(io)?;
-        tracing::debug!(ticket, path = %path.display(), "activity signal recorded");
+        tracing::debug!(ticket, path = ?path, "activity signal recorded");
         Ok(())
     }
 
@@ -423,6 +423,7 @@ mod tests {
     }
 
     // frob:tests classify
+    // frob:tests crates/frob-metrics/src/activity.rs::Segment.secs
     #[test]
     fn fixture_timeline_classifies_into_expected_segments() {
         let got = classify(&fixture(), 600);
@@ -436,6 +437,10 @@ mod tests {
                 seg(Activity::Implementing, 2000, 2100),
                 seg(Activity::Landing, 2100, 2200),
             ]
+        );
+        assert_eq!(
+            got.iter().map(Segment::secs).sum::<i64>(),
+            150 + 100 + 600 + 1100 + 100 + 100
         );
     }
 
@@ -459,7 +464,7 @@ mod tests {
         assert_eq!(summary_line(&totals(&[])), "no activity recorded");
     }
 
-    // frob:tests Journal::record
+    // frob:tests crates/frob-metrics/src/activity.rs::Journal.record
     #[test]
     fn journal_round_trips_and_summarizes() {
         let tmp = tempfile::tempdir().expect("tempdir");

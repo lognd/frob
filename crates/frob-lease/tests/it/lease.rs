@@ -1413,7 +1413,7 @@ fn the_pinned_base_is_found_by_the_worktree_holding_the_lease() {
     );
 }
 
-// frob:tests frob_lease::LeaseStore::acquire
+// frob:tests crates/frob-lease/src/store.rs::acquire
 #[test]
 fn acquire_and_refusal_are_journaled_as_activity_signals() {
     use frob_metrics::activity::{Journal, Signal};

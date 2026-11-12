@@ -25,14 +25,12 @@ use frob_check::CheckOptions;
 use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
 use frob_lease::{Lease, LeaseStore};
 use frob_ledger::event::{CommentData, EventBody};
-use frob_metrics::activity::{
-    ActivityTotal, DEFAULT_IDLE_GAP_SECS, Journal, Signal, summary_line,
-};
 use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
 use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
+use frob_metrics::activity::{ActivityTotal, DEFAULT_IDLE_GAP_SECS, Journal, Signal, summary_line};
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
