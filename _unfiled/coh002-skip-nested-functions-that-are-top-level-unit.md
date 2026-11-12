@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T10:27:39Z"
-updated = "2026-10-28T12:56:06Z"
+updated = "2026-11-12T21:39:33Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/**", "docs/**"]
+
+[[acceptance]]
+text = "COH002 does not flag a nested function that is a top-level statement of the unit, covered by a test"
+bound = false
 +++
 
 COH003 fixed a quirk where a nested function that is a top-level statement of the unit is not skipped; check COH002 for the same.

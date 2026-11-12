@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["COH002 does not flag a nested function that is a top-level statement of the unit, covered by a test"]
+reason = "add criterion"
+moved = []
+at = "2026-11-12T21:39:33Z"
+actor = "lognd"
+rev = 1
