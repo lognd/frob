@@ -1,0 +1,6 @@
+grimble = "2";
+part of m;
+
+system s;
+
+actor lone : human;

@@ -92,6 +92,8 @@ struct Tables<'a> {
     realizations: Vec<(Rec, crate::ast::Ident)>,
     /// Every system with its record, for the ambient rules.
     system_decls: BTreeMap<String, (Rec, &'a crate::plan::System)>,
+    /// Every `system REF;` marker in a mounted file: (record, span, mount prefix, REF) (D157).
+    markers: Vec<(Rec, Span, Vec<String>, String)>,
     /// Every arm `retry` with a resolved step and a written bound (AMB004).
     arm_retries: Vec<ArmRetry>,
     /// Include edges `(includer, included)` between scenario full names (AMB004).
@@ -138,6 +140,22 @@ pub(crate) fn file_system(items: &[Item], mounted: bool) -> Option<String> {
         (1, Some(n)) if braced || !mounted => Some((*n).to_owned()),
         _ => None,
     }
+}
+
+/// Resolves a mounted file's marker `REF` from mount prefix `mount` (5.3, nearest prefix first);
+/// `Some(full)` only when it names a declared system equal to the prefix or a proper prefix of it.
+// frob:ticket 01M6D124NJ6QRDAX1QD2V4GRJE
+pub(crate) fn marker_target(
+    systems: &BTreeSet<String>,
+    mount: &[String],
+    name: &str,
+) -> Option<String> {
+    let hit = (0..=mount.len())
+        .rev()
+        .map(|n| join(&mount[..n], name))
+        .find(|k| systems.contains(k))?;
+    let m = mount.join(".");
+    (m == hit || m.starts_with(&format!("{hit}."))).then_some(hit)
 }
 
 /// Resolves `path` from inside `ctx`, nearest enclosing prefix first (grmb-spec 5.3).
@@ -222,6 +240,18 @@ impl<'a> Tables<'a> {
                     self.collect_plan(file, p, ctx);
                     ctx.pop();
                 }
+                // A marker in a mounted file never declares; it is checked once all systems
+                // are known (grmb-spec 11.2, D157).
+                (Item::Plan(p), _)
+                    if !ctx.is_empty() && matches!(&**p, PlanItem::System(s) if !s.braced) =>
+                {
+                    if let PlanItem::System(s) = &**p {
+                        let rec = self.rec(file, ctx, &s.name.text);
+                        tracing::debug!(file, name = %s.name.text, "mounted system marker deferred");
+                        self.markers
+                            .push((rec, s.name.span, ctx.clone(), s.name.text.clone()));
+                    }
+                }
                 _ => self.collect(file, std::slice::from_ref(item), ctx),
             }
         }
@@ -248,7 +278,20 @@ impl<'a> Tables<'a> {
             PlanItem::System(s) => {
                 let rec = self.rec(file, ctx, &s.name.text);
                 self.systems.insert(rec.full.clone());
-                self.system_decls.insert(rec.full.clone(), (rec.clone(), s));
+                match self.system_decls.get(&rec.full) {
+                    Some((first, prev)) if prev.braced && s.braced => {
+                        let msg = format!(
+                            "system `{}` already has a braced declaration (file {}); a system has at most one",
+                            rec.full, first.file
+                        );
+                        self.raise("MDL001", &rec, s.name.span, msg);
+                    }
+                    // a marker never displaces a declaration already recorded
+                    Some((_, prev)) if prev.braced || !s.braced => {}
+                    _ => {
+                        self.system_decls.insert(rec.full.clone(), (rec.clone(), s));
+                    }
+                }
                 ctx.push(s.name.text.clone());
                 self.collect(file, &s.items, ctx);
                 ctx.pop();
@@ -1424,6 +1467,15 @@ fn goal_shape(
 
 /// The checks that need only the name tables: enclosure, kinds, goal keys, requires.
 fn structure(t: &mut Tables<'_>, pack_atoms: &BTreeSet<String>) {
+    for (rec, span, mount, name) in std::mem::take(&mut t.markers) {
+        if marker_target(&t.systems, &mount, &name).is_none() {
+            let msg = format!(
+                "a mounted file names a different system: `system {name};` does not resolve to `{}` or an enclosing system; drop the marker or the `as`",
+                mount.join(".")
+            );
+            t.raise("MDL031", &rec, span, msg);
+        }
+    }
     for p in std::mem::take(&mut t.pending) {
         let enclosed = (0..=p.rec.ctx.len())
             .rev()
@@ -2328,4 +2380,47 @@ fn actor_node(t: &Tables<'_>, nodes: &BTreeMap<String, String>, step: &str) -> O
     let (actor, _) = step.rsplit_once('.')?;
     let (arec, path) = t.actors.get(actor).map(|(r, p)| (r, p.as_ref()))?;
     find(nodes, &arec.ctx, path?).map(|(k, _)| k.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn set(names: &[&str]) -> BTreeSet<String> {
+        names.iter().map(|s| (*s).to_owned()).collect()
+    }
+
+    fn m(s: &str) -> Vec<String> {
+        s.split('.').map(str::to_owned).collect()
+    }
+
+    // frob:tests marker_target
+    #[test]
+    fn marker_equal_to_mount_resolves() {
+        let got = marker_target(&set(&["web_app"]), &m("web_app"), "web_app");
+        assert_eq!(got.as_deref(), Some("web_app"));
+    }
+
+    // frob:tests marker_target
+    #[test]
+    fn marker_naming_proper_prefix_resolves() {
+        let got = marker_target(&set(&["web_app"]), &m("web_app.sub"), "web_app");
+        assert_eq!(got.as_deref(), Some("web_app"));
+    }
+
+    // frob:tests marker_target
+    #[test]
+    fn marker_naming_other_system_is_rejected() {
+        assert_eq!(
+            marker_target(&set(&["web_app"]), &m("api"), "web_app"),
+            None
+        );
+        assert_eq!(marker_target(&set(&["api"]), &m("api"), "web_app"), None);
+    }
+
+    // frob:tests marker_target
+    #[test]
+    fn marker_not_extending_prefix_by_name_alone_is_rejected() {
+        assert_eq!(marker_target(&set(&["web"]), &m("web_app"), "web"), None);
+    }
 }
