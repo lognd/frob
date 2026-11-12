@@ -2,7 +2,8 @@
 id = "01M681KDM0YZZ6T0TJFPCEN1A8"
 title = "CAP: replace lexical prefilters in grimble-bind caps with parsed gates for non-C languages"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
