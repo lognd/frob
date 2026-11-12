@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-check/src/type_parse.rs"]
+new = ["crates/gob-check/src/type_parse.rs", "crates/frob-check/src/typefacts.rs"]
+reason = "make criterion explicit"
+at = "2026-11-12T22:51:36Z"
+actor = "lognd"
+rev = 1
