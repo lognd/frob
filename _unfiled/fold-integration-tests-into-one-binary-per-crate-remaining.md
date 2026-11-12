@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
-updated = "2026-11-12T02:12:09Z"
+updated = "2026-11-12T02:22:47Z"
 labels = ["no-story"]
 scope = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml", "crates/crunk-gallery/README.md", "crates/gob-dev/src/ci.rs", "crates/gob-dev/src/render/inline.rs", "crates/gob-fs/src/lib.rs", "crates/gob-mdtest/FORMAT.md", "crates/gob-mdtest/src/matrix.rs", "crates/grimble/src/lib.rs", "design/model.grmb", "docs/design/dup.md", "docs/design/grimble/grmb-spec.md", "docs/design/shared/architecture.md", "docs/design/shared/build-test-ci.md", "docs/design/shared/charter.md", "docs/design/shared/cli-contract.md", "docs/design/shared/rules.md", "docs/guides/crunk.md", "frob.lock", "notes/research/codegen-macros.md", "notes/research/rule-testing.md", "notes/v1/gap/D-incidents.md"]
 +++
