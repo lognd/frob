@@ -415,7 +415,7 @@ fn grid_edges(
         let (row, col) = (i / columns, i % columns);
         let row_start = row * columns;
         let row_end = (row_start + columns).min(n) - 1;
-        let last_in_col = (col..n).step_by(columns).last().unwrap_or(i);
+        let last_in_col = (col..n).step_by(columns).next_back().unwrap_or(i);
         let moves = [
             (
                 Direction::Right,
