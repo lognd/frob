@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-11-12T15:05:40Z"
+updated = "2026-11-12T15:05:41Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**", "docs/**", "changelog.d/**", "crates/frob-ledger/**", "crates/frob/src/config.rs"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a configured flap_repeat_days, when flap_review runs, then the window uses the configured days instead of the FLAP_REPEAT_DAYS constant"
-bound = false
+bound = true
 +++
 
 found while working ~6CVW7F9: evict_human, evict_agent, evict_rate, flap guard 14-day rule, feed activity idle into EvictContext
