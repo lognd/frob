@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-10-28T12:55:56Z"
+updated = "2026-11-12T10:31:29Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**,crates/crunk-rules/src/rules/gx003.rs"]
+
+[[acceptance]]
+text = "Given a focus group laid out on a grid, when GX003 runs, then neighbours are resolved along both axes, and a modal dialog that traps focus is exempt from the escape-route finding"
+bound = false
 +++
 
 found while working Q2ZC9QM: modal dialogs legitimately trap focus; grid groups need 2D neighbours.
