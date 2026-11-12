@@ -4,9 +4,10 @@ title = "Grimble LOG rules: remaining flow-conditional atoms (open file handles,
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-06T22:52:11Z"
-updated = "2026-11-06T22:52:11Z"
+updated = "2026-11-12T12:29:47Z"
 scope = ["crates/grimble-check/src/log/**"]
 +++
 
