@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T13:39:26Z"
-updated = "2026-11-12T12:29:47Z"
+updated = "2026-11-12T12:30:04Z"
 scope = ["crates/grimble-check/**"]
 +++
 
