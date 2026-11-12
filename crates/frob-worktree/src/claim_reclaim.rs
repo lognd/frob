@@ -12,6 +12,7 @@ use frob_lease::LeaseStore;
 use frob_ledger::event::{Event, EventBody, LeaseOp};
 use frob_ledger::{Ledger, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
+use gob_time::Stamp;
 
 use crate::claim::{remote_claim, sync_settings};
 use crate::error::WorktreeError;
@@ -93,6 +94,47 @@ fn record_of(event: &Event, handle: &str) -> Option<ParkRecord> {
     })
 }
 
+/// The newest eviction of `holder` after `acquired` that no `restore` or `reclaim` answered, with its time.
+fn unanswered_eviction(
+    events: &[Event],
+    handle: &str,
+    holder: &str,
+    acquired: i64,
+) -> Option<(Stamp, ParkRecord)> {
+    let (stamp, record) = events
+        .iter()
+        .filter_map(|e| record_of(e, handle).map(|r| (e.at, r)))
+        .max_by_key(|(at, _)| at.unix())?;
+    let at = stamp.unix();
+    if record.holder != holder || at < acquired {
+        return None;
+    }
+    let answered = events.iter().any(|e| {
+        matches!(&e.body, EventBody::Lease(l)
+            if matches!(l.op, LeaseOp::Restore | LeaseOp::Reclaim) && e.at.unix() >= at)
+    });
+    if answered {
+        tracing::debug!(
+            handle,
+            holder,
+            "eviction already answered by restore or reclaim"
+        );
+        return None;
+    }
+    Some((stamp, record))
+}
+
+/// The parked ref names every `evict` event in `events` recorded, oldest first.
+fn parked_names(events: &[Event]) -> Vec<String> {
+    events
+        .iter()
+        .filter_map(|e| match &e.body {
+            EventBody::Lease(l) if l.op == LeaseOp::Evict => l.parked.clone(),
+            _ => None,
+        })
+        .collect()
+}
+
 /// The `W-CLAIM-EVICTED` notice for `holder` on a ticket whose claim began at `acquired`, from its `events`.
 ///
 /// `None` unless the newest eviction names `holder`, came after `acquired`, and no `restore`
@@ -105,31 +147,9 @@ pub fn return_notice(
     acquired: i64,
 ) -> Option<String> {
     let bare = handle.trim_start_matches('~');
-    let (at, newest) = events
-        .iter()
-        .filter_map(|e| record_of(e, bare).map(|r| (e.at.unix(), (e, r))))
-        .max_by_key(|(at, _)| *at)
-        .map(|(at, (e, r))| (at, (e.at, r)))?;
-    let (stamp, record) = newest;
-    if record.holder != holder || at < acquired {
-        return None;
-    }
-    let answered = events.iter().any(|e| {
-        matches!(&e.body, EventBody::Lease(l)
-            if matches!(l.op, LeaseOp::Restore | LeaseOp::Reclaim) && e.at.unix() >= at)
-    });
-    if answered {
-        return None;
-    }
-    let parked: Vec<String> = events
-        .iter()
-        .filter_map(|e| match &e.body {
-            EventBody::Lease(l) if l.op == LeaseOp::Evict => l.parked.clone(),
-            _ => None,
-        })
-        .collect();
+    let (stamp, record) = unanswered_eviction(events, bare, holder, acquired)?;
     let date = stamp.precise().chars().take(10).collect::<String>();
-    let ret = holder_return(&record, &parked, &date);
+    let ret = holder_return(&record, &parked_names(events), &date);
     tracing::info!(handle, holder, push_to = %ret.push_to, "evicted holder returned");
     Some(ret.warning)
 }
@@ -229,7 +249,6 @@ impl Workspace<'_> {
 mod tests {
     use super::*;
     use frob_ledger::event::LeaseData;
-    use gob_time::Stamp;
 
     fn lease_ev(
         at: i64,

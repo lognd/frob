@@ -687,6 +687,22 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
     }
 }
 
+/// The warnings the sync itself produced: host lands, evicted-claim notices and diverged lands.
+fn sync_warnings(data: &RefreshReport) -> Vec<String> {
+    let mut lines: Vec<String> = data
+        .host_lands
+        .iter()
+        .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done."))
+        .collect();
+    lines.extend(data.claim_returns.iter().cloned());
+    if let Some(line) = &data.divergence {
+        lines.push(format!(
+            "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."
+        ));
+    }
+    lines
+}
+
 /// Fill the freshness fields of `out` from the cache at `now` and put the ranked notices in its warnings.
 fn with_freshness(
     mut out: Payload<RefreshReport>,
@@ -698,19 +714,8 @@ fn with_freshness(
 ) -> Payload<RefreshReport> {
     let fresh = assess(state, has_remote, signals, now, Thresholds::from_sync(sync));
     out.warnings.extend(fresh.messages());
-    out.warnings.extend(
-        out.data
-            .host_lands
-            .iter()
-            .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done.")),
-    );
-    let returns = out.data.claim_returns.clone();
-    out.warnings.extend(returns);
-    if let Some(line) = &out.data.divergence {
-        out.warnings.push(format!(
-            "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."
-        ));
-    }
+    let sync_lines = sync_warnings(&out.data);
+    out.warnings.extend(sync_lines);
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;
     out.data.notices = fresh.notices;
