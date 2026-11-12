@@ -706,8 +706,13 @@ mod tests {
         std::fs::write(&a, b"build one").unwrap();
         let first = exe_digest(&a).unwrap();
         // Same bytes at a new path written later (new mtime): same build identity.
-        std::thread::sleep(Duration::from_millis(20));
         std::fs::copy(&a, &b).unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(&b)
+            .unwrap()
+            .set_modified(std::time::UNIX_EPOCH + Duration::from_secs(1_000_000_000))
+            .unwrap();
         assert_eq!(exe_digest(&b).unwrap(), first);
         // Different bytes, even of the same length: a different build.
         std::fs::write(&b, b"build two").unwrap();

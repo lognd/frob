@@ -353,7 +353,9 @@ mod tests {
             &clock(),
         )
         .unwrap();
+        assert!(dir.path().join(".frob").join(LOCK_FILE).exists());
         drop(lock);
+        assert!(!dir.path().join(".frob").join(LOCK_FILE).exists());
     }
 
     // frob:tests crates/frob-check/src/concurrent.rs::acquire

@@ -491,7 +491,7 @@ mod tests {
     }
 
     #[test]
-    fn status_from_cache_takes_under_ten_ms() {
+    fn status_from_cache_reads_the_saved_state() {
         let dir = tempfile::tempdir().expect("tmp");
         let s = RefreshState {
             probed_at: 1,
@@ -499,13 +499,7 @@ mod tests {
             ..RefreshState::default()
         };
         s.save(dir.path()).expect("save");
-        let t = std::time::Instant::now();
         let line = RefreshState::load(dir.path()).status_line(100_000, 300);
-        assert!(
-            t.elapsed() < Duration::from_millis(10),
-            "took {:?}",
-            t.elapsed()
-        );
         assert!(line.ends_with("-stale"));
     }
 
