@@ -158,7 +158,7 @@ mod tests {
         let pauses = std::cell::Cell::new(0_u32);
         let release_on_pause = |_: Duration| {
             pauses.set(pauses.get() + 1);
-            let _ = std::fs::remove_file(&lock);
+            std::fs::remove_file(&lock).expect("release");
         };
         let run = git_with_backoff(
             &repo,
