@@ -28,4 +28,3 @@ tempfile = "3"
 
 [lints]
 workspace = true
-
