@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-11-12T14:52:45Z"
+updated = "2026-11-12T14:53:28Z"
 labels = ["no-story"]
-scope = ["crates/frob-worktree/**", "docs/**", "changelog.d/**"]
+scope = ["crates/frob-worktree/**", "docs/**", "changelog.d/**", "crates/frob-ledger/**", "crates/frob/src/config.rs"]
 
 [[acceptance]]
 text = "Given a [claims] table in frob.toml with evict_human, evict_agent, evict_rate and flap_repeat_days, when the config is loaded, then each value is parsed with the documented default when absent"
