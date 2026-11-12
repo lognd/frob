@@ -65,8 +65,24 @@ fn test_scaffolding(graph: &SymbolGraph) -> (BTreeSet<String>, BTreeMap<String, 
     (tests, parents)
 }
 
+/// True for a C# method the engine calls by name (`Awake`, `Update`): an entry point, never dead.
+fn is_engine_entry(rec: &SymbolRecord, is_entry: &dyn Fn(&str) -> bool) -> bool {
+    let named = rec.symref.name().is_some_and(|n| is_entry(undup(n)));
+    let root = named
+        && std::path::Path::new(rec.symref.path())
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("cs"));
+    if root {
+        tracing::debug!(unit = %rec.symref, "DEAD001 skips an engine entry point");
+    }
+    root
+}
+
 /// The private functions and methods that `DEAD001` examines.
-fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
+fn candidates_of<'g>(
+    graph: &'g SymbolGraph,
+    is_entry: &dyn Fn(&str) -> bool,
+) -> Vec<&'g SymbolRecord> {
     let public: BTreeSet<String> = graph
         .public_api()
         .iter()
@@ -89,6 +105,7 @@ fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
         })
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
         .filter(|r| !is_bench_file(r.symref.path()))
+        .filter(|r| !is_engine_entry(r, is_entry))
         .filter(|r| !in_test(&r.symref.to_string(), &tests, &parents))
         .collect()
 }
@@ -126,9 +143,9 @@ fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     (reach, spelled)
 }
 
-/// Findings for dead private functions and methods, and the candidates examined.
-pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
-    let candidates = candidates_of(graph);
+/// Findings for dead private functions and methods, and the candidates examined; `is_entry` names engine entry points.
+pub(crate) fn check(graph: &SymbolGraph, is_entry: &dyn Fn(&str) -> bool) -> (Vec<Verdict>, usize) {
+    let candidates = candidates_of(graph, is_entry);
     let (reach, spelled) = reach_of(graph);
     judge(&candidates, &reach, &spelled)
 }

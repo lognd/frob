@@ -99,6 +99,8 @@ pub struct ArchInput<'a> {
     pub changed: &'a BTreeSet<String>,
     /// Run the whole-repo structural clone scan (`DUP005`); off, the rule is not applicable.
     pub dup_scan: bool,
+    /// True for a method name the active engine pack calls itself (`Update`); `DEAD001` treats such C# methods as live roots.
+    pub is_engine_entry: &'a dyn Fn(&str) -> bool,
 }
 
 /// The shared clone index directory for the checkout at `root` (under the git common dir), `None` outside git.
@@ -148,7 +150,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     } else {
         tracing::debug!("LARGE001 is off (large_lines = 0)");
     }
-    let (findings, candidates) = dead::check(input.graph);
+    let (findings, candidates) = dead::check(input.graph, input.is_engine_entry);
     report.subjects.insert(DEAD, candidates);
     report.findings.extend(findings);
     let (findings, candidates) = vis::check(input.graph, input.crates);

@@ -788,6 +788,21 @@ fn coh_kind(opts: &CohPassOptions) -> String {
     format!("coh-{}", gob_walk::Digest::of(text.as_bytes()))
 }
 
+/// The engine vocabulary of the built-in `unity` pack when `root` enables it, else `None`.
+fn unity_vocab(root: &std::path::Path) -> Option<gob_ir::engine::EngineVocab> {
+    let table = PacksTable::load(root).ok()?;
+    if !table.enabled.iter().any(|id| id == "unity") {
+        return None;
+    }
+    match gob_packs::unity::UnityPack::builtin() {
+        Ok(pack) => Some(pack.vocab),
+        Err(err) => {
+            tracing::warn!(%err, "builtin unity pack failed to load; DEAD001 sees no engine roots");
+            None
+        }
+    }
+}
+
 /// Run the architecture rules over the walk (graph built from the bound code, uncached).
 fn arch_report(
     root: &std::path::Path,
@@ -795,7 +810,9 @@ fn arch_report(
     table: &GrimbleTable,
     read: &dyn Fn(&str) -> Option<String>,
     changed: &BTreeSet<String>,
+    vocab: Option<&gob_ir::engine::EngineVocab>,
 ) -> ArchReport {
+    let is_entry = |name: &str| vocab.is_some_and(|v| v.is_message(name));
     let code = grimble_bind::code::Code::build(root, entries);
     let graph = grimble_bind::edges::build_graph(root, &code);
     let mut deps = gob_symbols::CrateDeps::new(root);
@@ -813,6 +830,7 @@ fn arch_report(
         dup_index: grimble_arch::dup_index_dir(root).as_deref(),
         changed,
         dup_scan: table.scan_enabled(),
+        is_engine_entry: &is_entry,
     })
 }
 
@@ -922,11 +940,14 @@ fn reports(
             .join("\n")
             .as_bytes(),
     );
+    // The unity pack roots engine messages for DEAD001, so enabling it changes the report.
+    let vocab = unity_vocab(&cx.core.root);
     let arch_kind = format!(
-        "arch-{}-{}-{changed_digest}-{}",
+        "arch-{}-{}-{changed_digest}-{}-{}",
         table.dup_min_tokens,
         table.dup_min_occurrences,
-        u8::from(table.scan_enabled())
+        u8::from(table.scan_enabled()),
+        u8::from(vocab.is_some())
     );
     let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
     let path_key = report_cache::key("path", digest, &engine, table.large_lines);
@@ -1008,7 +1029,14 @@ fn reports(
                 let read = |p: &str| reader.borrow_mut().read_text(p).ok();
                 let started = std::time::Instant::now();
                 let arch = arch_hit.unwrap_or_else(|| {
-                    arch_report(&cx.core.root, &cx.core.entries, table, &read, changed)
+                    arch_report(
+                        &cx.core.root,
+                        &cx.core.entries,
+                        table,
+                        &read,
+                        changed,
+                        vocab.as_ref(),
+                    )
                 });
                 let arch_took = started.elapsed();
                 let started = std::time::Instant::now();

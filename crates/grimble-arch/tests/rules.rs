@@ -72,6 +72,7 @@ fn run_dup(
         dup_index: index.is_dir().then_some(index.as_path()),
         changed,
         dup_scan,
+        is_engine_entry: &|_| false,
     })
     .findings
 }
@@ -204,6 +205,7 @@ fn empty_repository_makes_the_rules_not_applicable() {
         dup_index: None,
         changed: &BTreeSet::new(),
         dup_scan: false,
+        is_engine_entry: &|_| false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(
@@ -245,6 +247,7 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         dup_index: None,
         changed: &BTreeSet::new(),
         dup_scan: false,
+        is_engine_entry: &|_| false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(ids, ["DUP004", "DUP005", "VIS001"]);
@@ -521,4 +524,52 @@ fn dup005_anchor_is_stable_so_a_baseline_keeps_matching() {
     let second = dup005(true);
     assert_eq!(first[0].anchor, second[0].anchor);
     assert!(first[0].anchor.starts_with("S:"));
+}
+
+/// The `DEAD001` verdict messages over `root` when `is_entry` names the engine entry points.
+fn dead_messages(root: &Path, is_entry: &dyn Fn(&str) -> bool) -> Vec<String> {
+    let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(root, &walked.files);
+    let graph = grimble_bind::edges::build_graph(root, &code);
+    let crates = BTreeMap::new();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 0,
+        dup_min_tokens: 0,
+        dup_min_occurrences: 0,
+        read: &read,
+        dup_index: None,
+        changed: &BTreeSet::new(),
+        dup_scan: false,
+        is_engine_entry: is_entry,
+    });
+    report
+        .findings
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .map(|f| f.message)
+        .collect()
+}
+
+/// A C# message the engine calls (`Update`) is a live root, while an unreferenced helper still fires.
+// frob:ticket 01M5F8MNMXE10ZQFN7BRA0V3XC
+// frob:tests crates/grimble-arch/src/rules/dead001.rs::Dead001
+#[test]
+fn dead001_treats_engine_entry_points_as_live_roots() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "Assets/Player.cs",
+        "class Player\n{\n    void Update() { }\n    void Helper() { }\n}\n",
+    );
+    let without = dead_messages(dir.path(), &|_| false);
+    assert!(
+        without.iter().any(|m| m.contains("`Update`")),
+        "{without:?}"
+    );
+    let with = dead_messages(dir.path(), &|n| n == "Update");
+    assert!(!with.iter().any(|m| m.contains("`Update`")), "{with:?}");
+    assert!(with.iter().any(|m| m.contains("`Helper`")), "{with:?}");
 }
