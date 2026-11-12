@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a TS/JS module that re-exports a name from a relative module, when the public export resolver is called, then it returns the defining module and gob-frameworks uses it instead of its own text-based re-export resolution"]
+moved = []
+at = "2026-11-12T08:31:36Z"
+actor = "lognd"
+rev = 1
