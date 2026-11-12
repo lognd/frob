@@ -3319,7 +3319,6 @@ dependencies = [
  "toml",
  "tracing",
  "tree-sitter",
- "unicode-normalization",
 ]
 
 [[package]]
