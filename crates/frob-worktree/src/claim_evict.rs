@@ -324,8 +324,7 @@ impl Workspace<'_> {
         if needs_confirm && !confirmed {
             let why = if flapped {
                 format!(
-                    "was already evicted in the last {} days; a repeat needs a human to confirm",
-                    flap_days
+                    "was already evicted in the last {flap_days} days; a repeat needs a human to confirm"
                 )
             } else {
                 "is held by a human and `[claims] evict_human = \"confirm\"`".to_owned()

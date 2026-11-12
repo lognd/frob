@@ -197,7 +197,7 @@ impl ClaimWindows {
     }
 
     /// Days a repeat eviction of one holder on one ticket counts as a flap (`[claims] flap_repeat_days`).
-    // frob:ticket Q9SKQ2Q
+    // frob:ticket 01M5DFKY9JMQH3VQH5KQ9SKQ2Q
     #[must_use]
     pub fn flap_repeat_days(&self) -> u64 {
         self.flap_repeat_days
@@ -593,7 +593,7 @@ mod tests {
         );
     }
 
-    // frob:ticket Q9SKQ2Q
+    // frob:ticket 01M5DFKY9JMQH3VQH5KQ9SKQ2Q
     // frob:tests crates/frob-ledger/src/claim_window.rs::ClaimWindows.flap_repeat_days
     #[test]
     fn flap_repeat_days_defaults_to_fourteen_and_follows_the_table() {

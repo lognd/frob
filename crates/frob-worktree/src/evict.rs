@@ -506,7 +506,7 @@ pub enum FlapReview {
 }
 
 /// Review a pending eviction against `prior_evictions`, the ages in seconds of earlier evictions of this holder on this ticket, using a window of `repeat_days`.
-// frob:ticket Q9SKQ2Q
+// frob:ticket 01M5DFKY9JMQH3VQH5KQ9SKQ2Q
 #[must_use]
 pub fn flap_review(prior_evictions: &[u64], repeat_days: u64) -> FlapReview {
     let limit = repeat_days.saturating_mul(86_400);
