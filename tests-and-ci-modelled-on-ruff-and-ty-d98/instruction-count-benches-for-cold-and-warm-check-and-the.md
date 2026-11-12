@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-21T13:24:45Z"
 updated = "2026-11-12T17:02:23Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/benches/**", "crates/frob-parse*/benches/**", "crates/*/Cargo.toml", "changelog.d/**", "crates/frob-check/benches/ic_check.rs"]
+scope = ["crates/gob-plan/benches/**", "crates/frob-parse*/benches/**", "crates/*/Cargo.toml", "changelog.d/**", "crates/frob-check/benches/ic_check.rs", "crates/gob-languages/benches/ic_parse.rs"]
 
 [[acceptance]]
 text = "Given cargo dev bench-ic, when run, then a cold and a warm frob-check summary and at least one more parser summary are produced from new crates/*/benches/ic_*.rs benches"
