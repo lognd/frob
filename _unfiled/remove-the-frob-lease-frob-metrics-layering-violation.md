@@ -2,7 +2,8 @@
 id = "01M77S60NMH0N01DJ75WTNW65J"
 title = "Remove the frob-lease -> frob-metrics layering violation (activity journal recording)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
