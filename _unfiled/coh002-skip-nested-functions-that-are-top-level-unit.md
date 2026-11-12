@@ -2,7 +2,8 @@
 id = "01M5HJDX45JB4H214VWY6M378S"
 title = "COH002: skip nested functions that are top-level unit statements"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
