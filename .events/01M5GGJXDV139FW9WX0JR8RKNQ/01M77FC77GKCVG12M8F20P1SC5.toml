@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "land blocked by DUP004 on ts_class_of/ts_lexical/ts_construct vs python twins; needs shared-extraction refactor in gob-symbols graph"
+at = "2026-11-12T08:53:18Z"
+actor = "lognd"
+rev = 1
