@@ -4,9 +4,10 @@ title = "COH004 corpus: fire example once the rule can fail"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-06T13:39:26Z"
-updated = "2026-11-06T13:39:26Z"
+updated = "2026-11-12T12:29:47Z"
 scope = ["crates/grimble-check/**"]
 +++
 
