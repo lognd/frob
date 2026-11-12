@@ -2,7 +2,8 @@
 id = "01M5F8MNMXE10ZQFN7BRA0V3XC"
 title = "unity pack: dead-code (DEAD001) reads the engine entry-point vocabulary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M44YQS4CNZM54P067GJVPDC0"
