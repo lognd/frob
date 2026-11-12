@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T20:25:15Z"
+digest = "dbccd5224db513855b279868e88db8b3011b7a2bc9a1fe63045322b1eb98990f"
+head = "f71bc9d94c6a5a97f9d20d8ae16e0e8e0c18e0fe"
+provider = "file"
+ref = "crates/grimble-model/tests/corpus/plan/mdl031-marker-mounted-other-fire/model.grmb"
+size = 67
+status = "measured"
+at = "2026-11-12T20:25:15Z"
+actor = "lognd"
+rev = 1
