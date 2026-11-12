@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
 updated = "2026-11-12T03:50:52Z"
 labels = ["no-story"]
-scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml"]
+scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs"]
 
 [[links]]
 kind = "blocked-by"
