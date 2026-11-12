@@ -4,9 +4,10 @@ title = "CI check step fails on 120 errors: LOG001/LOG002 shell scripts, TESTQ00
 type = "bug"
 category = "todo"
 priority = "critical"
+points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T12:30:35Z"
+updated = "2026-11-12T12:36:39Z"
 labels = ["ci"]
 scope = [".github/scripts/**"]
 
