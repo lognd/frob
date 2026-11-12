@@ -6,6 +6,7 @@
 
 use std::collections::BTreeMap;
 
+use crunk_scene::ElementKind;
 use crunk_spec::{ContentFile, DesignSpec, parse_content_file};
 
 use crate::scene_docs::{SCENE_DOC_SUFFIX, SceneDocFile};
@@ -23,6 +24,28 @@ pub const COPY_ATTR: &str = "data-copy";
 /// The attributes whose value is read by people (so is copy); each is keyed with
 /// `data-copy-<attribute>`.
 pub const COPY_ATTRIBUTES: &[&str] = &["alt", "aria-label", "placeholder", "title"];
+
+/// The props of a component instance (`<Button label="Save">`) whose value is read by people, so
+/// is copy; each is keyed with `data-copy-<prop>` like a copy attribute. Other props
+/// (`variant="primary"`) are options, not copy.
+pub const COMPONENT_TEXT_PROPS: &[&str] = &[
+    "label",
+    "text",
+    "caption",
+    "heading",
+    "headline",
+    "subtitle",
+    "description",
+    "message",
+    "content",
+    "tooltip",
+];
+
+/// Tags that never have a closing tag, so do not open a nesting level.
+const VOID_TAGS: &[&str] = &[
+    "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track",
+    "wbr",
+];
 
 /// The longest literal quoted in a finding, in characters.
 const QUOTE_MAX: usize = 40;
@@ -175,8 +198,10 @@ pub struct LiteralCopy {
     pub line: u32,
     /// The literal, trimmed.
     pub literal: String,
-    /// The attribute that holds it, `None` for the element's text.
+    /// The attribute (or component prop) that holds it, `None` for text.
     pub attribute: Option<String>,
+    /// Whether the text sits outside every element (a top-level text node of the scene).
+    pub top_level: bool,
     /// The key to define, for example `home.hero_title`.
     pub suggested_key: String,
     /// The attribute that should reference the key (`data-copy` or `data-copy-<attribute>`).
@@ -253,13 +278,16 @@ pub fn literal_copy(file: &SceneDocFile) -> Vec<LiteralCopy> {
                     line: el.line,
                     literal: text.clone(),
                     attribute: None,
+                    top_level: false,
                     suggested_key: suggest_key(&file.path, label, None),
                     reference_attr: COPY_ATTR.to_owned(),
                 });
             }
         }
         for (name, value) in &el.attributes {
-            if COPY_ATTRIBUTES.contains(&name.as_str())
+            let is_text_prop =
+                el.kind == ElementKind::Component && COMPONENT_TEXT_PROPS.contains(&name.as_str());
+            if (COPY_ATTRIBUTES.contains(&name.as_str()) || is_text_prop)
                 && is_copy(value)
                 && !has(&format!("{COPY_ATTR}-{name}"))
             {
@@ -268,12 +296,117 @@ pub fn literal_copy(file: &SceneDocFile) -> Vec<LiteralCopy> {
                     line: el.line,
                     literal: value.trim().to_owned(),
                     attribute: Some(name.clone()),
+                    top_level: false,
                     suggested_key: suggest_key(&file.path, label, Some(name)),
                     reference_attr: format!("{COPY_ATTR}-{name}"),
                 });
             }
         }
     }
+    for (n, (offset, text)) in top_level_text(&file.text).into_iter().enumerate() {
+        // The adapter hangs text after a void tag on that tag; the element hit already has it.
+        let owned_by_void = file.doc.elements.iter().any(|el| {
+            VOID_TAGS.contains(&el.tag.to_ascii_lowercase().as_str())
+                && el.offset < offset
+                && el.text.contains(&text)
+        });
+        if !is_copy(&text) || owned_by_void {
+            continue;
+        }
+        let label = if n == 0 {
+            "text".to_owned()
+        } else {
+            format!("text {}", n + 1)
+        };
+        tracing::debug!(path = %file.path, offset, "top-level text node is literal copy");
+        out.push(LiteralCopy {
+            offset,
+            line: line_at(&file.text, offset),
+            literal: text,
+            attribute: None,
+            top_level: true,
+            suggested_key: suggest_key(&file.path, &label, None),
+            reference_attr: COPY_ATTR.to_owned(),
+        });
+    }
+    out
+}
+
+/// 1-based line of byte `offset` in `text`.
+fn line_at(text: &str, offset: usize) -> u32 {
+    let newlines = text[..offset.min(text.len())].matches('\n').count();
+    u32::try_from(newlines + 1).unwrap_or(u32::MAX)
+}
+
+/// The trimmed, non-empty text runs of `src` that sit outside every element, each with the byte
+/// offset of its first character. A light tag scan: comments, doctypes, void and self-closing
+/// tags, quoted attribute values and `<style>`/`<script>` bodies are skipped over.
+fn top_level_text(src: &str) -> Vec<(usize, String)> {
+    let bytes = src.as_bytes();
+    let mut out = Vec::new();
+    let (mut depth, mut i, mut run) = (0usize, 0usize, 0usize);
+    let mut flush = |from: usize, to: usize, depth: usize| {
+        if depth == 0 && from < to {
+            let raw = &src[from..to];
+            let lead = raw.len() - raw.trim_start().len();
+            let text = raw.trim();
+            if !text.is_empty() {
+                out.push((from + lead, text.to_owned()));
+            }
+        }
+    };
+    while i < bytes.len() {
+        if bytes[i] != b'<' {
+            i += 1;
+            continue;
+        }
+        flush(run, i, depth);
+        let rest = &src[i..];
+        if rest.starts_with("<!--") {
+            i += rest.find("-->").map_or(rest.len(), |e| e + 3);
+        } else if rest.starts_with("<!") || rest.starts_with("<?") {
+            i += rest.find('>').map_or(rest.len(), |e| e + 1);
+        } else if rest.starts_with("</") {
+            depth = depth.saturating_sub(1);
+            i += rest.find('>').map_or(rest.len(), |e| e + 1);
+        } else if rest[1..].starts_with(|c: char| c.is_ascii_alphabetic()) {
+            let name: String = rest[1..]
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | ':'))
+                .collect::<String>()
+                .to_ascii_lowercase();
+            let mut j = 1;
+            let mut quote_ch = None;
+            let rb = rest.as_bytes();
+            while j < rb.len() {
+                match (quote_ch, rb[j]) {
+                    (Some(q), c) if c == q => quote_ch = None,
+                    (None, b'"' | b'\'') => quote_ch = Some(rb[j]),
+                    (None, b'>') => break,
+                    _ => {}
+                }
+                j += 1;
+            }
+            let self_closing = j > 0 && j <= rb.len() && rb.get(j - 1) == Some(&b'/');
+            i += (j + 1).min(rest.len());
+            if self_closing || VOID_TAGS.contains(&name.as_str()) {
+                // no nesting level
+            } else if name == "style" || name == "script" {
+                let tail = &src[i..];
+                let close = format!("</{name}");
+                let at = tail.to_ascii_lowercase().find(&close).unwrap_or(tail.len());
+                i += at;
+                i += src[i..].find('>').map_or(src.len() - i, |e| e + 1);
+            } else {
+                depth += 1;
+            }
+        } else {
+            i += 1;
+            continue;
+        }
+        run = i;
+    }
+    flush(run, bytes.len().min(src.len()), depth);
     out
 }
 

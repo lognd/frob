@@ -48,6 +48,35 @@ fn content001_flags_copy_attributes_and_suggests_an_attribute_key() {
     assert!(m[0].contains("data-copy-alt"), "{m:?}");
 }
 
+// frob:tests crates/crunk-rules/src/content_files.rs::literal_copy
+#[test]
+fn content001_flags_component_text_props_but_not_option_props() {
+    let m = c1("<Button data-id=\"save\" variant=\"primary\" label=\"Save changes\"></Button>\n");
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(
+        m[0].contains("Save changes") && m[0].contains("label attribute"),
+        "{m:?}"
+    );
+    assert!(m[0].contains("data-copy-label"), "{m:?}");
+    let clean = "<Button label=\"Save\" data-copy-label=\"home.save\"></Button>\n";
+    assert!(c1(clean).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/content_files.rs::literal_copy
+#[test]
+fn content001_flags_top_level_text_nodes() {
+    let m = c1(
+        "Welcome home\n<!-- note -->\n<div data-id=\"a\"><span>42</span></div>\n\nGoodbye\n<style>.a { color: red }</style>\n",
+    );
+    assert_eq!(m.len(), 2, "{m:?}");
+    assert!(
+        m[0].contains("Welcome home") && m[0].contains("top level"),
+        "{m:?}"
+    );
+    assert!(m[0].contains("line 1"), "{m:?}");
+    assert!(m[1].contains("Goodbye") && m[1].contains("line 5"), "{m:?}");
+}
+
 // frob:tests crates/crunk-rules/src/rules/content001.rs::Content001
 #[test]
 fn content001_ignores_empty_whitespace_numeric_and_punctuation_text() {

@@ -24,7 +24,7 @@ Copy lives in content keys, not in the scene markup.
 
 ## What it does
 
-Fires for each element in a scene document whose own text, or whose `alt`, `aria-label`, `title` or `placeholder` attribute, holds a literal with at least one letter. The finding names the element, the line and a suggested key (`<scene>.<element>`, plus `.<attribute>` for an attribute). Numbers, punctuation and whitespace are not copy. An element with `data-copy` has its text taken as the key's stand-in render, and an attribute with a `data-copy-<attribute>` twin is a reference; neither fires. A bare attribute (value `true`) is treated as a literal only when it has a letter, so `title` with no value is flagged as `true`; write the value or drop the attribute.
+Fires for each element in a scene document whose own text, or whose `alt`, `aria-label`, `title` or `placeholder` attribute, holds a literal with at least one letter. It also fires for text written outside every element, and for a text prop of a component instance (`label`, `text`, `caption`, `heading`, `headline`, `subtitle`, `description`, `message`, `content`, `tooltip` on a capitalised tag such as `<Button label="Save">`); a prop is a reference when its `data-copy-<prop>` twin is present. The finding names the element, the line and a suggested key (`<scene>.<element>`, plus `.<attribute>` for an attribute). Numbers, punctuation and whitespace are not copy. An element with `data-copy` has its text taken as the key's stand-in render, and an attribute with a `data-copy-<attribute>` twin is a reference; neither fires. A bare attribute (value `true`) is treated as a literal only when it has a letter, so `title` with no value is flagged as `true`; write the value or drop the attribute.
 
 ## Why it matters
 

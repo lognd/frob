@@ -1,4 +1,4 @@
-//! CONTENT001: a scene writes copy inline (element text, or an alt/aria-label/title/placeholder attribute) instead of referencing a content key. Off when the project has no scene documents.
+//! CONTENT001: a scene writes copy inline (element text, a top-level text node, an alt/aria-label/title/placeholder attribute, or a component text prop such as label) instead of referencing a content key. Off when the project has no scene documents.
 
 // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
 
@@ -35,10 +35,15 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Content001 {
                     Some(attr) => format!("{attr} attribute"),
                     None => "text".to_owned(),
                 };
+                let holder = if hit.top_level {
+                    "the top level of the scene".to_owned()
+                } else {
+                    file.element_label(hit.offset)
+                };
                 let message = format!(
                     "literal copy \"{}\" in the {what} of {} (line {}): move it to a content key such as '{}' in design/content/*.toml and reference it with {}=\"{}\"",
                     quote(&hit.literal),
-                    file.element_label(hit.offset),
+                    holder,
                     hit.line,
                     hit.suggested_key,
                     hit.reference_attr,
