@@ -26,6 +26,7 @@ mod symbolic_guard;
 mod symbols;
 mod typescript;
 mod typescript_consteval;
+mod typescript_exports;
 mod typescript_inherit;
 mod typescript_types;
 mod unity_project;

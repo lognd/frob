@@ -410,6 +410,30 @@ impl SymbolGraph {
         out
     }
 
+    /// The units TypeScript file `path` exports as `name`: its own public declarations, then re-export bindings and `export *`.
+    ///
+    /// Empty when nothing in the repository answers it (a package re-export, a computed export, a tsconfig alias);
+    /// several entries, or an `export *` approximation, are a May answer.
+    // frob:ticket 01M5GGJXDV139FW9WX0JR8RKNQ
+    pub fn ts_export_targets(&self, path: &str, name: &str) -> Vec<(Symref, Status)> {
+        let out: Vec<(Symref, Status)> = self
+            .ts_export(&self.ts, path, name, 0)
+            .into_iter()
+            .flat_map(|f| {
+                f.nodes
+                    .into_iter()
+                    .map(move |n| (self.graph[n].symref.clone(), f.status))
+            })
+            .collect();
+        tracing::trace!(
+            path,
+            name,
+            targets = out.len(),
+            "typescript export resolved"
+        );
+        out
+    }
+
     /// The module specifier and imported member (`default`, `*` or a name) of the import binding `local` in `from`.
     pub fn ts_import_source(&self, from: &str, local: &str) -> Option<(String, String)> {
         let u = *Self::ts_uses(&self.ts, &Symref::file(from), local).first()?;

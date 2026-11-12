@@ -262,30 +262,23 @@ impl<'g> Repo<'g> {
         }
         let specs = self.text(file).map(export_specs).unwrap_or_default();
         let mut found: Vec<(String, Status)> = Vec::new();
-        for spec in specs.iter().filter(|s| s.exported == name) {
-            match &spec.from {
-                None => found.extend(
-                    self.bound_unit(file, &spec.local)
-                        .map(|s| (s, Status::Must)),
-                ),
-                Some(from) => {
-                    if let Some(target) = self.resolve_module(file, from) {
-                        found.extend(self.export_targets(&target, &spec.local, depth + 1));
-                    }
-                }
-            }
+        for spec in specs
+            .iter()
+            .filter(|s| s.exported == name && s.from.is_none())
+        {
+            found.extend(
+                self.bound_unit(file, &spec.local)
+                    .map(|s| (s, Status::Must)),
+            );
         }
-        if found.is_empty() && name != "default" {
-            for spec in specs.iter().filter(|s| s.exported == "*") {
-                let Some(target) = spec
-                    .from
-                    .as_deref()
-                    .and_then(|f| self.resolve_module(file, f))
-                else {
-                    continue;
-                };
-                found.extend(self.export_targets(&target, name, depth + 1));
-            }
+        if found.is_empty() {
+            // Re-exports (`export { a } from`, `export * from`, an imported name exported) are the module graph's.
+            found.extend(
+                self.graph
+                    .ts_export_targets(file, name)
+                    .into_iter()
+                    .map(|(s, st)| (s.to_string(), st)),
+            );
         }
         if found.is_empty() && name == "default" && depth > 0 {
             found.push((file.to_owned(), Status::Must));
