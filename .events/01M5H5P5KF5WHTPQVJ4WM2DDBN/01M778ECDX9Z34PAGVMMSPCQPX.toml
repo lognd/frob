@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T06:52:08Z"
+digest = "b6a7acb91f5bebc1464ff2555929a725047f1e8b7cebf90ee480be23bfaf7ad9"
+head = "d9bcc5aa539843b5314545872f902dc58b0bf027"
+provider = "file"
+ref = "crates/crunk-rules/tests/it/content_rules.rs"
+size = 8035
+status = "measured"
+at = "2026-11-12T06:52:08Z"
+actor = "lognd"
+rev = 1
