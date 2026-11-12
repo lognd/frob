@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "out-of-repo goway-ledger step; not implementable in frob"
+at = "2026-11-12T00:42:17Z"
+actor = "lognd"
+rev = 1
