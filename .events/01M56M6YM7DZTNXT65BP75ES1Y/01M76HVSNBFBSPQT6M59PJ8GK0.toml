@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-12T00:17:31Z"
+digest = "e9267a94ebda92de621135967a74bcc195dca3bbe582d2d1c11e1718952e8d92"
+head = "3f2faaa7a59d3e6c830c9e114209525092e58149"
+provider = "file"
+ref = "crates/frob-check/tests/it/opens_once.rs"
+size = 2934
+status = "measured"
+at = "2026-11-12T00:17:31Z"
+actor = "lognd"
+rev = 1
