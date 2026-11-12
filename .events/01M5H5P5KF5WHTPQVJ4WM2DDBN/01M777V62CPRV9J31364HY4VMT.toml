@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a content key defined in more than one design/content file, when CONTENT004 runs, then it reports a finding naming the key and the files that define it"]
+moved = []
+at = "2026-11-12T06:41:39Z"
+actor = "lognd"
+rev = 1
