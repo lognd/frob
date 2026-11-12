@@ -2,12 +2,12 @@
 id = "01M5GM4B049PYVSS1CVA1XEKJS"
 title = "gob-caps: let capability matrix Gap cells name a ticket"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T01:38:08Z"
-updated = "2026-11-12T09:01:33Z"
+updated = "2026-11-12T09:01:38Z"
 labels = ["no-story"]
 scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*"]
 
