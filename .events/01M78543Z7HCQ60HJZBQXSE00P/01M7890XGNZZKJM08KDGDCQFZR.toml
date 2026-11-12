@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-dev/profile.toml", "changelog.d/**"]
+reason = "scope"
+at = "2026-11-12T16:21:30Z"
+actor = "lognd"
+rev = 1

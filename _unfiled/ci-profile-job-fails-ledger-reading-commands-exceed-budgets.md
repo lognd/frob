@@ -7,8 +7,9 @@ priority = "high"
 points = 5
 reporter = "lognd"
 created = "2026-11-12T15:13:21Z"
-updated = "2026-11-12T15:13:27Z"
+updated = "2026-11-12T16:21:30Z"
 labels = ["no-story"]
+scope = ["crates/gob-dev/profile.toml", "changelog.d/**"]
 
 [[acceptance]]
 text = "Profile job budgets pass on CI runner, or budgets are rebased with evidence"
