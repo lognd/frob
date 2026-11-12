@@ -1,0 +1,9 @@
+kind = "create"
+title = "Windows nextest: frob-check corpus mdtest_corpus exceeds the 120 s timeout"
+type = "bug"
+category = "todo"
+priority = "medium"
+idempotency_key = "win-mdtest-timeout"
+at = "2026-11-12T00:35:36Z"
+actor = "lognd"
+rev = 1
