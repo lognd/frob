@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Profile job budgets pass on CI runner, or budgets are rebased with evidence"]
+reason = "details"
+moved = []
+at = "2026-11-12T15:13:27Z"
+actor = "lognd"
+rev = 1
