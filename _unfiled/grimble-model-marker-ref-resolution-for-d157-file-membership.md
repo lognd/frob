@@ -2,7 +2,8 @@
 id = "01M6D124NJ6QRDAX1QD2V4GRJE"
 title = "grimble-model: marker REF resolution for D157 file membership (mounted-file mismatch MDL031, unmounted marker resolving elsewhere, duplicate braced MDL001)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
