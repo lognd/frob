@@ -4,7 +4,8 @@ title = "Verify folded test suites on a healthy goway host; fix git init -b depe
 type = "task"
 category = "todo"
 priority = "low"
+points = 3
 reporter = "lognd"
 created = "2026-11-12T02:41:27Z"
-updated = "2026-11-12T02:41:27Z"
+updated = "2026-11-12T12:29:46Z"
 +++
