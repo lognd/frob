@@ -4,8 +4,9 @@ title = "frob-check directive-scan cache keys records by content digest only, so
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-12T00:35:36Z"
-updated = "2026-11-12T00:35:36Z"
+updated = "2026-11-12T12:29:47Z"
 idempotency_key = "dirscan-cache-path"
 +++
