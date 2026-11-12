@@ -8,7 +8,7 @@ points = 3
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-11-12T03:26:41Z"
+updated = "2026-11-12T03:34:00Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "docs/**", "crates/frob/src/stats_cmd.rs", "crates/frob/src/forecast_view.rs"]
 
@@ -18,7 +18,7 @@ target = "01M48Q2BWRT117K8E163MWHDN2"
 
 [[acceptance]]
 text = "the hook writes counts to the journal in a fixture"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "stats reports tokens per point when present and says absent otherwise"
