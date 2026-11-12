@@ -99,6 +99,8 @@ pub struct RefreshReport {
     pub freshness: FreshState,
     /// Ranked `W-SYNC-*` / `E-SYNC-*` notices, highest first; also in the envelope warnings.
     pub notices: Vec<Notice>,
+    /// `W-CLAIM-EVICTED` notices for claims of this clone that were evicted; also in the envelope warnings.
+    pub claim_returns: Vec<String>,
 }
 
 /// Re-integrate attempts after a lost compare-and-swap, local or remote.
@@ -363,7 +365,7 @@ fn sync_locked(
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
     finish_sync(ledger, plan, conflicts.len(), rep);
-    observe_claims(ledger, plan);
+    observe_claims(ledger, plan, rep);
     if conflicts.is_empty() {
         return Ok(());
     }
@@ -373,7 +375,7 @@ fn sync_locked(
 
 /// Feed claim activity observation from this sync; failures are logged, never refusals.
 // frob:ticket 01M5DDB4ZTR3ZWPJNCMJHN764G
-fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
+fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) {
     let Some(root) = ledger.repo().work_dir() else {
         return;
     };
@@ -401,6 +403,11 @@ fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
     }
     if let Err(e) = frob_worktree::claim_observe::observe_live_claims(ledger, &store, now) {
         tracing::warn!(error = %e, "claim observation failed");
+    }
+    // frob:ticket 01M5DFKY6K8AH7K75XGTQMVAVA
+    match frob_worktree::claim_reclaim::holder_return_notices(ledger, &store) {
+        Ok(n) => rep.claim_returns = n,
+        Err(e) => tracing::warn!(error = %e, "holder return scan failed"),
     }
     if plan.push_wip {
         push_claim_wip(ledger, &store);
@@ -676,6 +683,7 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         age_secs: None,
         freshness: FreshState::Unknown,
         notices: Vec::new(),
+        claim_returns: Vec::new(),
     }
 }
 
@@ -696,6 +704,8 @@ fn with_freshness(
             .iter()
             .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done.")),
     );
+    let returns = out.data.claim_returns.clone();
+    out.warnings.extend(returns);
     if let Some(line) = &out.data.divergence {
         out.warnings.push(format!(
             "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."

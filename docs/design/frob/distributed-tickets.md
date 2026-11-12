@@ -469,8 +469,13 @@ parked/<handle>-<n>` starts from the parked work.
   idle days; your work is safe at parked/...; frob work ~X --reclaim`.
 - `--reclaim` with the ticket still `todo`: re-claims, restores the
   branch from the newest parked ref, writes `lease` op `reclaim`.
-- If someone else already holds it: refused with the holder named;
-  coordinate, or use the escape valve.
+- If someone else already holds it: refused with the holder named
+  (`E-RECLAIM-TAKEN`); with nothing parked it refuses
+  `E-RECLAIM-NOTHING`, and offline `E-RECLAIM-OFFLINE`. Coordinate, or
+  use the escape valve. `frob claim restore` is the verb for putting
+  parked work back without claiming (`claim_restore.rs`); `work
+  --reclaim` is restore plus claim (`claim_reclaim.rs`), and `frob
+  refresh` reports the `W-CLAIM-EVICTED` notice in its `claim_returns`.
 - `land` from an evicted local lease refuses with the same remedy.
 - A raw `git push` of the old branch after eviction: if nobody
   re-claimed, it recreates `ticket/<handle>`; sync sees a branch for an
