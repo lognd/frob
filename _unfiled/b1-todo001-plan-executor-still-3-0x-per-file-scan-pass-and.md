@@ -4,9 +4,10 @@ title = "B1 TODO001: plan executor still 3.0x per file; scan pass and allocation
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T19:24:18Z"
-updated = "2026-11-09T19:24:18Z"
+updated = "2026-11-12T12:29:45Z"
 scope = ["crates/gob-plan/src/exec/**"]
 +++
 
