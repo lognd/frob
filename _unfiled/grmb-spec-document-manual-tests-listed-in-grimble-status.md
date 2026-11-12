@@ -7,6 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-06T13:50:12Z"
-updated = "2026-11-12T12:29:46Z"
+updated = "2026-11-12T12:47:07Z"
 idempotency_key = "grmb-status-manual"
+labels = ["good-first"]
 +++
