@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-31T03:56:06Z"
-updated = "2026-11-12T20:58:28Z"
+updated = "2026-11-12T21:28:53Z"
 labels = ["no-story"]
-scope = ["crates/grimble-bind/src/caps.rs"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/Cargo.toml"]
 
 [[acceptance]]
 text = "file_is_relevant and mentions_lookup no longer skip function-pointer-only or alias-only files for any language; a computed use with an empty callee does not reach every vocab atom noisily."
