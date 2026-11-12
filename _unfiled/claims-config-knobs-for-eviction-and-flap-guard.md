@@ -2,12 +2,12 @@
 id = "01M5DFKY9JMQH3VQH5KQ9SKQ2Q"
 title = "claims config knobs for eviction and flap guard"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-11-12T14:52:40Z"
+updated = "2026-11-12T14:52:45Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**", "docs/**", "changelog.d/**"]
 
