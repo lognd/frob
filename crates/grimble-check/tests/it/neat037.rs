@@ -2,7 +2,6 @@
 
 // frob:ticket 01M4CXT1GFPWZAMV0BCBH3WC4G
 
-
 use gob_ir::Answer;
 use gob_ir::effect_class::{
     Callee, ClaimStatus, EffectClaim, EffectClass, EffectCollector, EffectFacts, Inferred,

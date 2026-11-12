@@ -18,7 +18,10 @@ macro_rules! pair {
         // frob:tests crates/grimble-lints/src/path.rs::scan
         #[test]
         fn $name() {
-            let bug = run(Language::Rust, include_str!(concat!("../corpus/path/", $bug)));
+            let bug = run(
+                Language::Rust,
+                include_str!(concat!("../corpus/path/", $bug)),
+            );
             assert_eq!(kinds(&bug), vec![$kind], "bug fires: {bug:?}");
             let fixed = run(
                 Language::Rust,

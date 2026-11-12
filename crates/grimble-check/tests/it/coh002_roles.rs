@@ -3,7 +3,6 @@
 // frob:ticket 01M5HJ078MGFERVXX3DSJT111F
 // frob:ticket 01M5K17ZYQCZSB2240DD4DZ677
 
-
 use gob_languages::Language;
 use gob_symbols::{Folded, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};

@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5HJ075VJZAP88EVTCX1MH8C
 
-
 use std::path::Path;
 
 use gob_languages::Language;

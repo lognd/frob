@@ -6,7 +6,6 @@
 // frob:ticket 01M63ZVCMA9J28JWXJEVNVD3Q1
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
 
-
 use std::path::Path;
 
 use grimble_check::{CheckOptions, run, sibling_document};

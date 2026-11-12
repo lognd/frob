@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5K18043Y5V9TF7QD2KNYR34
 
-
 use grimble_check::{CheckOptions, run, sibling_document};
 
 /// The COH004 findings of a repo holding `app/a.py` with `source`.

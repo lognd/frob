@@ -3,7 +3,6 @@
 
 // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
 
-
 use std::path::Path;
 
 use grimble_check::model_view::file_row;

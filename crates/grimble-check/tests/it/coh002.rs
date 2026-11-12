@@ -2,7 +2,6 @@
 
 // frob:ticket 01M4CXSRE3YHY7FV30R8GMB58A
 
-
 use gob_ir::{NodeId, Operator, Universal};
 use gob_symbols::fold_file;
 use gob_walk::{Digest, FileEntry, LanguageHint};

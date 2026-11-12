@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5HJNE91SN4N0MR8GHM30Z1Y
 
-
 use grimble_check::{CheckOptions, run, sibling_document};
 
 /// The TESTQ findings of a repo holding `grimble.toml` (`config`) and `tests/test_a.py` (`source`).

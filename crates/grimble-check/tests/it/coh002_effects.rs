@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5HJ07DTC2JQT9MP5T0TGDAS
 
-
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
 use gob_symbols::{Folded, def_use_of, fold_file};
