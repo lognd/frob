@@ -2,7 +2,8 @@
 id = "01M5H15HXSYYTSXC0ERNT1JMSB"
 title = "Render-dependent component checks: every variant combination renders"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
