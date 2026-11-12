@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:26Z"
-updated = "2026-11-12T22:51:41Z"
+updated = "2026-11-12T23:01:23Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/src/type_parse.rs", "crates/frob-check/src/typefacts.rs"]
 
 [[acceptance]]
 text = "A TypeScript file is marked type-clean only when tsc --listFilesOnly lists it (files outside tsconfig are not clean), covered by a test"
-bound = false
+bound = true
 +++
 
 found while working ~69D9E89
