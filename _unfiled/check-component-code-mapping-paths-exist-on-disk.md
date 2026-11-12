@@ -2,7 +2,8 @@
 id = "01M5H15J89N27F4C4CH719QDG4"
 title = "Check component code-mapping paths exist on disk"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
