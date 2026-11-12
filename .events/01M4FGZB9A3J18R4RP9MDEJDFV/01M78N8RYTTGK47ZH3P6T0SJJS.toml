@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T19:55:31Z"
+digest = "4b2215427cc171373f38854e110f444cba49b27688c5aa77482097a5e2dc9793"
+head = "560b631cb1ea1a72c637200908a525c17fe1b389"
+provider = "file"
+ref = "crates/grimble-model/src/fmt.rs"
+size = 12800
+status = "measured"
+at = "2026-11-12T19:55:31Z"
+actor = "lognd"
+rev = 1
