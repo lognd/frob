@@ -73,14 +73,18 @@ fn opens_of(root: &std::path::Path) -> usize {
     opens.0.load(Ordering::SeqCst)
 }
 
+/// Discoveries one check run of `root` logs inside a `DiscoverScope`.
+fn scoped_opens_of(root: &std::path::Path) -> usize {
+    let _scope = DiscoverScope::begin();
+    opens_of(root)
+}
+
 // frob:ticket 01M56M6YM7DZTNXT65BP75ES1Y
 // frob:tests crates/frob-check/src/snapshot.rs::open_ledger
 #[test]
 fn a_check_run_opens_the_work_tree_fewer_times_inside_a_discover_scope() {
     let dir = fixture();
     let plain = opens_of(dir.path());
-    let scope = DiscoverScope::begin();
-    let scoped = opens_of(dir.path());
-    drop(scope);
+    let scoped = scoped_opens_of(dir.path());
     assert!(scoped < plain, "scoped {scoped} opens vs plain {plain}");
 }
