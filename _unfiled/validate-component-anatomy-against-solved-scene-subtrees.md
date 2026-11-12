@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-11-12T10:02:44Z"
+updated = "2026-11-12T10:13:00Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "docs/reference/rules/COMP005.md"]
 
 [[acceptance]]
 text = "Given a component spec with anatomy nodes and a solved scene subtree for that component, when the anatomy rule runs, then each anatomy node is checked against the subtree and a node absent from it is reported"
