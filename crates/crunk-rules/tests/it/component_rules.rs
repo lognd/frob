@@ -164,6 +164,58 @@ fn the_component_itself_and_a_known_token_resolve() {
     assert!(messages::<Comp005>(text).is_empty());
 }
 
+const SUBTREE_COMPONENT: &str =
+    "name = \"button\"\n[anatomy]\nnodes = [\"button\", \"label\", \"icon\"]\n";
+
+/// A scene whose `button` subtree holds only the given child ids.
+fn scene_with(children: &[&str]) -> String {
+    let kids: Vec<String> = children
+        .iter()
+        .map(|id| {
+            format!("{{\"id\":\"{id}\",\"kind\":\"box\",\"style\":{{\"width\":10,\"height\":10}}}}")
+        })
+        .collect();
+    format!(
+        "{{\"viewport\":{{\"width\":100,\"height\":100}},\"root\":{{\"id\":\"root\",\"kind\":\"box\",\"style\":{{\"width\":100,\"height\":100}},\"children\":[{{\"id\":\"button\",\"kind\":\"box\",\"style\":{{\"width\":50,\"height\":50}},\"children\":[{}]}}]}}}}",
+        kids.join(",")
+    )
+}
+
+fn subtree_messages(scene: &str) -> Vec<String> {
+    let p = support::project_files(
+        FILE,
+        SUBTREE_COMPONENT,
+        &[("design/scenes/home.scene.json", scene)],
+        None,
+    );
+    support::run::<Comp005>(&p)
+        .into_iter()
+        .map(|f| f.message)
+        .collect()
+}
+
+// frob:tests crates/crunk-rules/src/rules/comp005.rs::Comp005
+#[test]
+fn an_anatomy_node_absent_from_the_solved_subtree_is_reported() {
+    let m = subtree_messages(&scene_with(&["label"]));
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("button/icon"), "{m:?}");
+    assert!(m[0].contains("home.scene.json"), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/comp005.rs::Comp005
+#[test]
+fn a_subtree_holding_every_anatomy_node_is_clean() {
+    assert!(subtree_messages(&scene_with(&["label", "icon"])).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/comp005.rs::Comp005
+#[test]
+fn a_scene_without_the_component_is_not_a_subject() {
+    let scene = scene_with(&[]).replace("\"button\"", "\"other\"");
+    assert!(subtree_messages(&scene).is_empty());
+}
+
 // frob:tests crates/crunk-rules/src/rules/comp006.rs::Comp006
 #[test]
 fn the_minimum_target_boundary_is_24() {
