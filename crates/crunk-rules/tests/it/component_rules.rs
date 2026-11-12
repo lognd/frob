@@ -187,6 +187,19 @@ fn a_draft_needs_no_mapping_but_a_blank_field_still_fires() {
     );
 }
 
+// frob:tests crates/crunk-rules/src/rules/comp007.rs::Comp007
+#[test]
+fn a_mapping_to_a_missing_path_fires_naming_it_and_an_existing_path_is_clean() {
+    let text = "name = \"b\"\nstatus = \"ready\"\n[[code]]\nframework = \"react\"\npath = \"src/B.tsx\"\nexport = \"B\"\n";
+    let missing = messages::<Comp007>(text);
+    assert_eq!(missing.len(), 1, "{missing:?}");
+    assert!(missing[0].contains("src/B.tsx"), "{missing:?}");
+    let present =
+        support::project_files(FILE, text, &[("src/B.tsx", "export const B = 1;\n")], None);
+    let found = support::run::<Comp007>(&present);
+    assert!(found.is_empty(), "{found:?}");
+}
+
 // frob:tests crates/crunk-rules/src/rules/comp008.rs::Comp008
 #[test]
 fn a_code_mapping_without_a_props_list_is_not_judged_and_a_missing_prop_fires() {

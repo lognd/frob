@@ -1,4 +1,4 @@
-//! COMP007: a `ready` or `completed` component with no `[[code]]` mapping, or a mapping with a blank framework, path or export. Off when the project has no component files.
+//! COMP007: a `ready` or `completed` component with no `[[code]]` mapping, or a mapping with a blank framework, path or export, or a mapped path that does not exist under the project root. Off when the project has no component files.
 
 // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
 
@@ -44,7 +44,24 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Comp007 {
                     ),
                 );
             }
+            let root = host.spec().map(|spec| spec.root.as_path());
             for (i, m) in c.code.iter().enumerate() {
+                if let Some(root) = root
+                    && !m.path.trim().is_empty()
+                    && !root.join(m.path.trim()).exists()
+                {
+                    tracing::debug!(path = %file.path, mapped = %m.path, "COMP007: mapped path missing on disk");
+                    out.fire_in(
+                        &file.path,
+                        at,
+                        format!(
+                            "component '{}' code mapping {} names path '{}' which does not exist",
+                            c.name,
+                            i + 1,
+                            m.path
+                        ),
+                    );
+                }
                 for (field, value) in [
                     ("framework", &m.framework),
                     ("path", &m.path),
