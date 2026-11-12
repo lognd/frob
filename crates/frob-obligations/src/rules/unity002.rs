@@ -28,7 +28,10 @@ pub struct Unity002;
 
 impl<P: ?Sized + ObligationHost> RelayRule<P> for Unity002 {
     fn relay(&self, host: &P, files: &mut FileInterner) -> Vec<Finding> {
-        let found = unity::unity002(host.obligations().root, files);
+        let found = {
+            let inputs = host.obligations();
+            unity::unity002(inputs.root, inputs.unity, files)
+        };
         tracing::debug!(found = found.len(), "UNITY002 evaluated");
         found
     }

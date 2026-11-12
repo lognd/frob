@@ -21,8 +21,11 @@ use crate::rules::{unity001::Unity001, unity002::Unity002, unity003::Unity003};
 use crate::todo::range;
 use crate::util::{def_id, finding_def};
 
+/// The gate that says where the unity pack is on, with the pack itself.
+pub type EnabledPack = (UnityGate, UnityPack);
+
 /// The pack and the gate that says where it is on, when the root config enables it.
-pub(crate) fn enabled_pack(root: &Path) -> Option<(UnityGate, UnityPack)> {
+pub fn enabled_pack(root: &Path) -> Option<EnabledPack> {
     let Ok(config) = std::fs::read_to_string(root.join("frob.toml")) else {
         return None;
     };
@@ -472,8 +475,8 @@ fn tracked_from_git(root: &Path) -> Result<Vec<String>, String> {
 }
 
 /// The `.meta` report for `root` when the unity pack is enabled; `None` when it is off.
-pub(crate) fn meta_report(root: &Path) -> Option<MetaReport> {
-    enabled_pack(root)?;
+pub(crate) fn meta_report(root: &Path, pack: Option<&EnabledPack>) -> Option<MetaReport> {
+    pack?;
     let tracked = tracked_paths(root);
     tracing::debug!(tracked = tracked.len(), "unity .meta scan");
     Some(scan_meta(&tracked, |m| {
@@ -494,8 +497,12 @@ fn at_file(
 }
 
 /// UNITY001: one finding per tracked asset or folder with no tracked `.meta`.
-pub(crate) fn unity001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
+pub(crate) fn unity001(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
         return Vec::new();
     };
     r.missing
@@ -509,8 +516,12 @@ pub(crate) fn unity001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
 }
 
 /// UNITY002: one finding per tracked `.meta` whose asset is not tracked.
-pub(crate) fn unity002(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
+pub(crate) fn unity002(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
         return Vec::new();
     };
     r.orphans
@@ -523,8 +534,12 @@ pub(crate) fn unity002(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
 }
 
 /// UNITY003: one Error per duplicated guid naming every file, plus Unresolved for unreadable guids.
-pub(crate) fn unity003(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
+pub(crate) fn unity003(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
         return Vec::new();
     };
     let mut out: Vec<Finding> = r

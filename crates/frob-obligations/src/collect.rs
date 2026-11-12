@@ -14,6 +14,7 @@ use gob_walk::{Roles, WalkConfig, walk};
 
 use crate::ObligationInputs;
 use crate::config::InvariantsConfig;
+use crate::unity::EnabledPack;
 
 /// Why collecting inputs failed.
 #[derive(Debug, thiserror::Error)]
@@ -40,6 +41,8 @@ pub struct Collected {
     pub tool_ids: BTreeMap<String, RuleId>,
     /// The UTC day `until=` dates are compared with, read once when collecting.
     pub today: gob_time::Day,
+    /// The unity pack and its gate when the root config enables it, read once when collecting.
+    pub unity: Option<EnabledPack>,
 }
 
 impl Collected {
@@ -60,6 +63,7 @@ impl Collected {
             config,
             today: self.today,
             tool_ids: &self.tool_ids,
+            unity: self.unity.as_ref(),
             skip_tools: false,
         }
     }
@@ -138,6 +142,7 @@ pub fn collect(root: &Path) -> Result<Collected, CollectError> {
         files,
         tool_ids: crate::tool_bound_ids(root),
         today: gob_time::Clock::today(&gob_time::SystemClock::pin()),
+        unity: crate::unity::enabled_pack(root),
     })
 }
 
