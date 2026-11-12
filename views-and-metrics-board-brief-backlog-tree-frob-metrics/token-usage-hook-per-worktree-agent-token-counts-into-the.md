@@ -2,7 +2,8 @@
 id = "01M48Q2CF72NC7WT89VTY17MK7"
 title = "Token usage hook: per-worktree agent token counts into the activity journal"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M48Q294B33TB7C0GSATZRGJB"
