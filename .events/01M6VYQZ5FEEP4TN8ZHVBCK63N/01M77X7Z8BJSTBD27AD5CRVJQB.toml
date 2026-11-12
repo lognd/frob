@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/scripts/**"]
+new = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs"]
+at = "2026-11-12T12:55:38Z"
+actor = "lognd"
+rev = 1
