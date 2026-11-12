@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "holder-return refresh wired via holder_return"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob claim restore verb exists and is documented"
