@@ -2,7 +2,8 @@
 id = "01M5GY2ZA5ER31SEFAW61ZPY4R"
 title = "crunk: detect custom property name collisions between DTCG token paths"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
