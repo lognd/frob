@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-11-12T04:10:04Z"
+updated = "2026-11-12T04:17:51Z"
 labels = ["no-story"]
 scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/**", "changelog.d/01M48Q2D1S4AC9RQE8HPNPTY6C.*", "crates/gob-dev/src/wheel_smoke.rs", "deny.toml", "crates/frob-release/tests/it/release_workflow.rs"]
 
@@ -18,7 +18,7 @@ target = "01M48Q2AQXY69YKK3D2DC05ZWR"
 
 [[acceptance]]
 text = "board --live and stats --live start frob-live and q quits"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob's dependency tree has no ratatui or notify"
