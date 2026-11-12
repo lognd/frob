@@ -2,7 +2,8 @@
 id = "01M5GY2ZEA492MTNPXVHEV60AY"
 title = "crunk: support DTCG $ref JSON-pointer references"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
