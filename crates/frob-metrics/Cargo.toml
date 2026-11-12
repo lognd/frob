@@ -9,6 +9,7 @@ rust-version.workspace = true
 authors.workspace = true
 
 [dependencies]
+frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 frob-pm = { version = "0.532.0", path = "../frob-pm" }
 schemars = "1"
 serde = { version = "1", features = ["derive"] }
@@ -20,5 +21,4 @@ tracing = "0.1"
 workspace = true
 
 [dev-dependencies]
-frob-ledger = { version = "0.532.0", path = "../frob-ledger" }
 tempfile = "3"

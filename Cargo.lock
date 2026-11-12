@@ -1448,7 +1448,6 @@ version = "0.532.0"
 dependencies = [
  "clap",
  "frob-ledger",
- "frob-metrics",
  "globset",
  "gob-cli",
  "gob-config",

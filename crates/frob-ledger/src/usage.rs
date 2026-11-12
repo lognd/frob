@@ -155,10 +155,10 @@ mod tests {
         }
     }
 
-    // frob:tests crates/frob-metrics/src/usage.rs::Journal.record_usage
-    // frob:tests crates/frob-metrics/src/usage.rs::Journal.read_usage
-    // frob:tests crates/frob-metrics/src/usage.rs::Journal.usage_tokens
-    // frob:tests crates/frob-metrics/src/usage.rs::UsageRecord.from_json
+    // frob:tests crates/frob-ledger/src/usage.rs::Journal.record_usage
+    // frob:tests crates/frob-ledger/src/usage.rs::Journal.read_usage
+    // frob:tests crates/frob-ledger/src/usage.rs::Journal.usage_tokens
+    // frob:tests crates/frob-ledger/src/usage.rs::UsageRecord.from_json
     #[test]
     fn hook_lines_land_in_the_journal_as_counts() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -180,8 +180,8 @@ mod tests {
         assert_eq!(j.usage_tokens("other").expect("tokens"), None);
     }
 
-    // frob:tests crates/frob-metrics/src/usage.rs::ticket_tokens
-    // frob:tests crates/frob-metrics/src/usage.rs::UsageRecord.total
+    // frob:tests crates/frob-ledger/src/usage.rs::ticket_tokens
+    // frob:tests crates/frob-ledger/src/usage.rs::UsageRecord.total
     #[test]
     fn totals_use_latest_per_session_and_none_when_empty() {
         assert_eq!(ticket_tokens(&[]), None);
@@ -190,7 +190,7 @@ mod tests {
         assert_eq!(rec("a", 0, u64::MAX, 5).total(), u64::MAX);
     }
 
-    // frob:tests crates/frob-metrics/src/usage.rs::UsageRecord.from_json
+    // frob:tests crates/frob-ledger/src/usage.rs::UsageRecord.from_json
     #[test]
     fn content_bearing_fields_are_rejected() {
         let bad = r#"{"session":"s","at":1,"input":1,"output":1,"text":"secret"}"#;
