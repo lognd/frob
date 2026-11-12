@@ -1,0 +1,8 @@
+kind = "create"
+title = "chore: clear cargo-shear 1.14 warnings (ignored-paths, redundant ignores, unused optional crunk-check)"
+type = "task"
+category = "todo"
+priority = "high"
+at = "2026-11-12T21:10:07Z"
+actor = "lognd"
+rev = 1
