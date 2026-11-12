@@ -21,7 +21,7 @@ bound = true
 
 [[acceptance]]
 text = "frob claim restore verb exists and is documented"
-bound = false
+bound = true
 +++
 
 found while working ~6CVW7F9: wire reclaim_plan and holder_return; add frob claim restore

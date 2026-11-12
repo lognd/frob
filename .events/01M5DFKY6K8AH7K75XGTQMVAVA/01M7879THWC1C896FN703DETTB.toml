@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-12T15:51:25Z"
+digest = "ebcbac858c289ba926c897643da485b31b157c83ad87de405991bd277224b8c6"
+head = "e3cd8cccfa446348007be914dea2707460147f11"
+provider = "file"
+ref = "crates/frob/src/refresh_cmd.rs"
+size = 30899
+status = "measured"
+at = "2026-11-12T15:51:25Z"
+actor = "lognd"
+rev = 1
