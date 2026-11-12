@@ -2,7 +2,8 @@
 id = "01M5AH5JFD9MVN1H1B6YHPX7GN"
 title = "Fold integration tests into one binary per crate: gob-plan, frob-ledger, crunk, crunk-rules, crunk-check (tests/*.rs to tests/main.rs)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
