@@ -31,7 +31,6 @@ fn write_fixture(root: &Path) {
     }
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 /// A fixture repository with no cache, outside the measured region.
 fn ic_cold() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -39,7 +38,6 @@ fn ic_cold() -> tempfile::TempDir {
     dir
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 /// A fixture repository whose cache a prior run has filled, outside the measured region.
 fn ic_warm() -> tempfile::TempDir {
     let dir = ic_cold();
@@ -47,7 +45,6 @@ fn ic_warm() -> tempfile::TempDir {
     dir
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 #[library_benchmark]
 #[bench::cold(setup = ic_cold)]
 fn check_cold(dir: tempfile::TempDir) -> usize {
@@ -59,7 +56,6 @@ fn check_cold(dir: tempfile::TempDir) -> usize {
     )
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 #[library_benchmark]
 #[bench::warm(setup = ic_warm)]
 fn check_warm(dir: tempfile::TempDir) -> usize {

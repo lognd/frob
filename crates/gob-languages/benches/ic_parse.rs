@@ -27,7 +27,6 @@ fn source(lang: &str) -> String {
         .collect()
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 /// Builds the source text outside the measured region.
 fn ic_source(lang: &'static str) -> (Language, String) {
     let language = match lang {
@@ -39,7 +38,6 @@ fn ic_source(lang: &'static str) -> (Language, String) {
     (language, source(lang))
 }
 
-// frob:accept DEAD001 because="called by the gungraun main! macro, which the call graph cannot see"
 #[library_benchmark]
 #[bench::rust(args = ("rust"), setup = ic_source)]
 #[bench::python(args = ("python"), setup = ic_source)]
