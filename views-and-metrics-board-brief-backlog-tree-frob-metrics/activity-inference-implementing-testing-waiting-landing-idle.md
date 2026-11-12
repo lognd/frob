@@ -8,7 +8,7 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-11-12T03:00:30Z"
+updated = "2026-11-12T03:01:22Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob-lease/**", "crates/frob-land/**", "crates/frob-tests/**", "docs/design/frob/pm-and-releases.md"]
 
@@ -18,7 +18,7 @@ target = "01M3ZX82YQ43A8SWS4F128J4NT"
 
 [[acceptance]]
 text = "a fixture timeline classifies into the expected segments"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "nothing is written to the code branch"
