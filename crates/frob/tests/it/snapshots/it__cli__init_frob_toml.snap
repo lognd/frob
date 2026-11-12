@@ -50,7 +50,7 @@ cas_retries = 5
 models = ["design/model.grmb"]
 
 [packs]
-# Enabled pack ids in load order.
+# Enabled pack ids in load order. Built-in packs are opt-in: add `"unity"` (`enabled = ["unity"]`) to turn on the Unity engine vocabulary pack; only the root `grimble.toml` enables it, never an adapter.
 enabled = []
 # Path of the pack lock, relative to the repository root.
 lock = "grimble.packs.lock"
