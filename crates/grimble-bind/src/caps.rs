@@ -748,31 +748,16 @@ fn scan_files<'a>(cx: &'a Cx<'_>) -> BTreeSet<&'a str> {
         .collect()
 }
 
-/// Cheap prefilter: whether `src` mentions a vocabulary name or a name-computed lookup at all.
-/// Python is checked on its NFKC form, since identifiers may be spelled in any equivalent form
-/// (ticket 01M6422ZYR690QV4JF17VYCFGM); other languages are never normalised.
-fn file_is_relevant(language: &str, src: &str, vocab: &[(&str, BTreeSet<&str>)]) -> bool {
-    // C and C++ have computed callees (function pointers, macros) that name no vocabulary entry,
-    // so no spelling can rule a file out (ticket 01M64VBRHX20P2EJGQ2S1VG0FG); a shell command
-    // word may be an expansion (`$c -rf x`), which names no vocabulary entry either
-    // (ticket 01M6CN4WNECMHQ1T65JT6CSE34)
-    if matches!(language, "c" | "cpp" | "shell") {
-        return true;
-    }
-    let folded;
-    let hay: &str = if language == "python" && !src.is_ascii() {
-        folded = unicode_normalization::UnicodeNormalization::nfkc(src).collect::<String>();
-        &folded
-    } else {
-        src
-    };
-    // (a name-computed lookup names no vocabulary entry, so a lookup primitive also passes)
-    // (`__builtins__[n]` is a lookup into the builtins namespace, which names no primitive)
-    gob_ir::name_lookup::mentions_lookup(language, hay)
-        || (language == "python" && hay.contains("__builtins__"))
-        || vocab
-            .iter()
-            .any(|(_, names)| names.iter().any(|n| hay.contains(last_segment(n))))
+/// Parsed relevance gate: whether `src` has any path use (a call, alias or function-valued
+/// reference) at all. A lexical text test is defeatable (a function pointer or an alias names no
+/// vocabulary entry), so no language is ruled out by spelling; only a file the parser finds no
+/// use in is skipped (ticket 01M681KDM0YZZ6T0TJFPCEN1A8). The vocabulary is kept in the
+/// signature for callers; relevance no longer depends on it.
+fn file_is_relevant(language: &str, src: &str, _vocab: &[(&str, BTreeSet<&str>)]) -> bool {
+    // frob:ticket 01M681KDM0YZZ6T0TJFPCEN1A8
+    let relevant = !gob_symbols::path_uses(language, src).is_empty();
+    tracing::trace!(language, relevant, "parsed relevance gate");
+    relevant
 }
 
 /// The atoms whose vocabulary the use `callee` names: a wildcard's hits, a computed use's reachable
@@ -793,6 +778,8 @@ fn vocab_hits<'a>(
             if pu.computed {
                 // unknown tail: any atom whose vocabulary lives under the known prefix
                 // (or a vocabulary entry that is the path itself: a computed use of `eval`)
+                // an empty callee (nothing known) reaches every atom, always as an uncertain use
+                // (ticket 01M681KDM0YZZ6T0TJFPCEN1A8)
                 callee.is_empty() || names.iter().any(|n| computed_reaches(language, n, callee))
             } else {
                 names_callee(language, names, callee)
@@ -3913,5 +3900,69 @@ mod cell_tests {
         assert!(a.contains("why: shells out"), "{a}");
         assert!(a.contains("safer: use the library API"), "{a}");
         assert_eq!(advice("k4emp90.absent"), "");
+    }
+}
+
+#[cfg(test)]
+mod relevance_tests {
+    use super::*;
+
+    // frob:ticket 01M681KDM0YZZ6T0TJFPCEN1A8
+    // frob:tests crates/grimble-bind/src/caps.rs::file_is_relevant
+    /// Function-pointer-only and alias-only files stay relevant in every language, with no vocab name.
+    #[test]
+    fn alias_and_pointer_only_files_are_relevant() {
+        let cases = [
+            ("python", "import os\nf = os.getcwd\nf()\n"),
+            ("python", "def go(g):\n    return getattr(g, name)()\n"),
+            ("c", "void run(void (*p)(void)) { p(); }\n"),
+            (
+                "rust",
+                "fn go(f: fn()) { f(); }\nuse std::fs as zz;\nfn h() { zz::read(\"a\"); }\n",
+            ),
+        ];
+        for (lang, src) in cases {
+            let used = !gob_symbols::path_uses(lang, src).is_empty();
+            assert_eq!(file_is_relevant(lang, src, &[]), used, "{lang}: {src}");
+        }
+        assert!(file_is_relevant(
+            "python",
+            "import os\nf = os.system\nf('x')\n",
+            &[]
+        ));
+    }
+
+    // frob:tests crates/grimble-bind/src/caps.rs::file_is_relevant
+    /// A file with no parsed use is skipped for any language, whatever words it contains.
+    #[test]
+    fn file_without_uses_is_not_relevant() {
+        assert!(!file_is_relevant("python", "x = 1\n", &[]));
+        assert!(!file_is_relevant("unknown-lang", "system(1)", &[]));
+    }
+
+    // frob:tests crates/grimble-bind/src/caps.rs::vocab_hits
+    /// A computed use with a known prefix reaches only atoms under it; an empty callee (nothing
+    /// known) is the sole case that reaches every atom, and its use is never certain.
+    #[test]
+    fn computed_use_reaches_only_atoms_under_its_known_prefix() {
+        let vocab = vec![
+            ("a.one", BTreeSet::from(["os.system"])),
+            ("a.two", BTreeSet::from(["subprocess.run"])),
+        ];
+        let pu = gob_symbols::PathUse {
+            offset: 0,
+            line: 1,
+            spelled: String::new(),
+            path: String::new(),
+            call: true,
+            dynamic: true,
+            external_root: false,
+            computed: true,
+            wildcards: Vec::new(),
+            maybe: false,
+        };
+        assert_eq!(vocab_hits("python", &vocab, None, &pu, "").len(), 2);
+        assert!(vocab_hits("python", &vocab, None, &pu, "json").is_empty());
+        assert_eq!(vocab_hits("python", &vocab, None, &pu, "os"), vec!["a.one"]);
     }
 }
