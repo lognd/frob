@@ -2,13 +2,13 @@
 id = "01M48Q2CF72NC7WT89VTY17MK7"
 title = "Token usage hook: per-worktree agent token counts into the activity journal"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-10-28T12:56:02Z"
+updated = "2026-11-12T03:21:32Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "docs/**"]
 
