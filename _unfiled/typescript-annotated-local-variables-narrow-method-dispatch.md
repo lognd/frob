@@ -2,7 +2,8 @@
 id = "01M5HMPQEYJ2FRW9YG7FMVKQY6"
 title = "TypeScript annotated local variables narrow method dispatch"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
