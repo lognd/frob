@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "frob's dependency tree has no ratatui or notify"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the wheel and archives contain frob-live and the smoke test runs it with --help"

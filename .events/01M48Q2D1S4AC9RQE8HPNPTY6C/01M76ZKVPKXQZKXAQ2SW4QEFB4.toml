@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-12T04:17:51Z"
+digest = "da802b9999d126c2d73ef381a87edd72cbb0317eed3e6e092cc3a2e7f3a4914b"
+head = "b2b32946818419d922f5f56c8bd6877a55d3b455"
+provider = "file"
+ref = "crates/frob-live/Cargo.toml"
+size = 917
+status = "measured"
+at = "2026-11-12T04:17:51Z"
+actor = "lognd"
+rev = 1
