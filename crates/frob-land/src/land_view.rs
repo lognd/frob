@@ -171,6 +171,7 @@ mod tests {
             digest: None,
             plan: Vec::new(),
             attempts: 1,
+            activity: Vec::new(),
             warnings: vec!["careful".to_owned()],
             pre_existing: Vec::new(),
             resolved: Vec::new(),

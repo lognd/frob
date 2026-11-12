@@ -333,6 +333,25 @@ The repository-wide tables (`[pm]`, `[pm.wip]`, `[pm.classes]` and
 not from the worktree copy, so a branch cut before a limit changed
 enforces the current value; the worktree file is used only when the ref
 has none. Per-worktree code config stays per worktree.
+
+### Activity inference
+
+The time of an in-progress ticket is classified from signals frob already
+sees, never from a state an agent sets (`frob_metrics::activity`). Signals:
+lease acquire and renew, worktree commit times, file mtimes when frob looks,
+test and evidence runs, goway job reports, lease refusals (`E-LEASE-HELD`,
+recorded as a local event against the refused ticket) and the land start and
+end. `classify` sessionises them with an idle gap (default 15 minutes): a
+point signal (commit, edit, lease) is implementing until the next signal,
+for at most the gap, and the rest is idle; a refusal is waiting; test and
+goway spans are testing; the land span is landing. The final point signal
+contributes nothing.
+
+The journal is local and never committed: one JSON-lines file per ticket in
+`<git common dir>/frob/activity/<ticket ulid>.jsonl`, outside every work
+tree, so nothing reaches the code branch. At land the totals per activity are
+returned in the land outcome (`activity`) and, when the ledger lives on its own
+branch, noted on the ticket as `activity: implementing 2h0m, testing 5m0s`.
 <!-- frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W -->
 
 ## 8. Rule family PM (generated like every other family)

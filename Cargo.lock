@@ -1418,6 +1418,7 @@ dependencies = [
  "frob-evidence",
  "frob-lease",
  "frob-ledger",
+ "frob-metrics",
  "frob-pm",
  "frob-present",
  "frob-release",
@@ -1447,6 +1448,7 @@ version = "0.532.0"
 dependencies = [
  "clap",
  "frob-ledger",
+ "frob-metrics",
  "globset",
  "gob-cli",
  "gob-config",
@@ -1508,6 +1510,8 @@ dependencies = [
  "frob-pm",
  "schemars",
  "serde",
+ "serde_json",
+ "tempfile",
  "thiserror",
  "tracing",
 ]

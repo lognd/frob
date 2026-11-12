@@ -1412,3 +1412,31 @@ fn the_pinned_base_is_found_by_the_worktree_holding_the_lease() {
         "another worktree does not see it"
     );
 }
+
+// frob:tests frob_lease::LeaseStore::acquire
+#[test]
+fn acquire_and_refusal_are_journaled_as_activity_signals() {
+    use frob_metrics::activity::{Journal, Signal};
+    let dir = tempfile::tempdir().expect("tempdir");
+    let store = store_in(dir.path(), LeaseConfig::default());
+    let (a, b) = (TicketId::mint(), TicketId::mint());
+    store
+        .acquire(a, &holder("alice"), &scope(&["src/x/**"]))
+        .expect("alice acquires");
+    let refused = store.acquire(b, &holder("bob"), &scope(&["src/x/**"]));
+    assert!(matches!(refused, Err(LeaseError::Held { .. })));
+
+    let journal = Journal::in_common_dir(&dir.path().join(".git"));
+    let alice = journal.read(&a.to_string()).expect("read a");
+    assert!(
+        matches!(alice.as_slice(), [Signal::Lease { .. }]),
+        "{alice:?}"
+    );
+    let bob = journal.read(&b.to_string()).expect("read b");
+    assert!(
+        matches!(bob.as_slice(), [Signal::LeaseRefused { .. }]),
+        "{bob:?}"
+    );
+    // The journal lives in the git common dir, never in the work tree.
+    assert!(!dir.path().join("frob").exists());
+}

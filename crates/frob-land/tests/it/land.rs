@@ -324,6 +324,72 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+// frob:ticket 01M48Q2BWRT117K8E163MWHDN2
+// frob:tests crates/frob-land/src/land.rs::land
+#[test]
+fn land_summary_carries_per_activity_totals_and_writes_nothing_to_the_code_branch() {
+    use frob_metrics::activity::{Activity, Journal, Signal};
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Add activity", &["src/**"]);
+    Fixture::commit_in(&s.wt, "src/a.rs", "fn a() {}\n");
+    Fixture::evidence(&s, "src/a.rs");
+    let journal = Journal::in_common_dir(&fx.root.join(".git"));
+    for sig in [
+        Signal::Lease { at: 0 },
+        Signal::Commit { at: 100 },
+        Signal::TestRun { from: 150, to: 250 },
+    ] {
+        journal.record(&s.id.to_string(), &sig).expect("record");
+    }
+    let (_, before) = git_out(&fx.root, &["ls-tree", "-r", "--name-only", "main"]);
+
+    let out = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect("land");
+
+    let secs = |a: Activity| {
+        out.activity
+            .iter()
+            .find(|t| t.activity == a)
+            .map(|t| t.secs)
+    };
+    // The real lease signal from `start` adds a second or so of implementing time after the seeded span.
+    assert!(secs(Activity::Implementing).is_some_and(|i| i >= 150));
+    assert_eq!(secs(Activity::Testing), Some(100));
+    assert_eq!(secs(Activity::Waiting), Some(0));
+    assert!(secs(Activity::Landing).is_some_and(|l| l >= 0));
+
+    let (_, after) = git_out(&fx.root, &["ls-tree", "-r", "--name-only", "main"]);
+    let added: Vec<&str> = after
+        .lines()
+        .filter(|l| !before.lines().any(|b| b == *l))
+        .collect();
+    assert!(
+        added.iter().all(|p| p.starts_with("src/")
+            || p.starts_with("changelog.d/")
+            || p.starts_with(".frob/")
+            || p.starts_with("tickets/")),
+        "only the ticket's own work reaches main: {added:?}"
+    );
+    assert!(
+        !after
+            .lines()
+            .any(|l| l.contains("activity") || l.ends_with(".jsonl")),
+        "no activity journal on the code branch: {after}"
+    );
+    let (_, status) = git_out(&fx.root, &["status", "--porcelain"]);
+    assert!(
+        !status.contains("activity"),
+        "journal is untracked-invisible: {status}"
+    );
+}
+
 // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]

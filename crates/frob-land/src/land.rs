@@ -25,6 +25,9 @@ use frob_check::CheckOptions;
 use frob_evidence::{DoneGuard, EvidenceGuard, Workspace};
 use frob_lease::{Lease, LeaseStore};
 use frob_ledger::event::{CommentData, EventBody};
+use frob_metrics::activity::{
+    ActivityTotal, DEFAULT_IDLE_GAP_SECS, Journal, Signal, summary_line,
+};
 use frob_ledger::guards::{CloseContext, CloseGuard, default_close_guards};
 use frob_ledger::model::Category;
 use frob_ledger::model::CommentSubtype;
@@ -439,6 +442,7 @@ fn prepare(
         branch: Some(branch.clone()),
         worktree: Some(wt_path.clone()),
         base_merge,
+        activity: Vec::new(),
         warnings,
         pre_existing: ratchet.pre_existing,
         resolved: ratchet.resolved,
@@ -520,6 +524,11 @@ impl Ready {
         let fold_budget = budget.max(LEDGER_FOLD_BUDGET);
         let ledger_dir = site.ledger.config().dir.clone();
         let mut cone = self.cone.clone();
+        self.out.activity = summarize_activity(
+            &site.ledger,
+            (id, ctx.repo.common_dir()),
+            (&self.out.stages, on_branch),
+        );
         let mut attempt = 0_u32;
         let oid = loop {
             attempt += 1;
@@ -882,6 +891,7 @@ pub(crate) fn blank_outcome(
         digest: None,
         plan: Vec::new(),
         attempts: 0,
+        activity: Vec::new(),
         warnings: Vec::new(),
         pre_existing: Vec::new(),
         resolved: Vec::new(),
@@ -1702,6 +1712,47 @@ fn append_branch_land(
         },
     )?;
     Ok(())
+}
+
+/// Journal this land as an activity span, total the ticket's inferred activity, and note it on the ticket.
+///
+/// The land began as long ago as the sum of its top-level stages; the note goes to the ledger only
+/// in branch mode, so nothing about activity ever reaches the code branch (frob:ticket 01M48Q2BWRT117K8E163MWHDN2).
+/// Activity is observation: failures are logged and yield no totals, never a refused land.
+fn summarize_activity(
+    ledger: &Ledger,
+    (id, common_dir): (TicketId, &Path),
+    (stages, on_branch): (&[StageTiming], bool),
+) -> Vec<ActivityTotal> {
+    let journal = Journal::in_common_dir(common_dir);
+    let key = id.to_string();
+    let to = ledger.clock().now().unix();
+    let spent_ms: u64 = stages
+        .iter()
+        .filter(|s| !s.name.contains(':'))
+        .map(|s| s.ms)
+        .sum();
+    let from = to - i64::try_from(spent_ms / 1000).unwrap_or(0);
+    journal.record_quietly(&key, &Signal::Land { from, to });
+    let totals = match journal.summarize(&key, DEFAULT_IDLE_GAP_SECS) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(ticket = %id, error = %e, "could not total activity for the land summary");
+            return Vec::new();
+        }
+    };
+    let line = summary_line(&totals);
+    tracing::info!(ticket = %id, on_branch, summary = %line, "land activity summary");
+    if on_branch {
+        let note = EventBody::Comment(CommentData {
+            subtype: CommentSubtype::Note,
+            body: format!("activity: {line}"),
+        });
+        if let Err(e) = ledger.append(id, note) {
+            tracing::warn!(ticket = %id, error = %e, "could not record the activity note");
+        }
+    }
+    totals
 }
 
 /// Record the base-CI override note, when one was given, as a decision comment.

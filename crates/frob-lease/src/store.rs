@@ -18,6 +18,7 @@ use std::time::{Duration, Instant};
 
 use frob_ledger::TicketId;
 use frob_ledger::model::Stamp;
+use frob_metrics::activity::{Journal, Signal};
 use globset::GlobSet;
 use gob_git::Repo;
 use gob_time::Clock;
@@ -152,6 +153,15 @@ impl LeaseStore {
                 .ok()
                 .filter(|a| !a.trim().is_empty()),
         })
+    }
+
+    /// Append the signal built by `make` (given now, unix seconds) to the local activity journal (frob:ticket 01M48Q2BWRT117K8E163MWHDN2).
+    fn record_signal(&self, ticket: TicketId, make: impl FnOnce(i64) -> Signal) {
+        let Some(frob_dir) = self.waiters_dir.parent() else {
+            return;
+        };
+        Journal::in_frob_dir(frob_dir)
+            .record_quietly(&ticket.to_string(), &make(self.now().unix()));
     }
 
     /// The clock instant at the whole-second precision of lease files.
@@ -438,6 +448,7 @@ impl LeaseStore {
         let existing = live.iter().find(|l| l.ticket == ticket);
         if let Some(e) = existing.filter(|e| &e.holder != holder) {
             tracing::info!(%ticket, holder = %e.holder, "acquire refused: ticket held");
+            self.record_signal(ticket, |at| Signal::LeaseRefused { at });
             return Err(LeaseError::Held {
                 holder: e.holder.clone(),
                 ticket,
@@ -474,6 +485,7 @@ impl LeaseStore {
                 &self.resolver,
             )? {
                 tracing::info!(%ticket, other = %other.ticket, holder = %other.holder, %overlap, "acquire refused: overlap");
+                self.record_signal(ticket, |at| Signal::LeaseRefused { at });
                 return Err(LeaseError::Held {
                     holder: other.holder.clone(),
                     ticket: other.ticket,
@@ -510,6 +522,7 @@ impl LeaseStore {
         self.write(&lock, &lease)?;
         self.remove_waiter(ticket)?;
         tracing::info!(%ticket, %holder, already, scope = ?lease.scope, "lease acquired");
+        self.record_signal(ticket, |at| Signal::Lease { at });
         Ok(Acquired { lease, already })
     }
 

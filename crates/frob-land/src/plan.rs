@@ -169,6 +169,9 @@ pub struct LandOutcome {
     /// Compare-and-swap attempts the publish took (1 unless `--wait` retried a stale base); 0 when nothing was published.
     #[serde(default)]
     pub attempts: u32,
+    /// Seconds spent per inferred activity (implementing, testing, waiting, landing, idle); empty on a dry run or when nothing was observed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub activity: Vec<frob_metrics::activity::ActivityTotal>,
     /// Non-fatal notices.
     pub warnings: Vec<String>,
     /// Blocking findings that already exist on the base tip: reported, not refused (the ratchet).
