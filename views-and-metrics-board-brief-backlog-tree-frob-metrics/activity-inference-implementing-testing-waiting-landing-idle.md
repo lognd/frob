@@ -2,13 +2,13 @@
 id = "01M48Q2BWRT117K8E163MWHDN2"
 title = "Activity inference: implementing, testing, waiting, landing, idle from observed signals"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:52Z"
-updated = "2026-10-28T12:57:32Z"
+updated = "2026-11-12T02:31:31Z"
 labels = ["no-story"]
 scope = ["crates/frob-metrics/**", "crates/frob-lease/**", "crates/frob-land/**", "crates/frob-tests/**"]
 
