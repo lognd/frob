@@ -4,6 +4,7 @@
 
 // frob:ticket 01M4CXSTHZXVBMWSTRCBH9BHQ5
 
+use crate::union_find::Union;
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::{NodeId, Operator, Term, Universal};
@@ -94,20 +95,6 @@ fn idents(term: &Term, n: NodeId, out: &mut Vec<String>) {
     }
 }
 
-struct Union(Vec<usize>);
-
-impl Union {
-    fn find(&mut self, x: usize) -> usize {
-        let p = self.0[x];
-        if p == x {
-            return x;
-        }
-        let r = self.find(p);
-        self.0[x] = r;
-        r
-    }
-}
-
 /// Judge `unit` of `term`: cluster the words of its statements and report disjoint vocabularies.
 pub fn coh004(term: &Term, unit: NodeId, opts: &Coh004Options) -> Coh004 {
     let per_stmt: Vec<BTreeSet<String>> = statements(term, unit)
@@ -129,7 +116,7 @@ pub fn coh004(term: &Term, unit: NodeId, opts: &Coh004Options) -> Coh004 {
         .into_iter()
         .collect();
     let index: BTreeMap<&String, usize> = vocab.iter().enumerate().map(|(i, &w)| (w, i)).collect();
-    let mut uf = Union((0..vocab.len()).collect());
+    let mut uf = Union::new(vocab.len());
     for words in &per_stmt {
         let mut it = words.iter().map(|w| index[w]);
         if let Some(first) = it.next() {

@@ -10,6 +10,7 @@
 
 // frob:ticket 01M4CXSQB9YJGH0FRSHX5ECTEM
 
+use crate::union_find::Union;
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::{DefUseEdge, GroupOrder, MayCause, NodeId, Operator, Status, Term, Universal};
@@ -111,27 +112,6 @@ pub enum Coh001 {
         /// The May edges that join Must components.
         witnesses: Vec<MayWitness>,
     },
-}
-
-struct Union(Vec<usize>);
-
-impl Union {
-    fn new(n: usize) -> Self {
-        Self((0..n).collect())
-    }
-    fn find(&mut self, x: usize) -> usize {
-        let p = self.0[x];
-        if p == x {
-            return x;
-        }
-        let r = self.find(p);
-        self.0[x] = r;
-        r
-    }
-    fn join(&mut self, a: usize, b: usize) {
-        let (a, b) = (self.find(a), self.find(b));
-        self.0[a.max(b)] = a.min(b);
-    }
 }
 
 /// True when node `id` is a universal `Bind` of the given `kind` (for example `let`, `pattern`).
