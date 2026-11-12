@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
 updated = "2026-11-12T01:29:34Z"
 labels = ["no-story"]
-scope = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml", "crates/crunk-gallery/README.md", "crates/gob-dev/src/ci.rs", "crates/gob-dev/src/render/inline.rs", "crates/gob-fs/src/lib.rs", "crates/gob-mdtest/FORMAT.md", "crates/gob-mdtest/src/matrix.rs", "crates/grimble/src/lib.rs", "design/model.grmb", "docs/design/dup.md"]
+scope = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml", "crates/crunk-gallery/README.md", "crates/gob-dev/src/ci.rs", "crates/gob-dev/src/render/inline.rs", "crates/gob-fs/src/lib.rs", "crates/gob-mdtest/FORMAT.md", "crates/gob-mdtest/src/matrix.rs", "crates/grimble/src/lib.rs", "design/model.grmb", "docs/design/dup.md", "docs/design/grimble/grmb-spec.md"]
 +++
 
 found while working ~ZM1HA1J: finishes the consolidation and closes the 3 GB acceptance measurement.
