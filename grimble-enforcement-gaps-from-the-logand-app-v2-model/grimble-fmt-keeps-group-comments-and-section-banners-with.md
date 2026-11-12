@@ -8,10 +8,10 @@ points = 2
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:03Z"
-updated = "2026-11-12T19:51:36Z"
+updated = "2026-11-12T19:55:24Z"
 idempotency_key = "logand-gaps-E2"
 labels = ["adoption:logand-app", "grimble", "no-story"]
-scope = ["crates/grimble-model/**", "docs/design/grmb-spec.md", "changelog.d/**"]
+scope = ["crates/grimble-model/**", "docs/design/grmb-spec.md", "changelog.d/**", "docs/design/shared/code-model.md"]
 
 [[acceptance]]
 text = "Given a section banner followed by a blank line, when grimble fmt runs, then the banner stays above the same first entity or group"
