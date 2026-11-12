@@ -4,6 +4,7 @@ title = "indexgen: allow clippy::too_many_lines on generated bind()"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-12T06:52:11Z"
 updated = "2026-11-12T11:01:35Z"
