@@ -7,9 +7,9 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T12:55:39Z"
+updated = "2026-11-12T12:55:40Z"
 labels = ["ci"]
-scope = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs", "crates/frob-check/src/concurrent.rs", "crates/frob-check/tests/it/sibling.rs", "crates/frob-land/src/git.rs"]
+scope = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs", "crates/frob-check/src/concurrent.rs", "crates/frob-check/tests/it/sibling.rs", "crates/frob-land/src/git.rs", "crates/frob-ledger/src/refresh.rs"]
 
 [[acceptance]]
 text = "given the CI rust ubuntu-latest job, when cargo dev ci --step check runs, then it exits 0"
