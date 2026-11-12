@@ -8,9 +8,9 @@ points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-11-12T03:44:54Z"
+updated = "2026-11-12T03:50:51Z"
 labels = ["no-story"]
-scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock"]
+scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml"]
 
 [[links]]
 kind = "blocked-by"

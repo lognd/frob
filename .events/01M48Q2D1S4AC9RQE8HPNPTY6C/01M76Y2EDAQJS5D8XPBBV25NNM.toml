@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock"]
+new = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml"]
+at = "2026-11-12T03:50:51Z"
+actor = "lognd"
+rev = 1
