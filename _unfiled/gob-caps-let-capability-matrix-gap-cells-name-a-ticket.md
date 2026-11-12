@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T01:38:08Z"
-updated = "2026-11-12T09:11:30Z"
+updated = "2026-11-12T09:11:31Z"
 labels = ["no-story"]
-scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*", "crates/gob-caps/tests/gap_tickets.rs"]
+scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*", "crates/gob-caps/tests/gap_tickets.rs", "docs/reference/languages.md"]
 
 [[acceptance]]
 text = "Given a capability matrix cell with Precision::None, when it is declared, then it carries a ticket reference and the rendered languages page shows that ticket in the Gap cell"
