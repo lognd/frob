@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "land blocked: 39 AFFECT001/DRIFT003 need human frob ack of regenerated bind fns"
+at = "2026-11-12T11:30:06Z"
+actor = "lognd"
+rev = 1
