@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T17:16:35Z"
+digest = "f11b1fe57e4601bf5544d15ecbdd0cc40239e77dc2194eaf065f563449fd45bf"
+head = "2954321f32063793a472855395bda4979fba9291"
+provider = "file"
+ref = "crates/frob-check/benches/ic_check.rs"
+size = 2304
+status = "measured"
+at = "2026-11-12T17:16:35Z"
+actor = "lognd"
+rev = 1

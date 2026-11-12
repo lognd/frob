@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T13:24:45Z"
-updated = "2026-11-12T17:05:21Z"
+updated = "2026-11-12T17:16:35Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/benches/**", "crates/frob-parse*/benches/**", "crates/*/Cargo.toml", "changelog.d/**", "crates/frob-check/benches/ic_check.rs", "crates/gob-languages/benches/ic_parse.rs"]
 
