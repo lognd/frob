@@ -9,9 +9,9 @@ points = 5
 parent = "01M4P2MQ9EDGX3NCSBRS0H1AYB"
 reporter = "lognd"
 created = "2026-10-11T18:12:27Z"
-updated = "2026-11-07T05:31:00Z"
+updated = "2026-11-07T19:18:22Z"
 labels = ["no-story"]
-scope = ["crates/frob-cli/**", "crates/frob/**", "docs/guides/hooks.md", "docs/reference/**"]
+scope = ["crates/frob/src/agent_heavy_cmd.rs", "crates/frob/tests/it/agent_heavy.rs"]
 
 [[acceptance]]
 text = "heavy takes the shared build lock under the git common dir, sets the target dir, runs the command, cleans regenerable test executables, releases the lock"
