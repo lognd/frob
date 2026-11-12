@@ -2,7 +2,8 @@
 id = "01M5HA927868ERRSB19JYF0QZE"
 title = "GX focus: grid-axis groups and modal trap exemption"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
