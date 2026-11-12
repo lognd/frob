@@ -44,8 +44,8 @@ impl Family {
 }
 
 /// The stages whose output is a checker verdict: the first strict typed-parser stage with a fixed argv per language family.
-fn checker_stages(table: &CheckTable) -> Vec<(Family, &ToolStage)> {
-    let mut out: Vec<(Family, &ToolStage)> = Vec::new();
+fn checker_stages<'a>(root: &Path, table: &'a CheckTable) -> Vec<(Family, &'a ToolStage)> {
+    let mut out: Vec<(Family, &'a ToolStage)> = Vec::new();
     for s in &table.tool {
         let Some(family) = Family::of(s.parser) else {
             continue;
@@ -53,7 +53,7 @@ fn checker_stages(table: &CheckTable) -> Vec<(Family, &ToolStage)> {
         if s.args.iter().any(|a| a.contains('{')) || out.iter().any(|(f, _)| *f == family) {
             continue;
         }
-        if !is_strict_checker(s) {
+        if !is_strict_checker(s, root) {
             tracing::debug!(stage = %s.name, "type checker is not run strict; its verdict is ignored");
             continue;
         }
@@ -104,7 +104,7 @@ pub(crate) fn type_facts(
         tracing::debug!(?trust, "type checker not consulted");
         return none;
     }
-    let stages = checker_stages(table);
+    let stages = checker_stages(root, table);
     if stages.is_empty() {
         tracing::debug!("no strict type-checker stage; annotations stay claims");
         return none;
@@ -120,6 +120,24 @@ pub(crate) fn type_facts(
         }
     }
     facts
+}
+
+/// The files a `tsc` stage's program covers (`--listFilesOnly` lines); `None` for other checkers or when the listing fails (then no file is vetted by it).
+fn listed_files(runner: &Runner, spec: &Spec, stage: &ToolStage) -> Option<Vec<String>> {
+    if stage.parser != ToolParser::TscText {
+        return None;
+    }
+    let mut list = spec.clone();
+    list.args.push("--listFilesOnly".to_owned());
+    match runner.run(&list) {
+        Ok(o) if matches!(o.status, Outcome::Exited(0)) => {
+            Some(o.stdout.lines().map(str::to_owned).collect())
+        }
+        other => {
+            tracing::warn!(stage = %stage.name, ok = other.is_ok(), "tsc file listing failed; no file is marked clean");
+            Some(Vec::new())
+        }
+    }
 }
 
 /// Runs one checker stage and derives its facts; `None` (logged) when it cannot give a verdict.
@@ -156,7 +174,14 @@ fn run_checker(
         tracing::warn!(stage = %stage.name, status = ?output.status, "type checker ended abnormally");
         return None;
     }
-    match type_facts_from_output(stage.parser, &output.stdout, trust, files) {
+    let listed = listed_files(&runner, &spec, stage);
+    match type_facts_from_output(
+        stage.parser,
+        &output.stdout,
+        trust,
+        files,
+        listed.as_deref(),
+    ) {
         Ok(facts) => {
             tracing::info!(stage = %stage.name, files = files.len(), "type facts derived");
             Some(facts)
@@ -220,7 +245,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let root = dir.path();
         let mut entries = Vec::new();
-        for name in ["clean.ts", "dirty.ts"] {
+        for name in ["clean.ts", "dirty.ts", "out.ts"] {
             entries.push(FileEntry {
                 path: name.to_owned(),
                 size: 0,
@@ -231,7 +256,7 @@ mod tests {
         }
         std::fs::write(
             root.join("fake.sh"),
-            "echo \"dirty.ts(1,1): error TS2339: nope.\"\nexit 2\n",
+            "case \"$*\" in *--listFilesOnly*) echo \"$PWD/clean.ts\"; echo \"$PWD/dirty.ts\"; exit 0;; esac\necho \"dirty.ts(1,1): error TS2339: nope.\"\nexit 2\n",
         )
         .expect("script");
         let read = |p: &str| std::fs::read_to_string(root.join(p));
@@ -250,6 +275,7 @@ mod tests {
         );
         assert_eq!(facts.weight("clean.ts", 1), AnnotationWeight::Exact);
         assert_eq!(facts.weight("dirty.ts", 1), AnnotationWeight::Claimed);
+        assert_eq!(facts.weight("out.ts", 1), AnnotationWeight::Claimed);
         let lax = type_facts(root, &strict("\"fake.sh\""), &entries, "frob", &read);
         assert_eq!(lax.weight("clean.ts", 1), AnnotationWeight::Claimed);
     }
