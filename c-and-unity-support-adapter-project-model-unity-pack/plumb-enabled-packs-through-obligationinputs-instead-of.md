@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "All ObligationInputs construction sites (collect.rs, frob-check snapshot.rs) populate the field; existing unity COV001 tests still pass"
-bound = false
+bound = true
 +++
 
 found while working ~YR0STJ5: cov.rs unity_roots reads frob.toml directly
