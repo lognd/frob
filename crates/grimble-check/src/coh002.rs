@@ -377,6 +377,10 @@ pub fn judge(
     };
     let mut found = Vec::new();
     for stmt in statements(term, unit) {
+        if is_nested_unit(term, stmt) {
+            trace!("coh002 skips a nested unit that is a top-level statement");
+            continue;
+        }
         if let Some(d) = decision_of(term, stmt, syntax) {
             found.push(d);
         }
