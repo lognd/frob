@@ -146,3 +146,28 @@ fn colliding_css_names_are_refused() {
         }
     );
 }
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::compile
+#[test]
+fn compile_returns_every_token_with_resolved_values() {
+    let doc = Document::parse(FULL).expect("parses");
+    let set = doc.compile().expect("compiles");
+    assert_eq!(set.len(), doc.tokens().len());
+    let ink = set.get("--color-ink").expect("ink");
+    let alias = set.get("--color-link").expect("link");
+    assert_eq!(ink.value, alias.value, "the alias resolves to its target");
+    assert_eq!(set.get("--alias-x").expect("x").value, ink.value);
+    assert_eq!(
+        set.get("--space-m").expect("m").value.css().as_deref(),
+        Some("16px")
+    );
+    assert!(set.get("--color-brand").is_some(), "$root names the group");
+}
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::compile
+#[test]
+fn compile_refuses_a_type_the_model_cannot_hold() {
+    let doc =
+        Document::parse(r#"{"g": {"$type": "gradient", "a": {"$value": []}}}"#).expect("parses");
+    assert!(matches!(doc.compile(), Err(DtcgError::Unsupported { .. })));
+}
