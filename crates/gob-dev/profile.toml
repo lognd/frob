@@ -271,7 +271,8 @@ args = ["cycle", "assign", "{ticket}"]
 exit = [0, 2, 3]
 # Recalibrated 500 -> 600: CI warm median measured 1027 ms against a 1000 ms limit; ~0.5 s locally.
 # Recalibrated 600 -> 700: CI warm median measured 1263 ms against a 1200 ms limit as the ledger grew.
-budget_ms = 700
+# Recalibrated 700 -> 800: CI warm median measured 1427 ms against a 1400 ms limit (run 43238771974).
+budget_ms = 800
 
 [scenario."frob cycle unassign"]
 args = ["cycle", "unassign", "{ticket}", "profile"]
