@@ -5,9 +5,10 @@ type = "bug"
 category = "todo"
 priority = "critical"
 class = "expedite"
+points = 3
 reporter = "lognd"
 created = "2026-11-07T21:01:52Z"
-updated = "2026-11-12T12:30:35Z"
+updated = "2026-11-12T12:36:39Z"
 scope = ["crates/grimble/**", "crates/grimble-cli/**", "crates/grimble-bind/**", "crates/grimble-lints/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
