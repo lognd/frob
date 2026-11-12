@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["nextest ci profile gives frob-check mdtest_corpus a reviewed 300 s slow-timeout override with a reason, following the gob-check ui_product precedent"]
+reason = "scope for drain"
+moved = []
+at = "2026-11-12T17:31:42Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,8 @@
+kind = "field"
+field = "labels"
+old = ["good-first"]
+new = ["good-first", "no-story"]
+reason = "scope for drain"
+at = "2026-11-12T17:31:42Z"
+actor = "lognd"
+rev = 1

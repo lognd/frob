@@ -7,7 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-12T00:35:36Z"
-updated = "2026-11-12T12:47:07Z"
+updated = "2026-11-12T17:31:42Z"
 idempotency_key = "win-mdtest-timeout"
-labels = ["good-first"]
+labels = ["good-first", "no-story"]
+scope = [".config/nextest.toml", "changelog.d/**"]
+
+[[acceptance]]
+text = "nextest ci profile gives frob-check mdtest_corpus a reviewed 300 s slow-timeout override with a reason, following the gob-check ui_product precedent"
+bound = false
 +++
