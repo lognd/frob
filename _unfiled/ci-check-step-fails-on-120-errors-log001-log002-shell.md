@@ -2,12 +2,12 @@
 id = "01M6VYQZ5FEEP4TN8ZHVBCK63N"
 title = "CI check step fails on 120 errors: LOG001/LOG002 shell scripts, TESTQ001/TESTQ002 tests"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T12:36:39Z"
+updated = "2026-11-12T12:48:00Z"
 labels = ["ci"]
 scope = [".github/scripts/**"]
 
