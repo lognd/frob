@@ -134,8 +134,9 @@ impl Union {
     }
 }
 
-fn is_let(term: &Term, id: NodeId) -> bool {
-    matches!(term.node(id).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == "let")
+/// True when node `id` is a universal `Bind` of the given `kind` (for example `let`, `pattern`).
+pub(crate) fn is_bind_kind(term: &Term, id: NodeId, want: &str) -> bool {
+    matches!(term.node(id).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == want)
 }
 
 fn is_punct(term: &Term, id: NodeId) -> bool {
@@ -147,7 +148,7 @@ fn is_punct(term: &Term, id: NodeId) -> bool {
 
 fn flatten(term: &Term, list: NodeId, out: &mut Vec<NodeId>) {
     for &c in term.node(list).children() {
-        if is_let(term, c) {
+        if is_bind_kind(term, c, "let") {
             if let [scope, rhs, ..] = term.node(c).children() {
                 if matches!(
                     term.node(*scope).op(),
@@ -185,7 +186,7 @@ pub(crate) fn statements(term: &Term, unit: NodeId) -> Vec<NodeId> {
 }
 
 fn statement_of(term: &Term, stmts: &BTreeMap<NodeId, usize>, mut n: NodeId) -> Option<usize> {
-    if is_let(term, n) {
+    if is_bind_kind(term, n, "let") {
         n = *term.node(n).children().get(1)?;
     }
     loop {

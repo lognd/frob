@@ -241,11 +241,6 @@ fn is_sequence(term: &Term, n: NodeId) -> bool {
     )
 }
 
-/// True when `n` is a Rust match arm: a `pattern` bind.
-fn is_arm(term: &Term, n: NodeId) -> bool {
-    matches!(term.node(n).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == "pattern")
-}
-
 /// A Rust `match`: the adapter folds it to a sequence of the scrutinee and a sequence of arm binds.
 fn match_of(term: &Term, n: NodeId) -> Option<Decision> {
     if !is_sequence(term, n) {
@@ -255,12 +250,16 @@ fn match_of(term: &Term, n: NodeId) -> Option<Decision> {
         return None;
     };
     let arm_list = term.node(*arms).children();
-    (is_sequence(term, *arms) && !arm_list.is_empty() && arm_list.iter().all(|&a| is_arm(term, a)))
-        .then(|| Decision {
-            node: n,
-            condition: *scrutinee,
-            bodies: vec![*arms],
-        })
+    (is_sequence(term, *arms)
+        && !arm_list.is_empty()
+        && arm_list
+            .iter()
+            .all(|&a| crate::coh001::is_bind_kind(term, a, "pattern")))
+    .then(|| Decision {
+        node: n,
+        condition: *scrutinee,
+        bodies: vec![*arms],
+    })
 }
 
 fn decision_of(term: &Term, n: NodeId, syntax: &gob_ir::DefUseSyntax) -> Option<Decision> {
