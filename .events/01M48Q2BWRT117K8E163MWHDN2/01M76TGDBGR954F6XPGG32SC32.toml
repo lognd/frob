@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-12T02:48:35Z"
+digest = "2402ac0bef374eafb15c5c76af04133596e68c2e4375def02e1dcae06854a6cb"
+head = "2396c94bbb026567b36ba7e5ae390dac7caa01aa"
+provider = "file"
+ref = "crates/frob-land/tests/it/land.rs"
+size = 117230
+status = "measured"
+at = "2026-11-12T02:48:35Z"
+actor = "lognd"
+rev = 1
