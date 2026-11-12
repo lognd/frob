@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-12T20:25:15Z"
+digest = "3f74d6e22641e4bf3c4450b92b6bcb8256cd18b1b6a20f2938de19e4d7d04766"
+head = "f71bc9d94c6a5a97f9d20d8ae16e0e8e0c18e0fe"
+provider = "file"
+ref = "crates/grimble-model/tests/corpus/plan/mdl001-system-braced-twice-fire/model.grmb"
+size = 53
+status = "measured"
+at = "2026-11-12T20:25:15Z"
+actor = "lognd"
+rev = 1

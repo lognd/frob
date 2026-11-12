@@ -17,5 +17,5 @@ bound = true
 
 [[acceptance]]
 text = "A second braced declaration of a system is MDL001"
-bound = false
+bound = true
 +++
