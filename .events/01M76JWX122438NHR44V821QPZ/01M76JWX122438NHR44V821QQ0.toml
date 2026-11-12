@@ -1,0 +1,9 @@
+kind = "create"
+title = "frob-check directive-scan cache keys records by content digest only, so moved identical files keep stale paths (scan_one in snapshot.rs)"
+type = "bug"
+category = "todo"
+priority = "medium"
+idempotency_key = "dirscan-cache-path"
+at = "2026-11-12T00:35:36Z"
+actor = "lognd"
+rev = 1
