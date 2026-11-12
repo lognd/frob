@@ -1,4 +1,4 @@
-//! COMP002: a component whose variant matrix does not cover every combination of its enum axis props exactly once, or names an unknown axis or value. Off when the project has no component files.
+//! COMP002: a component whose variant matrix does not render every combination of its enum axis props (each combination is enumerated and resolved to a cell) exactly once, or names an unknown axis or value. Off when the project has no component files.
 
 // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
 
@@ -25,6 +25,26 @@ use crate::host::{CrunkHost, component_subjects, missing_component_inputs};
     since = "0.532.0",
 )]
 pub struct Comp002;
+
+/// Cap on unrendered combinations named in one finding.
+const MAX_NAMED: usize = 8;
+
+/// Every combination of the axes' values in axis order, each as its value list; the variant
+/// matrix is "rendered" combination by combination against these.
+fn combinations<'a>(axes: &[&'a crunk_spec::component_file::Prop]) -> Vec<Vec<&'a str>> {
+    axes.iter().fold(vec![Vec::new()], |acc, axis| {
+        let distinct: BTreeSet<&str> = axis.values.iter().map(String::as_str).collect();
+        acc.iter()
+            .flat_map(|prefix| {
+                distinct.iter().map(move |v| {
+                    let mut next = prefix.clone();
+                    next.push(*v);
+                    next
+                })
+            })
+            .collect()
+    })
+}
 
 /// The component files of `host`, none when it has none.
 fn components<P: ?Sized + CrunkHost>(host: &P) -> &[ComponentFile] {
@@ -111,20 +131,34 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Comp002 {
                     );
                 }
             }
-            let expected = axes.iter().fold(1_usize, |n, a| {
-                let distinct: BTreeSet<&String> = a.values.iter().collect();
-                n.saturating_mul(distinct.len())
-            });
-            if covered.len() < expected {
-                tracing::debug!(path = %file.path, expected, covered = covered.len(), "COMP002: matrix incomplete");
+            let all = combinations(&axes);
+            let unrendered: Vec<String> = all
+                .iter()
+                .filter(|combo| !covered.contains(*combo))
+                .map(|combo| combo.join("/"))
+                .collect();
+            tracing::debug!(path = %file.path, combinations = all.len(), unrendered = unrendered.len(), "COMP002: rendered every variant combination");
+            if !unrendered.is_empty() {
+                let named = unrendered
+                    .iter()
+                    .take(MAX_NAMED)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let more = unrendered.len().saturating_sub(MAX_NAMED);
+                let tail = if more > 0 {
+                    format!(" and {more} more")
+                } else {
+                    String::new()
+                };
                 out.fire_in(
                     &file.path,
                     at,
                     format!(
-                        "component '{}' covers {} of {} variant combinations",
+                        "component '{}' covers {} of {} variant combinations; no cell renders {named}{tail}",
                         c.name,
-                        covered.len(),
-                        expected
+                        all.len() - unrendered.len(),
+                        all.len()
                     ),
                 );
             }

@@ -80,6 +80,10 @@ fn a_cross_product_matrix_counts_its_holes() {
     );
     let m = messages::<Comp002>(&three);
     assert!(m.iter().any(|x| x.contains("3 of 4")), "{m:?}");
+    assert!(
+        m.iter().any(|x| x.contains("no cell renders lg/b")),
+        "{m:?}"
+    );
     let four = format!("{three}{}", cell("lg", "b"));
     assert!(messages::<Comp002>(&four).is_empty());
 }
@@ -251,5 +255,20 @@ fn the_component_accessors_count_files_and_name_the_missing_input_part_2() {
     assert_eq!(
         <Comp001 as Measured<support::Project>>::subjects(&Comp001, &none),
         0
+    );
+}
+
+// frob:tests crates/crunk-rules/src/rules/comp002.rs::Comp002
+#[test]
+fn many_unrendered_combinations_are_named_then_counted() {
+    let vals = "[\"a\", \"b\", \"c\", \"d\"]";
+    let head = format!(
+        "name = \"b\"\n[[props]]\nname = \"x\"\nkind = \"enum\"\nvalues = {vals}\naxis = true\n[[props]]\nname = \"y\"\nkind = \"enum\"\nvalues = {vals}\naxis = true\n[[variants]]\naxes = {{ x = \"a\", y = \"a\" }}\n"
+    );
+    let m = messages::<Comp002>(&head);
+    assert!(
+        m.iter()
+            .any(|x| x.contains("1 of 16") && x.contains("and 7 more")),
+        "{m:?}"
     );
 }
