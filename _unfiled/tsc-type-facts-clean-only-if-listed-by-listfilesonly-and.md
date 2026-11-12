@@ -2,7 +2,8 @@
 id = "01M5HMPQJH9F5WRY1HR5G8XEG9"
 title = "tsc type facts: clean only if listed by --listFilesOnly, and detect tsconfig strict"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
