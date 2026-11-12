@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "Given per-clause comments, when grimble fmt runs, then they still follow their clause"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given fmt run twice, when compared, then output is identical"
