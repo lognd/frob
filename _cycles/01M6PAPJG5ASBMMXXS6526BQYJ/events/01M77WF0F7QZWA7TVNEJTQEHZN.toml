@@ -1,0 +1,7 @@
+kind = "cycle"
+op = "carried"
+ticket = "01M1T07P0HF544YT627SJ4C4BC"
+to = "01M77WEXE67XXKD5GJRYW8RDP5"
+at = "2026-11-12T12:41:55Z"
+actor = "lognd"
+rev = 1

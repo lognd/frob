@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "Over-committed drain cycle; carried unfinished work forward."
+at = "2026-11-12T12:41:55Z"
+actor = "lognd"
+rev = 1
