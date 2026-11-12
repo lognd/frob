@@ -2,13 +2,13 @@
 id = "01M5FA5EHT4NSJZP7JVFCZTVFB"
 title = "Instruction-count benches for cold and warm check and the other parsers"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T13:24:45Z"
-updated = "2026-11-12T17:01:28Z"
+updated = "2026-11-12T17:01:34Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/benches/**", "crates/frob-parse*/benches/**", "crates/*/Cargo.toml", "changelog.d/**"]
 
