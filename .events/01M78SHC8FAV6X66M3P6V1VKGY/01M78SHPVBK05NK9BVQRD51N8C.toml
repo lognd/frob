@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+new = ["Cargo.toml", "crates/gob-product/Cargo.toml"]
+reason = "scope"
+at = "2026-11-12T21:10:18Z"
+actor = "lognd"
+rev = 1

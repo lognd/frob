@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["cargo shear exits 0 with no warnings"]
+reason = "scope"
+moved = []
+at = "2026-11-12T21:10:18Z"
+actor = "lognd"
+rev = 1
