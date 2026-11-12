@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-11-09T19:24:18Z"
-updated = "2026-11-12T12:29:45Z"
+updated = "2026-11-12T12:30:10Z"
 scope = ["crates/gob-plan/src/exec/**"]
 +++
 
