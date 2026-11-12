@@ -2,12 +2,12 @@
 id = "01M5H5P5KF5WHTPQVJ4WM2DDBN"
 title = "crunk: rule for duplicate content keys across files"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:44:59Z"
-updated = "2026-11-12T06:53:27Z"
+updated = "2026-11-12T07:03:45Z"
 scope = ["crates/crunk-rules/**", "changelog.d/01M5H5P5KF5WHTPQVJ4WM2DDBN.*", "docs/reference/rules/CONTENT004.md", "docs/reference/rules/README.md", "docs/README.md"]
 
 [[acceptance]]
