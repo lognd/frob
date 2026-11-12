@@ -6,7 +6,7 @@ category = "in-progress"
 priority = "high"
 reporter = "lognd"
 created = "2026-11-12T21:10:07Z"
-updated = "2026-11-12T21:10:34Z"
+updated = "2026-11-12T21:10:39Z"
 labels = ["no-story"]
 scope = ["Cargo.toml", "crates/gob-product/Cargo.toml"]
 
