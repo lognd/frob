@@ -7,7 +7,7 @@ priority = "critical"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T13:31:28Z"
+updated = "2026-11-12T13:44:38Z"
 labels = ["ci"]
 scope = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs", "crates/frob-check/src/concurrent.rs", "crates/frob-check/tests/it/sibling.rs", "crates/frob-land/src/git.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/tests/it/agent_heavy.rs", "crates/frob/tests/it/lease_heartbeat.rs", "crates/frob/tests/it/sync_policy.rs", "crates/gob-cache/src/lib.rs", "crates/gob-check/tests/ui_product.rs", "crates/gob-dev/src/profile/scenarios.rs", "crates/gob-dev/src/registry.rs", "crates/gob-ir/tests/it/deep.rs", "crates/gob-ir/tests/it/wire.rs", "crates/gob-macros/tests/ui.rs", "crates/gob-macros/tests/ui_rule_attr.rs", "crates/gob-packs/src/activation.rs", "crates/gob-plan/src/grl/parse/tests/props.rs", "crates/gob-plan/tests/grl_errors/main.rs", "crates/gob-time/tests/time.rs", "crates/grimble-ci/tests/rules.rs"]
 
