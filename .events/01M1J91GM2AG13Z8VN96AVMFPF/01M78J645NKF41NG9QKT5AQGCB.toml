@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Legacy Python-era report: scope files src/frob/vet/_hook.py and _scan.py no longer exist; not reproduced in the Rust vet."
+at = "2026-11-12T19:01:38Z"
+actor = "lognd"
+rev = 1

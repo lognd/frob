@@ -2,12 +2,13 @@
 id = "01M1J91GM2AG13Z8VN96AVMFPF"
 title = "vet --hook vets whole resolution instead of delta"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 reporter = "human"
 created = "2026-09-03T00:00:00Z"
-updated = "2026-10-27T02:57:36Z"
+updated = "2026-11-12T19:01:38Z"
 aliases = ["T-3714"]
 labels = ["v1-cluster:E1", "triage:accepted"]
 scope = ["src/frob/vet/_hook.py", "src/frob/vet/_scan.py"]
