@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-12T03:00:30Z"
+digest = "f2f24a24b0288be1e3d7a19307fc18d634cae5af3e2fc58e6a079cd3ae7c28a2"
+head = "9ab10f6d00d2614e1b3d3763d4792a355d63e130"
+provider = "file"
+ref = "crates/frob-lease/tests/it/lease.rs"
+size = 49161
+status = "measured"
+at = "2026-11-12T03:00:30Z"
+actor = "lognd"
+rev = 1
