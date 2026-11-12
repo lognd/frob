@@ -2,7 +2,8 @@
 id = "01M5DFKY6K8AH7K75XGTQMVAVA"
 title = "work --reclaim, holder-return refresh, claim restore"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
