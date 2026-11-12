@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:26Z"
-updated = "2026-11-12T22:24:50Z"
+updated = "2026-11-12T22:25:44Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/tests/it/typescript_inherit.rs", "changelog.d/01M5HMPQEYJ2FRW9YG7FMVKQY6.fixed.md"]
 
