@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
-updated = "2026-11-11T23:57:18Z"
+updated = "2026-11-12T00:09:38Z"
 labels = ["no-story"]
-scope = ["crates/gob-plan/tests/**", "crates/frob-ledger/tests/**", "crates/crunk/tests/**", "crates/crunk-rules/tests/**", "crates/crunk-check/tests/**"]
+scope = ["crates/gob-plan/tests/**", "crates/frob-ledger/tests/**", "crates/crunk/tests/**", "crates/crunk-rules/tests/**", "crates/crunk-check/tests/**", "design/model.grmb"]
 
 [[acceptance]]
 text = "Each of gob-plan, frob-ledger, crunk, crunk-rules, crunk-check has its loose tests/*.rs folded into one tests/it/main.rs binary with every test preserved"
