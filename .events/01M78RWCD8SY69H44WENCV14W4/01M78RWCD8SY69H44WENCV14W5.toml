@@ -1,0 +1,8 @@
+kind = "create"
+title = "CAP: collapse empty-callee computed use into one unresolved finding instead of reaching every vocab atom"
+type = "bug"
+category = "todo"
+priority = "medium"
+at = "2026-11-12T20:58:39Z"
+actor = "lognd"
+rev = 1
