@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs", "crates/frob-check/src/concurrent.rs", "crates/frob-check/tests/it/sibling.rs", "crates/frob-land/src/git.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/tests/it/agent_heavy.rs", "crates/frob/tests/it/lease_heartbeat.rs", "crates/frob/tests/it/sync_policy.rs", "crates/gob-cache/src/lib.rs", "crates/gob-check/tests/ui_product.rs", "crates/gob-dev/src/profile/scenarios.rs", "crates/gob-dev/src/registry.rs", "crates/gob-ir/tests/it/deep.rs"]
+new = [".github/scripts/**", "crates/crunk-tailwind/tests/runtime.rs", "crates/frob-check/src/concurrent.rs", "crates/frob-check/tests/it/sibling.rs", "crates/frob-land/src/git.rs", "crates/frob-ledger/src/refresh.rs", "crates/frob/tests/it/agent_heavy.rs", "crates/frob/tests/it/lease_heartbeat.rs", "crates/frob/tests/it/sync_policy.rs", "crates/gob-cache/src/lib.rs", "crates/gob-check/tests/ui_product.rs", "crates/gob-dev/src/profile/scenarios.rs", "crates/gob-dev/src/registry.rs", "crates/gob-ir/tests/it/deep.rs", "crates/gob-ir/tests/it/wire.rs"]
+at = "2026-11-12T12:55:43Z"
+actor = "lognd"
+rev = 1
