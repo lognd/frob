@@ -2,13 +2,14 @@
 id = "01M6VX2NSCBWN9FQ2CFYZ29PVA"
 title = "grimble status takes 24s and 4.8 GB RSS (was 232 ms): blocks the profile CI job"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:01:52Z"
-updated = "2026-11-12T12:36:39Z"
+updated = "2026-11-12T19:11:46Z"
 scope = ["crates/grimble/**", "crates/grimble-cli/**", "crates/grimble-bind/**", "crates/grimble-lints/**", "crates/gob-dev/profile.toml"]
 
 [[acceptance]]
