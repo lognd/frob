@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-12T14:15:58Z"
+digest = "210a76a599140dc6820668d0a1c816f48552f783db1b76b49c9411d6d0e0defe"
+head = "afd53364a6379f21c12759d58176b68f1da6f0bf"
+provider = "file"
+ref = "crates/gob-dev/tests/it/layering.rs"
+size = 11417
+status = "measured"
+at = "2026-11-12T14:15:58Z"
+actor = "lognd"
+rev = 1
