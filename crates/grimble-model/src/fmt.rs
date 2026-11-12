@@ -2,6 +2,7 @@
 
 // frob:ticket 01M3Z713VGKF4Z0JJ3263XJMC3
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use crate::ast::{Entity, EntityKind, FileStatus, Header, Item, ModuleKind, ParsedFile};
@@ -50,6 +51,7 @@ pub fn format_file(file: &ParsedFile) -> Result<String, FmtError> {
     let mut p = Printer {
         f: file,
         out: String::new(),
+        pinned: BTreeSet::new(),
     };
     p.file();
     tracing::debug!(path = %file.path, bytes = p.out.len(), "formatted");
@@ -61,6 +63,8 @@ mod plan;
 struct Printer<'a> {
     f: &'a ParsedFile,
     out: String,
+    /// Floating comments (grmb-spec 9.3 item 5): printed at their slot, never with their item.
+    pinned: BTreeSet<usize>,
 }
 
 /// The canonical one-line text of a ceiling item.
@@ -168,7 +172,62 @@ impl Printer<'_> {
         self.out.push('\n');
     }
 
+    /// The leading floating banner of a target: the comments of `ids` up to the last one that
+    /// is followed by a blank line before the next comment or the target at `start`.
+    fn floating_prefix(&self, ids: &[usize], start: usize) -> Vec<usize> {
+        let mut last = None;
+        for (n, &i) in ids.iter().enumerate() {
+            let c = &self.f.comments[i];
+            if c.kind == CommentKind::Doc || c.span.end > start {
+                break;
+            }
+            let next = ids
+                .get(n + 1)
+                .map_or(start, |&j| self.f.comments[j].span.start.min(start));
+            let blank = self
+                .f
+                .text
+                .get(c.span.end..next)
+                .is_some_and(|gap| gap.matches('\n').count() >= 2);
+            if blank {
+                last = Some(n);
+            }
+        }
+        last.map_or_else(Vec::new, |n| ids[..=n].to_vec())
+    }
+
+    /// Pins the floating banners of `targets` (id, start byte) to their source slot (their
+    /// index in `targets`), marks them as not travelling with their target, and returns them.
+    fn pin_banners(&mut self, targets: &[(usize, usize)]) -> BTreeMap<usize, Vec<usize>> {
+        let mut slots: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
+        for (slot, &(id, start)) in targets.iter().enumerate() {
+            let banner = self.floating_prefix(self.f.attachments.of(id), start);
+            if banner.is_empty() {
+                continue;
+            }
+            tracing::debug!(id, slot, comments = banner.len(), "pinned floating comment");
+            self.pinned.extend(banner.iter().copied());
+            slots.entry(slot).or_default().extend(banner);
+        }
+        slots
+    }
+
+    /// Prints a floating banner followed by the blank line that keeps it floating.
+    fn banner(&mut self, ids: &[usize], indent: usize) {
+        self.write_comments(ids, indent);
+        self.out.push('\n');
+    }
+
     fn comments(&mut self, ids: &[usize], indent: usize) {
+        let own: Vec<usize> = ids
+            .iter()
+            .copied()
+            .filter(|i| !self.pinned.contains(i))
+            .collect();
+        self.write_comments(&own, indent);
+    }
+
+    fn write_comments(&mut self, ids: &[usize], indent: usize) {
         let pad = " ".repeat(indent);
         for &i in ids {
             let c = &self.f.comments[i];
@@ -215,13 +274,19 @@ impl Printer<'_> {
     fn items(&mut self, items: &[&Item], indent: usize, top: bool) {
         let mut sorted: Vec<&Item> = items.to_vec();
         sorted.sort_by_key(|i| item_rank(i));
+        let anchors: Vec<(usize, usize)> = items.iter().map(|i| (i.id(), i.span().start)).collect();
+        let mut banners = self.pin_banners(&anchors);
         let mut prev_include = false;
         for (n, item) in sorted.iter().enumerate() {
             let is_include = matches!(item, Item::Include(_));
-            if (top || n > 0) && !(prev_include && is_include) {
+            let banner = banners.remove(&n);
+            if (top || n > 0) && (banner.is_some() || !(prev_include && is_include)) {
                 self.out.push('\n');
             }
             prev_include = is_include;
+            if let Some(b) = banner {
+                self.banner(&b, indent);
+            }
             self.item(item, indent);
         }
     }
@@ -323,7 +388,21 @@ impl Printer<'_> {
             return;
         }
         self.line(indent, &format!("{head} {{"));
-        for (c, text) in printed {
+        let anchors: Vec<(usize, usize)> = e.clauses.iter().map(|c| (c.id, c.span.start)).collect();
+        let mut banners = self.pin_banners(&anchors);
+        let last = printed.len();
+        for (n, (c, text)) in printed.into_iter().enumerate() {
+            // A slot past the end (a dropped duplicate) lands on the last clause.
+            let hit: Vec<usize> = banners
+                .keys()
+                .copied()
+                .filter(|&k| k == n || (n + 1 == last && k > n))
+                .collect();
+            for k in hit {
+                if let Some(b) = banners.remove(&k) {
+                    self.banner(&b, indent + 2);
+                }
+            }
             self.comments(self.f.attachments.of(c.id), indent + 2);
             self.line(indent + 2, &format!("{text};"));
         }
@@ -374,5 +453,66 @@ mod tests {
             "{out}"
         );
         assert_eq!(fmt(&out), out);
+    }
+
+    const HEAD: &str = "grimble = \"2\";\nmodule m;\n";
+
+    #[test]
+    fn floating_banner_keeps_its_slot_above_the_sorted_group() {
+        let src =
+            format!("{HEAD}\n// ---- nodes ----\n\nnode b : trusted {{}}\nnode a : trusted {{}}\n");
+        let once = fmt(&src);
+        assert_eq!(
+            once,
+            format!(
+                "{HEAD}\n// ---- nodes ----\n\nnode a : trusted {{\n}}\n\nnode b : trusted {{\n}}\n"
+            )
+        );
+        assert_eq!(fmt(&once), once);
+    }
+
+    #[test]
+    fn attached_comments_still_follow_their_entity_and_clause() {
+        let src = format!(
+            "{HEAD}\n// about b\nnode b : trusted {{\n  // the owner\n  owns \"z\";\n  // the kind\n  kind component;\n}}\n\nnode a : trusted {{}}\n"
+        );
+        let once = fmt(&src);
+        assert_eq!(
+            once,
+            format!(
+                "{HEAD}\nnode a : trusted {{\n}}\n\n// about b\nnode b : trusted {{\n  // the kind\n  kind component;\n  // the owner\n  owns \"z\";\n}}\n"
+            )
+        );
+        assert_eq!(fmt(&once), once);
+    }
+
+    #[test]
+    fn floating_clause_banner_stays_above_the_first_sorted_clause() {
+        let src = format!(
+            "{HEAD}\nnode a : trusted {{\n  // the clauses below\n\n  owns \"z\";\n  // direct\n  kind component;\n}}\n"
+        );
+        let once = fmt(&src);
+        assert_eq!(
+            once,
+            format!(
+                "{HEAD}\nnode a : trusted {{\n  // the clauses below\n\n  // direct\n  kind component;\n  owns \"z\";\n}}\n"
+            )
+        );
+        assert_eq!(fmt(&once), once);
+    }
+
+    #[test]
+    fn mixed_banner_and_attached_comment_split_and_are_idempotent() {
+        let src = format!(
+            "{HEAD}\nuse \"a\";\n\n// banner\n\n// own\nnode z : trusted {{}}\nnode y : trusted {{}}\n"
+        );
+        let once = fmt(&src);
+        assert_eq!(
+            once,
+            format!(
+                "{HEAD}\nuse \"a\";\n\n// banner\n\nnode y : trusted {{\n}}\n\n// own\nnode z : trusted {{\n}}\n"
+            )
+        );
+        assert_eq!(fmt(&once), once);
     }
 }

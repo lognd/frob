@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 1f210de2095f1135031f0580c7485e4e4485648b3745e6a1871997771425ee43 # shrinks to src = "grimble = \"2\";   module m;   node n0 : trusted { provides fs.write(\"data/**\") via (\"crates/a/**\"\t&\tkind(function, method))   &   \"x/{a,b}/**\";\n    /* block */\nsurface !attr(marker)\n    &\n    attr(timeout <= 30 s); // plain\nmay net.connect(\"a.com\", \"b.com\");  }   flow f30 : n0 -> n1 { /// doc text\nproducer attr(vis = \"pub\")\t|\tattr(timeout <= 30 s);    }   claim k2 { /// doc text\nnoflow n0 -> n1;\n    /// doc text\nevidence tests ((attr(vis = \"pub\")   |   lang(rust))   |   \"crates/a/**\")   |   kind(type);   /// doc text\nnoflow n0 -> n1;\tevidence tests (attr(marker) | (attr(timeout <= 30 s)\n    &\n    attr(vis = \"pub\")))\t&\tlang(rust);\n     }   contract c31 { /* block */\nshape attr(vis = \"pub\") & attr(vis = \"pub\"); // frob:doc docs/x.md#a\nversioning scheme=semver current=\"1.0.0\" compat=full; // frob:doc docs/x.md#a\nshape !lang(rust);\n     }   contract c13 { // frob:doc docs/x.md#a\nshape attr(vis = \"pub\") & (attr(marker) | attr(marker));\t// plain\nshape kind(function, method) | attr(vis = \"pub\");  }\n"

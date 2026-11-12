@@ -674,6 +674,16 @@ parse then print, defined on the canonical facet stream.
 5. Comments and directives travel with their item and keep their text;
    a comment is never deleted, merged or reflowed; doc comments stay
    directly above the item.
+   A comment block followed by a blank line is a floating banner (a
+   section header, "the clauses below"): it keeps its slot, so it is
+   printed above whatever item (or clause) lands at the position it had
+   among its siblings, with its blank line, instead of travelling with
+   the item that follows it in the source. Within a block of comments
+   the banner is the run up to the last comment followed by a blank
+   line; the comments after it, with no blank line before the item, are
+   attached and follow the item or clause as before. `///` doc comments
+   are never floating. A banner whose slot is past the last printed
+   clause (after a duplicate was dropped) lands on the last clause.
 6. A file that contains a `hole(kind=parse-error)` or an `opaque` is not
    rewritten (`fmt` exits 1 naming the hole) so that a syntax error is
    never "formatted away". A `sorry` is not a hole (9.5) and is printed.
