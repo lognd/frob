@@ -9,13 +9,13 @@ points = 3
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:07:57Z"
-updated = "2026-11-06T16:53:27Z"
+updated = "2026-11-07T18:46:20Z"
 persona = "a pack author"
 capability = "get one actionable finding for v1 hyphenated atoms"
 outcome_text = "I can migrate old atom spellings quickly"
 idempotency_key = "logand-gaps-D1"
 labels = ["adoption:logand-app", "grimble"]
-scope = ["docs/design/migration.md", "docs/design/packs.md", "crates/grimble-model/**", "changelog.d/**", "docs/design/frob/migration.md"]
+scope = ["docs/design/frob/migration.md", "crates/grimble-model/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "Given may net-mutate, when grimble check runs, then exactly one finding names the snake_case spelling net_mutate"
