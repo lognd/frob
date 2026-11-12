@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T01:38:08Z"
-updated = "2026-10-28T12:55:47Z"
+updated = "2026-11-12T09:01:33Z"
 labels = ["no-story"]
-scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs"]
+scope = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*"]
+
+[[acceptance]]
+text = "Given a capability matrix cell with Precision::None, when it is declared, then it carries a ticket reference and the rendered languages page shows that ticket in the Gap cell"
+bound = false
 +++
 
 found while working ~SPZ6PP9: Precision::None renders as bare Gap; code-model.md section 3 wants Gap cells to name a ticket. Needs a data-model change in gob-caps.
