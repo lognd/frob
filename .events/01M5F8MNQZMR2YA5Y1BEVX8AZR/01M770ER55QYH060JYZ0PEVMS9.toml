@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["ObligationInputs carries the enabled packs, and cov.rs unity_roots/unity_dynamic read them from there instead of re-reading frob.toml", "All ObligationInputs construction sites (collect.rs, frob-check snapshot.rs) populate the field; existing unity COV001 tests still pass"]
+moved = []
+at = "2026-11-12T04:32:32Z"
+actor = "lognd"
+rev = 1
