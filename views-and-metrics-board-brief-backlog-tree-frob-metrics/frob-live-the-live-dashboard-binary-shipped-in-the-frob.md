@@ -2,13 +2,13 @@
 id = "01M48Q2D1S4AC9RQE8HPNPTY6C"
 title = "frob-live: the live dashboard binary, shipped in the frob wheel, reached by board --live and stats --live"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-10-28T12:57:41Z"
+updated = "2026-11-12T03:44:54Z"
 labels = ["no-story"]
 scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock"]
 
