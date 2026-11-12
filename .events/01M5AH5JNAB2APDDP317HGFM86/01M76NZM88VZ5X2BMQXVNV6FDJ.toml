@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml"]
+new = ["crates/*/tests/**", ".github/scripts/plan-jobs.py", ".github/workflows/ci.yml", ".github/workflows/dup-scan.yml"]
+at = "2026-11-12T01:29:31Z"
+actor = "lognd"
+rev = 1
