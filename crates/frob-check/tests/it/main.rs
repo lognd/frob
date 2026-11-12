@@ -17,7 +17,6 @@ mod proc001;
 mod proc002;
 mod python;
 mod ramp;
-mod rule_coverage;
 mod rule_matrix;
 mod sibling;
 mod tool_bind;

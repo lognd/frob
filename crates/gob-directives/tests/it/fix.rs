@@ -99,7 +99,7 @@ fn fixtures() -> Vec<Fixture> {
 
 /// Snapshot the outcome under `tests/fixtures/snapshots`, which the directive scan excludes.
 fn snap(name: &str, out: &Outcome) {
-    insta::with_settings!({ snapshot_path => "fixtures/snapshots", prepend_module_to_snapshot => false }, {
+    insta::with_settings!({ snapshot_path => "../fixtures/snapshots", prepend_module_to_snapshot => false }, {
         insta::assert_snapshot!(name, out.snapshot_text());
     });
 }

@@ -20,8 +20,10 @@ fn regenerate_lock_when_asked() {
     if std::env::var_os("GOB_REGEN_CORE_LOCK").is_none() {
         return;
     }
-    let lock = Lock::new(vec![core_effects::locked().unwrap()]);
+    let live = core_effects::locked().unwrap();
+    let lock = Lock::new(vec![live.clone()]);
     write(&lock_path(), &lock).unwrap();
+    assert_eq!(verify(&read(&lock_path()).unwrap(), &[live]), vec![]);
 }
 
 // frob:tests locked

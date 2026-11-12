@@ -154,7 +154,8 @@ fn real_steps() -> Vec<Step> {
 #[test]
 fn ci_yml_runs_exactly_the_cargo_dev_ci_steps() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    parity(&text, &real_steps()).unwrap();
+    let verdict = parity(&text, &real_steps());
+    assert!(verdict.is_ok(), "{verdict:?}");
 }
 
 // frob:tests crates/gob-dev/tests/it/ci_parity.rs::ci_yml_installs_the_windows_target
@@ -210,7 +211,8 @@ fn a_raw_or_dropped_check_in_ci_yml_fails_naming_it() {
 #[test]
 fn ci_yml_installs_every_linux_step_prerequisite() {
     let text = std::fs::read_to_string(root().join(".github/workflows/ci.yml")).unwrap();
-    missing_install(&text, &real_steps()).unwrap();
+    let verdict = missing_install(&text, &real_steps());
+    assert!(verdict.is_ok(), "{verdict:?}");
 }
 
 // frob:tests crates/gob-dev/tests/it/ci_parity.rs::a_missing_prerequisite_install_fails_naming_it

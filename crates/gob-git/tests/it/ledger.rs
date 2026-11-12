@@ -728,7 +728,10 @@ fn a_held_index_lock_is_waited_out_and_the_write_succeeds() {
     let releaser = {
         let lock = lock.clone();
         std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(700));
+            // Let the writer reach the held lock first: yield the CPU repeatedly, no wall clock.
+            for _ in 0..50_000 {
+                std::thread::yield_now();
+            }
             std::fs::remove_file(lock).unwrap();
         })
     };

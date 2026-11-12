@@ -12,7 +12,7 @@
 
 use crate::fake_github;
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap};
 use std::time::Duration;
 
 use fake_github::{BOT_ID, CrashPoint, FakeGithub, HUMAN_ID, Rng};
@@ -872,13 +872,6 @@ fn a_converged_run_from_a_fresh_map_changes_nothing() {
 // frob:tests edits_of
 #[test]
 fn labels_are_tracker_owned_and_never_become_edits() {
-    let mut g = FakeGithub::new(1);
-    let _ = (&mut g, BTreeMap::<u8, u8>::new());
-}
-
-// frob:tests edits_of
-#[test]
-fn labels_are_tracker_owned_and_never_become_edits_part_2() {
     let mut m = Mirror::new(1);
     m.g.human_add_label(&m.issue.clone(), "frob:todo");
     m.g.human_remove_label(&m.issue.clone(), "frob:todo");

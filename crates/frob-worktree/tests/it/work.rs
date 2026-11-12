@@ -1281,8 +1281,7 @@ fn a_new_worktree_keeps_unchanged_sources_no_newer_than_the_tip_commit() {
         return;
     }
     let fx = Fixture::new();
-    // The checkout is made after the tip commit's second has passed, as a worktree made after a build is.
-    std::thread::sleep(Duration::from_millis(1200));
+    // The checkout files carry sub-second mtimes, so they are newer than the tip's whole-second commit time.
     let ledger = fx.ledger(None);
     let leases = fx.leases();
     let cfg = WorktreeConfig::load(&fx.root).expect("config");

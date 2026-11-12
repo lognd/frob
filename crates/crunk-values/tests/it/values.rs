@@ -153,6 +153,7 @@ fn parse_never_panics_on_junk() {
         .chars()
         .collect();
     let mut state: u64 = 20_260_902;
+    let mut parsed = 0usize;
     for _ in 0..5000 {
         let mut s = String::new();
         state = state
@@ -164,7 +165,8 @@ fn parse_never_panics_on_junk() {
                 .wrapping_add(1);
             s.push(alphabet[(state >> 33) as usize % alphabet.len()]);
         }
-        Color::parse(&s).ok();
-        Length::parse(&s, 16.0).ok();
+        parsed += usize::from(Color::parse(&s).is_ok());
+        parsed += usize::from(Length::parse(&s, 16.0).is_ok());
     }
+    assert!(parsed < 2 * 5000, "junk must not parse every time");
 }

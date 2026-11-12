@@ -361,8 +361,10 @@ fn rules_are_registered_with_d32_identity() {
 
 #[test]
 fn registry_lists_every_verb_with_schemas() {
+    // `derive.rs` registers a `demo:` verb in this same binary; the product registry excludes it.
     let verbs: Vec<String> = all_directives()
         .map(gob_directives::DirectiveMeta::qualified)
+        .filter(|verb| !verb.starts_with("demo:"))
         .collect();
     assert_eq!(
         verbs,

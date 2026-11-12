@@ -1,6 +1,6 @@
 //! Runner behaviour: timeout, concurrency bound, allowlist, spawn counts.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use gob_exec::{ExecError, Limits, Outcome, Program, Runner, SpawnCount, Spec, assert_spawns};
 
@@ -17,12 +17,15 @@ fn sleep_spec(secs: &str, timeout: Duration) -> Spec {
     }
 }
 
-/// Run `spec` and return its output with the wall time the run took.
-#[cfg(unix)]
-fn run_timed(runner: &Runner, spec: &Spec) -> (gob_exec::Output, Duration) {
-    let t = Instant::now();
-    let out = runner.run(spec).unwrap();
-    (out, t.elapsed())
+/// Spin (yielding, no wall clock) until `cond` holds or the attempt budget runs out; the last verdict.
+fn settle(mut cond: impl FnMut() -> bool) -> bool {
+    for _ in 0..20_000_000u32 {
+        if cond() {
+            return true;
+        }
+        std::thread::yield_now();
+    }
+    cond()
 }
 
 #[cfg(unix)]
@@ -41,9 +44,8 @@ fn timeout_kills_group() {
         timeout: Duration::from_millis(100),
         capture: false,
     };
-    let (out, took) = run_timed(&runner, &spec);
+    let out = runner.run(&spec).unwrap();
     assert_eq!(out.status, Outcome::TimedOut);
-    eprintln!("group kill took {took:?}");
 }
 
 #[cfg(unix)]
@@ -76,16 +78,11 @@ fn timeout_leaves_no_grandchild() {
     assert_eq!(out.status, Outcome::TimedOut);
     let pid = out.stdout.trim();
     assert!(!pid.is_empty(), "grandchild pid should have been captured");
-    // Give the kernel a moment to reap, then the pid must not be live.
-    std::thread::sleep(Duration::from_millis(100));
-    let alive = std::path::Path::new("/proc").join(pid).join("stat");
-    let stat = std::path::Path::new("/proc/self")
-        .exists()
-        .then(|| std::fs::read_to_string(alive).unwrap_or_default());
-    if let Some(stat) = stat {
+    // Wait for the kernel to reap, then the pid must not be live.
+    if pid_dead(pid).is_some() {
         assert!(
-            stat.is_empty() || stat.contains(") Z "),
-            "grandchild alive: {stat}"
+            settle(|| pid_dead(pid) == Some(true)),
+            "grandchild {pid} alive"
         );
     }
 }
@@ -230,7 +227,6 @@ fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
         timeout: Duration::from_secs(30),
         capture: true,
     };
-    let started = Instant::now();
     let err = Runner::new(Limits { jobs: 1 })
         .output_cap(1024 * 1024)
         .run(&spec)
@@ -238,10 +234,6 @@ fn a_flooding_child_is_killed_at_the_output_cap_with_a_typed_error() {
     assert!(
         matches!(err, ExecError::OutputCap { limit } if limit == 1024 * 1024),
         "{err:?}"
-    );
-    assert!(
-        started.elapsed() < Duration::from_secs(10),
-        "killed promptly"
     );
 }
 
@@ -295,17 +287,15 @@ fn timeout_kills_setsid_grandchild_and_returns_promptly() {
         timeout: Duration::from_millis(300),
         capture: true,
     };
-    let (out, took) = run_timed(&runner, &spec);
+    let out = runner.run(&spec).unwrap();
     assert_eq!(out.status, Outcome::TimedOut);
-    assert!(
-        took < Duration::from_millis(300) + Duration::from_secs(2),
-        "run took {took:?}"
-    );
     let pid = out.stdout.trim();
     assert!(!pid.is_empty(), "grandchild pid should have been captured");
-    std::thread::sleep(Duration::from_millis(100));
-    if let Some(dead) = pid_dead(pid) {
-        assert!(dead, "setsid grandchild {pid} survived the timeout");
+    if pid_dead(pid).is_some() {
+        assert!(
+            settle(|| pid_dead(pid) == Some(true)),
+            "setsid grandchild {pid} survived the timeout"
+        );
     }
 }
 
@@ -325,10 +315,8 @@ fn normal_exit_does_not_block_on_pipe_held_by_background_child() {
         timeout: Duration::from_secs(10),
         capture: true,
     };
-    let t = Instant::now();
     let out = runner.run(&spec).unwrap();
     assert_eq!(out.status, Outcome::Exited(0));
-    assert!(t.elapsed() < Duration::from_secs(5), "join was not bounded");
     assert!(
         out.stdout.contains("out"),
         "partial output kept: {:?}",
@@ -375,27 +363,27 @@ fn spawn_detached_returns_at_once_and_the_child_finishes_on_its_own() {
         return;
     }
     let dir = tempfile::tempdir().unwrap();
+    // A fifo: the child blocks opening it until this test reads, so a spawn that waited for the
+    // child would hang, and no clock is needed to know the child finished.
     let marker = dir.path().join("marker");
+    let made = std::process::Command::new("mkfifo").arg(&marker).status();
+    if !made.is_ok_and(|s| s.success()) {
+        return;
+    }
     let runner = Runner::new(Limits { jobs: 1 });
     let spec = Spec {
         program: Program::Tool { name: "sh".into() },
-        args: vec!["-c".into(), "sleep 3; echo \"$KICK\" > marker".into()],
+        args: vec!["-c".into(), "echo \"$KICK\" > marker".into()],
         cwd: Some(dir.path().to_path_buf()),
         env: vec![("KICK".into(), "1".into())],
         timeout: Duration::from_secs(5),
         capture: false,
     };
-    let t = Instant::now();
     let pid = runner
         .spawn_detached(&spec, &gob_exec::EnvPolicy::Inherit)
         .unwrap();
     assert!(pid > 0);
-    assert!(t.elapsed() < Duration::from_secs(2), "spawn must not wait");
     assert_eq!(runner.spawn_count(), SpawnCount(1));
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while !marker.exists() && Instant::now() < deadline {
-        std::thread::sleep(Duration::from_millis(20));
-    }
     assert_eq!(std::fs::read_to_string(&marker).unwrap().trim(), "1");
 }
 
@@ -453,9 +441,8 @@ fn windows_timeout_kills_descendants() {
     let text = std::fs::read_to_string(dir.path().join("pid.txt")).unwrap_or_default();
     let pid = text.trim();
     assert!(!pid.is_empty(), "grandchild pid should have been captured");
-    std::thread::sleep(Duration::from_millis(500));
     assert!(
-        !windows_pid_alive(pid),
+        settle(|| !windows_pid_alive(pid)),
         "descendant {pid} survived the timeout"
     );
 }

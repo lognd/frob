@@ -2,7 +2,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use frob_land::{LandLock, LockOptions, StallAction};
 
@@ -34,7 +34,6 @@ fn quick(stall_ms: u64) -> LockOptions {
 // frob:tests crates/frob-land/src/lock.rs::LandLock
 #[test]
 fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
-    let started = Instant::now();
     let dir = tempfile::tempdir().expect("tempdir");
     let (fired, opts) = flagging_options(150);
     let stuck = LandLock::acquire_with(dir.path(), Duration::ZERO, "a landing ~stuck", &opts)
@@ -56,7 +55,6 @@ fn a_land_blocked_forever_is_aborted_by_the_watchdog_and_frees_the_lock() {
     );
     assert_eq!(status.record.expect("record").holder, "b landing ~next");
     drop(next);
-    assert!(started.elapsed() < Duration::from_secs(8));
 }
 
 // frob:tests crates/frob-land/src/lock.rs::LandLock

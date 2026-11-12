@@ -448,4 +448,8 @@ fn a_real_project_ingests_when_one_is_named() {
             eprintln!("  {k} = {v}");
         }
     }
+    assert!(
+        !theme.entries.is_empty() || !theme.diagnostics.is_empty(),
+        "the node engine yields entries or says why not: {theme:?}"
+    );
 }

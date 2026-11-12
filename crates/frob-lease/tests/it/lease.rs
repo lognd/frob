@@ -115,7 +115,7 @@ fn admission_count_and_acquire_are_one_critical_section() {
                         &scope(&[area.as_str()]),
                         |live| {
                             // Widen the window between the count and the write.
-                            std::thread::sleep(std::time::Duration::from_millis(5));
+                            std::thread::yield_now();
                             if live.len() >= 2 { Err(Full) } else { Ok(()) }
                         },
                     )
