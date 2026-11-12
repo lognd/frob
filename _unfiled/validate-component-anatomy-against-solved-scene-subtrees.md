@@ -2,12 +2,12 @@
 id = "01M5H15J1MN75F1TAA820Y2X8T"
 title = "Validate component anatomy against solved scene subtrees"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-11-12T10:02:39Z"
+updated = "2026-11-12T10:02:44Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 
