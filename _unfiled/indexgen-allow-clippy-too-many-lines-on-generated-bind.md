@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-12T06:52:11Z"
-updated = "2026-11-12T11:01:41Z"
-scope = ["crates/gob-rules/src/indexgen.rs"]
+updated = "2026-11-12T11:09:32Z"
+scope = ["crates/gob-rules/src/indexgen.rs", "crates/crunk-rules/src/rules/mod.rs"]
 
 [[acceptance]]
 text = "Given a rule crate with enough rules that generated bind() exceeds 100 lines, when clippy runs, then the generated bind() carries an allow of clippy::too_many_lines with a reason and raises no LINT001"
