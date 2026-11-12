@@ -7,6 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-12T00:35:36Z"
-updated = "2026-11-12T12:29:47Z"
+updated = "2026-11-12T12:47:07Z"
 idempotency_key = "win-mdtest-timeout"
+labels = ["good-first"]
 +++
