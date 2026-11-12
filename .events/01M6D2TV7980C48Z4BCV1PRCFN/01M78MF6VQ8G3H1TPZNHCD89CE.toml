@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Already implemented: amb001/003/005/007 rules exist in crates/grimble-model/src/rules (commit 463fa9ba62); ticket stale"
+at = "2026-11-12T19:41:33Z"
+actor = "lognd"
+rev = 1
