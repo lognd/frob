@@ -24,7 +24,7 @@ pub(crate) fn forecast_line_for(
     min_history: u32,
 ) -> Result<String, CliError> {
     let (open, edges) = open_closure(ledger, ids)?;
-    let facts = ticket_facts(ledger)?;
+    let facts = ticket_facts(ledger, None)?;
     let chain = longest_chain(&edges);
     tracing::debug!(
         open = open.len(),

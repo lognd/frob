@@ -78,7 +78,7 @@ impl Command for Stats {
     }
 
     fn run(&self, ctx: &Context) -> CliOutcome<StatsReport> {
-        let (_, root) = Located::discover(&ctx.cwd).into_repo()?;
+        let (repo, root) = Located::discover(&ctx.cwd).into_repo()?;
         let cfg = FrobConfig::load(&root).map_err(|e| config_refusal(&e))?;
         let min_history = cfg.pm.pm.min_history;
         let ledger = open(ctx)?;
@@ -86,7 +86,8 @@ impl Command for Stats {
         let all = cycles(store)?;
         let deliv = deliveries(store, &ledger, &all);
         let done = done_points(&deliv);
-        let tickets = ticket_facts(&ledger)?;
+        let journal = frob_metrics::activity::Journal::in_common_dir(repo.common_dir());
+        let tickets = ticket_facts(&ledger, Some(&journal))?;
         let ms = milestone_epics(store, &ledger)?;
         let report = compute(&StatsInput {
             sections: self.sections.clone(),
@@ -107,7 +108,10 @@ impl Command for Stats {
 }
 
 /// Facts about every velocity-counting ticket, with start and done times read from its events.
-pub(crate) fn ticket_facts(ledger: &frob_ledger::Ledger) -> Result<Vec<TicketFact>, CliError> {
+pub(crate) fn ticket_facts(
+    ledger: &frob_ledger::Ledger,
+    journal: Option<&frob_metrics::activity::Journal>,
+) -> Result<Vec<TicketFact>, CliError> {
     let all = ledger
         .list(&ListFilter::default())
         .map_err(crate::ticket::cli_err)?;
@@ -146,11 +150,27 @@ pub(crate) fn ticket_facts(ledger: &frob_ledger::Ledger) -> Result<Vec<TicketFac
             created: s.created.unix(),
             started: transition_to(Category::InProgress).min(),
             done_at: transition_to(Category::Done).max(),
-            tokens: frob_ledger::event::usage_total(&evs),
+            tokens: frob_ledger::event::usage_total(&evs)
+                .or_else(|| journal.and_then(|j| journal_tokens(j, s.id))),
         });
     }
     tracing::debug!(count = out.len(), "ticket facts gathered");
     Ok(out)
+}
+
+/// Tokens the usage journal holds for `id`, keyed by full ulid or by its 7-character suffix; `None` when absent.
+fn journal_tokens(journal: &frob_metrics::activity::Journal, id: TicketId) -> Option<u64> {
+    let full = id.to_string();
+    let suffix = full.get(full.len().saturating_sub(7)..).unwrap_or(&full);
+    [full.as_str(), suffix]
+        .into_iter()
+        .find_map(|key| match journal.usage_tokens(key) {
+            Ok(t) => t,
+            Err(e) => {
+                tracing::warn!(ticket = key, error = %e, "usage journal unreadable");
+                None
+            }
+        })
 }
 
 /// Each milestone version with the handles of its member epics.
@@ -178,4 +198,30 @@ fn milestone_epics(
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<Stats>()
+}
+
+#[cfg(test)]
+mod journal_tests {
+    use super::*;
+    use frob_metrics::activity::Journal;
+    use frob_metrics::usage::UsageRecord;
+
+    #[test]
+    fn journal_tokens_finds_the_suffix_keyed_file() {
+        // frob:tests crates/frob/src/stats_cmd.rs::journal_tokens
+        let dir = tempfile::tempdir().expect("tempdir");
+        let journal = Journal::in_common_dir(dir.path());
+        let id: TicketId = "01M48Q2CF72NC7WT89VTY17MK7".parse().expect("ulid");
+        let rec = UsageRecord {
+            session: "s1".to_owned(),
+            at: 1,
+            input: 10,
+            output: 5,
+            cache_read: 0,
+            cache_create: 0,
+        };
+        assert_eq!(journal_tokens(&journal, id), None);
+        journal.record_usage("TY17MK7", &rec).expect("record");
+        assert_eq!(journal_tokens(&journal, id), Some(15));
+    }
 }
