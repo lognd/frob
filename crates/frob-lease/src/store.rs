@@ -17,8 +17,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use frob_ledger::TicketId;
-use frob_ledger::model::Stamp;
 use frob_ledger::activity::{Journal, Signal};
+use frob_ledger::model::Stamp;
 use globset::GlobSet;
 use gob_git::Repo;
 use gob_time::Clock;
