@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T22:24:50Z"
+digest = "2bbf73ac79f4fb5eaf44073329f5e214537992a340d3c17e730e3ac52c23c0b5"
+head = "17f058f114c87530693078baee0d6e8c26edddec"
+provider = "file"
+ref = "crates/gob-symbols/tests/it/typescript_inherit.rs"
+size = 8127
+status = "measured"
+at = "2026-11-12T22:24:50Z"
+actor = "lognd"
+rev = 1

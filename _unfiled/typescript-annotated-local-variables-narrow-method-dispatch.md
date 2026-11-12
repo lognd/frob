@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:26Z"
-updated = "2026-11-12T22:24:49Z"
+updated = "2026-11-12T22:24:50Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/tests/it/typescript_inherit.rs", "changelog.d/01M5HMPQEYJ2FRW9YG7FMVKQY6.fixed.md"]
 
 [[acceptance]]
 text = "A TypeScript local variable with a type annotation narrows method-call dispatch to that type, covered by a test"
-bound = false
+bound = true
 +++
 
 found while working ~69D9E89
