@@ -29,5 +29,3 @@ tempfile = "3"
 [lints]
 workspace = true
 
-[package.metadata.cargo-shear]
-ignored = ["clap"]
