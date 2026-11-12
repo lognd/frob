@@ -7,7 +7,15 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T02:22:52Z"
-updated = "2026-11-12T20:21:42Z"
+updated = "2026-11-12T20:25:10Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src/model.rs,crates/grimble-model/src/plan_check.rs,crates/grimble-model/tests/corpus/**"]
+
+[[acceptance]]
+text = "A mounted file whose marker names a different system is MDL031"
+bound = false
+
+[[acceptance]]
+text = "A second braced declaration of a system is MDL001"
+bound = false
 +++
