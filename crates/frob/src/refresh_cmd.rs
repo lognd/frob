@@ -703,9 +703,20 @@ fn sync_warnings(data: &RefreshReport) -> Vec<String> {
     lines
 }
 
+/// `out` with the freshness messages and then the sync-state lines appended to its warnings.
+fn with_warnings(
+    mut out: Payload<RefreshReport>,
+    freshness: Vec<String>,
+) -> Payload<RefreshReport> {
+    out.warnings.extend(freshness);
+    let sync_lines = sync_warnings(&out.data);
+    out.warnings.extend(sync_lines);
+    out
+}
+
 /// Fill the freshness fields of `out` from the cache at `now` and put the ranked notices in its warnings.
 fn with_freshness(
-    mut out: Payload<RefreshReport>,
+    out: Payload<RefreshReport>,
     state: &RefreshState,
     has_remote: bool,
     signals: Signals,
@@ -713,9 +724,7 @@ fn with_freshness(
     sync: &frob_ledger::config::SyncTable,
 ) -> Payload<RefreshReport> {
     let fresh = assess(state, has_remote, signals, now, Thresholds::from_sync(sync));
-    out.warnings.extend(fresh.messages());
-    let sync_lines = sync_warnings(&out.data);
-    out.warnings.extend(sync_lines);
+    let mut out = with_warnings(out, fresh.messages());
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;
     out.data.notices = fresh.notices;
