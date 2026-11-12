@@ -378,9 +378,10 @@ fn land_summary_carries_per_activity_totals_and_writes_nothing_to_the_code_branc
         "only the ticket's own work reaches main: {added:?}"
     );
     assert!(
-        !after
-            .lines()
-            .any(|l| l.contains("activity") || l.ends_with(".jsonl")),
+        !after.lines().any(|l| l.contains("activity")
+            || std::path::Path::new(l)
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("jsonl"))),
         "no activity journal on the code branch: {after}"
     );
     let (_, status) = git_out(&fx.root, &["status", "--porcelain"]);
