@@ -7,7 +7,17 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-10-27T02:58:34Z"
+updated = "2026-11-12T14:52:40Z"
+labels = ["no-story"]
+scope = ["crates/frob-worktree/**", "docs/**", "changelog.d/**"]
+
+[[acceptance]]
+text = "Given a [claims] table in frob.toml with evict_human, evict_agent, evict_rate and flap_repeat_days, when the config is loaded, then each value is parsed with the documented default when absent"
+bound = false
+
+[[acceptance]]
+text = "Given a configured flap_repeat_days, when flap_review runs, then the window uses the configured days instead of the FLAP_REPEAT_DAYS constant"
+bound = false
 +++
 
 found while working ~6CVW7F9: evict_human, evict_agent, evict_rate, flap guard 14-day rule, feed activity idle into EvictContext

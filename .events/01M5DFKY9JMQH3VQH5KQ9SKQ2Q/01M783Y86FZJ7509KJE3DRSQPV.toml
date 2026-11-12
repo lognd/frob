@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a [claims] table in frob.toml with evict_human, evict_agent, evict_rate and flap_repeat_days, when the config is loaded, then each value is parsed with the documented default when absent", "Given a configured flap_repeat_days, when flap_review runs, then the window uses the configured days instead of the FLAP_REPEAT_DAYS constant"]
+reason = "scope for drain"
+moved = []
+at = "2026-11-12T14:52:40Z"
+actor = "lognd"
+rev = 1
