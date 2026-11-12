@@ -354,6 +354,55 @@ returned in the land outcome (`activity`) and, when the ledger lives on its own
 branch, noted on the ticket as `activity: implementing 2h0m, testing 5m0s`.
 <!-- frob:ticket 01M4GWKEMB266C6GTFEP4R3G7W -->
 
+#### Token usage hook
+
+Cost per point can use tokens as well as wall-clock. frob never reads a
+harness transcript; instead a Claude Code `Stop` (or `PostToolUse`) hook totals
+its own session's token counts and appends one counts-only line to
+`<git common dir>/frob/activity/<ticket ulid>.usage.jsonl`
+(`frob_metrics::usage`). A line holds `session`, `at` (unix seconds), `input`,
+`output` and optionally `cache_read` and `cache_create`; any other field makes
+the line unreadable, so no content can be stored. Counts are cumulative per
+session: the total for a ticket is the latest line of each session, summed
+(`Journal::usage_tokens`). `frob stats` shows `cost per point (tokens)` when a
+ticket's usage is known and `cost per point (tokens): absent` otherwise.
+
+Register in `.claude/settings.json` (hook runs in the ticket worktree on
+branch `ticket/<ulid>`):
+
+```json
+{"hooks": {"Stop": [{"hooks": [{"type": "command",
+  "command": "python3 -I .claude/hooks/frob-usage.py"}]}]}}
+```
+
+`.claude/hooks/frob-usage.py` (reads the hook's stdin JSON, sums only the
+numeric `usage` counts of the transcript, writes nothing else):
+
+```python
+import json, subprocess, sys, time, os
+hook = json.load(sys.stdin)
+git = lambda *a: subprocess.check_output(("git", *a), text=True).strip()
+branch = git("branch", "--show-current")
+if not branch.startswith("ticket/"):
+    sys.exit(0)
+tot = dict(input=0, output=0, cache_read=0, cache_create=0)
+keys = dict(input_tokens="input", output_tokens="output",
+            cache_read_input_tokens="cache_read",
+            cache_creation_input_tokens="cache_create")
+for line in open(hook["transcript_path"]):
+    u = (json.loads(line).get("message") or {}).get("usage") or {}
+    for k, v in keys.items():
+        tot[v] += int(u.get(k) or 0)
+d = os.path.join(os.path.abspath(git("rev-parse", "--git-common-dir")), "frob", "activity")
+os.makedirs(d, exist_ok=True)
+rec = dict(session=hook["session_id"], at=int(time.time()), **tot)
+with open(os.path.join(d, branch[7:] + ".usage.jsonl"), "a") as f:
+    f.write(json.dumps(rec) + "\n")
+```
+
+Wiring `frob stats` to prefer the journal total when the ledger has no
+`ticket usage` event is a follow-up in `crates/frob`.
+
 ## 8. Rule family PM (generated like every other family)
 
 | Id | Checks |

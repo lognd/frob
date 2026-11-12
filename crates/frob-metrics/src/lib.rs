@@ -15,6 +15,7 @@ pub mod percentile;
 pub mod remaining;
 pub mod report;
 pub mod times;
+pub mod usage;
 pub mod velocity;
 
 pub use figure::Figure;

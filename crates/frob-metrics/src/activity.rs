@@ -330,6 +330,11 @@ impl Journal {
         }
     }
 
+    /// The directory holding the per-ticket files.
+    pub(crate) fn dir(&self) -> &Path {
+        &self.dir
+    }
+
     fn path(&self, ticket: &str) -> PathBuf {
         self.dir.join(format!("{ticket}.jsonl"))
     }

@@ -274,6 +274,12 @@ pub fn render_text(r: &StatsReport) -> Vec<String> {
             }
         }
     }
+    if r.cost
+        .as_ref()
+        .is_some_and(|c| !c.iter().any(|x| x.unit == CostUnit::Tokens))
+    {
+        out.push("cost per point (tokens): absent (no token usage recorded)".to_owned());
+    }
     out
 }
 
@@ -324,5 +330,48 @@ mod tests {
             "{text}"
         );
         assert!(text.contains("throughput: unresolved"), "{text}");
+    }
+
+    #[test]
+    fn tokens_cost_is_reported_when_present_and_absent_otherwise() {
+        // frob:tests crates/frob-metrics/src/report.rs::render_text
+        // frob:ticket 01M48Q2CF72NC7WT89VTY17MK7
+        let done = BTreeMap::new();
+        let fact = |tokens| TicketFact {
+            handle: "~A".to_owned(),
+            points: Some(2),
+            state: TicketState::Finished,
+            parent: None,
+            created: 0,
+            started: Some(0),
+            done_at: Some(7200),
+            tokens,
+        };
+        let render = |tickets: &[TicketFact]| {
+            let input = StatsInput {
+                sections: vec![Section::Cost],
+                cycles: &[],
+                done: &done,
+                tickets,
+                milestones: &[],
+                last: 3,
+                min_history: 3,
+                k: 1.0,
+                now: 0,
+                window_days: 28,
+            };
+            render_text(&compute(&input)).join("\n")
+        };
+        let without = render(&[fact(None)]);
+        assert!(
+            without.contains("cost per point (tokens): absent"),
+            "{without}"
+        );
+        let with = render(&[fact(Some(1000))]);
+        assert!(
+            with.contains("cost per point (tokens): unresolved (1 of 3 samples)"),
+            "{with}"
+        );
+        assert!(!with.contains("absent"), "{with}");
     }
 }
