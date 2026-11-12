@@ -2,12 +2,13 @@
 id = "01M1T07NXGXQ1VDNZ4FWF10TGF"
 title = "F-230: the TS walker emits no symbol for describe()/it() call expressions, so no frob:tests directive can ever bind a vitest test (root cause of F-172/F-219/F-225)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 reporter = "human"
 created = "2026-09-06T00:00:00Z"
-updated = "2026-10-27T02:57:44Z"
+updated = "2026-11-12T18:52:33Z"
 aliases = ["T-4016"]
 labels = ["v1-cluster:D2", "triage:accepted"]
 scope = ["src/frob/lang/_walk_typescript.py"]

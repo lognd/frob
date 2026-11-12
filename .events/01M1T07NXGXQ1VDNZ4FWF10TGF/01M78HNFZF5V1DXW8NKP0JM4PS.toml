@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Legacy Python-era report: src/frob/lang/_walk_typescript.py no longer exists; the Rust port resolves vitest/jest describe/it ids via crates/gob-languages/src/testnames.rs, so the gap described is not present."
+at = "2026-11-12T18:52:33Z"
+actor = "lognd"
+rev = 1
