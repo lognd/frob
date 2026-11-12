@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T16:48:26Z"
+digest = "406d75dad2940f569d84db9e454c9f54ff52b0b8f2de27edb730d7e2b834d665"
+head = "689dfcdc64c6bef9e65eae7763972b955be4f9bc"
+provider = "file"
+ref = "crates/grimble-arch/tests/rules.rs"
+size = 20081
+status = "measured"
+at = "2026-11-12T16:48:26Z"
+actor = "lognd"
+rev = 1
