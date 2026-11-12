@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T21:56:29Z"
+digest = "fcb5b6a84b5f774ac324b95e830801d9071a1481c2db700da1a4cfe0301bdbff"
+head = "f7d82e9b330e9f87842d6aa0bfe562edb7b84e1c"
+provider = "file"
+ref = "crates/grimble-check/tests/it/coh002.rs"
+size = 4588
+status = "measured"
+at = "2026-11-12T21:56:29Z"
+actor = "lognd"
+rev = 1
