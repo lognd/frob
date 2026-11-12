@@ -2,7 +2,8 @@
 id = "01M5DFKY9JMQH3VQH5KQ9SKQ2Q"
 title = "claims config knobs for eviction and flap guard"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
