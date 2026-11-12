@@ -2,7 +2,8 @@
 id = "01M5GY2Z3XXW99X7S02KZVBBSN"
 title = "crunk: compile an imported DTCG document into a TokenSet"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
