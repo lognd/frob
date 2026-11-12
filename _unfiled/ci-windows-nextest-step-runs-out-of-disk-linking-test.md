@@ -5,9 +5,10 @@ type = "bug"
 category = "todo"
 priority = "critical"
 class = "expedite"
+points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T12:30:35Z"
+updated = "2026-11-12T12:36:39Z"
 labels = ["ci"]
 scope = [".github/workflows/ci.yml", ".github/actions/**"]
 
