@@ -1124,3 +1124,23 @@ fn cell_triples_expand_tags_in_declaration_order() {
     assert_eq!(spec.platforms_for(None), ["desk", "mob"]);
     assert_eq!(spec.platforms_for(Some(&vec!["tag:m".to_owned()])), ["mob"]);
 }
+
+// frob:ticket 01M5EF4AH2KXS5K18WQPAQ4JC0
+// frob:tests crates/crunk-spec/src/load.rs::load_spec
+// frob:tests crates/crunk-spec/src/screen_file.rs::load_screen_files
+#[test]
+fn screen_file_is_merged_into_spec_screens() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("crunk.toml"), full()).unwrap();
+    let screens = dir.path().join("design/screens");
+    std::fs::create_dir_all(&screens).unwrap();
+    std::fs::write(
+        screens.join("zeta.screen.toml"),
+        "id = \"zeta\"\nentry = \"/z\"\n[[states]]\nid = \"default\"\n",
+    )
+    .unwrap();
+    std::fs::write(screens.join("bad.screen.toml"), "id = 3").unwrap();
+    let spec = load_spec(dir.path()).unwrap();
+    assert!(spec.screens.contains_key("zeta"));
+    assert_eq!(spec.screens["zeta"].entry, "/z");
+}

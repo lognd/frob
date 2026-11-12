@@ -4,6 +4,7 @@
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
 
 use std::collections::HashSet;
+use std::path::Path;
 
 use crate::table::ScreenConfig;
 
@@ -68,6 +69,47 @@ pub fn parse_screen_file(text: &str) -> Result<ScreenConfig, ScreenFileError> {
     }
     tracing::debug!(screen = %screen.id, states = screen.states.len(), "parsed screen file");
     Ok(screen)
+}
+
+/// Directory under the project root holding screen spec files.
+pub const SCREENS_DIR: &str = "design/screens";
+
+/// File-name suffix of a screen spec file.
+pub const SCREEN_SUFFIX: &str = ".screen.toml";
+
+/// Read and parse every `<root>/design/screens/*.screen.toml`, sorted by path.
+///
+/// A missing directory yields no screens; an unreadable or invalid file is skipped with a warning.
+pub fn load_screen_files(root: &Path) -> Vec<ScreenConfig> {
+    let dir = root.join(SCREENS_DIR);
+    let Ok(entries) = std::fs::read_dir(&dir) else {
+        tracing::debug!(dir = %dir.display(), "no screens directory");
+        return Vec::new();
+    };
+    let mut paths: Vec<_> = entries
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .is_some_and(|n| n.to_string_lossy().ends_with(SCREEN_SUFFIX))
+        })
+        .collect();
+    paths.sort();
+    paths
+        .into_iter()
+        .filter_map(|path| {
+            let text = std::fs::read_to_string(&path)
+                .inspect_err(|err| {
+                    tracing::warn!(path = %path.display(), %err, "screen file unreadable; skipped");
+                })
+                .ok()?;
+            parse_screen_file(&text)
+                .inspect_err(|err| {
+                    tracing::warn!(path = %path.display(), %err, "screen file invalid; skipped");
+                })
+                .ok()
+        })
+        .collect()
 }
 
 #[cfg(test)]

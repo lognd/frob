@@ -538,8 +538,16 @@ impl<'a> Ctx<'a> {
                 .map(RosterEntry::from)
                 .collect::<Vec<_>>(),
         )?;
+        // frob:ticket 01M5EF4AH2KXS5K18WQPAQ4JC0
+        let mut screen_tables = raw.screen.unwrap_or_default();
+        let from_files = crate::screen_file::load_screen_files(root);
+        tracing::debug!(
+            count = from_files.len(),
+            "merging screen files into screens"
+        );
+        screen_tables.extend(from_files);
         let screens = validate::screens(
-            &raw.screen.unwrap_or_default(),
+            &screen_tables,
             &validate::Platforms::new(&platforms),
             &sessions,
             &mock_sets,
