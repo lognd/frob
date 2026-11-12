@@ -2,13 +2,13 @@
 id = "01M4FGZB9A3J18R4RP9MDEJDFV"
 title = "grimble fmt keeps group comments and section banners with what they describe"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 2
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:03Z"
-updated = "2026-11-12T19:51:31Z"
+updated = "2026-11-12T19:51:36Z"
 idempotency_key = "logand-gaps-E2"
 labels = ["adoption:logand-app", "grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/grmb-spec.md", "changelog.d/**"]
