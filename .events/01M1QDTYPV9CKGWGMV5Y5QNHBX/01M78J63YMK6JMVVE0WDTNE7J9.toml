@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Legacy Python-era report; Rust frob serve verified to answer initialize in an empty directory with no frob.toml."
+at = "2026-11-12T19:01:38Z"
+actor = "lognd"
+rev = 1
