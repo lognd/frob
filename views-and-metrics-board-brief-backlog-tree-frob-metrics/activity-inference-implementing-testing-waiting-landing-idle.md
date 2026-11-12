@@ -2,7 +2,8 @@
 id = "01M48Q2BWRT117K8E163MWHDN2"
 title = "Activity inference: implementing, testing, waiting, landing, idle from observed signals"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 8
 parent = "01M48Q294B33TB7C0GSATZRGJB"
