@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T11:11:08Z"
+digest = "f916fcb17cc4bc252d7adfbf7d38ac11cd57c222340b2e51d1f421a8838af183"
+head = "57189d562e9250730a69b5a262c9ea146137663b"
+provider = "file"
+ref = "crates/gob-rules/src/indexgen.rs"
+size = 20053
+status = "measured"
+at = "2026-11-12T11:11:08Z"
+actor = "lognd"
+rev = 1
