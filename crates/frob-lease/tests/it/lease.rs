@@ -225,20 +225,18 @@ fn ttl_expiry_frees_and_prunes() {
 fn shared_files_are_exempt() {
     let dir = tempfile::tempdir().expect("tempdir");
     let shared = store_in(dir.path(), cfg(&["Cargo.lock"]));
-    shared
-        .acquire(
-            TicketId::mint(),
-            &holder("a"),
-            &scope(&["Cargo.lock", "a/**"]),
-        )
-        .expect("a");
-    shared
-        .acquire(
-            TicketId::mint(),
-            &holder("b"),
-            &scope(&["Cargo.lock", "b/**"]),
-        )
-        .expect("b shares Cargo.lock");
+    let first = shared.acquire(
+        TicketId::mint(),
+        &holder("a"),
+        &scope(&["Cargo.lock", "a/**"]),
+    );
+    assert!(first.is_ok(), "a acquires");
+    let second = shared.acquire(
+        TicketId::mint(),
+        &holder("b"),
+        &scope(&["Cargo.lock", "b/**"]),
+    );
+    assert!(second.is_ok(), "b shares Cargo.lock");
 }
 
 #[test]
@@ -684,13 +682,12 @@ fn two_tickets_each_leasing_their_own_fragment_do_not_conflict() {
         )
         .expect("b: a legacy changelog.d/** scope is ignored, not an error");
     let c = TicketId::mint();
-    store
-        .acquire(
-            c,
-            &holder("carol"),
-            &scope(&["changelog.d/*.added.md", &frag(c)]),
-        )
-        .expect("c: foreign-covering globs never contend");
+    let carol = store.acquire(
+        c,
+        &holder("carol"),
+        &scope(&["changelog.d/*.added.md", &frag(c)]),
+    );
+    assert!(carol.is_ok(), "c: foreign-covering globs never contend");
 }
 
 // frob:tests crates/frob-lease/src/store.rs::rescope
