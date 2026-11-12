@@ -4,9 +4,10 @@ title = "Move AGENT_MARKERS below gob-trust so gob-trust stops depending on gob-
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-07T19:52:04Z"
-updated = "2026-11-07T19:52:04Z"
+updated = "2026-11-12T12:29:45Z"
 scope = ["crates/gob-trust/**", "crates/gob-cli/**"]
 +++
 
