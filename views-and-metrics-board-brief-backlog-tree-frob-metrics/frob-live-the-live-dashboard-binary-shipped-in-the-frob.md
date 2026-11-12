@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
 updated = "2026-11-12T03:50:57Z"
 labels = ["no-story"]
-scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/MOVED.toml", "docs/README.md", "docs/assets", "docs/decisions", "docs/design", "docs/grimble", "docs/guides", "docs/history", "docs/migration", "docs/packs", "docs/reference", "docs/schemas"]
+scope = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/MOVED.toml", "docs/README.md", "docs/assets", "docs/decisions", "docs/design", "docs/grimble", "docs/guides", "docs/history", "docs/migration", "docs/packs", "docs/reference", "docs/schemas", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md"]
 
 [[links]]
 kind = "blocked-by"

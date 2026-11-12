@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/MOVED.toml", "docs/README.md", "docs/assets", "docs/decisions", "docs/design", "docs/grimble", "docs/guides", "docs/history", "docs/migration", "docs/packs", "docs/reference", "docs/schemas"]
+new = ["crates/frob-live/**", "crates/frob/**", "packaging/**", ".github/workflows/release.yml", "Cargo.lock", ".github/workflows/build-smoke.yml", ".github/workflows/ci.yml", "crates/frob-release/tests/it/products.rs", "crates/gob-dev/src/wheel.rs", "dist-workspace.toml", "docs/MOVED.toml", "docs/README.md", "docs/assets", "docs/decisions", "docs/design", "docs/grimble", "docs/guides", "docs/history", "docs/migration", "docs/packs", "docs/reference", "docs/schemas", "changelog.d/01KZ7KGKHYQ1QZ0BHKB49P22KK.changed.md"]
+at = "2026-11-12T03:50:57Z"
+actor = "lognd"
+rev = 1
