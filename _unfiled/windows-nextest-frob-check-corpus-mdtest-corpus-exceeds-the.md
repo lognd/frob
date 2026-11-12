@@ -2,7 +2,8 @@
 id = "01M76JWX3J0FAVBXRSVNH34WZN"
 title = "Windows nextest: frob-check corpus mdtest_corpus exceeds the 120 s timeout"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
