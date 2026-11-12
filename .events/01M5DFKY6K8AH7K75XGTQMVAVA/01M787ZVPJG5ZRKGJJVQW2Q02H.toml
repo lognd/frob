@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-12T16:03:27Z"
+digest = "02fb3dc38a91360dd3ea9d6336b2455e1a8b0bb9d913d383fee144d7fde74a85"
+head = "479b0ac58c871da000ea7dbfdd549b609363dd6b"
+provider = "file"
+ref = "crates/frob-worktree/src/claim_restore.rs"
+size = 7296
+status = "measured"
+at = "2026-11-12T16:03:27Z"
+actor = "lognd"
+rev = 1
