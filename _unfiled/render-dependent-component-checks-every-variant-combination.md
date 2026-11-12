@@ -2,12 +2,12 @@
 id = "01M5H15HXSYYTSXC0ERNT1JMSB"
 title = "Render-dependent component checks: every variant combination renders"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-11-12T09:31:28Z"
+updated = "2026-11-12T09:31:34Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**", "changelog.d/*"]
 
