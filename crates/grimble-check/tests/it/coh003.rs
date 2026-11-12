@@ -2,7 +2,6 @@
 
 // frob:ticket 01M4CXSSGYVE2QQ7ACW7T5Y51S
 
-#![allow(unused_crate_dependencies)]
 
 use gob_ir::{NodeId, Operator, Universal};
 use gob_symbols::fold_file;

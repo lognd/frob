@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5K18043Y5V9TF7QD2KNYR34
 
-#![allow(unused_crate_dependencies)]
 
 use grimble_check::{CheckOptions, run, sibling_document};
 

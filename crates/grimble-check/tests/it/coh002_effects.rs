@@ -2,7 +2,6 @@
 
 // frob:ticket 01M5HJ07DTC2JQT9MP5T0TGDAS
 
-#![allow(unused_crate_dependencies)]
 
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;

@@ -3,7 +3,6 @@
 
 // frob:ticket 01M6H40PZZE3V5ZA9DD3T6JNG5
 
-#![allow(unused_crate_dependencies)]
 
 use std::path::Path;
 

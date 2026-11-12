@@ -2,7 +2,6 @@
 
 // frob:ticket 01M4CXT1GFPWZAMV0BCBH3WC4G
 
-#![allow(unused_crate_dependencies)]
 
 use gob_ir::Answer;
 use gob_ir::effect_class::{
