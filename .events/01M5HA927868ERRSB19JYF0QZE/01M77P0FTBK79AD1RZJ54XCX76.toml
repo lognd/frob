@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-layout/**,crates/crunk-rules/src/rules/gx003.rs", "docs/reference/rules/GX003.md", "crates/crunk-rules/src/rules/gx003.md", "crates/crunk-rules/tests/it/gx_rules.rs", "crates/crunk-layout/**"]
+new = ["crates/crunk-layout/**,crates/crunk-rules/src/rules/gx003.rs", "docs/reference/rules/GX003.md", "crates/crunk-rules/src/rules/gx003.md", "crates/crunk-rules/tests/it/gx_rules.rs", "crates/crunk-layout/**", "crates/crunk-rules/src/rules/gx003.rs"]
+at = "2026-11-12T10:49:13Z"
+actor = "lognd"
+rev = 1
