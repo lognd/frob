@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-11-12T05:54:02Z"
+updated = "2026-11-12T05:54:03Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**", "changelog.d/01M5H15J89N27F4C4CH719QDG4.*", "docs/reference/rules/COMP007.md"]
 
