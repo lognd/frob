@@ -2,7 +2,8 @@
 id = "01M5H5P5NTT9XAYR4ZSA4RRB8F"
 title = "crunk: component-instance text props and top-level text as literal copy"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
