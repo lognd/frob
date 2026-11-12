@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/indexgen.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/frob-ack/src/rules/mod.rs", "crates/frob-lease/src/rules/mod.rs", "crates/frob-ledger/src/rules/mod.rs", "crates/frob-obligations/src/rules/mod.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-release/src/rules/mod.rs", "crates/frob-tests/src/rules/mod.rs", "crates/gob-check/tests/product_rules/alpha/src/rules/mod.rs", "crates/gob-check/tests/product_rules/beta/src/rules/mod.rs", "crates/gob-check/tests/product_rules/delta/src/rules/mod.rs", "crates/gob-check/tests/product_rules/gamma/src/rules/mod.rs", "crates/gob-config/src/rules/mod.rs", "crates/gob-rules/src/rules/mod.rs"]
+new = ["crates/gob-rules/src/indexgen.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/frob-ack/src/rules/mod.rs", "crates/frob-lease/src/rules/mod.rs", "crates/frob-ledger/src/rules/mod.rs", "crates/frob-obligations/src/rules/mod.rs", "crates/frob-pm/src/rules/mod.rs", "crates/frob-release/src/rules/mod.rs", "crates/frob-tests/src/rules/mod.rs", "crates/gob-check/tests/product_rules/alpha/src/rules/mod.rs", "crates/gob-check/tests/product_rules/beta/src/rules/mod.rs", "crates/gob-check/tests/product_rules/delta/src/rules/mod.rs", "crates/gob-check/tests/product_rules/gamma/src/rules/mod.rs", "crates/gob-config/src/rules/mod.rs", "crates/gob-rules/src/rules/mod.rs", "crates/grimble-arch/src/rules/mod.rs"]
+at = "2026-11-12T11:09:36Z"
+actor = "lognd"
+rev = 1
