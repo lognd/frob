@@ -2,7 +2,8 @@
 id = "01M5GM4B049PYVSS1CVA1XEKJS"
 title = "gob-caps: let capability matrix Gap cells name a ticket"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
