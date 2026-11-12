@@ -496,23 +496,38 @@ fn at_file(
     finding_def(def, Some(span), message, anchor)
 }
 
+/// One finding of `def` per path `pick` takes from the `.meta` report; none when the pack is off.
+fn per_path(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+    def: &gob_rules::RuleDef,
+    select: fn(&MetaReport) -> &[String],
+    message: fn(&str) -> String,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
+        return Vec::new();
+    };
+    select(&r)
+        .iter()
+        .map(|p| at_file(def, files, p, message(p), p))
+        .collect()
+}
+
 /// UNITY001: one finding per tracked asset or folder with no tracked `.meta`.
 pub(crate) fn unity001(
     root: &Path,
     pack: Option<&EnabledPack>,
     files: &mut FileInterner,
 ) -> Vec<Finding> {
-    let Some(r) = meta_report(root, pack) else {
-        return Vec::new();
-    };
-    r.missing
-        .iter()
-        .map(|a| {
-            let msg =
-                format!("`{a}` is tracked but `{a}.meta` is not; Unity would assign a fresh guid");
-            at_file(Unity001::DEF, files, a, msg, a)
-        })
-        .collect()
+    per_path(
+        root,
+        pack,
+        files,
+        Unity001::DEF,
+        |r| &r.missing,
+        |a| format!("`{a}` is tracked but `{a}.meta` is not; Unity would assign a fresh guid"),
+    )
 }
 
 /// UNITY002: one finding per tracked `.meta` whose asset is not tracked.
@@ -521,16 +536,14 @@ pub(crate) fn unity002(
     pack: Option<&EnabledPack>,
     files: &mut FileInterner,
 ) -> Vec<Finding> {
-    let Some(r) = meta_report(root, pack) else {
-        return Vec::new();
-    };
-    r.orphans
-        .iter()
-        .map(|m| {
-            let msg = format!("`{m}` is tracked but its asset is not");
-            at_file(Unity002::DEF, files, m, msg, m)
-        })
-        .collect()
+    per_path(
+        root,
+        pack,
+        files,
+        Unity002::DEF,
+        |r| &r.orphans,
+        |m| format!("`{m}` is tracked but its asset is not"),
+    )
 }
 
 /// UNITY003: one Error per duplicated guid naming every file, plus Unresolved for unreadable guids.
