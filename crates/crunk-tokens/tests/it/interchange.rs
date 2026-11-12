@@ -131,3 +131,18 @@ fn interchange_rejects_reference_cycle() {
         DtcgError::Cycle { .. }
     ));
 }
+
+// frob:tests crates/crunk-tokens/src/interchange.rs::check_css_names
+#[test]
+fn colliding_css_names_are_refused() {
+    let text = r##"{"a": {"$type": "color", "b-c": {"$value": "#fff"}}, "a-b": {"$type": "color", "c": {"$value": "#000"}}}"##;
+    let err = Document::parse(text).expect_err("collision");
+    assert_eq!(
+        err,
+        DtcgError::NameCollision {
+            first: "a.b-c".into(),
+            second: "a-b.c".into(),
+            property: "--a-b-c".into(),
+        }
+    );
+}

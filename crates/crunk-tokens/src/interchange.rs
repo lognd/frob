@@ -59,6 +59,16 @@ pub enum DtcgError {
         /// The OS error.
         message: String,
     },
+    /// Two distinct token paths map to the same CSS custom property.
+    #[error("`{first}` and `{second}` both map to the custom property `{property}`")]
+    NameCollision {
+        /// The earlier token path (file order).
+        first: String,
+        /// The later token path.
+        second: String,
+        /// The shared custom property name.
+        property: String,
+    },
     /// A chain of whole-value aliases loops back on itself.
     #[error("`{path}`: reference chain is cyclic")]
     Cycle {
@@ -523,7 +533,30 @@ impl Document {
         summary
     }
 
+    /// The first pair of distinct token paths that map to one CSS custom property, if any.
+    ///
+    /// # Errors
+    ///
+    /// [`DtcgError::NameCollision`] naming both paths and the shared property.
+    pub fn check_css_names(&self) -> Result<(), DtcgError> {
+        let mut seen = std::collections::BTreeMap::<String, String>::new();
+        for (path, _) in self.tokens() {
+            let property = crate::dialect::name_of_path(&path);
+            if let Some(first) = seen.get(&property) {
+                tracing::warn!(%first, second = %path, %property, "dtcg: css name collision");
+                return Err(DtcgError::NameCollision {
+                    first: first.clone(),
+                    second: path,
+                    property,
+                });
+            }
+            seen.insert(property, path);
+        }
+        Ok(())
+    }
+
     fn validate(&self) -> Result<(), DtcgError> {
+        self.check_css_names()?;
         for (path, token) in self.tokens() {
             let parts: Vec<String> = path.split('.').map(str::to_owned).collect();
             let Some(ty) = self.resolved_type(&path) else {
