@@ -2,7 +2,8 @@
 id = "01M4FGZB9A3J18R4RP9MDEJDFV"
 title = "grimble fmt keeps group comments and section banners with what they describe"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
