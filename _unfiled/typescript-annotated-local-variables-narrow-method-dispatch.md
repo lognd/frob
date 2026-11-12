@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T11:07:26Z"
-updated = "2026-11-12T22:21:34Z"
+updated = "2026-11-12T22:24:49Z"
 labels = ["no-story"]
-scope = ["crates/gob-symbols/src/typescript/fold.rs"]
+scope = ["crates/gob-symbols/src/typescript/fold.rs", "crates/gob-symbols/tests/it/typescript_inherit.rs"]
 
 [[acceptance]]
 text = "A TypeScript local variable with a type annotation narrows method-call dispatch to that type, covered by a test"
