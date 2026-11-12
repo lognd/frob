@@ -2,12 +2,12 @@
 id = "01M6D467K5GSWH3VRBNZM68NSY"
 title = "grimble-model: PLAN020 variant duplicated as arm"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T03:17:32Z"
-updated = "2026-11-12T19:12:01Z"
+updated = "2026-11-12T19:12:06Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/rules/**", "crates/grimble-model/tests/corpus/**", "changelog.d/**", "docs/**"]
 
