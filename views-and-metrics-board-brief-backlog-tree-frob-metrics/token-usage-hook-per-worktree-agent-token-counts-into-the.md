@@ -8,9 +8,9 @@ points = 3
 parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
-updated = "2026-11-12T03:21:32Z"
+updated = "2026-11-12T03:26:41Z"
 labels = ["no-story"]
-scope = ["crates/frob-metrics/**", "docs/**"]
+scope = ["crates/frob-metrics/**", "docs/**", "crates/frob/src/stats_cmd.rs"]
 
 [[links]]
 kind = "blocked-by"
