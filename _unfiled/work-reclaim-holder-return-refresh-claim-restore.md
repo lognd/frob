@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T20:21:34Z"
-updated = "2026-11-12T15:31:40Z"
+updated = "2026-11-12T15:51:25Z"
 labels = ["no-story"]
 scope = ["crates/frob-worktree/**", "crates/frob/src/**", "docs/**", "changelog.d/**"]
 
 [[acceptance]]
 text = "frob work --reclaim uses reclaim_plan to take over an evicted claim"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "holder-return refresh wired via holder_return"
