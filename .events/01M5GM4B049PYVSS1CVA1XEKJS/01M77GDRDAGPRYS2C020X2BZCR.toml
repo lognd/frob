@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T09:11:37Z"
+digest = "cff0151bb854ef76aa947fe2fa38ac0a07fe78bce519b9835a6227572ea293c4"
+head = "59d065c0c010fd63e8977dbc23c048f421d9a744"
+provider = "file"
+ref = "crates/gob-caps/tests/gap_tickets.rs"
+size = 1022
+status = "measured"
+at = "2026-11-12T09:11:37Z"
+actor = "lognd"
+rev = 1
