@@ -2,12 +2,12 @@
 id = "01M5AH5JNAB2APDDP317HGFM86"
 title = "Fold integration tests into one binary per crate: remaining crates under crates/*/tests (~243 files), then verify cargo dev test-size under 3 GB"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-19T16:50:57Z"
-updated = "2026-10-28T12:55:46Z"
+updated = "2026-11-12T00:41:38Z"
 labels = ["no-story"]
 scope = ["crates/*/tests/**"]
 +++
