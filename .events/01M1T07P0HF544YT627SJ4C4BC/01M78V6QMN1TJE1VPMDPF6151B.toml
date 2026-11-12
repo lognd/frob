@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Python-era scope (src/frob/strata/*.py, design/frob.strata) no longer exists in the Rust workspace; re-file against the Rust SYS rules if still wanted"
+at = "2026-11-12T21:39:15Z"
+actor = "lognd"
+rev = 1
