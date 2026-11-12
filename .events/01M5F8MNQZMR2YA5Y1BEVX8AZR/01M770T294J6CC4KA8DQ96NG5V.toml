@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-12T04:38:43Z"
+digest = "da5274034e5a3fa8b5a9ff5f36362934cdd3a991b5b42a013909987f8204c74b"
+head = "44dc1ea13fcfffac73e6f4022a1eb238857f4ed9"
+provider = "file"
+ref = "crates/frob-obligations/src/cov.rs"
+size = 18078
+status = "measured"
+at = "2026-11-12T04:38:43Z"
+actor = "lognd"
+rev = 1
