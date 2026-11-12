@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-12T15:16:50Z"
+digest = "247bac911cff867c8007d820a80a90fcc91bc0b21899ef29c80af7a5efcf7e63"
+head = "0aae4fcf7b68f0a527dc24d240bdd87dba66814e"
+provider = "file"
+ref = "crates/frob-worktree/src/evict.rs"
+size = 33606
+status = "measured"
+at = "2026-11-12T15:16:50Z"
+actor = "lognd"
+rev = 1
