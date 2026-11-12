@@ -5,13 +5,15 @@
 
 use std::fmt::Write as _;
 
+use gob_caps::{Lang, gap_ticket};
+
 use crate::registry::fidelity_report;
 
 /// Renders the languages page body (no generated marker; `cargo dev gen languages` adds it): an extension table, then one capability table per adapter.
 pub fn languages_page() -> String {
     let report = fidelity_report();
     let mut out = String::from(
-        "# Languages\n\nCells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown).\n",
+        "# Languages\n\nCells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown; `Gap (~ID)` names the ticket that fills it).\n",
     );
     out.push_str("\n## Extensions\n\n| Extension | Language | Fidelity |\n|---|---|---|\n");
     let mut by_ext: Vec<(&str, &str, String)> = report
@@ -34,7 +36,15 @@ pub fn languages_page() -> String {
         }
         out.push_str(".\n\n| Capability | Cell | Precision |\n|---|---|---|\n");
         for (c, p) in &r.capabilities {
-            writeln!(out, "| {} | {} | {} |", c.name(), p.cell(), p.label()).ok();
+            let ticket = Lang::from_tag(r.language).and_then(|l| gap_ticket(l, *c));
+            writeln!(
+                out,
+                "| {} | {} | {} |",
+                c.name(),
+                p.cell_with_ticket(ticket),
+                p.label()
+            )
+            .ok();
         }
     }
     tracing::debug!(
