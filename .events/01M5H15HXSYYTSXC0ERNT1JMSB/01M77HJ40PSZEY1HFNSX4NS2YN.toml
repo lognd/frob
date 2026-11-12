@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a component spec with a variant matrix, when COMP002 runs, then every variant combination is rendered and a combination that fails to render is reported"]
+moved = []
+at = "2026-11-12T09:31:28Z"
+actor = "lognd"
+rev = 1

@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-10-28T12:55:57Z"
+updated = "2026-11-12T09:31:28Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "changelog.d/*"]
+
+[[acceptance]]
+text = "Given a component spec with a variant matrix, when COMP002 runs, then every variant combination is rendered and a combination that fails to render is reported"
+bound = false
 +++
 
 Cut from ~D6TTN3F: COMP002 checks the matrix statically only; add render coverage of each variant cell.
