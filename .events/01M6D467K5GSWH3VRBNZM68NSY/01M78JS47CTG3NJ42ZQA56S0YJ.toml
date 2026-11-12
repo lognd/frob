@@ -1,0 +1,8 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
+new = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**", "crates/grimble-model/src/plan_check.rs", "crates/grimble-model/src/rules/**", "crates/grimble-model/tests/corpus/**", "changelog.d/**", "docs/**"]
+reason = "normalize scope globs"
+at = "2026-11-12T19:12:01Z"
+actor = "lognd"
+rev = 1
