@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Given cargo dev bench-ic, when run, then a cold and a warm frob-check summary and at least one more parser summary are produced from new crates/*/benches/ic_*.rs benches"]
+reason = "scope and acceptance for drain"
+moved = []
+at = "2026-11-12T17:01:28Z"
+actor = "lognd"
+rev = 1
