@@ -5,10 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
-parent = "01M47QJ3CHWZBZ6R3QHN4R2XN5"
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-22T00:36:12Z"
-updated = "2026-11-12T08:53:18Z"
+updated = "2026-11-12T12:30:07Z"
 scope = ["crates/gob-symbols/src/**", "crates/gob-frameworks/**", "changelog.d/01M5GGJXDV139FW9WX0JR8RKNQ.*", "crates/gob-symbols/tests/it/main.rs", "crates/gob-symbols/tests/it/typescript_exports.rs"]
 
 [[acceptance]]
