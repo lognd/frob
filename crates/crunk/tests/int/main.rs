@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use gob_cli::run_for_test;
 use serde_json::Value;
 
-#[path = "../common/mod.rs"]
+#[path = "../it/common/mod.rs"]
 mod common;
 
 fn parity_root() -> PathBuf {

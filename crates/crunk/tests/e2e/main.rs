@@ -10,7 +10,7 @@
 use std::collections::BTreeSet;
 
 mod audit;
-#[path = "../common/mod.rs"]
+#[path = "../it/common/mod.rs"]
 mod common;
 mod divergences;
 mod replay;
