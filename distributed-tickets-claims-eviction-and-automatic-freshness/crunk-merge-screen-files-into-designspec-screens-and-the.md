@@ -2,13 +2,13 @@
 id = "01M5EF4AH2KXS5K18WQPAQ4JC0"
 title = "crunk: merge screen files into DesignSpec.screens and the gallery"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-10-28T12:55:58Z"
+updated = "2026-11-12T05:11:59Z"
 labels = ["no-story"]
 scope = ["crates/crunk-spec/**"]
 
