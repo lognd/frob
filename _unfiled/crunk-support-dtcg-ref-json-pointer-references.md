@@ -2,12 +2,12 @@
 id = "01M5GY2ZEA492MTNPXVHEV60AY"
 title = "crunk: support DTCG $ref JSON-pointer references"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T04:32:10Z"
-updated = "2026-11-12T07:31:27Z"
+updated = "2026-11-12T07:31:33Z"
 labels = ["no-story"]
 scope = ["crates/crunk-tokens/**", "changelog.d/01M5GY2ZEA492MTNPXVHEV60AY.*"]
 
