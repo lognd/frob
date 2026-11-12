@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*", "crates/gob-caps/tests/gap_tickets.rs", "docs/reference/languages.md"]
+new = ["crates/gob-caps/**", "crates/gob-symbols/src/languages_page.rs", "changelog.d/*", "crates/gob-caps/tests/gap_tickets.rs", "docs/reference/languages.md", "changelog.d/01M5GM4B049PYVSS1CVA1XEKJS.added.md"]
+at = "2026-11-12T09:11:31Z"
+actor = "lognd"
+rev = 1
