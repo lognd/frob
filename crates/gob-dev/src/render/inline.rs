@@ -5,7 +5,7 @@
 //! `// test_ok NAME` (input the parser must accept) or `// test_err NAME` (input it must reject) is
 //! followed by the `//` lines that make up the input. `cargo dev gen inline` writes each block to
 //! `resources/inline/ok/NAME.<ext>` or `resources/inline/err/NAME.<ext>`; GEN001 keeps the files
-//! current, and each parser crate snapshots the tree and errors of every file (`tests/inline.rs`).
+//! current, and each parser crate snapshots the tree and errors of every file (`tests/it/inline.rs`).
 //!
 //! One escape exists, for the directive parser whose inputs are themselves directives: a
 //! namespace followed by a backslash and a colon (`frob`, backslash, colon) extracts as the

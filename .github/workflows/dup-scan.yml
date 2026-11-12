@@ -4,7 +4,7 @@ name: dup-scan
 # workflow, not a job of ci.yml: it never runs on a push or pull request, so it is not a check on
 # any commit and the land gate (crates/frob-land/src/base_ci.rs) cannot wait on it or fail on it.
 # Clusters already in frob-baseline.toml stay quiet; a new cluster exits 1 and turns this run red.
-# Every `uses:` below is pinned by full commit SHA (crates/gob-dev/tests/dup_scan_workflow.rs).
+# Every `uses:` below is pinned by full commit SHA (crates/gob-dev/tests/it/dup_scan_workflow.rs).
 # frob:ticket 01M4P0SXJRVQ0ADAAH3FMYPAR6
 
 on:

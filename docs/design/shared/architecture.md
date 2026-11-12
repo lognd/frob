@@ -745,7 +745,7 @@ existing conversions in 105 files migrate crate by crate; each
 migration ticket ends with that crate free of the allow list.
 
 The allow list is shrink-only and lives in one place: the `ALLOW` array in
-`crates/gob-path/tests/confinement.rs`. A crate on it carries, at the root
+`crates/gob-path/tests/it/confinement.rs`. A crate on it carries, at the root
 of each target that still converts, `#![expect(clippy::disallowed_methods,
 reason = "confinement allow list: ...")]` (`cfg_attr(test, ...)` when only
 its unit tests convert). Three failures keep it honest: a new conversion in

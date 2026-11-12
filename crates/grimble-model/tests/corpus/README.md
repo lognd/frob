@@ -1,6 +1,6 @@
 # The .grmb conformance corpus (grmb-spec 12)
 
-Run by `tests/corpus.rs` (`cargo nextest run -p grimble-model`). One case is either
+Run by `tests/it/corpus.rs` (`cargo nextest run -p grimble-model`). One case is either
 
 - a file `X.grmb` with a sibling `X.expect` (and optionally a golden `X.u`), or
 - a directory holding an `expect` file (and optionally `expect.u`) and every `.grmb` input of
@@ -28,4 +28,4 @@ Where the spec lists one file but the point needs several files (`version/header
 Every case also runs the round-trip contract on each file. A golden `.u` holds the indented term
 (sort, operator, name, byte range, anchor, symref), every reference with its scope-graph
 resolution, and the bound directives; regenerate with `GRMB_BLESS=1 cargo test -p grimble-model
---test corpus` and review the diff.
+--test it corpus` and review the diff.

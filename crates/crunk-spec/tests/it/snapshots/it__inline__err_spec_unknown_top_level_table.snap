@@ -1,0 +1,22 @@
+---
+source: crates/crunk-spec/tests/it/inline.rs
+expression: dump
+---
+Err(
+    Invalid {
+        path: "crunk.toml",
+        at: Some(
+            Location {
+                line: 23,
+                column: 2,
+            },
+        ),
+        detail: "unknown top-level key `pallet_x`",
+        key: Some(
+            "pallet_x",
+        ),
+        suggestion: Some(
+            "palette",
+        ),
+    },
+)

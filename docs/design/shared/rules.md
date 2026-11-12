@@ -1513,7 +1513,7 @@ an opaque region, an Unknown visibility) is run against every shipped
 rule, so "the rule behaves as its declared polarity says" is a test, not a
 claim (universal-model.md 4.5, Theorem 3: never an Error or Warn whose
 premise is false). The frob corpus is
-`crates/frob-obligations/tests/polarity_conformance.rs`: it evaluates every
+`crates/frob-obligations/tests/it/polarity_conformance.rs`: it evaluates every
 shipped rule over the four repositories and fails when any P- rule emits a
 certain `Error` on a May-only, opaque or Unknown-visibility absence; a
 forged-finding control proves the oracle can fail. The ecosystem check (build-test-ci.md 6) reports files
@@ -1549,7 +1549,7 @@ language's adapter does not provide is Unknown. The test `oracle_live` fails
 when the committed `observed` column differs from these live answers (a source
 that no adapter parses is an error, not a verdict, so a flaky parse never
 flips the column). Regenerate the column deliberately with
-`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test oracle_live`, then review
+`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test it oracle_live`, then review
 the diff and refresh `baseline.toml` by hand if a rate moved.
 
 ### 12.9 Native coverage providers
@@ -1717,7 +1717,7 @@ out-of-range edit, never reaches a fixpoint (oscillation), or leaves a
 fixable finding after the fixpoint. `Outcome::snapshot_text` is the round
 count plus the unified diff original to final, snapshotted with insta.
 `missing_fixtures` names fixable rules with no fixture; with no fixable rules
-it passes vacuously. Self-tests in `crates/gob-fix/tests/harness.rs` cover
+it passes vacuously. Self-tests in `crates/gob-fix/tests/it/harness.rs` cover
 the oscillating, parse-breaking, macro-wrapping, hole-growing, no-op and
 overlapping cases. Per-rule snapshots for the real fixable rules are wired in
 the rule crates (follow-up tickets under the parent epic).

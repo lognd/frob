@@ -1,5 +1,5 @@
 ---
-source: crates/gob-directives/tests/fix.rs
+source: crates/gob-directives/tests/it/fix.rs
 expression: out.snapshot_text()
 ---
 rounds: 1

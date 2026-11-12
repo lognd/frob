@@ -1,8 +1,0 @@
----
-source: crates/gob-directives/tests/inline.rs
-expression: dump
----
-ScanResult {
-    directives: [],
-    findings: [],
-}

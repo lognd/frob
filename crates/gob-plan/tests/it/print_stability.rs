@@ -1,5 +1,5 @@
 //! GRL printer stability harness (docs/design/shared/rules.md section 12.10, D98), modelled on
-//! `crates/grimble-model/tests/stability.rs`: the printer must be a fixed point
+//! `crates/grimble-model/tests/it/stability.rs`: the printer must be a fixed point
 //! (`print(print(x)) = print(x)`), must round-trip (`parse(print(t)) = t` up to source
 //! ranges) over every fixture and a generated family of trees, and a deliberately broken printer
 //! must fail with a shrunk example.

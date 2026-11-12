@@ -2,7 +2,7 @@
 //!
 //! [`steps`] is the single definition of every CI check (name, argv, environment, platform).
 //! `ci.yml` invokes `cargo dev ci --step <name>` for each check and holds no argv of its own;
-//! `tests/ci_parity.rs` fails when the workflow and this list disagree, so a check added to one
+//! `tests/it/ci_parity.rs` fails when the workflow and this list disagree, so a check added to one
 //! cannot be missing from the other. Process spawning goes through `gob-exec` (PROC001).
 //! The `clippy-windows` step is part of the default list and offloadable, so the one documented
 //! whole-workspace command (`cargo dev ci`, through a remote host) catches Windows-only compile breaks.

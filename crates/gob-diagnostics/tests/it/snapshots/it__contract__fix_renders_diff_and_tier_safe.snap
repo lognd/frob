@@ -1,0 +1,15 @@
+---
+source: crates/gob-diagnostics/tests/it/contract.rs
+assertion_line: 498
+expression: "plain(&s, &f)"
+---
+src/a.rs
+  2:5: error[DOC001]: spell it color
+  fix[machine]: colour to color
+    --- src/a.rs
+    +++ src/a.rs
+    @@ -2,1 +2,1 @@
+    -let colour = 1;
+    +let color = 1;
+
+1 errors, 0 unresolved (0 required)

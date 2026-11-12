@@ -818,7 +818,7 @@ Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-doc
 
 #### 4.6.1 Layer table
 
-`crates/gob-dev/tests/layering.rs` reads this table and walks the
+`crates/gob-dev/tests/it/layering.rs` reads this table and walks the
 normal and build dependencies from `cargo metadata`. A crate may depend
 only on crates in a strictly lower layer, and on its own product or
 `gob-*` (a `gob-*` crate on `gob-*` only). A new edge that breaks either

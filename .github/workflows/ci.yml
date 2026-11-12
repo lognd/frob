@@ -69,7 +69,7 @@ jobs:
         run: |
           # The path-to-job-set mapping is data (crates/gob-dev/changes.toml, also read by
           # `cargo dev changes`) applied by .github/scripts/plan-jobs.py, which needs no compile
-          # (tested by crates/gob-dev/tests/ci_plan.rs): docs only, crunk-only, or the whole workspace.
+          # (tested by crates/gob-dev/tests/it/ci_plan.rs): docs only, crunk-only, or the whole workspace.
           # frob:ticket 01M43ARWT173GKANZ322H41VF1
           # frob:ticket 01M47QVD03PGCAZ301WHC5Q4MF
           if [ "$EVENT" = "pull_request" ]; then
@@ -191,7 +191,7 @@ jobs:
       # so the tool lives in target/dev-tool there), or a literal `cargo dev ci --step <name>` for
       # a Linux-only check: the argv, flags and environment live in crates/gob-dev/src/ci.rs, so
       # `cargo dev ci` locally runs exactly this list.
-      # crates/gob-dev/tests/ci_parity.rs fails when the two diverge.
+      # crates/gob-dev/tests/it/ci_parity.rs fails when the two diverge.
       - name: rustfmt
         if: runner.os == 'Linux'
         run: cargo dev ci --step fmt
@@ -312,7 +312,7 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}-crunk
       cancel-in-progress: true
     env:
-      # Every crates/crunk* package; crates/gob-dev/tests/ci_plan.rs fails when this list drifts.
+      # Every crates/crunk* package; crates/gob-dev/tests/it/ci_plan.rs fails when this list drifts.
       CRUNK_PACKAGES: -p crunk -p crunk-check -p crunk-fix -p crunk-gallery -p crunk-ingest -p crunk-layout -p crunk-query -p crunk-rules -p crunk-scene -p crunk-spec -p crunk-tailwind -p crunk-tokens -p crunk-values
       RUSTC_WRAPPER: sccache
       SCCACHE_GHA_ENABLED: "true"
@@ -405,7 +405,7 @@ jobs:
   # Optional (never required for merge): the node Tailwind runtime tests with node mandatory, so a
   # runner without node fails here instead of skipping. Nothing `needs` this job and it is
   # `continue-on-error`, so red or skipped never blocks the dev channel or a merge; do not add it
-  # to a `needs` list or to branch protection (crates/gob-dev/tests/ci_plan.rs pins this). The
+  # to a `needs` list or to branch protection (crates/gob-dev/tests/it/ci_plan.rs pins this). The
   # playwright gallery tests join it when the gallery port lands.
   crunk-node:
     name: crunk node (optional)

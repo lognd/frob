@@ -464,7 +464,7 @@ doc comments, copied verbatim so the generated CLI reference does not change;
 the verb's about text stays owned by its `CommandMeta` (`augment` restores it).
 Shared argument groups are `#[command(flatten)]` structs. No verb reads a flag
 by string name (`.get_one`, `.get_flag`, `Arg::new` ...); the lint test
-`crates/gob-cli/tests/flags_declared_once.rs` enforces it for frob, grimble,
+`crates/gob-cli/tests/it/flags_declared_once.rs` enforces it for frob, grimble,
 crunk and the `frob-*` crates.
 
 ## 2. Diagnostics that teach, and fixes that are safe to apply
