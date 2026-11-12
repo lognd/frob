@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "nothing is written to the code branch"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "the land summary carries per-activity totals"
