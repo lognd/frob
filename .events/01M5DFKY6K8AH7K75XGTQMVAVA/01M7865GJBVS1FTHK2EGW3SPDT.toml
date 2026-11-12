@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["frob work --reclaim uses reclaim_plan to take over an evicted claim", "holder-return refresh wired via holder_return", "frob claim restore verb exists and is documented"]
+reason = "scope"
+moved = []
+at = "2026-11-12T15:31:35Z"
+actor = "lognd"
+rev = 1
