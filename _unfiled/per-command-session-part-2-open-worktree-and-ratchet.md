@@ -2,7 +2,8 @@
 id = "01M56M6YM7DZTNXT65BP75ES1Y"
 title = "Per-command Session part 2: open worktree and ratchet checkout once in frob-check/gob-git, share a Session across frob CLI verbs, one Workspace type (audit M14)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
