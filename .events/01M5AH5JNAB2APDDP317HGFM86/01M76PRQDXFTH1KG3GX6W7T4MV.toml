@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-12T01:43:13Z"
+digest = "823c14f1de5beed6f715f9397c9f7ef9c2e8a45c5942882fb556d5d16c2322e3"
+head = "cc5c365112b15dd65a82fba7666b477d2ba4134e"
+provider = "file"
+ref = "crates/crunk-gallery/tests/it/gallery.rs"
+size = 7236
+status = "measured"
+at = "2026-11-12T01:43:13Z"
+actor = "lognd"
+rev = 1
