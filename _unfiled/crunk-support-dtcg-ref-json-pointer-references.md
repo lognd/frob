@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T04:32:10Z"
-updated = "2026-11-12T07:41:23Z"
+updated = "2026-11-12T07:42:31Z"
 labels = ["no-story"]
 scope = ["crates/crunk-tokens/**", "changelog.d/01M5GY2ZEA492MTNPXVHEV60AY.*"]
 
