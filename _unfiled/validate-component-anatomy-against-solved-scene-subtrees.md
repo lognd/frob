@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-10-28T12:55:40Z"
+updated = "2026-11-12T10:02:39Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
+
+[[acceptance]]
+text = "Given a component spec with anatomy nodes and a solved scene subtree for that component, when the anatomy rule runs, then each anatomy node is checked against the subtree and a node absent from it is reported"
+bound = false
 +++
 
 Cut from ~D6TTN3F: anatomy nodes are checked only against the spec list, not a scene subtree.
