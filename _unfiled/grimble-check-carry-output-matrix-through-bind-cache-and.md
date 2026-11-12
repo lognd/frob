@@ -4,9 +4,10 @@ title = "grimble-check: carry Output.matrix through bind_cache and show full cap
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-06T15:59:12Z"
-updated = "2026-11-06T15:59:12Z"
+updated = "2026-11-12T12:29:46Z"
 scope = ["crates/grimble-check/src/**"]
 +++
 
