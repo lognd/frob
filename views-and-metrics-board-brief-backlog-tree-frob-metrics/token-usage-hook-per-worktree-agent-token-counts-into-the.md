@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-06T13:39:53Z"
 updated = "2026-11-12T03:26:41Z"
 labels = ["no-story"]
-scope = ["crates/frob-metrics/**", "docs/**", "crates/frob/src/stats_cmd.rs"]
+scope = ["crates/frob-metrics/**", "docs/**", "crates/frob/src/stats_cmd.rs", "crates/frob/src/forecast_view.rs"]
 
 [[links]]
 kind = "blocked-by"
