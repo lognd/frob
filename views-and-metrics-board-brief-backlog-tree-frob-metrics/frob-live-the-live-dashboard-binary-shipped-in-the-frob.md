@@ -26,7 +26,7 @@ bound = true
 
 [[acceptance]]
 text = "the wheel and archives contain frob-live and the smoke test runs it with --help"
-bound = false
+bound = true
 +++
 
 New crate crates/frob-live (ratatui, notify): redraws the frob-pm Board and frob-metrics stats values, refreshing on ledger, worktree and file changes (debounced) and on a timer for time windows, like clocx --live. frob execs the sibling binary found next to itself (sibling discovery, D87) for --live; frob links no TUI. The wheel and release archives ship frob-live beside frob, grimble and crunk.

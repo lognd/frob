@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-12T04:17:51Z"
+digest = "70db1bcff4b88c552d2a636f9f30eeae446062c58c6faf7be3190d225f836bf2"
+head = "b2b32946818419d922f5f56c8bd6877a55d3b455"
+provider = "file"
+ref = "packaging/smoke/archive-smoke.sh"
+size = 3184
+status = "measured"
+at = "2026-11-12T04:17:51Z"
+actor = "lognd"
+rev = 1
