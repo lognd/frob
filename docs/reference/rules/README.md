@@ -114,6 +114,7 @@
 | [CONTENT001](CONTENT001.md) | content-literal-copy | error | manual | P+ | true | Copy lives in content keys, not in the scene markup. |
 | [CONTENT002](CONTENT002.md) | content-over-budget | error | manual | P+ | true | A copy key stays inside its length budget. |
 | [CONTENT003](CONTENT003.md) | content-key-undefined | error | manual | P+ | true | Every copy key a scene references is defined. |
+| [CONTENT004](CONTENT004.md) | content-key-duplicate | error | manual | P+ | true | Every content key is defined in exactly one file. |
 
 ## CONTRAST
 

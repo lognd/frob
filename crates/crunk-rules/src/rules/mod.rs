@@ -35,6 +35,8 @@ pub mod content001;
 pub mod content002;
 /// Rule `CONTENT003`.
 pub mod content003;
+/// Rule `CONTENT004`.
+pub mod content004;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
 /// Rule `CRAFT001`.
@@ -218,6 +220,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <content001::Content001 as gob_rules::RuleDecl>::DEF,
     <content002::Content002 as gob_rules::RuleDecl>::DEF,
     <content003::Content003 as gob_rules::RuleDecl>::DEF,
+    <content004::Content004 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
     <craft001::Craft001 as gob_rules::RuleDecl>::DEF,
     <craft002::Craft002 as gob_rules::RuleDecl>::DEF,
@@ -333,6 +336,7 @@ where
     content001::Content001: gob_rules::Measured<P>,
     content002::Content002: gob_rules::Measured<P>,
     content003::Content003: gob_rules::Measured<P>,
+    content004::Content004: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
     craft001::Craft001: gob_rules::RepoRule<P>,
     craft002::Craft002: gob_rules::RepoRule<P>,
@@ -433,6 +437,7 @@ where
     rules.push(gob_rules::BoundRule::measured(content001::Content001));
     rules.push(gob_rules::BoundRule::measured(content002::Content002));
     rules.push(gob_rules::BoundRule::measured(content003::Content003));
+    rules.push(gob_rules::BoundRule::measured(content004::Content004));
     rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
     rules.push(gob_rules::BoundRule::repo(craft001::Craft001));
     rules.push(gob_rules::BoundRule::repo(craft002::Craft002));
