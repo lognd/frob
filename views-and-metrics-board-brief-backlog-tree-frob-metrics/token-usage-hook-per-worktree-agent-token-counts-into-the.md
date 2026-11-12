@@ -22,7 +22,7 @@ bound = true
 
 [[acceptance]]
 text = "stats reports tokens per point when present and says absent otherwise"
-bound = false
+bound = true
 +++
 
 A documented Claude Code hook (PostToolUse/Stop) that appends token usage per session to the worktree's .frob activity journal, so cost per point can use tokens as well as wall-clock; frob never reads harness transcripts itself. Privacy: counts only, no content.
