@@ -2,7 +2,7 @@
 """Map changed paths (one per line on stdin) to the CI job sets that must run.
 
 The mapping is data: crates/gob-dev/changes.toml (the same file `cargo dev changes` embeds, so
-this script and the Rust tool cannot disagree; crates/gob-dev/tests/it/ci_plan.rs checks they agree).
+this script and the Rust tool cannot disagree; crates/gob-dev/tests/ci_plan.rs checks they agree).
 Prints `key=value` lines for $GITHUB_OUTPUT: rust, full, crunk, node, workflows, docs_only.
 
 - rust: some file outside the docs class changed (any Rust job can be affected).
