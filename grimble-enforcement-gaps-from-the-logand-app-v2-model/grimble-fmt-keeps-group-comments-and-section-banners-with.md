@@ -8,9 +8,9 @@ points = 2
 parent = "01M4FGWBHH3K9F2PPFYRGQ353T"
 reporter = "lognd"
 created = "2026-10-09T05:08:03Z"
-updated = "2026-10-09T05:08:03Z"
+updated = "2026-11-12T19:51:31Z"
 idempotency_key = "logand-gaps-E2"
-labels = ["adoption:logand-app", "grimble"]
+labels = ["adoption:logand-app", "grimble", "no-story"]
 scope = ["crates/grimble-model/**", "docs/design/grmb-spec.md", "changelog.d/**"]
 
 [[acceptance]]
