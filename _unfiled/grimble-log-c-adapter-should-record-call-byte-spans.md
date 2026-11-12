@@ -4,9 +4,10 @@ title = "Grimble LOG: C# adapter should record call byte spans"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-09T12:11:11Z"
-updated = "2026-11-09T12:11:11Z"
+updated = "2026-11-12T12:29:46Z"
 scope = ["crates/gob-symbols/src/csharp.rs"]
 +++
 
