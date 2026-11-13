@@ -17,9 +17,9 @@ pub const MANIFEST_PATH: &str = "gallery/manifest.json";
 /// reports it as unresolved rather than as every cell missing.
 pub fn gather(root: &Path, spec: &DesignSpec) -> Option<RenderLedger> {
     let path = root.join(MANIFEST_PATH);
-    let text = match std::fs::read(&path) {
-        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+    let text = match gob_fs::read_optional(&path) {
+        Ok(Some(text)) => text,
+        Ok(None) => {
             tracing::info!(path = %path.display(), "render ledger: no gallery manifest; STATE004 does not apply");
             return None;
         }
