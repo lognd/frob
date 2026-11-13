@@ -2,7 +2,8 @@
 id = "01M78RWCD8SY69H44WENCV14W4"
 title = "CAP: collapse empty-callee computed use into one unresolved finding instead of reaching every vocab atom"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
