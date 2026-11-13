@@ -8,13 +8,13 @@ points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-11-13T17:17:40Z"
-updated = "2026-11-13T17:19:01Z"
+updated = "2026-11-13T17:28:50Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/pretty.rs", "crates/frob/src/**"]
 
 [[acceptance]]
 text = "given a TTY with TERM=xterm, when each verb family (ticket, lease, cycle, release, milestone, rule, check, land, work, test) runs with --text, then ids, status words and headings carry ANSI styling via pretty::Theme, and one test per family asserts it"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "given NO_COLOR, TERM=dumb or a pipe, then output stays byte-identical to the plain rows"
