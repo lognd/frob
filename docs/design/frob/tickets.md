@@ -749,8 +749,10 @@ passing record or an attestation, latest per provider, reference and
 criterion, through the moved maps); a story, bug or security ticket with no criteria at all is
 refused (`E-DONE-NO-CRITERIA`, ~H1NWDN9, D92: with nothing to bind the requirement would pass
 vacuously; always on, checked before `done_requires`, and not excused by the evidence bypass, so
-it is refused on its own close or land, never on a later one), while chore, docs, epic and every
-other type may close with none, since there is nothing to state as given/when/then and a forced
+it is refused on its own close or land, never on a later one; ~SEWGFDJ widened this from story, bug
+and security to every type that claims a change, task, invariant and incident included, and added the
+explicit waiver of a `no-criteria` ticket label, recorded in the ledger), while chore, docs, epic and
+custom types may close with none, since there is nothing to state as given/when/then and a forced
 criterion would be ceremonial (an exempt ticket without criteria closes with a warning);
 `--no-evidence --reason` bypasses this requirement only and records
 the `evidence-bypass` event. `no_open_children`: every child is done.
@@ -1859,7 +1861,7 @@ Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and in
 
 ### D92
 
-Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's "passes with a warning"): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
+Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's "passes with a warning"; widened to task, invariant and incident with a `no-criteria` label waiver by ~SEWGFDJ): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
 
 ### D99
 

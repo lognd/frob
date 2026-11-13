@@ -75,7 +75,16 @@ impl Repo {
 
     /// A ticket with `scope`, leased to `actor`.
     fn leased(&self, actor: &str, scope: &str) -> (String, frob_ledger::TicketId) {
-        let id = self.ok(&["ticket", "new", "--title", "t", "--scope", scope])["data"]["id"]
+        let id = self.ok(&[
+            "ticket",
+            "new",
+            "--title",
+            "t",
+            "--scope",
+            scope,
+            "--label",
+            "no-criteria",
+        ])["data"]["id"]
             .as_str()
             .expect("id")
             .to_owned();

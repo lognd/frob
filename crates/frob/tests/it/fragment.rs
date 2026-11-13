@@ -76,7 +76,16 @@ fn ok(dir: &Path, args: &[&str]) -> Value {
 fn ticket(dir: &Path, ty: &str) -> (String, String) {
     let v = ok(
         dir,
-        &["ticket", "new", "--title", "Teach the widget", "--type", ty],
+        &[
+            "ticket",
+            "new",
+            "--title",
+            "Teach the widget",
+            "--type",
+            ty,
+            "--label",
+            "no-criteria",
+        ],
     );
     let d = &v["data"];
     (

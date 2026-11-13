@@ -201,6 +201,10 @@ impl Fixture {
         let mut req = NewTicket::new(title, ty);
         req.scope = scope.iter().map(|s| (*s).to_owned()).collect();
         req.acceptance = acceptance.iter().map(|s| (*s).to_owned()).collect();
+        if ty == TicketType::Task && acceptance.is_empty() {
+            // Task fixtures that are not about criteria waive the zero-criteria refusal explicitly (~SEWGFDJ).
+            req.labels = vec!["no-criteria".to_owned()];
+        }
         let created = ledger.new_ticket(req).expect("new");
         let id = created.ticket.front.id;
         let ws = Workspace {
@@ -1021,7 +1025,7 @@ fn the_close_guards_refuse_before_the_base_is_merged_or_checked() {
 // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
 // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
 #[test]
-fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands() {
+fn a_story_without_criteria_refuses_its_own_land_and_a_chore_without_still_lands() {
     if !git_available() {
         return;
     }
@@ -1042,7 +1046,7 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
     assert!(r.message.contains("story"), "{}", r.message);
     assert_eq!(fx.main_tip(), before, "base did not move");
 
-    let t = fx.start_typed("Add i", TicketType::Task, &["lib/**"], &[]);
+    let t = fx.start_typed("Add i", TicketType::Chore, &["lib/**"], &[]);
     Fixture::commit_in(&t.wt, "lib/i.rs", "fn i() {}\n");
     Fixture::evidence(&t, "lib/i.rs");
     land(
@@ -1050,7 +1054,7 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
         &Fixture::opts(&t),
         &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
     )
-    .expect("task is exempt");
+    .expect("chore is exempt");
 }
 
 #[test]
