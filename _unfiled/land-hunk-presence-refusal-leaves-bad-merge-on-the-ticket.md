@@ -4,9 +4,10 @@ title = "land: hunk-presence refusal leaves bad merge on the ticket branch; retr
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:13:13Z"
-updated = "2026-11-13T16:13:13Z"
+updated = "2026-11-13T16:41:26Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
