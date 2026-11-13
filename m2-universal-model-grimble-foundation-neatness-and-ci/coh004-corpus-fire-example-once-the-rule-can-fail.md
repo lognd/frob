@@ -2,7 +2,8 @@
 id = "01M6RHBVHQBW025N2RNM6ZVE60"
 title = "COH004 corpus: fire example once the rule can fail"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
