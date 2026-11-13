@@ -253,6 +253,46 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
     assert_eq!(ids, ["DUP004", "DUP005", "VIS001"]);
 }
 
+/// A Rust repository with no `pub` free function left to judge makes `VIS001` not applicable.
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn a_rust_repository_without_pub_free_functions_makes_vis001_not_applicable() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "Cargo.toml",
+        "[package]\nname = \"solo\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    );
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "fn helper() {}\n\nfn other() {\n    helper();\n}\n",
+    );
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(dir.path(), &walked.files);
+    let graph = grimble_bind::edges::build_graph(dir.path(), &code);
+    let mut deps = CrateDeps::new(dir.path());
+    let crates: BTreeMap<String, String> = walked
+        .files
+        .iter()
+        .filter_map(|f| deps.crate_of(&f.path).map(|c| (f.path.clone(), c)))
+        .collect();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 0,
+        dup_min_tokens: 50,
+        dup_min_occurrences: 3,
+        read: &read,
+        dup_index: None,
+        changed: &BTreeSet::new(),
+        dup_scan: false,
+        is_engine_entry: &|_| false,
+    });
+    assert!(report.not_applicable.contains_key("VIS001"));
+}
+
 /// The findings of `rule` over the repository at `root`.
 fn of_rule(root: &Path, rule: &str) -> Vec<Verdict> {
     run(root, 0)
