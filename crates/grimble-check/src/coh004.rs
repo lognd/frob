@@ -46,17 +46,18 @@ impl Default for Coh004Options {
 impl From<&CohTable> for Coh004Options {
     /// The knobs of a loaded `[coh]` table: the cluster floor and extra stop words on the built-ins.
     fn from(table: &CohTable) -> Self {
-        let mut opts = Self {
-            min_cluster_words: usize::try_from(table.vocab_min_cluster_words).unwrap_or(usize::MAX),
-            ..Self::default()
-        };
-        extend_unique(&mut opts.stop_words, &table.vocab_stop_words);
+        let mut stop_words = Self::default().stop_words;
+        extend_unique(&mut stop_words, &table.vocab_stop_words);
         debug!(
-            min_cluster_words = opts.min_cluster_words,
-            stop_words = opts.stop_words.len(),
+            floor = table.vocab_min_cluster_words,
+            stop_words = stop_words.len(),
             "coh004 options from [coh]"
         );
-        opts
+        Self {
+            min_cluster_words: usize::try_from(table.vocab_min_cluster_words).unwrap_or(usize::MAX),
+            stop_words,
+            ..Self::default()
+        }
     }
 }
 
