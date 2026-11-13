@@ -26,7 +26,7 @@ use crate::events::{LandEvent, land_recorded};
 use crate::git::git;
 use crate::land::{base_ref, jitter};
 use crate::plan::LandOptions;
-use crate::train_state::{MemberStatus, Phase, TrainRun, TrainStore, resume_phase};
+use crate::train_state::{Bypass, MemberStatus, Phase, TrainRun, TrainStore, resume_phase};
 
 /// Stable code of the refusal when the base moved and could not be folded in.
 const CODE_STALE: &str = "E-LAND-STALE";
@@ -44,6 +44,8 @@ pub struct CloseMember {
     pub evidence: EvidenceGuard,
     /// The done guard (criteria, changelog) for the ticket.
     pub done: DoneGuard,
+    /// The bypass options the ticket was enqueued with (outcome, reasons, base-CI override).
+    pub bypass: Bypass,
 }
 
 /// What a [`TrainCloser::close_run`] did.
@@ -73,10 +75,8 @@ pub struct TrainCloser<'a> {
     pub store: &'a TrainStore,
     /// The base branch short name.
     pub base: &'a str,
-    /// Outcome, reason, retry policy and wait budget.
+    /// Retry policy and wait budget; per-member outcome and bypasses live on each [`CloseMember`].
     pub opts: &'a LandOptions,
-    /// The base-CI override note to audit on every member, when set.
-    pub ci_override: Option<&'a str>,
 }
 
 impl TrainCloser<'_> {
@@ -425,7 +425,7 @@ impl TrainCloser<'_> {
                     pushed: false,
                 }));
             }
-            if let Some(note) = self.ci_override {
+            if let Some(note) = m.bypass.override_base_ci.as_deref() {
                 let seen = self.ledger.events(m.id)?.iter().any(|e| {
                     matches!(&e.body, EventBody::Comment(c)
                         if c.subtype == CommentSubtype::Decision && c.body == note)
@@ -444,13 +444,13 @@ impl TrainCloser<'_> {
             out.push(BatchClose {
                 id: m.id,
                 before,
-                outcome: self.opts.outcome,
-                reason: self
-                    .opts
+                outcome: m.bypass.outcome,
+                reason: m
+                    .bypass
                     .reason
                     .clone()
-                    .or_else(|| self.opts.no_evidence_reason.clone())
-                    .or_else(|| self.opts.no_changelog_reason.clone()),
+                    .or_else(|| m.bypass.no_evidence_reason.clone())
+                    .or_else(|| m.bypass.no_changelog_reason.clone()),
                 guards,
             });
         }
@@ -591,6 +591,7 @@ mod tests {
                     branch: format!("ticket/{id}"),
                     evidence: EvidenceGuard::default(),
                     done: DoneGuard::for_ticket(&self.ledger, *id, &self.root).expect("done guard"),
+                    bypass: Bypass::default(),
                 })
                 .collect()
         }
@@ -603,7 +604,6 @@ mod tests {
                 store: &self.store,
                 base: "main",
                 opts,
-                ci_override: None,
             }
         }
 
@@ -715,6 +715,36 @@ mod tests {
             "one ledger commit closes every member"
         );
         assert!(f.store.load_run().expect("load").is_none(), "state cleared");
+    }
+
+    // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
+    // frob:tests crates/frob-land/src/train_close.rs::TrainCloser.close_run
+    #[test]
+    fn queued_ticket_never_inherits_another_entrys_bypass() {
+        let f = Fix::new();
+        let ids: Vec<_> = (0..2)
+            .map(|i| f.ticket(&format!("t{i}"), TicketType::Docs))
+            .collect();
+        let cand = f.candidate();
+        let mut run = f.run(&cand, &ids);
+        let mut members = f.members(&ids);
+        members[0].bypass.override_base_ci = Some("ci is down".to_owned());
+        let opts = LandOptions::default();
+        f.closer(&opts)
+            .close_run(&mut run, &members)
+            .expect("close");
+        let noted = |id: TicketId| {
+            f.ledger
+                .events(id)
+                .expect("events")
+                .iter()
+                .any(|e| matches!(&e.body, EventBody::Comment(c) if c.body == "ci is down"))
+        };
+        assert!(noted(ids[0]), "the overriding entry is audited");
+        assert!(
+            !noted(ids[1]),
+            "the other entry never inherits the override"
+        );
     }
 
     // frob:ticket 01M4Z1N93S11HX3DGGKBJF5WGP

@@ -19,11 +19,13 @@ use gob_path::Shown;
 use std::path::{Path, PathBuf};
 
 use frob_ledger::TicketId;
+use frob_ledger::model::Outcome;
 use gob_time::{Clock, SystemClock};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::error::LandError;
+use crate::plan::LandOptions;
 use crate::ratchet::FindingNote;
 use gob_exec::pid_alive;
 
@@ -187,6 +189,58 @@ pub fn resume_phase(run: &TrainRun, candidate_in_base: bool) -> Phase {
     resumed
 }
 
+/// The bypass options one ticket was enqueued with; the driver lands the ticket with these, never its own.
+// frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Bypass {
+    /// Close without measured evidence, saying why (`--no-evidence --reason`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub no_evidence_reason: Option<String>,
+    /// Close without a changelog fragment, saying why (`--no-changelog --reason`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub no_changelog_reason: Option<String>,
+    /// Why the ticket is closed with a non-done outcome.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// The outcome the ticket is closed with.
+    pub outcome: Outcome,
+    /// Land despite a red or unreadable base CI, saying why (`--override-base-ci --reason`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub override_base_ci: Option<String>,
+}
+
+impl Bypass {
+    /// The bypass options carried by `opts`.
+    pub fn of(opts: &LandOptions) -> Self {
+        Self {
+            no_evidence_reason: opts.no_evidence_reason.clone(),
+            no_changelog_reason: opts.no_changelog_reason.clone(),
+            reason: opts.reason.clone(),
+            outcome: opts.outcome,
+            override_base_ci: opts.override_base_ci.clone(),
+        }
+    }
+
+    /// `opts` with its bypass options replaced by these.
+    pub fn apply(&self, opts: &LandOptions) -> LandOptions {
+        LandOptions {
+            no_evidence_reason: self.no_evidence_reason.clone(),
+            no_changelog_reason: self.no_changelog_reason.clone(),
+            reason: self.reason.clone(),
+            outcome: self.outcome,
+            override_base_ci: self.override_base_ci.clone(),
+            ..opts.clone()
+        }
+    }
+}
+
+impl Default for Bypass {
+    /// No bypass: close as done with every guard enforced.
+    fn default() -> Self {
+        Self::of(&LandOptions::default())
+    }
+}
+
 /// One enqueued ticket waiting for a train.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct QueueEntry {
@@ -207,6 +261,9 @@ pub struct QueueEntry {
     /// entries written before this field existed, which the driver runs itself).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rules: Option<Vec<FindingNote>>,
+    /// The bypass options of the enqueuing `land`; entries written before this field existed land with none.
+    #[serde(default)]
+    pub bypass: Bypass,
 }
 
 /// What became of one ticket, for its enqueuer.
@@ -685,6 +742,40 @@ mod tests {
         assert_eq!(resume_phase(&r, false), Phase::Building);
     }
 
+    // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
+    // frob:tests crates/frob-land/src/train_state.rs::Bypass.apply
+    #[test]
+    fn bypass_replaces_the_drivers_options_and_survives_the_queue() {
+        let driver = LandOptions {
+            no_evidence_reason: Some("driver".into()),
+            override_base_ci: Some("driver".into()),
+            wait_secs: 7,
+            ..LandOptions::default()
+        };
+        let applied = Bypass::default().apply(&driver);
+        assert_eq!(applied.no_evidence_reason, None);
+        assert_eq!(applied.override_base_ci, None);
+        assert_eq!(applied.wait_secs, 7, "non-bypass options stay the driver's");
+        let dir = tempfile::tempdir().unwrap();
+        let store = TrainStore::new(dir.path());
+        let own = Bypass {
+            no_changelog_reason: Some("mine".into()),
+            ..Bypass::default()
+        };
+        let entry = QueueEntry {
+            schema_version: SCHEMA_VERSION,
+            id: TicketId::mint(),
+            enqueued_at: 1,
+            actor: "a".into(),
+            worktree: "/w".into(),
+            head_oid: "d".repeat(40),
+            rules: None,
+            bypass: own.clone(),
+        };
+        store.enqueue(&entry).unwrap();
+        assert_eq!(store.queue().unwrap()[0].bypass, own);
+    }
+
     // frob:tests crates/frob-land/src/train_state.rs::TrainStore.enqueue
     #[test]
     fn queue_entries_are_independent_files_and_results_prune() {
@@ -698,6 +789,7 @@ mod tests {
             worktree: "/w".into(),
             head_oid: "d".repeat(40),
             rules: None,
+            bypass: Bypass::default(),
         };
         let (b, a) = (mk(20), mk(10));
         store.enqueue(&b).unwrap();

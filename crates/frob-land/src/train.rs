@@ -43,8 +43,8 @@ use crate::ratchet::{self, FindingNote};
 use crate::train_check::{CandidateChecker, GitBackend, MemberInfo, run_member_rules};
 use crate::train_close::{CloseMember, TrainCloser};
 use crate::train_state::{
-    BatchSize, Member, MemberStatus, Phase, QueueEntry, SCHEMA_VERSION, TicketResult, TrainRun,
-    TrainStore, resume_phase,
+    BatchSize, Bypass, Member, MemberStatus, Phase, QueueEntry, SCHEMA_VERSION, TicketResult,
+    TrainRun, TrainStore, resume_phase,
 };
 
 /// Finished results kept for waiting enqueuers.
@@ -326,11 +326,12 @@ impl<'a> Driver<'a> {
 
     /// Load one queued ticket for a round.
     fn load(&self, entry: &QueueEntry) -> Result<Result<Chosen, Unfit>, LandError> {
+        // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
         let lo = LandOptions {
             handle: Some(entry.id.to_string()),
             dry_run: false,
             ci_reader: Some(self.ci.clone()),
-            ..self.opts.land.clone()
+            ..entry.bypass.apply(&self.opts.land)
         };
         let begun = match begin(Path::new(&entry.worktree), &lo, self.clock) {
             Ok(b) => b,
@@ -622,6 +623,7 @@ impl<'a> Driver<'a> {
                 branch: c.pre.branch.clone(),
                 evidence: c.pre.evidence.clone(),
                 done: c.pre.done.clone(),
+                bypass: c.entry.bypass.clone(),
             })
             .collect();
         let closer = TrainCloser {
@@ -631,7 +633,6 @@ impl<'a> Driver<'a> {
             store: &self.site.store,
             base: &self.site.base,
             opts: &self.opts.land,
-            ci_override: self.opts.land.override_base_ci.as_deref(),
         };
         let done = closer.close_run(run, &members)?;
         for id in &done.landed {
@@ -1132,6 +1133,7 @@ pub fn enqueue(
         worktree: Shown::of(&pre.wt_path).to_string(),
         head_oid: head.to_string(),
         rules: Some(rules),
+        bypass: Bypass::of(opts),
     })?;
     mark_queued(&pre.primary, clock, id, true);
     clear_result_labels(&pre.site.ledger, id);
