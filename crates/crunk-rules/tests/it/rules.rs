@@ -620,3 +620,16 @@ fn renders_host_accessor_reports_the_ledger_only_for_render_cases() {
             .is_some_and(|l| l.has("home", "default", "desk"))
     );
 }
+
+// frob:ticket 01M5EF4A9VM42NW2805KJJ86Q4
+// frob:tests crates/crunk-rules/src/render_ledger.rs::ledger_inapplicable
+#[test]
+fn ledger_inapplicable_reports_a_missing_ledger_only() {
+    let plain = support::project("css/a.css", "a { color: red; }", None);
+    assert_eq!(
+        crunk_rules::render_ledger::ledger_inapplicable(&plain).as_deref(),
+        Some("no render ledger was gathered")
+    );
+    let rendered = support::project("css/a.css", "a { color: red; }", Some("render-complete"));
+    assert!(crunk_rules::render_ledger::ledger_inapplicable(&rendered).is_none());
+}
