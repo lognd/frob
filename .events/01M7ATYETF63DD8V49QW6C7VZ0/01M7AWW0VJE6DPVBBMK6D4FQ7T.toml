@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T16:46:50Z"
+digest = "7b90282c175fbd9acf64e3bdfd6f25586f8553a539d57252b7f92688725247f8"
+head = "e23e5b4b5aabc2595772815f9a45cc4c7e44eb5c"
+provider = "file"
+ref = "changelog.d/01M7ATYETF63DD8V49QW6C7VZ0.fixed.md"
+size = 185
+status = "measured"
+at = "2026-11-13T16:46:50Z"
+actor = "lognd"
+rev = 1
