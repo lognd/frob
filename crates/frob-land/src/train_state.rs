@@ -745,7 +745,7 @@ mod tests {
     // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
     // frob:tests crates/frob-land/src/train_state.rs::Bypass.apply
     #[test]
-    fn bypass_replaces_the_drivers_options_and_survives_the_queue() {
+    fn bypass_replaces_the_drivers_options() {
         let driver = LandOptions {
             no_evidence_reason: Some("driver".into()),
             override_base_ci: Some("driver".into()),
@@ -756,6 +756,12 @@ mod tests {
         assert_eq!(applied.no_evidence_reason, None);
         assert_eq!(applied.override_base_ci, None);
         assert_eq!(applied.wait_secs, 7, "non-bypass options stay the driver's");
+    }
+
+    // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
+    // frob:tests crates/frob-land/src/train_state.rs::TrainStore.enqueue
+    #[test]
+    fn bypass_survives_the_queue_round_trip() {
         let dir = tempfile::tempdir().unwrap();
         let store = TrainStore::new(dir.path());
         let own = Bypass {

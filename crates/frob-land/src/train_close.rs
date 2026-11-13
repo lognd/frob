@@ -720,7 +720,7 @@ mod tests {
     // frob:ticket 01M7ATYF0JJPY1SV1VP0BGSKE1
     // frob:tests crates/frob-land/src/train_close.rs::TrainCloser.close_run
     #[test]
-    fn queued_ticket_never_inherits_another_entrys_bypass() {
+    fn queued_ticket_never_inherits_another_entries_bypass() {
         let f = Fix::new();
         let ids: Vec<_> = (0..2)
             .map(|i| f.ticket(&format!("t{i}"), TicketType::Docs))
