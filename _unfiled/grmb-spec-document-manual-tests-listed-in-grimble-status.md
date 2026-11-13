@@ -7,7 +7,18 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T13:50:12Z"
-updated = "2026-11-13T05:48:29Z"
+updated = "2026-11-13T06:52:22Z"
 idempotency_key = "grmb-status-manual"
 labels = ["good-first"]
+scope = ["docs/**"]
+
+[[acceptance]]
+text = "Each manual test listed by grimble status is documented with how to run it."
+bound = false
 +++
+
+Document the manual tests that grimble status lists.
+
+## Start here
+
+Read crates/grimble-cli status output and docs/grimble, then add a short docs page listing each manual test and how to run it.

@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Each manual test listed by grimble status is documented with how to run it."]
+reason = "complete good-first ticket (PM031)"
+moved = []
+at = "2026-11-13T06:52:22Z"
+actor = "lognd"
+rev = 1

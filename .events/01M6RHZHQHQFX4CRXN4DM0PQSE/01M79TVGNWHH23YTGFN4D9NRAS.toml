@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+new = ["docs/**"]
+reason = "complete good-first ticket (PM031)"
+at = "2026-11-13T06:52:22Z"
+actor = "lognd"
+rev = 1
