@@ -120,7 +120,8 @@
     "tokens_file": "",
     "namespace_keys": false,
     "alpha_channels": false,
-    "version": "auto"
+    "version": "auto",
+    "engine": "node"
   },
   "breakpoints": {
     "points": {
