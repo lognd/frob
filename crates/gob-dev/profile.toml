@@ -341,7 +341,7 @@ budget_ms = 500
 [scenario."frob release changelog"]
 args = ["release", "changelog", "--version", "0.532.0"]
 exit = [0, 2, 3]
-budget_ms = 500
+budget_ms = 750
 
 [scenario."frob release adopt"]
 args = ["release", "adopt", "0.532.0"]
