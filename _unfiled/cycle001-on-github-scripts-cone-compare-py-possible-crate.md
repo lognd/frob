@@ -4,8 +4,9 @@ title = "CYCLE001 on .github/scripts/cone-compare.py: possible crate import cycl
 type = "chore"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-13T19:16:38Z"
-updated = "2026-11-13T19:16:38Z"
+updated = "2026-11-13T21:34:13Z"
 idempotency_key = "cycle001-cone-compare"
 +++
