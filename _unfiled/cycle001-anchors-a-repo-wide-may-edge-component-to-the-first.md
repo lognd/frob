@@ -2,7 +2,8 @@
 id = "01M7BJPF2BB15JWV88XXFEA9MD"
 title = "CYCLE001 anchors a repo-wide May-edge component to the first file and cannot be waived"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
