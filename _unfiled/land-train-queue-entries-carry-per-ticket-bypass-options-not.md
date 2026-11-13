@@ -2,7 +2,8 @@
 id = "01M7ATYF0JJPY1SV1VP0BGSKE1"
 title = "land train: queue entries carry per-ticket bypass options, not the driver's"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
