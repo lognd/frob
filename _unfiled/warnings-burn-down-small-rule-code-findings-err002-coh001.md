@@ -2,12 +2,12 @@
 id = "01M7AYFA9AE50AM4617VSX6B8Q"
 title = "warnings: burn down small-rule code findings (ERR002 COH001 LOG001 VIS001 REL003 RES001 FMT001 CYCLE001)"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T17:14:51Z"
+updated = "2026-11-13T18:42:20Z"
 labels = ["no-story"]
 scope = ["crates/**"]
 
