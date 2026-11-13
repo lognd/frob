@@ -590,6 +590,7 @@ name = "crunk-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "crunk-gallery",
  "crunk-ingest",
  "crunk-rules",
  "crunk-spec",

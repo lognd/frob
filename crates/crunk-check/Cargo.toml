@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
+crunk-gallery = { version = "0.532.0", path = "../crunk-gallery" }
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-rules = { version = "0.532.0", path = "../crunk-rules" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
