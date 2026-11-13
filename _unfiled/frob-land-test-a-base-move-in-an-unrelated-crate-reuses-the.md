@@ -2,12 +2,12 @@
 id = "01M7BBZ1HGMWFJ3ZGEWXF2C1DD"
 title = "frob-land test a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land fails on base"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T21:10:38Z"
-updated = "2026-11-13T21:10:38Z"
+updated = "2026-11-13T23:01:36Z"
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
