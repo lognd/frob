@@ -1,6 +1,7 @@
 //! CYCLE001: import cycles between crates (or files outside any crate).
 
 // frob:ticket 01M3Z7141TW2H3HXJRK1QBHP7T
+// frob:ticket 01M7BJPF2BB15JWV88XXFEA9MD
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -112,35 +113,55 @@ pub(crate) fn check(
     for (name, &i) in &ids {
         names[i].clone_from(name);
     }
-    let mut strict: Adj = vec![BTreeSet::new(); names.len()];
-    for &(a, b) in &must {
-        strict[a].insert(b);
-    }
-    let mut loose = strict.clone();
-    for &(a, b) in &may {
-        loose[a].insert(b);
-    }
-    let sure = cycles(&strict);
-    let mut findings = Vec::new();
-    for comp in &sure {
-        findings.push(report(comp, &names, &first_file, None));
-    }
-    for comp in cycles(&loose) {
-        if !sure.contains(&comp) {
-            findings.push(report(
-                &comp,
-                &names,
-                &first_file,
-                Some(UnresolvedReason::EdgeMay),
-            ));
-        }
-    }
+    let findings = findings_of(&names, &first_file, &must, &may);
     tracing::debug!(
         nodes = names.len(),
         cycles = findings.len(),
         "CYCLE001 evaluated"
     );
     (findings, names.len())
+}
+
+/// The unnamed root node (files outside any crate): never part of a May-only cycle.
+fn is_root(names: &[String], node: usize) -> bool {
+    names[node].is_empty()
+}
+
+/// Cycle findings over interned `must` and `may` edges; May edges touching the root node are ignored.
+fn findings_of(
+    names: &[String],
+    first_file: &[String],
+    must: &[(usize, usize)],
+    may: &[(usize, usize)],
+) -> Vec<Verdict> {
+    let mut strict: Adj = vec![BTreeSet::new(); names.len()];
+    for &(a, b) in must {
+        strict[a].insert(b);
+    }
+    let mut loose = strict.clone();
+    for &(a, b) in may {
+        if is_root(names, a) || is_root(names, b) {
+            tracing::debug!(from = %names[a], to = %names[b], "CYCLE001 skips May edge at the root node");
+            continue;
+        }
+        loose[a].insert(b);
+    }
+    let sure = cycles(&strict);
+    let mut findings = Vec::new();
+    for comp in &sure {
+        findings.push(report(comp, names, first_file, None));
+    }
+    for comp in cycles(&loose) {
+        if !sure.contains(&comp) {
+            findings.push(report(
+                &comp,
+                names,
+                first_file,
+                Some(UnresolvedReason::EdgeMay),
+            ));
+        }
+    }
+    findings
 }
 
 /// One cycle finding naming every member.
@@ -176,5 +197,44 @@ fn report(
             ),
             anchor,
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn names(v: &[&str]) -> Vec<String> {
+        v.iter().map(|s| (*s).to_owned()).collect()
+    }
+
+    fn files(n: usize) -> Vec<String> {
+        (0..n).map(|i| format!("f{i}.rs")).collect()
+    }
+
+    #[test]
+    fn may_cycle_through_root_is_ignored() {
+        // frob:tests crates/grimble-arch/src/cycle.rs::findings_of
+        let n = names(&["", "a", "b"]);
+        let may = [(0, 1), (1, 2), (2, 0)];
+        assert!(findings_of(&n, &files(3), &[], &may).is_empty());
+    }
+
+    #[test]
+    fn may_cycle_between_crates_is_unresolved() {
+        // frob:tests crates/grimble-arch/src/cycle.rs::findings_of
+        let n = names(&["", "a", "b"]);
+        let may = [(1, 2), (2, 1), (0, 1)];
+        let found = findings_of(&n, &files(3), &[], &may);
+        assert_eq!(found.len(), 1);
+    }
+
+    #[test]
+    fn must_cycle_between_crates_is_reported() {
+        // frob:tests crates/grimble-arch/src/cycle.rs::findings_of
+        let n = names(&["", "a", "b"]);
+        let must = [(1, 2), (2, 1)];
+        let found = findings_of(&n, &files(3), &must, &[(0, 1)]);
+        assert_eq!(found.len(), 1);
     }
 }
