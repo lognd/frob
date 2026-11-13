@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
 updated = "2026-11-13T17:02:16Z"
 labels = ["no-story"]
-scope = ["crates/frob-ledger/**", "crates/frob-evidence/**"]
+scope = ["crates/frob-ledger/**", "crates/frob-evidence/**", "crates/frob/tests/**"]
 
 [[acceptance]]
 text = "Closing done with no acceptance criteria fails unless explicitly waived."
