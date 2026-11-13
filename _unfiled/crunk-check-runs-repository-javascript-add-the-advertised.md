@@ -2,7 +2,8 @@
 id = "01M7AV37ZMX53C3NNTGFA8TB2V"
 title = "crunk check runs repository JavaScript; add the advertised static opt-out"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
