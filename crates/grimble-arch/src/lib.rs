@@ -160,6 +160,12 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
         report
             .not_applicable
             .insert(VIS, "no Rust source files in the walk".to_owned());
+    } else if candidates == 0 {
+        tracing::debug!("no pub Rust free function outside the public API; VIS001 does not apply");
+        report.not_applicable.insert(
+            VIS,
+            "no pub Rust free function outside the public API to judge".to_owned(),
+        );
     }
     report.findings.extend(findings);
     let (findings, lexed) = dup::check(
