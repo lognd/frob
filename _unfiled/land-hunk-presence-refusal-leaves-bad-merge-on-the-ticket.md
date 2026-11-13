@@ -2,12 +2,12 @@
 id = "01M7ATYETF63DD8V49QW6C7VZ0"
 title = "land: hunk-presence refusal leaves bad merge on the ticket branch; retry lands it unchecked"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:13:13Z"
-updated = "2026-11-13T16:41:26Z"
+updated = "2026-11-13T16:41:32Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
