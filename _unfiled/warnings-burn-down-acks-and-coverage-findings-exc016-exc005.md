@@ -2,7 +2,8 @@
 id = "01M7AYFADBZEDS3BQQNE0AN3EV"
 title = "warnings: burn down acks and coverage findings (EXC016 EXC005 COV001 COV004 SYS013 CAP001 AFFECT001)"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
