@@ -1,0 +1,13 @@
+kind = "field"
+field = "body"
+old = "found while working 2KNYR34: COH004 reports Unresolved only (no Advisory severity), so its page has no expect=fire example."
+new = """
+COH004 reports Unresolved only, so its page has no expect=fire example.
+
+## Start here
+
+See crates/grimble-check COH004 rule and its corpus page; add a firing example once the rule can fail."""
+reason = "complete good-first ticket (PM031)"
+at = "2026-11-13T06:52:22Z"
+actor = "lognd"
+rev = 1

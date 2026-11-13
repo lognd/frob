@@ -8,9 +8,17 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T13:39:26Z"
-updated = "2026-11-13T05:48:29Z"
+updated = "2026-11-13T06:52:22Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/grimble-check/**"]
+
+[[acceptance]]
+text = "COH004 corpus page carries an expect=fire example that passes."
+bound = false
 +++
 
-found while working 2KNYR34: COH004 reports Unresolved only (no Advisory severity), so its page has no expect=fire example.
+COH004 reports Unresolved only, so its page has no expect=fire example.
+
+## Start here
+
+See crates/grimble-check COH004 rule and its corpus page; add a firing example once the rule can fail.
