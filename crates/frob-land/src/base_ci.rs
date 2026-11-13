@@ -181,6 +181,8 @@ pub(crate) struct Gate {
     pub warnings: Vec<String>,
     /// The audit note to record on the ticket when the gate was overridden.
     pub override_note: Option<String>,
+    /// True when a counted check was red and the land went ahead anyway (override); the fix ticket is still owed.
+    pub red_overridden: bool,
 }
 
 /// True when `name` matches the case-insensitive wildcard `pattern`.
@@ -276,6 +278,7 @@ pub(crate) fn judge(
                     gate.warnings.push(format!(
                         "base CI at {short} is red but the land was overridden: {named}"
                     ));
+                    gate.red_overridden = true;
                     gate.override_note = Some(format!(
                         "land overrode a red base CI at {short} ({named}): {reason}"
                     ));
@@ -369,26 +372,22 @@ fn open_blockers(ledger: &Ledger, landing: &str) -> Vec<String> {
 }
 
 // frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
-/// Add the culprit range to a red-base refusal and file the blocking fix ticket (idempotent on the first-red sha).
+// frob:ticket ~MM9Z56N
+/// File the blocking fix ticket for a red base (idempotent on the first-red sha) and name its culprit range.
 ///
-/// Any failure to read runs, find the range or file the ticket leaves the refusal as it was.
-fn with_culprit(
-    err: LandError,
+/// Returns the ticket handle and the land commits since the last green run; any failure to read runs,
+/// find the range or file the ticket yields `None`. Independent of whether the land is overridden.
+fn file_fix_ticket(
     reader: &dyn CiReader,
     (wt, cwd, base): (&Repo, &Path, &str),
     ledger: &Ledger,
-) -> LandError {
-    let Some(refusal) = err.refusal() else {
-        return err;
-    };
-    let Some(runs) = reader.runs(wt, cwd, base) else {
-        return err;
-    };
+) -> Option<(String, String)> {
+    let runs = reader.runs(wt, cwd, base)?;
     let culprit = match find_culprit(&runs, &history(wt, cwd, base)) {
         Ok(c) => c,
         Err(e) => {
             tracing::info!(error = %e, "no culprit range named");
-            return err;
+            return None;
         }
     };
     let mut req = NewTicket::new(culprit.fix.title.clone(), TicketType::Bug);
@@ -399,11 +398,11 @@ fn with_culprit(
     let handle = match ledger.new_ticket(req) {
         Ok(applied) => {
             tracing::info!(handle = %applied.handle, already = applied.already, "fix ticket for the red base");
-            applied.handle
+            applied.handle.to_string()
         }
         Err(e) => {
             tracing::warn!(error = %e, "fix ticket not filed");
-            return err;
+            return None;
         }
     };
     let lands = culprit
@@ -412,6 +411,25 @@ fn with_culprit(
         .map(|c| format!("{} {}", &c.sha[..c.sha.len().min(9)], c.subject))
         .collect::<Vec<_>>()
         .join("; ");
+    Some((handle, lands))
+}
+
+// frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
+/// Add the culprit range to a red-base refusal after filing the blocking fix ticket.
+///
+/// Any failure to read runs, find the range or file the ticket leaves the refusal as it was.
+fn with_culprit(
+    err: LandError,
+    reader: &dyn CiReader,
+    ctx: (&Repo, &Path, &str),
+    ledger: &Ledger,
+) -> LandError {
+    let Some(refusal) = err.refusal() else {
+        return err;
+    };
+    let Some((handle, lands)) = file_fix_ticket(reader, ctx, ledger) else {
+        return err;
+    };
     let message = format!(
         "{}; land commits since the last green run: {}; fix ticket {handle} blocks lands until it closes",
         refusal.message,
@@ -481,6 +499,18 @@ pub(crate) fn gate(
     match judge(&cfg, state, &sha, override_reason) {
         Err(e) if e.refusal().is_some_and(|r| r.code == CODE_BASE_RED) => {
             Err(with_culprit(e, reader, (wt, cwd, base), ledger))
+        }
+        Ok(mut gate) if gate.red_overridden => {
+            // An override lets this land through but must not hide the red base: still file the fix ticket.
+            match file_fix_ticket(reader, (wt, cwd, base), ledger) {
+                Some((handle, _)) => {
+                    tracing::warn!(%handle, "overridden land still filed the fix ticket");
+                    gate.warnings
+                        .push(format!("fix ticket {handle} filed for the red base"));
+                }
+                None => tracing::info!("overridden land: no fix ticket filed"),
+            }
+            Ok(gate)
         }
         other => other,
     }

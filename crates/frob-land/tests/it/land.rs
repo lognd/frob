@@ -2302,6 +2302,34 @@ fn an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket() {
     );
 }
 
+// frob:ticket ~MM9Z56N
+// frob:tests crates/frob-land/src/base_ci.rs::file_fix_ticket
+#[test]
+fn an_overridden_land_on_a_red_base_still_files_the_culprit_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let red = vec![frob_release::culprit::RunRecord {
+        sha: fx.main_tip(),
+        verdict: frob_release::culprit::Verdict::Red,
+    }];
+    let ci = CannedCi::with_runs(failing("rust (linux)"), red);
+    let (_, out) = ci_land(&fx, ci, |o| {
+        o.override_base_ci = Some("hotfix for the red base".to_owned());
+    });
+    assert!(out.expect("overridden land").closed);
+    let blockers = fx
+        .ledger()
+        .list(&frob_ledger::index::ListFilter {
+            label: Some("blocks-lands".to_owned()),
+            ..Default::default()
+        })
+        .expect("list")
+        .len();
+    assert_eq!(blockers, 1, "the culprit fix ticket was filed");
+}
+
 // frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG
 // frob:tests crates/frob-land/src/base_ci.rs::gate
 #[test]
