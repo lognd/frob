@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "superseded: CYCLE001 root-node anchoring fixed by ~XFEA9MD; script has no cycle"
+at = "2026-11-13T23:53:04Z"
+actor = "lognd"
+rev = 1
