@@ -2,7 +2,8 @@
 id = "01M7AVDYTWT6TV0C7FFJ59JH0S"
 title = "land train: DSMXVR6 hunk verification makes the 12-ticket train test time out on Windows"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 points = 2
 reporter = "lognd"
