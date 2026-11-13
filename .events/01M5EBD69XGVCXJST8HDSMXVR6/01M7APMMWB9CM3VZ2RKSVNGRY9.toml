@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-13T14:57:57Z"
+digest = "4d7031355830958dd10e324600999bb46623a39f7773c3101218f4a295ea35e5"
+head = "7b7d6f70b728baf86f787be5be158aefef625491"
+provider = "file"
+ref = "crates/frob-land/src/candidate.rs"
+size = 20673
+status = "measured"
+at = "2026-11-13T14:57:57Z"
+actor = "lognd"
+rev = 1
