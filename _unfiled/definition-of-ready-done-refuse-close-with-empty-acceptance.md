@@ -2,7 +2,8 @@
 id = "01M7AV6DMGJBMR5ATRTSEWGFDJ"
 title = "Definition of Ready/Done: refuse close with empty acceptance criteria"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
