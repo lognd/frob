@@ -2,12 +2,12 @@
 id = "01M7AVDYTWT6TV0C7FFJ59JH0S"
 title = "land train: DSMXVR6 hunk verification makes the 12-ticket train test time out on Windows"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T16:21:41Z"
-updated = "2026-11-13T16:21:59Z"
+updated = "2026-11-13T16:22:04Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
