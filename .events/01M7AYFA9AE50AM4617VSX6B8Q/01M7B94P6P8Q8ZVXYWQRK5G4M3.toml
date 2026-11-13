@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T20:21:17Z"
+digest = "e719fedf13e8c3311260998de031be6111402b27f30c5d65b5e854b6b226b1f9"
+exit_code = 0
+head = "3f3d70360066dcf650a27b5801bdb6a3385abdc1"
+inline = """
+
+running 1 test
+test a_rust_repository_without_pub_free_functions_makes_vis001_not_applicable ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.03s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running tests/rules.rs (target/debug/deps/rules-40a9c6807bc1670d)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-arch --test rules without_pub_free"
+size = 342
+status = "measured"
+at = "2026-11-13T20:21:17Z"
+actor = "lognd"
+rev = 1
