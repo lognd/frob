@@ -4,9 +4,10 @@ title = "crunk T1 layout rules silently pass on token-using scenes"
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T16:15:50Z"
+updated = "2026-11-13T17:11:58Z"
 labels = ["no-story"]
 scope = ["crates/crunk-*/**"]
 
