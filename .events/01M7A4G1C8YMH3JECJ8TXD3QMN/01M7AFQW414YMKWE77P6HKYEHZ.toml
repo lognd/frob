@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a rule crate with more than 40 rules, when its index is generated, then bind is split into BindPart chunks and no too_many_lines allow is needed"]
+moved = []
+at = "2026-11-13T12:57:23Z"
+actor = "lognd"
+rev = 1
