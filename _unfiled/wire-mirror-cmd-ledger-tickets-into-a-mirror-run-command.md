@@ -2,7 +2,8 @@
 id = "01M7A32314FMETC15Y3P16PG85"
 title = "Wire mirror_cmd::ledger_tickets into a mirror run command"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
