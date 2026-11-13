@@ -2,12 +2,12 @@
 id = "01M7AV37ZMX53C3NNTGFA8TB2V"
 title = "crunk check runs repository JavaScript; add the advertised static opt-out"
 type = "security"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T17:11:58Z"
+updated = "2026-11-13T21:37:23Z"
 labels = ["no-story"]
 scope = ["crates/crunk-*/**"]
 
