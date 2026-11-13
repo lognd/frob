@@ -2,7 +2,8 @@
 id = "01M7ATYEXWQEBT3NPC65JBQCNJ"
 title = "land: branch ref mode closes the ticket before the base fast-forward; failed FF reads as already-done"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
