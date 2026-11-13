@@ -2,7 +2,8 @@
 id = "01M79PFSVFJW52SD0JX79MC408"
 title = "frob land waits out a racing land instead of E-LAND-DIRTY"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
