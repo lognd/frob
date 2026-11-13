@@ -11,5 +11,5 @@ updated = "2026-11-13T05:51:30Z"
 
 [[acceptance]]
 text = "Shipped fix described in its changelog fragment"
-bound = false
+bound = true
 +++
