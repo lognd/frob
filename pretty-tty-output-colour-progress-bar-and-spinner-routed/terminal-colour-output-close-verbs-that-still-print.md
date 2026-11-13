@@ -8,7 +8,7 @@ points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-11-13T17:17:40Z"
-updated = "2026-11-13T17:28:50Z"
+updated = "2026-11-13T17:28:52Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/pretty.rs", "crates/frob/src/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "given NO_COLOR, TERM=dumb or a pipe, then output stays byte-identical to the plain rows"
-bound = false
+bound = true
 +++
 
 Owner reports terminal colour output does not match the W1GQTPG acceptance (every verb coloured and aligned). Spot check on a pty: rule list emits styling on 1 line only. Audit each verb family on a pty, list the gaps, route them through Theme::decorate, add a test per family.
