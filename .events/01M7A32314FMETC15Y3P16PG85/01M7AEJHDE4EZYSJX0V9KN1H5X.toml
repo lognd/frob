@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob/src/mirror_cmd.rs"]
+new = ["crates/frob/src/mirror_cmd.rs", "changelog.d/01M5EKM0HMCYE834CN3J9NEK8B.added.md"]
+at = "2026-11-13T12:36:59Z"
+actor = "lognd"
+rev = 1
