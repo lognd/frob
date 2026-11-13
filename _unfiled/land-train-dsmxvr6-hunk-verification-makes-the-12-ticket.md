@@ -1,0 +1,18 @@
++++
+id = "01M7AVDYTWT6TV0C7FFJ59JH0S"
+title = "land train: DSMXVR6 hunk verification makes the 12-ticket train test time out on Windows"
+type = "bug"
+category = "todo"
+priority = "critical"
+reporter = "lognd"
+created = "2026-11-13T16:21:41Z"
+updated = "2026-11-13T16:21:41Z"
+labels = ["no-story"]
+scope = ["crates/frob-land/**"]
+
+[[acceptance]]
+text = "frob-land::it twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit passes within the 120s nextest limit on Windows CI; hunk verification stays on every member merge."
+bound = false
++++
+
+CI run on 4e9cfcc7ef: Windows nextest TIMEOUT 120s on the twelve-ticket train test; everything else passed. Suspect verify_member in candidate.rs runs a full hunk-presence verify per member merge. Make it cheap (cache the base diff, or verify once per member against the already-computed merge) without dropping the check.
