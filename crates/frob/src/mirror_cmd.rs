@@ -11,6 +11,7 @@ use frob_ledger::Ledger;
 use frob_ledger::model::{Category, LinkKind, Outcome};
 use frob_ledger::ops::TicketView;
 use frob_mirror::identity;
+use frob_mirror::ledger_source::{FactsFn, LedgerTickets};
 use frob_mirror::projection::{
     self, Classification, Criterion, EvidenceItem, Identity, IssueProjection, People, Relation,
     RelationKind, State, TicketFacts,
@@ -57,6 +58,34 @@ impl Command for MirrorRender {
         tracing::info!(ticket = %id, digest = %projection.provenance.render_digest, "mirror render");
         Ok(Payload::new(projection))
     }
+}
+
+/// The mirror host's ticket source over `ledger`: facts come from [`facts_of`], `exclude` is withheld.
+// frob:ticket 01M5EKM0HMCYE834CN3J9NEK8B
+#[expect(
+    dead_code,
+    reason = "the mirror run command that consumes the source is not wired yet"
+)]
+pub(crate) fn ledger_tickets<'a>(
+    ledger: &'a Ledger,
+    repository: String,
+    exclude: BTreeSet<String>,
+) -> LedgerTickets<'a> {
+    let facts: FactsFn<'a> = Box::new(move |l, id| {
+        let folded = l
+            .show(id)
+            .map_err(cli_err)
+            .and_then(|view| facts_of(l, &view, repository.clone()));
+        match folded {
+            Ok(f) => Some(f),
+            Err(e) => {
+                tracing::warn!(ticket = %id, error = %e, "ticket facts unfoldable");
+                None
+            }
+        }
+    });
+    tracing::debug!(excluded = exclude.len(), "ledger ticket source built");
+    LedgerTickets::new(ledger, facts, exclude, env!("CARGO_PKG_VERSION"))
 }
 
 /// Fold one ticket view and its evidence into the facts the producer projects.
