@@ -2302,7 +2302,7 @@ fn an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket() {
     );
 }
 
-// frob:ticket ~MM9Z56N
+// frob:ticket 01M7AV6DA56YMV88HFEMM9Z56N
 // frob:tests crates/frob-land/src/base_ci.rs::file_fix_ticket
 #[test]
 fn an_overridden_land_on_a_red_base_still_files_the_culprit_ticket() {

@@ -372,7 +372,7 @@ fn open_blockers(ledger: &Ledger, landing: &str) -> Vec<String> {
 }
 
 // frob:ticket 01M4GWS3GBJTFXFEGSNFB7J4FQ
-// frob:ticket ~MM9Z56N
+// frob:ticket 01M7AV6DA56YMV88HFEMM9Z56N
 /// File the blocking fix ticket for a red base (idempotent on the first-red sha) and name its culprit range.
 ///
 /// Returns the ticket handle and the land commits since the last green run; any failure to read runs,
@@ -398,7 +398,7 @@ fn file_fix_ticket(
     let handle = match ledger.new_ticket(req) {
         Ok(applied) => {
             tracing::info!(handle = %applied.handle, already = applied.already, "fix ticket for the red base");
-            applied.handle.to_string()
+            applied.handle.clone()
         }
         Err(e) => {
             tracing::warn!(error = %e, "fix ticket not filed");
@@ -502,13 +502,12 @@ pub(crate) fn gate(
         }
         Ok(mut gate) if gate.red_overridden => {
             // An override lets this land through but must not hide the red base: still file the fix ticket.
-            match file_fix_ticket(reader, (wt, cwd, base), ledger) {
-                Some((handle, _)) => {
-                    tracing::warn!(%handle, "overridden land still filed the fix ticket");
-                    gate.warnings
-                        .push(format!("fix ticket {handle} filed for the red base"));
-                }
-                None => tracing::info!("overridden land: no fix ticket filed"),
+            if let Some((handle, _)) = file_fix_ticket(reader, (wt, cwd, base), ledger) {
+                tracing::warn!(%handle, "overridden land still filed the fix ticket");
+                gate.warnings
+                    .push(format!("fix ticket {handle} filed for the red base"));
+            } else {
+                tracing::info!("overridden land: no fix ticket filed");
             }
             Ok(gate)
         }
