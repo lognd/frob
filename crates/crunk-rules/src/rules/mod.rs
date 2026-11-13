@@ -157,6 +157,8 @@ pub mod state001;
 pub mod state002;
 /// Rule `STATE003`.
 pub mod state003;
+/// Rule `STATE004`.
+pub mod state004;
 /// Rule `STATE006`.
 pub mod state006;
 /// Rule `STATE007`.
@@ -279,6 +281,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <state001::State001 as gob_rules::RuleDecl>::DEF,
     <state002::State002 as gob_rules::RuleDecl>::DEF,
     <state003::State003 as gob_rules::RuleDecl>::DEF,
+    <state004::State004 as gob_rules::RuleDecl>::DEF,
     <state006::State006 as gob_rules::RuleDecl>::DEF,
     <state007::State007 as gob_rules::RuleDecl>::DEF,
     <token002::Token002 as gob_rules::RuleDecl>::DEF,
@@ -394,6 +397,7 @@ where
     state001::State001: gob_rules::Measured<P>,
     state002::State002: gob_rules::Measured<P>,
     state003::State003: gob_rules::Measured<P>,
+    state004::State004: gob_rules::RepoRule<P>,
     state006::State006: gob_rules::Measured<P>,
     state007::State007: gob_rules::Measured<P>,
     token002::Token002: gob_rules::Measured<P>,
@@ -494,6 +498,7 @@ where
     rules.push(gob_rules::BoundRule::measured(state001::State001));
     rules.push(gob_rules::BoundRule::measured(state002::State002));
     rules.push(gob_rules::BoundRule::measured(state003::State003));
+    rules.push(gob_rules::BoundRule::repo(state004::State004));
     rules.push(gob_rules::BoundRule::measured(state006::State006));
     rules.push(gob_rules::BoundRule::measured(state007::State007));
     rules.push(gob_rules::BoundRule::measured(token002::Token002));

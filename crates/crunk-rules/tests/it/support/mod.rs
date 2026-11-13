@@ -21,6 +21,7 @@ use crunk_ingest::{ProjectStyles, ingest_tree};
 use crunk_rules::CrunkHost;
 use crunk_rules::component_files::ComponentFacts;
 use crunk_rules::content_files::ContentFacts;
+use crunk_rules::render_ledger::RenderLedger;
 use crunk_rules::review::{AckSignature, ReviewFacts, Subject, judge};
 use crunk_rules::scene_docs::SceneDocFacts;
 use crunk_rules::scene_files::SceneFacts;
@@ -41,6 +42,8 @@ pub struct Project {
     pub styles: ProjectStyles,
     pub tailwind: TailwindFacts,
     pub reviews: Option<ReviewFacts>,
+    // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+    pub renders: Option<RenderLedger>,
     pub tokens: Option<TokenFacts>,
     pub scenes: Option<SceneFacts>,
     // frob:ticket 01M5H30AMSB0THE4GW322D4K54
@@ -64,6 +67,9 @@ impl CrunkHost for Project {
     }
     fn reviews(&self) -> Option<&ReviewFacts> {
         self.reviews.as_ref()
+    }
+    fn renders(&self) -> Option<&RenderLedger> {
+        self.renders.as_ref()
     }
     fn tokens(&self) -> Option<&TokenFacts> {
         self.tokens.as_ref()
@@ -333,6 +339,9 @@ fn build(
         spec_text.push_str(&review_tables(config));
     }
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
+    if config.is_some_and(|c| c.starts_with("render-")) {
+        spec_text.push_str(RENDER_TABLES);
+    }
     if let Some(kind) = config.and_then(|c| c.strip_prefix("game-")) {
         spec_text.push_str(&game_table(kind));
     }
@@ -391,11 +400,14 @@ fn build(
     let components = Some(ComponentFacts::load(&spec));
     let tailwind = tailwind_facts(&spec, &styles, config);
     let reviews = config.and_then(|c| review_facts(&spec, c));
+    // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+    let renders = config.and_then(|c| render_ledger(&spec, c));
     Project {
         spec,
         styles,
         tailwind,
         reviews,
+        renders,
         tokens,
         scenes,
         scene_docs,
@@ -549,4 +561,29 @@ fn write_content(root: &Path, config: Option<&str>) {
             "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Welcome back\"\nmax_chars = 20\n",
         );
     }
+}
+
+// frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+/// Two platforms and the screen `home` (one state) a `config=render-*` case adds.
+const RENDER_TABLES: &str = "\n[[platform]]\nid = \"desk\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[platform]]\nid = \"phone\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[screen]]\nid = \"home\"\nentry = \"/\"\n[[screen.states]]\nid = \"default\"\n";
+
+// frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+/// The render ledger of the `render-*` case named `config`: `render-complete` renders every cell,
+/// `render-missing` leaves the `phone` cell out, `render-unreadable` could not be read.
+fn render_ledger(spec: &DesignSpec, config: &str) -> Option<RenderLedger> {
+    if !config.starts_with("render-") {
+        return None;
+    }
+    let mut ledger = RenderLedger::default();
+    if config == "render-unreadable" {
+        ledger.unreadable = Some("gallery manifest is not valid".to_owned());
+        return Some(ledger);
+    }
+    for (screen, state, platform) in spec.cell_triples() {
+        if config == "render-missing" && platform == "phone" {
+            continue;
+        }
+        ledger.record(&screen, &state, &platform);
+    }
+    Some(ledger)
 }
