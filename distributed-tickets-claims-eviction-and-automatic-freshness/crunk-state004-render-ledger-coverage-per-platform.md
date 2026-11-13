@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-11-13T09:20:16Z"
+updated = "2026-11-13T09:38:48Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "docs/design/crunk/**"]
 
 [[acceptance]]
 text = "Given a screen state without a render entry for a platform, when checked, then STATE004 fires"
