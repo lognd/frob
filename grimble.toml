@@ -58,8 +58,9 @@ exempt = ["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_
 # save*, fetch*, unlink, rename, spawn, create*, delete*, send*, append_land/line/summary,
 # open_lock/repo, run_provider/pytest/once/with/case, set_autocrlf/permissions/change*,
 # update_ref*, record_bypass/run/snapshot) are deliberately NOT listed and stay Unresolved
-# until classified one by one.
-trivial = [
+# until classified one by one. These go in callee_trivial, not trivial: trivial also drops
+# statements from COH001's job clustering, and these names are ordinary code.
+callee_trivial = [
   "SystemExit", "_deny", "_frob_version_skew", "_handle_edit", "_log_decision", "_real_run",
   "abi_version", "abnormal", "abort", "abort_with", "aborts", "about", "abs", "absolute",
   "acceptable", "ack", "acquire", "actor", "actor_node", "adapter", "add", "add_cells",
@@ -335,10 +336,10 @@ trivial = [
 ]
 # COH004 mixed-vocabularies: with the built-in floor of 2 words per cluster nearly every
 # Rust function (5.7k) split into "vocabularies" made of std/test scaffolding words
-# (assert, expect, unwrap, iter, tempdir, ...). A vocabulary now needs 4 domain words and
+# (assert, expect, unwrap, iter, tempdir, ...). A vocabulary now needs 5 domain words and
 # the scaffolding words below are dropped before clustering; this keeps the rule live for
 # functions that really mix two large domains.
-vocab_min_cluster_words = 4
+vocab_min_cluster_words = 5
 vocab_stop_words = [
   "assert", "expect", "unwrap", "iter", "map", "contains", "collect", "owned", "string", "vec",
   "default", "empty", "from", "run", "std", "with", "join", "format", "write", "into",

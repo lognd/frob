@@ -62,11 +62,17 @@ impl From<&CohTable> for Coh002Options {
         debug!(
             effect_calls = table.effect_calls.len(),
             trivial = table.trivial.len(),
+            callee_trivial = table.callee_trivial.len(),
             "COH002 options from the [coh] table"
         );
         Self {
             effect_calls: table.effect_calls.clone(),
-            trivial: table.trivial.clone(),
+            trivial: table
+                .trivial
+                .iter()
+                .chain(&table.callee_trivial)
+                .cloned()
+                .collect(),
         }
     }
 }

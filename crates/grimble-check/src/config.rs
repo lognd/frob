@@ -79,7 +79,8 @@ impl PacksTable {
 /// empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
 /// `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 /// `min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a
-/// job; `trivial` also adds to COH001's built-in logging vocabulary.
+/// job; `trivial` also adds to COH001's built-in logging vocabulary, so list only logging-like
+/// names there and put plain non-effect callees in `callee_trivial`, which only COH002 reads.
 /// `vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a
 /// vocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.
 // frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
@@ -92,6 +93,9 @@ pub struct CohTable {
     /// Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect.
     #[config(default = crate::coh002::default_trivial())]
     pub trivial: Vec<String>,
+    /// Extra callee names COH002 treats as non-effects; unlike `trivial` they do not change COH001's job clustering.
+    #[config(default = crate::coh002::default_trivial())]
+    pub callee_trivial: Vec<String>,
     /// The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction.
     #[config(default = u64::from(crate::coh003::DEFAULT_MAX_LEVEL_SPREAD))]
     pub max_level_spread: u64,

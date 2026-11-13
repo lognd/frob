@@ -101,7 +101,8 @@ a name as an effect, `trivial` as never one, and a name in both is trivial. Both
 empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
 `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 `min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a
-job; `trivial` also adds to COH001's built-in logging vocabulary.
+job; `trivial` also adds to COH001's built-in logging vocabulary, so list only logging-like
+names there and put plain non-effect callees in `callee_trivial`, which only COH002 reads.
 `vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a
 vocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.
 
@@ -109,6 +110,7 @@ Materialized: no.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `callee_trivial` | `Vec<String>` | `[]` | no | Extra callee names COH002 treats as non-effects; unlike `trivial` they do not change COH001's job clustering. |
 | `effect_calls` | `Vec<String>` | `[]` | no | Extra callee names that perform an effect (IO, messaging, persistence) when called inside a decision. |
 | `max_level_spread` | `u64` | `1` | no | The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction. |
 | `min_slice_statements` | `u64` | `2` | no | The fewest top-level statements a component needs to count as a job for COH001. |
