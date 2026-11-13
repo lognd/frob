@@ -2,12 +2,12 @@
 id = "01M78RWCD8SY69H44WENCV14W4"
 title = "CAP: collapse empty-callee computed use into one unresolved finding instead of reaching every vocab atom"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-12T20:58:39Z"
-updated = "2026-11-13T06:54:20Z"
+updated = "2026-11-13T08:11:45Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/grimble-bind/**"]
 
