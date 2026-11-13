@@ -565,11 +565,11 @@ fn write_content(root: &Path, config: Option<&str>) {
 
 // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
 /// Two platforms and the screen `home` (one state) a `config=render-*` case adds.
-const RENDER_TABLES: &str = "\n[[platform]]\nid = \"desk\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[platform]]\nid = \"phone\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[screen]]\nid = \"home\"\nentry = \"/\"\n[[screen.states]]\nid = \"default\"\n";
+const RENDER_TABLES: &str = "\n[[platform]]\nid = \"desk\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[platform]]\nid = \"phone\"\nrenderer = \"command\"\ncommand = \"true\"\n\n[[screen]]\nid = \"home\"\nentry = \"/\"\n[[screen.states]]\nid = \"default\"\n[[screen.states]]\nid = \"hover\"\n";
 
 // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
 /// The render ledger of the `render-*` case named `config`: `render-complete` renders every cell,
-/// `render-missing` leaves the `phone` cell out, `render-unreadable` could not be read.
+/// `render-missing` leaves the `phone` cell out, `render-alike` and `render-distinct` record a tiny or large state diff, `render-unreadable` could not be read.
 fn render_ledger(spec: &DesignSpec, config: &str) -> Option<RenderLedger> {
     if !config.starts_with("render-") {
         return None;
@@ -578,6 +578,14 @@ fn render_ledger(spec: &DesignSpec, config: &str) -> Option<RenderLedger> {
     if config == "render-unreadable" {
         ledger.unreadable = Some("gallery manifest is not valid".to_owned());
         return Some(ledger);
+    }
+    if config == "render-alike" || config == "render-distinct" {
+        let ppm = if config == "render-alike" {
+            50
+        } else {
+            250_000
+        };
+        ledger.record_diff("home", "desk", "default", "hover", ppm);
     }
     for (screen, state, platform) in spec.cell_triples() {
         if config == "render-missing" && platform == "phone" {
