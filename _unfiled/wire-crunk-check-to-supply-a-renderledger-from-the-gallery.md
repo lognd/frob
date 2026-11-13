@@ -2,7 +2,8 @@
 id = "01M7A3AHXFBFA5WT97NRGJWYQ4"
 title = "Wire crunk-check to supply a RenderLedger from the gallery manifest"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
