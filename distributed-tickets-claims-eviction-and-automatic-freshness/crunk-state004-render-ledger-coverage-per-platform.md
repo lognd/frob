@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
 updated = "2026-11-13T09:38:49Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**", "docs/design/crunk/**", "docs/reference/rules/**"]
+scope = ["crates/crunk-rules/**", "docs/design/crunk/**", "docs/reference/rules/**", "docs/README.md"]
 
 [[acceptance]]
 text = "Given a screen state without a render entry for a platform, when checked, then STATE004 fires"
