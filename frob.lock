@@ -461,13 +461,13 @@ acked_at = "2026-10-03T18:50:49.848073329Z"
 [[symbol]]
 identity = "crates/crunk-rules/src/rules/mod.rs::bind"
 symref = "crates/crunk-rules/src/rules/mod.rs::bind"
-sig = "c32e5deda067ea6e85fc69ec88a3a1770bf83919578709ea5a97320b8c015dba"
-body = "2c0ae214506a9ff76d9ad9b62aaabdcc3674a81b324d77e7cf951fb141da5087"
+sig = "ab31065ced0b61c84de64d2781121ee735a43d82ef56cc087ac053f14cd9d789"
+body = "bcea650a3af5d82825685665e49a131c156fd62dae4cf99c0301e1bf3a7f23e9"
 doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
 attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
-contract = "e0bb0a07d38889b75c6463ab62bea672c5227a36575795b1c07b3434d1424ddc"
+contract = "4e71371f989c4910ca32523286236da7a9461e63067a0bf9698b725a6dabab4a"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-13T09:40:33.914615987Z"
+acked_at = "2026-11-13T10:09:52.455082688Z"
 
 [[symbol]]
 identity = "crates/crunk-rules/tests/it/rules.rs::bind_yields_one_bound_rule_per_declaration"
