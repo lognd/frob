@@ -6,6 +6,19 @@
 
 use std::collections::BTreeSet;
 
+use crate::host::CrunkHost;
+
+/// Why a rule reading the spec and the render ledger cannot run on `host`, if it cannot.
+pub fn ledger_inapplicable<P: ?Sized + CrunkHost>(host: &P) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    if host.renders().is_none() {
+        return Some("no render ledger was gathered".to_owned());
+    }
+    None
+}
+
 /// Smallest pixel difference between two states of one screen on one platform, in parts per million.
 pub const MIN_STATE_DIFF_PPM: u32 = 10_000;
 

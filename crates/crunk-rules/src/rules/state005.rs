@@ -5,7 +5,7 @@
 use gob_rules::{Out, RepoRule, rule};
 
 use crate::host::CrunkHost;
-use crate::render_ledger::MIN_STATE_DIFF_PPM;
+use crate::render_ledger::{MIN_STATE_DIFF_PPM, ledger_inapplicable};
 
 /// Two states of a screen whose renders differ by less than the threshold.
 #[derive(Debug, Clone, Copy, Default)]
@@ -55,12 +55,6 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for State005 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        if host.spec().is_none() {
-            return Some("no valid crunk.toml".to_owned());
-        }
-        if host.renders().is_none() {
-            return Some("no render ledger was gathered".to_owned());
-        }
-        None
+        ledger_inapplicable(host)
     }
 }
