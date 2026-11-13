@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+new = ["good-first", "no-story"]
+reason = "make third good-first ticket (PM032)"
+at = "2026-11-13T06:52:22Z"
+actor = "lognd"
+rev = 1
