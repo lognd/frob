@@ -8,7 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:50:45Z"
-updated = "2026-11-13T09:11:45Z"
+updated = "2026-11-13T09:15:26Z"
+scope = ["crates/frob/src/mirror_cmd.rs"]
 +++
 
 found while working ~ACC0466: LedgerTickets takes an injected FactsFn; mirror_cmd::facts_of in the frob crate should supply it
