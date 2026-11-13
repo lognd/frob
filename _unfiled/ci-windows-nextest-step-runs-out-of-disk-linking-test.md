@@ -2,7 +2,8 @@
 id = "01M6VYQYX4EBQTWGTR81JC3PFH"
 title = "CI Windows nextest step runs out of disk linking test binaries (LNK1180)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "critical"
 class = "expedite"
 points = 3
