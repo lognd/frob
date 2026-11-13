@@ -4,9 +4,10 @@ title = "release criteria: add an evidence provider for ticket state and CI so e
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T16:17:34Z"
+updated = "2026-11-13T17:11:59Z"
 labels = ["no-story"]
 scope = ["crates/frob-release/**"]
 
