@@ -113,7 +113,7 @@ fn doable_warns_when_offline_and_the_view_is_old() {
         .map(|_| {
             let r = frob(clone.path(), false, &["ticket", "doable"]);
             if warnings(&r.1).contains("W-SYNC-STALE") {
-                // frob:waive TESTQ002 reason="real-time wait for a straggling refresh lock held by another process; no clock to fake"
+                // frob:accept TESTQ002 because="real-time wait for a straggling refresh lock held by another process; no clock to fake"
                 std::thread::sleep(Duration::from_millis(250));
             }
             r
