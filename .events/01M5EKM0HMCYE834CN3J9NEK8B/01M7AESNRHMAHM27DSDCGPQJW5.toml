@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "superseded: its commit landed via P16PG85"
+at = "2026-11-13T12:40:53Z"
+actor = "lognd"
+rev = 1

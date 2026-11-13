@@ -2,13 +2,14 @@
 id = "01M5EKM0HMCYE834CN3J9NEK8B"
 title = "frob: wire LedgerTickets into the mirror command with a facts provider"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:50:45Z"
-updated = "2026-11-13T09:50:01Z"
+updated = "2026-11-13T12:40:53Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
 
