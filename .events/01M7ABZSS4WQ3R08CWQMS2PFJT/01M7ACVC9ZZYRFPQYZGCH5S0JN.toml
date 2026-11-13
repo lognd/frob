@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given an ambient git config with a user.email, when the identity test runs, then it passes with name-only then name+email results"]
+moved = []
+at = "2026-11-13T12:06:52Z"
+actor = "lognd"
+rev = 1
