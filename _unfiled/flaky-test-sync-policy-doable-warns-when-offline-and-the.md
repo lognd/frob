@@ -7,6 +7,6 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T07:01:30Z"
-updated = "2026-11-13T10:24:37Z"
+updated = "2026-11-13T10:29:14Z"
 scope = ["crates/frob/tests/it/sync_policy.rs"]
 +++
