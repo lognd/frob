@@ -4,9 +4,10 @@ title = "land: red-base override must not skip the culprit fix-ticket filing"
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T16:17:34Z"
+updated = "2026-11-13T17:11:59Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
