@@ -817,3 +817,38 @@ fn closeout_needs_bound_evidence_and_a_reason_then_closes_done_without_a_lease()
         "{reasons:?}"
     );
 }
+
+// frob:ticket 01M7AV6DMGJBMR5ATRTSEWGFDJ
+// frob:tests crates/frob-evidence/src/done.rs::criteria_required
+#[test]
+fn task_incident_and_invariant_without_criteria_are_refused() {
+    let dir = repo(&["criteria_evidenced"]);
+    for ty in ["task", "incident", "invariant"] {
+        let id = typed(dir.path(), ty, &[]);
+        let out = close(dir.path(), &id, &["--no-evidence", "--reason", "x"]);
+        assert_eq!(code(&out), 3, "{ty}");
+        assert_eq!(json(&out)["error"]["code"], "E-DONE-NO-CRITERIA", "{ty}");
+    }
+}
+
+// frob:ticket 01M7AV6DMGJBMR5ATRTSEWGFDJ
+// frob:tests crates/frob-evidence/src/done.rs::criteria_waived
+#[test]
+fn the_no_criteria_label_waives_the_zero_criteria_refusal() {
+    let dir = repo(&["criteria_evidenced"]);
+    let id = typed(dir.path(), "task", &["--label", "no-criteria"]);
+    let closed = ok(
+        dir.path(),
+        &[
+            "ticket",
+            "close",
+            &id,
+            "--outcome",
+            "done",
+            "--no-evidence",
+            "--reason",
+            "x",
+        ],
+    );
+    assert_eq!(closed["data"]["category"], "done");
+}

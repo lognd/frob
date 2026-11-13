@@ -105,7 +105,16 @@ impl Repo {
     }
 
     fn titled(&self, ty: &str, title: &str) -> String {
-        self.ok(&["ticket", "new", "--title", title, "--type", ty])["data"]["id"]
+        self.ok(&[
+            "ticket",
+            "new",
+            "--title",
+            title,
+            "--type",
+            ty,
+            "--label",
+            "no-criteria",
+        ])["data"]["id"]
             .as_str()
             .expect("id")
             .to_owned()
