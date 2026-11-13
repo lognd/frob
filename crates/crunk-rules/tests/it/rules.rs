@@ -601,3 +601,19 @@ fn scene_doc_solve_at_follows_the_requested_viewport() {
             .is_none()
     );
 }
+
+// frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.renders
+#[test]
+fn renders_host_accessor_reports_the_ledger_only_for_render_cases() {
+    use crunk_rules::CrunkHost as _;
+
+    let plain = support::project("css/a.css", "a { color: red; }", None);
+    assert!(plain.renders().is_none());
+    let rendered = support::project("css/a.css", "a { color: red; }", Some("render-complete"));
+    assert!(
+        rendered
+            .renders()
+            .is_some_and(|l| l.has("home", "default", "desk"))
+    );
+}
