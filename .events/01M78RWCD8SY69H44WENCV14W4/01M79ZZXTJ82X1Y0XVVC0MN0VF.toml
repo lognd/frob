@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T08:22:09Z"
+digest = "e38121acd23e3d29b9c68b12dccc05c1d434482df139efaf30ba236e40bdd4de"
+head = "5c02d23aa7ca218e6b7e610f2de2162cc820ecf9"
+provider = "file"
+ref = "crates/grimble-bind/src/caps.rs"
+size = 160939
+status = "measured"
+at = "2026-11-13T08:22:09Z"
+actor = "lognd"
+rev = 1
