@@ -4,9 +4,10 @@ title = "land train: DSMXVR6 hunk verification makes the 12-ticket train test ti
 type = "bug"
 category = "todo"
 priority = "critical"
+points = 2
 reporter = "lognd"
 created = "2026-11-13T16:21:41Z"
-updated = "2026-11-13T16:21:41Z"
+updated = "2026-11-13T16:21:59Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
