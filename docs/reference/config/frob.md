@@ -102,6 +102,8 @@ empty. A call the capability cannot place leaves the verdict Unresolved until it
 `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 `min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a
 job; `trivial` also adds to COH001's built-in logging vocabulary.
+`vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a
+vocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.
 
 Materialized: no.
 
@@ -111,6 +113,8 @@ Materialized: no.
 | `max_level_spread` | `u64` | `1` | no | The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction. |
 | `min_slice_statements` | `u64` | `2` | no | The fewest top-level statements a component needs to count as a job for COH001. |
 | `trivial` | `Vec<String>` | `[]` | no | Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect. |
+| `vocab_min_cluster_words` | `u64` | `2` | no | The fewest distinct words a cluster needs to count as a vocabulary for COH004. |
+| `vocab_stop_words` | `Vec<String>` | `[]` | no | Extra generic words COH004 drops before clustering (std method names, test scaffolding). |
 
 ## `[compute]`
 

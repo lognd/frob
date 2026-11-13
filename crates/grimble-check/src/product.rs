@@ -22,6 +22,7 @@ use crate::bind_cache::{self, BindSummary};
 use crate::coh_pass::CohPassOptions;
 use crate::coh001::CohOptions;
 use crate::coh002::Coh002Options;
+use crate::coh004::Coh004Options;
 use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, PacksTable, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::layers::ModelLayers;
@@ -775,7 +776,7 @@ fn cached_log_report(
 fn coh_kind(opts: &CohPassOptions) -> String {
     // The version tag invalidates reports cached before COH003 joined the pass; the model's layers
     // are a function of the walk digest, which already keys the artifact.
-    let mut text = String::from("coh001-v4\u{1f}");
+    let mut text = String::from("coh001-v5\u{1f}");
     text.push_str(&opts.coh002.effect_calls.join("\n"));
     text.push('\u{1f}');
     text.push_str(&opts.coh002.trivial.join("\n"));
@@ -785,6 +786,10 @@ fn coh_kind(opts: &CohPassOptions) -> String {
     text.push_str(&opts.coh001.min_slice_statements.to_string());
     text.push('\u{1f}');
     text.push_str(&opts.coh001.trivial.join("\n"));
+    text.push('\u{1f}');
+    text.push_str(&opts.coh004.min_cluster_words.to_string());
+    text.push('\u{1f}');
+    text.push_str(&opts.coh004.stop_words.join("\n"));
     format!("coh-{}", gob_walk::Digest::of(text.as_bytes()))
 }
 
@@ -1201,6 +1206,7 @@ impl Product for Grimble {
         let coh_opts = CohPassOptions {
             coh001: CohOptions::from(&coh_table),
             coh002: Coh002Options::from(&coh_table),
+            coh004: Coh004Options::from(&coh_table),
             max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
             model: ModelLayers::from_model(&model),
         };

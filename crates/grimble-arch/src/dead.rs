@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_rules::{Severity, UnresolvedReason};
-use gob_symbols::{EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{EdgeBasis, EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref};
 
 use crate::{DEAD, Verdict};
 
@@ -110,10 +110,24 @@ fn candidates_of<'g>(
         .collect()
 }
 
+/// Per name-only call site (caller, line, callee text), how many workspace methods it may call.
+fn name_only_fanout(graph: &SymbolGraph) -> BTreeMap<(String, Option<u32>, Option<String>), usize> {
+    let mut fanout: BTreeMap<(String, Option<u32>, Option<String>), usize> = BTreeMap::new();
+    for e in graph.edges_with_status() {
+        if e.basis == EdgeBasis::NameOnly && e.status == Status::May && e.to.is_some() {
+            *fanout
+                .entry((e.from.to_string(), e.line, e.text.clone()))
+                .or_default() += 1;
+        }
+    }
+    fanout
+}
+
 /// How each unit is reached, and the names spelled by unresolved calls.
 fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
     let mut spelled: BTreeSet<&str> = BTreeSet::new();
+    let fanout = name_only_fanout(graph);
     for e in graph.edges_with_status() {
         if !matches!(
             e.kind,
@@ -129,6 +143,15 @@ fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
                 let r = reach.entry(undup(&to.to_string()).to_owned()).or_default();
                 match e.status {
                     Status::Must => r.must = true,
+                    // A name-only call site with exactly one candidate can only mean that unit.
+                    Status::May
+                        if e.basis == EdgeBasis::NameOnly
+                            && fanout.get(&(e.from.to_string(), e.line, e.text.clone()))
+                                == Some(&1) =>
+                    {
+                        tracing::debug!(unit = %to, "DEAD001 sole name-only candidate counts as reached");
+                        r.must = true;
+                    }
                     Status::May => r.may = true,
                     Status::Unknown => {}
                 }

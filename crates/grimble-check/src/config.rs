@@ -80,6 +80,8 @@ impl PacksTable {
 /// `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 /// `min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a
 /// job; `trivial` also adds to COH001's built-in logging vocabulary.
+/// `vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a
+/// vocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.
 // frob:ticket 01M4TVEKR73CP9A5RGGPPK3AWW
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "coh")]
@@ -96,6 +98,12 @@ pub struct CohTable {
     /// The fewest top-level statements a component needs to count as a job for COH001.
     #[config(default = crate::coh001::DEFAULT_MIN_SLICE_STATEMENTS as u64)]
     pub min_slice_statements: u64,
+    /// The fewest distinct words a cluster needs to count as a vocabulary for COH004.
+    #[config(default = crate::coh004::DEFAULT_MIN_CLUSTER_WORDS as u64)]
+    pub vocab_min_cluster_words: u64,
+    /// Extra generic words COH004 drops before clustering (std method names, test scaffolding).
+    #[config(default = Vec::new())]
+    pub vocab_stop_words: Vec<String>,
 }
 
 impl CohTable {

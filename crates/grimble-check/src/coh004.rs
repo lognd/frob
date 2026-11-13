@@ -11,6 +11,10 @@ use gob_ir::{NodeId, Operator, Term, Universal};
 use tracing::debug;
 
 use crate::coh001::statements;
+use crate::config::CohTable;
+
+/// The built-in value of `[coh] vocab_min_cluster_words`.
+pub const DEFAULT_MIN_CLUSTER_WORDS: usize = 2;
 
 /// Knobs of COH004.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,7 +30,7 @@ pub struct Coh004Options {
 impl Default for Coh004Options {
     fn default() -> Self {
         Self {
-            min_cluster_words: 2,
+            min_cluster_words: DEFAULT_MIN_CLUSTER_WORDS,
             min_word_len: 3,
             stop_words: [
                 "self", "this", "cls", "new", "get", "set", "len", "str", "int", "let", "true",
@@ -36,6 +40,28 @@ impl Default for Coh004Options {
             .map(str::to_owned)
             .to_vec(),
         }
+    }
+}
+
+impl From<&CohTable> for Coh004Options {
+    /// The knobs of a loaded `[coh]` table: the cluster floor and extra stop words on the built-ins.
+    fn from(table: &CohTable) -> Self {
+        let mut opts = Self {
+            min_cluster_words: usize::try_from(table.vocab_min_cluster_words)
+                .unwrap_or(usize::MAX),
+            ..Self::default()
+        };
+        for word in &table.vocab_stop_words {
+            if !opts.stop_words.contains(word) {
+                opts.stop_words.push(word.clone());
+            }
+        }
+        debug!(
+            min_cluster_words = opts.min_cluster_words,
+            stop_words = opts.stop_words.len(),
+            "coh004 options from [coh]"
+        );
+        opts
     }
 }
 
