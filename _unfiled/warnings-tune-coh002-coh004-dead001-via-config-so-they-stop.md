@@ -2,7 +2,8 @@
 id = "01M7AYFA4EZJMYASA6P8EA6SJK"
 title = "warnings: tune COH002/COH004/DEAD001 via config so they stop drowning real findings"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
