@@ -1,0 +1,8 @@
+kind = "create"
+title = "Teach the LOG001 scanner the stderr/stdout writes the universal model resolves to logger"
+type = "chore"
+category = "todo"
+priority = "low"
+at = "2026-11-13T05:43:08Z"
+actor = "lognd"
+rev = 1
