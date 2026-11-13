@@ -633,3 +633,13 @@ fn ledger_inapplicable_reports_a_missing_ledger_only() {
     let rendered = support::project("css/a.css", "a { color: red; }", Some("render-complete"));
     assert!(crunk_rules::render_ledger::ledger_inapplicable(&rendered).is_none());
 }
+
+// frob:tests crates/crunk-rules/src/rules/mod.rs::BindPart.push_all
+#[test]
+fn a_part_appends_only_its_own_rules() {
+    use crunk_rules::rules::{BindPart, Part0};
+    let mut rules: Vec<gob_rules::BoundRule<dyn crunk_rules::CrunkHost>> = Vec::new();
+    Part0::push_all(&mut rules);
+    assert!(!rules.is_empty());
+    assert!(rules.len() < 100);
+}

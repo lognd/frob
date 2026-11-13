@@ -1769,3 +1769,19 @@ fn doable_filters_by_derived_crate_and_product() {
     assert_eq!(sa.crates, vec!["frob-ledger"]);
     assert_eq!(sa.products, vec!["frob"]);
 }
+
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.design_links
+fn design_links_lists_only_tickets_that_implement(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    ledger
+        .new_ticket(NewTicket::new("Plain", TicketType::Task))
+        .expect("plain");
+    let mut req = NewTicket::new("Impl", TicketType::Task);
+    req.implements = vec!["design:impl/w.a".to_owned()];
+    let made = ledger.new_ticket(req).expect("impl");
+    let links = ledger.design_links().expect("links");
+    assert_eq!(links.len(), 1);
+    assert_eq!(links[0].0.id, made.ticket.front.id);
+    assert_eq!(links[0].1, vec!["design:impl/w.a".to_owned()]);
+}
+both_layouts!(design_links_lists_only_tickets_that_implement);

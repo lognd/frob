@@ -613,3 +613,11 @@ fn dead001_treats_engine_entry_points_as_live_roots() {
     assert!(!with.iter().any(|m| m.contains("`Update`")), "{with:?}");
     assert!(with.iter().any(|m| m.contains("`Helper`")), "{with:?}");
 }
+
+/// The clone index directory is absent outside a git checkout.
+// frob:tests crates/grimble-arch/src/lib.rs::dup_index_dir
+#[test]
+fn dup_index_dir_is_none_outside_git() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    assert!(grimble_arch::dup_index_dir(tmp.path()).is_none());
+}

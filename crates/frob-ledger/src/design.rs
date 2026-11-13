@@ -715,4 +715,22 @@ mod tests {
         let p2 = vec![(tid, vec![unknown.to_owned()])];
         assert_eq!(verdict(&own, &p2, unknown), RowVerdict::NotRun);
     }
+
+    // frob:tests crates/frob-ledger/src/design.rs::DesignStatus.as_str
+    // frob:tests crates/frob-ledger/src/design.rs::Overlay.as_str
+    // frob:tests crates/frob-ledger/src/design.rs::link_of
+    // frob:tests crates/frob-ledger/src/design.rs::DesignGraph.requires_of
+    #[test]
+    fn words_and_links_render() {
+        assert_eq!(DesignStatus::Declared.as_str(), "declared");
+        assert_eq!(DesignStatus::Bound.as_str(), "bound");
+        assert_eq!(DesignStatus::Verified.as_str(), "verified");
+        assert_eq!(Overlay::Unplanned.as_str(), "unplanned");
+        assert_eq!(Overlay::Planned.as_str(), "planned");
+        assert_eq!(Overlay::InProgress.as_str(), "in-progress");
+        assert_eq!(Overlay::Done.as_str(), "done");
+        assert_eq!(link_of("goal/x"), format!("{LINK_PREFIX}goal/x"));
+        let g = DesignGraph::from_json(GRAPH).unwrap();
+        assert!(g.requires_of("goal/none").is_empty());
+    }
 }

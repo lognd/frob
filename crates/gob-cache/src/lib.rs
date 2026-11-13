@@ -909,4 +909,12 @@ mod tests {
             .unwrap();
         assert!(cache.get_repo_rule("g", "R").is_none());
     }
+
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.engine
+    #[test]
+    fn engine_accessor_returns_the_fingerprint() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        assert!(cache.engine().starts_with("gob-cache/"));
+    }
 }

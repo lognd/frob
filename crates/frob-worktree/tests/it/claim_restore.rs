@@ -227,3 +227,25 @@ fn an_unreachable_remote_refuses_the_restore_as_offline() {
     let err = ws.restore_claim(&id, "offline").expect_err("offline");
     assert_eq!(code(&err), E_RESTORE_OFFLINE);
 }
+
+// frob:tests crates/frob-worktree/src/claim_reclaim.rs::Workspace.work_reclaiming
+// frob:tests crates/frob-worktree/src/claim_reclaim.rs::holder_return_notices
+#[test]
+fn reclaiming_with_nothing_parked_refuses_and_no_holder_means_no_notice() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let (id, _) = new_ticket(&ledger);
+    let err = ws
+        .work_reclaiming(&id, &WorkOptions::default())
+        .expect_err("nothing parked");
+    assert_eq!(code(&err), frob_worktree::claim_reclaim::E_RECLAIM_NOTHING);
+    let notices =
+        frob_worktree::claim_reclaim::holder_return_notices(&ledger, &leases).expect("notices");
+    assert!(notices.is_empty());
+}
