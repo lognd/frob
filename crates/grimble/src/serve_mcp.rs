@@ -24,9 +24,9 @@ pub fn run() -> i32 {
         }
     };
     let stdin = io::stdin();
-    // frob:accept LOG001 because="stdout is the MCP wire protocol"
+    // frob:defer LOG001 because="stdout is the MCP wire protocol" ticket=01M79PWQP03T5YH7QVM72KW077
     let mut stdout = io::stdout().lock();
-    // frob:accept LOG001 because="stderr is handed to the MCP transport"
+    // frob:defer LOG001 because="stderr is handed to the MCP transport" ticket=01M79PWQP03T5YH7QVM72KW077
     let mut stderr = io::stderr().lock();
     match grimble_serve::launch(&root, stdin.lock(), &mut stdout, &mut stderr) {
         Ok(()) => 0,
