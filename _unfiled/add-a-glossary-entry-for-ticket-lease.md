@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-13T09:50:06Z"
+updated = "2026-11-13T09:51:55Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/glossary/**"]
 
@@ -18,6 +18,6 @@ bound = false
 
 ## Start here
 
-- Files to read first: <TODO: list the files>
-- Test command: <TODO: the command that runs the tests>
-- Who to ask: <TODO: a handle or channel>
+- Files to read first: docs/glossary/ and the matching verb's --help output
+- Test command: frob check --ticket
+- Who to ask: the ticket reporter (lognd)
