@@ -7,9 +7,9 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T21:47:56Z"
+updated = "2026-11-13T22:12:20Z"
 labels = ["no-story"]
-scope = ["crates/crunk-*/**", "docs/**"]
+scope = ["crates/crunk-*/**", "docs/**", "crates/crunk/**"]
 
 [[acceptance]]
 text = "crunk check --static and engine=static never execute repo JS; test proves it."
