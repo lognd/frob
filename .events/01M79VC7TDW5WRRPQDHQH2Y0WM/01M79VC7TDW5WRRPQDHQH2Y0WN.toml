@@ -1,0 +1,8 @@
+kind = "create"
+title = "Flaky test: sync_policy doable_warns_when_offline_and_the_view_is_old sees W-SYNC-STALE instead of W-SYNC-OFFLINE under CI load"
+type = "bug"
+category = "todo"
+priority = "medium"
+at = "2026-11-13T07:01:30Z"
+actor = "lognd"
+rev = 1
