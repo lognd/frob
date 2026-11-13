@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:13:13Z"
-updated = "2026-11-13T22:21:30Z"
+updated = "2026-11-13T22:30:38Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "A test shows a queued ticket never inherits another entry's bypass flags."
-bound = false
+bound = true
 +++
 
 The driver's --no-evidence/--no-changelog/--outcome/--override-base-ci apply to every queued ticket. Source: frob-audit-core.md (Opus audit); read from code, not reproduced.
