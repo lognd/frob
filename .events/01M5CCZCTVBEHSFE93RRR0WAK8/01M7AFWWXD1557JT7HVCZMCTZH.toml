@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "no profiler available; needs structural change on quiet machine"
+at = "2026-11-13T13:00:07Z"
+actor = "lognd"
+rev = 1
