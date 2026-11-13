@@ -2,12 +2,12 @@
 id = "01M5CQ4WJJRWTQ7J9K20EWC4K9"
 title = "Findings JSON FindingRecord/EditRecord file field as RelPath"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T13:13:54Z"
-updated = "2026-11-09T16:50:27Z"
+updated = "2026-11-13T17:11:59Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json", "Cargo.lock"]
 +++

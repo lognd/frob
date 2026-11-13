@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "stale in-progress past pm.max_age_days; no live work"
+at = "2026-11-13T17:11:59Z"
+actor = "lognd"
+rev = 1
