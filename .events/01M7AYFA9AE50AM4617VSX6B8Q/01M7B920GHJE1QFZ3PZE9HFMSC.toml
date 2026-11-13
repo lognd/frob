@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T20:18:18Z"
+digest = "dcfd7eb5fd79e6764d8c181d6dfa448dac1d95aab5abe5f18165eb444530f49d"
+exit_code = 1
+head = "b48fb9b72ba2a600568c3f9c96fee0aaa4558ea0"
+passed = false
+provider = "command"
+ref = "target/release/frob check --skip-tools --ticket ~VSX6B8Q"
+size = 785441
+status = "measured"
+uri = "dir:.git/frob/artifacts/dcfd7eb5fd79e6764d8c181d6dfa448dac1d95aab5abe5f18165eb444530f49d"
+at = "2026-11-13T20:18:18Z"
+actor = "lognd"
+rev = 1
