@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "base CI red, remote unreachable so view stale; test-only change with no user-visible effect"
+at = "2026-11-13T20:52:23Z"
+actor = "lognd"
+rev = 1
