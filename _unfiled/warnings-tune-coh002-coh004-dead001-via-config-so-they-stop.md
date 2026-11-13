@@ -2,12 +2,12 @@
 id = "01M7AYFA4EZJMYASA6P8EA6SJK"
 title = "warnings: tune COH002/COH004/DEAD001 via config so they stop drowning real findings"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T17:14:51Z"
+updated = "2026-11-13T17:15:01Z"
 labels = ["no-story"]
 scope = ["frob.toml"]
 
