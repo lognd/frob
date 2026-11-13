@@ -1117,11 +1117,33 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
 
 // frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
 // frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
-/// Refuse (`E-LAND-HUNKS-DROPPED`) when a base merge from the tip `pre` resolved the ticket's own hunks away.
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Refuse (`E-LAND-HUNKS-DROPPED`) when a base merge from the tip `pre` resolved the ticket's own hunks away, resetting the branch to `pre`.
 ///
 /// Every land-time merge of the base (the pre-land merge and the stale-base re-merge) calls this
 /// after [`merge_base_in`], so a stacked successor cannot lose hunks to a base squash-land unnoticed.
+/// On refusal the bad merge commit is undone: left in place, a retry would see the base already
+/// merged and land the dropped hunks without re-running the check.
 pub(crate) fn verify_merge_kept_hunks(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    handle: &str,
+    pre: Option<Oid>,
+) -> Result<(), LandError> {
+    let checked = check_merge_kept_hunks(wt, wt_path, base, handle, pre);
+    if let (Err(e), Some(pre)) = (&checked, pre)
+        && e.refusal()
+            .is_some_and(|r| r.code == "E-LAND-HUNKS-DROPPED")
+    {
+        reset_branch_to(wt, wt_path, pre)?;
+    }
+    checked
+}
+
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Run the hunk-presence check for a merge from `pre` to the current head; a no-op when nothing was merged.
+fn check_merge_kept_hunks(
     wt: &Repo,
     wt_path: &Path,
     base: &str,
@@ -1140,6 +1162,14 @@ pub(crate) fn verify_merge_kept_hunks(
             handle,
         )?;
     }
+    Ok(())
+}
+
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Hard-reset the ticket branch in its worktree to `pre`, undoing a refused base merge.
+fn reset_branch_to(wt: &Repo, wt_path: &Path, pre: Oid) -> Result<(), LandError> {
+    let reset = git(wt, wt_path, &["reset", "--hard", &pre.to_string()])?;
+    tracing::warn!(%pre, reset = reset.ok(), "hunk-presence refusal: ticket branch reset to its pre-merge head");
     Ok(())
 }
 
@@ -2076,6 +2106,35 @@ mod tests {
         verify_merge_kept_hunks(&repo, d, "dev", "~X", pre).expect("clean merge passes the check");
         let text = std::fs::read_to_string(d.join("m.txt")).expect("read");
         assert!(text.contains("e2"), "{text}");
+    }
+
+    /// Merge `dev` into the current branch but resolve m.txt to dev's copy, dropping the successor's hunks.
+    fn lossy_merge(repo: &Repo, d: &Path) {
+        run_git(repo, d, &["merge", "-q", "--no-edit", "-s", "ours", "dev"]);
+        run_git(repo, d, &["checkout", "dev", "--", "m.txt"]);
+        run_git(repo, d, &["commit", "-q", "--amend", "--no-edit"]);
+    }
+
+    // frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+    // frob:tests crates/frob-land/src/land.rs::verify_merge_kept_hunks
+    #[test]
+    fn a_refused_merge_is_undone_so_the_retry_is_refused_again() {
+        let (tmp, repo) = stacked_fixture();
+        let d = tmp.path();
+        let pre = repo.head().expect("head").oid;
+        let dev = repo.merge_base("dev", "dev").expect("dev");
+        for attempt in 1..=2 {
+            lossy_merge(&repo, d);
+            let err = verify_merge_kept_hunks(&repo, d, "dev", "~X", pre).expect_err("drop");
+            let code = err.refusal().map(|r| r.code.clone());
+            assert_eq!(code.as_deref(), Some("E-LAND-HUNKS-DROPPED"), "{attempt}");
+            assert_eq!(repo.head().expect("head").oid, pre, "reset to pre");
+            assert_ne!(
+                repo.merge_base("dev", "HEAD").expect("mb"),
+                dev,
+                "the base must not read as already merged on retry"
+            );
+        }
     }
 
     // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
