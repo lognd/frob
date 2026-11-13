@@ -2,8 +2,9 @@
 
 // frob:ticket 01M5XCWYB9M2YSJ5EGABMREX1B
 
-use taffy::{AvailableSpace, Layout, Size};
+use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyTree};
 
+use super::prepare::TextCtx;
 use super::tree::{Built, Entry};
 use super::{SolveError, SolveNote};
 use crate::output::{Axis, NodeKind, RawNode, SolvedText};
@@ -27,27 +28,34 @@ pub(crate) fn compute(
         .collect();
     let mut failed: Option<TextError> = None;
     for root in roots {
-        built
-            .tree
-            .compute_layout_with_measure(root, space, |input, _id, ctx, style| {
-                taffy::compute_leaf_layout(
-                    input,
-                    style,
-                    |_, _| 0.0,
-                    |known, avail| {
-                        let Some(c) = ctx else { return Size::ZERO };
-                        measure_for_taffy(fonts, &c.text, &c.style, known, avail).unwrap_or_else(
-                            |e| {
-                                failed.get_or_insert(e);
-                                Size::ZERO
-                            },
-                        )
-                    },
-                )
-            })
-            .map_err(|e| SolveError::Engine(e.to_string()))?;
+        layout_root(&mut built.tree, root, space, fonts, &mut failed)?;
     }
     failed.map_or(Ok(()), |e| Err(e.into()))
+}
+
+/// Lays out one root, measuring text through `fonts`; the first measure error lands in `failed`.
+fn layout_root(
+    tree: &mut TaffyTree<TextCtx>,
+    root: NodeId,
+    space: Size<AvailableSpace>,
+    fonts: &mut TextMeasurer,
+    failed: &mut Option<TextError>,
+) -> Result<(), SolveError> {
+    tree.compute_layout_with_measure(root, space, |input, _id, ctx, style| {
+        taffy::compute_leaf_layout(
+            input,
+            style,
+            |_, _| 0.0,
+            |known, avail| {
+                let Some(c) = ctx else { return Size::ZERO };
+                measure_for_taffy(fonts, &c.text, &c.style, known, avail).unwrap_or_else(|e| {
+                    failed.get_or_insert(e);
+                    Size::ZERO
+                })
+            },
+        )
+    })
+    .map_err(|e| SolveError::Engine(e.to_string()))
 }
 
 /// Reads positions (absolute, viewport coordinates) and text metrics for every entry.

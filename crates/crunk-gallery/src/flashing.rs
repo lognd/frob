@@ -343,20 +343,31 @@ pub fn check_flashing(
     if severity == Severity::Off {
         return Ok(Verdict::Pass);
     }
-    if frames.len() < 2 {
-        tracing::info!(frames = frames.len(), "too few frames to judge flashing");
-        return Ok(Verdict::Unresolved(format!(
-            "{} frame(s) captured; flashing needs at least 2",
-            frames.len()
-        )));
+    if let Some(unresolved) = too_few_frames(frames) {
+        return Ok(unresolved);
     }
     validate(frames)?;
-    let burst = [Kind::General, Kind::Red]
-        .into_iter()
-        .find_map(|k| scan(k, frames, cfg));
-    Ok(burst.map_or(Verdict::Pass, |b| {
+    Ok(first_burst(frames, cfg).map_or(Verdict::Pass, |b| {
         Verdict::Fail(finding(severity, cell, &b, cfg))
     }))
+}
+
+/// `Unresolved` when fewer than two frames were captured, since flashing needs a pair.
+fn too_few_frames(frames: &[Frame]) -> Option<Verdict> {
+    (frames.len() < 2).then(|| {
+        tracing::info!(frames = frames.len(), "too few frames to judge flashing");
+        Verdict::Unresolved(format!(
+            "{} frame(s) captured; flashing needs at least 2",
+            frames.len()
+        ))
+    })
+}
+
+/// The first burst found, general flashes before red.
+fn first_burst(frames: &[Frame], cfg: &FlashConfig) -> Option<Burst> {
+    [Kind::General, Kind::Red]
+        .into_iter()
+        .find_map(|k| scan(k, frames, cfg))
 }
 
 /// The FLASH001 finding for a burst.

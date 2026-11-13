@@ -338,6 +338,16 @@ fn diverged_ledgers() -> (tempfile::TempDir, tempfile::TempDir, tempfile::TempDi
     (origin, first, second)
 }
 
+/// True when an index page on the ledger branch of `dir` mentions a ticket titled `title`.
+fn ledger_names_title(dir: &Path, title: &str) -> bool {
+    let out = std::process::Command::new("git")
+        .args(["grep", "-l", "-e", title, "frob-tickets", "--", "indexes"])
+        .current_dir(dir)
+        .output()
+        .expect("git grep");
+    String::from_utf8_lossy(&out.stdout).contains("indexes")
+}
+
 fn ledger_listing(dir: &Path) -> String {
     let out = std::process::Command::new("git")
         .args([
@@ -365,13 +375,9 @@ fn merged_ledger_refresh_leaves_pages_naming_both_clones_tickets() {
     assert_eq!(v["data"]["ledger"], "merged", "{v}");
     assert_eq!(v["data"]["pushed"], true, "{v}");
     let pages = ledger_listing(second.path());
-    let both = ["Filed in the first clone", "Filed in the second clone"].map(|title| {
-        let out = std::process::Command::new("git")
-            .args(["grep", "-l", "-e", title, "frob-tickets", "--", "indexes"])
-            .current_dir(second.path())
-            .output()
-            .expect("git grep");
-        String::from_utf8_lossy(&out.stdout).contains("indexes")
-    });
+    let both = [
+        ledger_names_title(second.path(), "Filed in the first clone"),
+        ledger_names_title(second.path(), "Filed in the second clone"),
+    ];
     assert_eq!(both, [true, true], "pages after merge: {pages}");
 }

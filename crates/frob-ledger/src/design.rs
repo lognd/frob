@@ -455,6 +455,28 @@ pub fn row_anchor_parts(row: &str) -> Option<(&str, usize)> {
     well_formed.then_some((entity, index))
 }
 
+/// True when a passed attestation carrying `row` sits on a live ticket whose design links reach `reach`.
+fn row_reached(
+    links: &[(TicketFacts, Vec<String>)],
+    passed: &[(TicketId, Vec<String>)],
+    row: &str,
+    reach: &BTreeSet<String>,
+) -> bool {
+    passed
+        .iter()
+        .filter(|(_, facts)| facts.iter().any(|f| f == row))
+        .any(|(ticket, _)| {
+            links.iter().any(|(facts, targets)| {
+                facts.id == *ticket
+                    && facts.is_live()
+                    && targets
+                        .iter()
+                        .filter_map(|t| anchor_of(t).ok())
+                        .any(|a| reach.contains(a))
+            })
+        })
+}
+
 // frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
 /// The verdict of the `manual` row `row`: `Pass` when a passed attestation carrying `row` sits on a live ticket implementing the entity or a design ancestor.
 ///
@@ -473,20 +495,7 @@ pub fn manual_row_verdict(
         tracing::debug!(row, "manual row names an entity the graph lacks");
         return RowVerdict::NotRun;
     }
-    let reach = graph.self_and_ancestors(entity);
-    let verdict = passed
-        .iter()
-        .filter(|(_, facts)| facts.iter().any(|f| f == row))
-        .any(|(ticket, _)| {
-            links.iter().any(|(facts, targets)| {
-                facts.id == *ticket
-                    && facts.is_live()
-                    && targets
-                        .iter()
-                        .filter_map(|t| anchor_of(t).ok())
-                        .any(|a| reach.contains(a))
-            })
-        });
+    let verdict = row_reached(links, passed, row, &graph.self_and_ancestors(entity));
     tracing::debug!(row, verdict, "manual row verdict");
     if verdict {
         RowVerdict::Pass

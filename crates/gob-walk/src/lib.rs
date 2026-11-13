@@ -450,6 +450,13 @@ mod tests {
         }
     }
 
+    /// Reads `rel` through `locator`'s reader, returning its bytes when the reader has them.
+    fn read_via(locator: &dyn ContentLocator, rel: &str) -> Option<Vec<u8>> {
+        let mut got = None;
+        locator.with_reader(&mut |r| got = r.read(rel).expect("read"));
+        got
+    }
+
     // frob:tests crates/gob-walk/src/content.rs::ContentBackend.locate
     #[test]
     fn a_backend_locates_only_the_roots_it_covers() {
@@ -457,9 +464,7 @@ mod tests {
         assert!(ContentBackend::locate(&backend, Path::new("/elsewhere")).is_none());
         let locator = ContentBackend::locate(&backend, Path::new("/srv/covered"))
             .expect("the covered root is located");
-        let mut got = None;
-        locator.with_reader(&mut |r| got = r.read("x.rs").expect("read"));
-        assert_eq!(got, Some(b"fake:x.rs".to_vec()));
+        assert_eq!(read_via(&*locator, "x.rs"), Some(b"fake:x.rs".to_vec()));
     }
 
     // frob:tests crates/gob-walk/src/lib.rs::walk_with

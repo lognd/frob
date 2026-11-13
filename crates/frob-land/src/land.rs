@@ -2069,23 +2069,27 @@ mod tests {
         assert!(run.ok(), "git {args:?}: {}", run.text);
     }
 
+    /// Overwrite `m.txt` under `d` with `body`.
+    fn write_m(d: &Path, body: &str) {
+        std::fs::write(d.join("m.txt"), body).expect("write");
+    }
+
     /// A stacked successor whose base squash-landed, in a fresh repo: `dev` carries A1 squashed, HEAD is A2.
     fn stacked_fixture() -> (tempfile::TempDir, Repo) {
         let tmp = tempfile::tempdir().expect("tempdir");
         let repo = Repo::init(tmp.path()).expect("init");
         let d = tmp.path();
-        let write = |body: &str| std::fs::write(d.join("m.txt"), body).expect("write");
         run_git(&repo, d, &["config", "user.name", "T"]);
         run_git(&repo, d, &["config", "user.email", "t@example.com"]);
         run_git(&repo, d, &["checkout", "-q", "-b", "dev"]);
-        write("a\nb\nc\nd\ne\nf\n");
+        write_m(d, "a\nb\nc\nd\ne\nf\n");
         run_git(&repo, d, &["add", "m.txt"]);
         run_git(&repo, d, &["commit", "-q", "-m", "base"]);
         run_git(&repo, d, &["checkout", "-q", "-b", "a1"]);
-        write("a\nB1\nc\nd\ne\nf\n");
+        write_m(d, "a\nB1\nc\nd\ne\nf\n");
         run_git(&repo, d, &["commit", "-q", "-am", "a1"]);
         run_git(&repo, d, &["checkout", "-q", "-b", "a2"]);
-        write("a\nB1\nc\nd\ne2\nf\n");
+        write_m(d, "a\nB1\nc\nd\ne2\nf\n");
         run_git(&repo, d, &["commit", "-q", "-am", "a2 feature"]);
         run_git(&repo, d, &["checkout", "-q", "dev"]);
         run_git(&repo, d, &["merge", "-q", "--squash", "a1"]);

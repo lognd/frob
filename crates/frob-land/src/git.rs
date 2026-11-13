@@ -155,11 +155,7 @@ mod tests {
             blocked.text
         );
         // The injected pause stands in for the wait: the other process releases the lock "during" it.
-        let pauses = std::cell::Cell::new(0_u32);
-        let release_on_pause = |_: Duration| {
-            pauses.set(pauses.get() + 1);
-            std::fs::remove_file(&lock).expect("release");
-        };
+        let release_on_pause = |_: Duration| std::fs::remove_file(&lock).expect("release");
         let run = git_with_backoff(
             &repo,
             dir.path(),
@@ -169,7 +165,7 @@ mod tests {
             &release_on_pause,
         )
         .expect("git");
-        assert_eq!(pauses.get(), 1, "backed off exactly once");
+        assert!(!lock.exists(), "the pause released the lock");
         assert!(run.ok(), "retried until the lock cleared: {}", run.text);
     }
 

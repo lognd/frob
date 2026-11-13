@@ -61,6 +61,23 @@ fn state_file(clone: &Path) -> std::path::PathBuf {
     clone.join(".git").join("frob").join("refresh.toml")
 }
 
+/// Run `ticket doable` until the offline probe actually runs (not reporting a busy refresh lock).
+fn doable_once_probed(clone: &Path) -> (i32, Value) {
+    // A probe that finds the per-clone refresh lock held (a straggling refresh under CI load)
+    // leaves the aged state untouched and reports STALE; retry until the probe actually runs.
+    (0..40)
+        .map(|_| {
+            let r = frob(clone, false, &["ticket", "doable"]);
+            if warnings(&r.1).contains("W-SYNC-STALE") {
+                // frob:accept TESTQ002 because="real-time wait for a straggling refresh lock held by another process; no clock to fake"
+                std::thread::sleep(Duration::from_millis(250));
+            }
+            r
+        })
+        .find(|(_, v)| !warnings(v).contains("W-SYNC-STALE"))
+        .expect("the probe never ran: refresh lock stayed busy")
+}
+
 fn warnings(v: &Value) -> String {
     v["warnings"].to_string()
 }
@@ -107,19 +124,7 @@ fn doable_warns_when_offline_and_the_view_is_old() {
     let (origin, clone) = clone_with_origin();
     frob(clone.path(), false, &["refresh"]);
     offline_with_view_at(origin.path(), clone.path(), |ok| ok - 7200);
-    // A probe that finds the per-clone refresh lock held (a straggling refresh under CI load)
-    // leaves the aged state untouched and reports STALE; retry until the probe actually runs.
-    let (code, v) = (0..40)
-        .map(|_| {
-            let r = frob(clone.path(), false, &["ticket", "doable"]);
-            if warnings(&r.1).contains("W-SYNC-STALE") {
-                // frob:accept TESTQ002 because="real-time wait for a straggling refresh lock held by another process; no clock to fake"
-                std::thread::sleep(Duration::from_millis(250));
-            }
-            r
-        })
-        .find(|(_, v)| !warnings(v).contains("W-SYNC-STALE"))
-        .expect("the probe never ran: refresh lock stayed busy");
+    let (code, v) = doable_once_probed(clone.path());
     assert_eq!(code, 0, "{v}");
     assert!(warnings(&v).contains("W-SYNC-OFFLINE"), "{v}");
     assert_eq!(v["freshness"]["state"], "degraded", "{v}");

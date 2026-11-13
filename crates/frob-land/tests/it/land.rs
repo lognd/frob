@@ -328,6 +328,14 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+/// Seconds recorded for `a` in a land summary's per-activity totals, if it has an entry.
+fn activity_secs(
+    totals: &[frob_metrics::activity::ActivityTotal],
+    a: frob_metrics::activity::Activity,
+) -> Option<i64> {
+    totals.iter().find(|t| t.activity == a).map(|t| t.secs)
+}
+
 // frob:ticket 01M48Q2BWRT117K8E163MWHDN2
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]
@@ -357,17 +365,11 @@ fn land_summary_carries_per_activity_totals_and_writes_nothing_to_the_code_branc
     )
     .expect("land");
 
-    let secs = |a: Activity| {
-        out.activity
-            .iter()
-            .find(|t| t.activity == a)
-            .map(|t| t.secs)
-    };
     // The real lease signal from `start` adds a second or so of implementing time after the seeded span.
-    assert!(secs(Activity::Implementing).is_some_and(|i| i >= 150));
-    assert_eq!(secs(Activity::Testing), Some(100));
-    assert_eq!(secs(Activity::Waiting), Some(0));
-    assert!(secs(Activity::Landing).is_some_and(|l| l >= 0));
+    assert!(activity_secs(&out.activity, Activity::Implementing).is_some_and(|i| i >= 150));
+    assert_eq!(activity_secs(&out.activity, Activity::Testing), Some(100));
+    assert_eq!(activity_secs(&out.activity, Activity::Waiting), Some(0));
+    assert!(activity_secs(&out.activity, Activity::Landing).is_some_and(|l| l >= 0));
 
     let (_, after) = git_out(&fx.root, &["ls-tree", "-r", "--name-only", "main"]);
     let added: Vec<&str> = after

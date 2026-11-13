@@ -46,8 +46,8 @@ severity = "error"
 [log]
 # Files never judged by LOG001/LOG002: the defaults (tests, build scripts, __main__) plus
 # test-support helper binaries that fake external tools, benches, examples and repo scripts,
-# which print by design. Real CLI source stays judged. Setting this replaces the defaults, so they are repeated.
-exempt = ["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/build.rs", "**/__main__.py", "crates/gob-testsupport/src/bin/**", "**/benches/**", "**/examples/**", "scripts/**"]
+# which print by design, plus shell scripts that log through logger(1) (.github/scripts, packaging/smoke). Real CLI source stays judged. Setting this replaces the defaults, so they are repeated.
+exempt = ["**/tests/**", "**/test/**", "**/__tests__/**", "**/test_*.py", "**/*_test.*", "**/*.test.*", "**/*.spec.*", "**/build.rs", "**/__main__.py", "crates/gob-testsupport/src/bin/**", "**/benches/**", "**/examples/**", "scripts/**", ".github/scripts/**", "packaging/smoke/**"]
 
 [coh]
 # COH002 Unresolved noise: the Rust adapter cannot place bare method calls, so every decision

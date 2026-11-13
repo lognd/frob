@@ -199,13 +199,13 @@ pub(super) mod status_serde {
     /// Writes the status as its rank (0 Unknown, 1 May, 2 Must).
     #[allow(clippy::trivially_copy_pass_by_ref)] // serde `with` requires a reference
     // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
-    pub fn serialize<S: Serializer>(s: &Status, ser: S) -> Result<S::Ok, S::Error> {
+    pub(crate) fn serialize<S: Serializer>(s: &Status, ser: S) -> Result<S::Ok, S::Error> {
         ser.serialize_u8(super::status_to_u8(*s))
     }
 
     /// Reads a status written by [`serialize`]; any other rank is an error.
     // frob:defer DEAD001 because="named by a serde `with` attribute string, which the call graph cannot see" ticket=01M61DFC5ZCSJTKMNBP88AKFVS
-    pub fn deserialize<'de, D: Deserializer<'de>>(de: D) -> Result<Status, D::Error> {
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(de: D) -> Result<Status, D::Error> {
         match u8::deserialize(de)? {
             n @ 0..=2 => Ok(super::status_of_u8(n)),
             n => Err(serde::de::Error::custom(format!("bad status rank {n}"))),
