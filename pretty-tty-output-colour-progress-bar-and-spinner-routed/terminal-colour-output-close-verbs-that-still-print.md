@@ -2,13 +2,13 @@
 id = "01M7AYMF3066GKHWVPQ40XY7XH"
 title = "Terminal colour output: close verbs that still print uncoloured rows on a TTY (W1GQTPG acceptance gap)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5XMN7Z3TWMW8YMGVE2QBC17"
 reporter = "lognd"
 created = "2026-11-13T17:17:40Z"
-updated = "2026-11-13T17:17:40Z"
+updated = "2026-11-13T17:19:01Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/pretty.rs", "crates/frob/src/**"]
 
