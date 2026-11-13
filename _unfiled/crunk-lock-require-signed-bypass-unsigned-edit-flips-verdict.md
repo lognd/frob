@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T23:41:35Z"
+updated = "2026-11-13T23:47:42Z"
 labels = ["no-story"]
 scope = ["crates/crunk-*/**"]
 
 [[acceptance]]
 text = "A test shows an unsigned flip fails require_signed."
-bound = false
+bound = true
 +++
 
 H4: an unsigned commit can flip a signed rejected verdict to approved and still satisfy require_signed. Source: frob-audit-grimble-crunk.md (Opus audit).

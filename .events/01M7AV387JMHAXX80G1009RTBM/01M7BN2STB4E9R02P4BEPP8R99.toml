@@ -1,0 +1,122 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T23:47:42Z"
+digest = "1b21c9a54b1dcd64bdb98ea45c5d105e0ffbb2923ebdb96c2d9b68db145bc56b"
+exit_code = 0
+head = "2873871b11bdfadf42ee25053d898b18f24d9603"
+inline = """
+
+running 2 tests
+test render_ledger::tests::only_cells_with_a_render_are_recorded ... ok
+test render_ledger::tests::missing_manifest_gathers_no_ledger_and_bad_one_is_unreadable ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 85 tests
+test color001::an_unusable_spec_refuses_the_run_instead_of_passing_it ... ok
+test color001::off_in_lint_silences_the_rule ... ok
+test color001::a_jsx_style_prop_is_ingested_when_jsx_globs_are_set ... ok
+test color001::a_spec_only_project_gets_a_required_unresolved_from_color001 ... ok
+test color001::a_contrast_failure_only_in_the_cb_safe_mode_names_the_mode ... ok
+test color001::a_rule_new_in_this_release_line_is_no_longer_ramped ... ok
+test color001::rules_ramp_false_leaves_a_new_rule_at_error ... ok
+test crunk_web_pack::a_drifted_tree_is_refused ... ok
+test crunk_web_pack::catalog_is_empty_when_the_switch_is_off ... ok
+test crunk_web_pack::a_rule_without_examples_does_not_compile ... ok
+test crunk_web_pack::a11y_rules_fire_with_teaching_text_on_a_violation ... ok
+test crunk_web_pack::every_a11y_rule_passes_its_examples ... ok
+test crunk_web_pack::every_seo_rule_passes_its_examples ... ok
+test crunk_web_pack::seo_rules_carry_teaching_text_and_a_remedy ... ok
+test crunk_web_pack::launch_rules_carry_teaching_text_and_a_remedy ... ok
+test crunk_web_pack::the_lock_digest_matches_the_pack_tree ... ok
+test crunk_web_pack::webperf_assets_rules_are_not_applicable_without_an_adapter ... ok
+test crunk_web_pack::catalog_lists_the_pack_rules_when_on ... ok
+test crunk_web_pack::every_launch_rule_passes_its_examples ... ok
+test color001::a_failing_role_pair_is_reported_at_the_spec ... ok
+test baseline::an_unlisted_key_does_not_mute ... ok
+test crunk_web_pack::webperf_assets_rules_carry_teaching_text_and_a_remedy ... ok
+test crunk_web_pack::webperf_assets_clean_and_firing_examples_pass ... ok
+test color001::the_message_names_the_nearest_palette_token_and_the_distance ... ok
+test baseline::a_baselined_finding_is_muted_and_reported_suppressed ... ok
+test color001::an_undefined_token_with_the_generated_sheet_present_fires_and_without_it_is_unresolved ... ok
+test craft010::a_project_that_deleted_its_motion_reports_the_missing_motion_policy ... ok
+test craft010::motion_with_a_reduced_motion_twin_is_clean ... ok
+test gx014::a_waiver_with_a_reason_silences_it ... ok
+test gx014::a_color_literal_asks_for_the_generated_token_constant ... ok
+test has_config::only_a_crunk_toml_marks_a_project ... ok
+test gx014::named_literal_arguments_fire_instead_of_going_unresolved ... ok
+test color001::the_finding_is_located_at_the_literal_and_a_waiver_silences_it ... ok
+test opaque::every_crunk_opaque_region_is_sound ... ok
+test review::a_signed_commit_vouches_for_its_entry ... ok
+test review::an_ack_by_an_unlisted_person_or_a_rejection_without_a_note_is_refused ... ok
+test gx014::named_literal_arguments_fire_instead_of_going_unresolved_part_2 ... ok
+test gx014::generated_token_files_and_non_generators_are_exempt ... ok
+test review::an_uncommitted_verdict_flip_is_not_vouched_for ... ok
+test review::git_signature_status_letters_map_to_good_or_unsigned ... ok
+test review::git_signatures_read_the_commit_that_last_changed_the_entry ... ok
+test review::an_unsigned_commit_that_flips_the_verdict_is_not_vouched_for ... ok
+test review::require_signed_judges_the_commit_that_introduced_the_ack ... ok
+test review::a_token_the_screen_does_not_use_does_not_make_it_stale ... ok
+test review::the_identity_is_git_config_name_and_email_or_unknown ... ok
+test review::require_signed_fails_an_unsigned_flip_through_gather ... ok
+test rule_coverage::every_crunk_rule_has_a_corpus ... ok
+test gx014::named_colors_hex_strings_and_font_sizes_are_literals ... ok
+test review::the_release_gate_runs_a_stale_review_as_an_error_that_fails_the_run ... ok
+test spec_errors::a_repository_without_crunk_toml_still_runs ... ok
+test scene_docs::a_non_utf8_nested_scene_is_a_finding_not_a_panic ... ok
+test spec_errors::malformed_toml_fails_the_load ... ok
+test scene_docs::well_formed_scenes_raise_no_scene005 ... ok
+test gx014::computed_color_methods_are_unresolved_and_clear_stays_clean ... ok
+test review::human001_is_release_only_and_not_in_gate_at_local_and_ci ... ok
+test gx014::prefab_color_and_font_size_literals_are_audited ... ok
+test review::a_changed_token_makes_human001_name_the_screen_and_token_until_acked_again ... ok
+test spec_errors::an_unknown_key_in_a_known_table_fails_naming_table_and_key ... ok
+test spec_errors::an_unknown_table_fails_the_load_naming_it ... ok
+test spec_errors::v1_shaped_layers_content_fails_the_load ... ok
+test gx014::token_constants_comments_and_strings_are_clean ... ok
+test telemetry::a_crunk_check_leaves_no_state_directory_in_the_worktree ... ok
+test static_tailwind::engine_static_in_crunk_toml_never_executes_repository_javascript ... ok
+test tier::default_tier_lists_nothing_it_decides ... ok
+test stylelint::a_stylelint_stage_yields_advisory_findings_under_crunk_ids ... ok
+test tier::tier_default_is_t1_and_unknown_lists_all ... ok
+test static_tailwind::the_static_flag_never_executes_repository_javascript ... ok
+test tier::document_carries_a_not_run_section ... ok
+test tier::must_measure_above_tier_is_unresolved_and_unknown_family_is_t0 ... ok
+test tier::slop_layout_tells_are_t1_and_the_static_slop_rules_stay_t0 ... ok
+test tier::t0_skips_solver_rules_and_says_so ... ok
+test tokens001::a_stale_tokens_file_is_a_finding_that_lint_can_silence_part_2 ... ok
+test waive001::a_waiver_with_a_reason_suppresses_its_rule_only ... ok
+test tokens001::utilities_are_judged_over_the_collected_tailwind_facts ... ok
+test tokens001::a_stale_tokens_file_is_a_finding_that_lint_can_silence ... ok
+test waive001::a_leading_waiver_suppresses_the_next_declaration ... ok
+test waive001::the_unified_rules_index_lists_every_crunk_rule ... ok
+test waive001::a_waiver_without_a_reason_fires_waive001_and_does_not_suppress ... ok
+test tier::not_run_is_stable_ordered_and_family_filtered ... ok
+test waive001::findings_from_several_files_are_ordered_by_path_line_rule ... ok
+test gx014::non_literal_color_arguments_are_unresolved ... ok
+test warm_cache::the_second_run_reuses_cached_ingest_and_reports_the_same_findings ... ok
+test gx014::prefab_non_literal_or_malformed_values_are_unresolved_not_findings ... ok
+test waive001::lint_warn_changes_the_severity_and_off_drops_the_finding ... ok
+test gx_corpus::mdtest_corpus ... ok
+
+test result: ok. 85 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.28s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 14s
+     Running unittests src/lib.rs (target/debug/deps/crunk_check-228f41123f2bae88)
+     Running tests/it/main.rs (target/debug/deps/it-80565bda6389ccc9)
+   Doc-tests crunk_check
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p crunk-check"
+size = 6912
+status = "measured"
+at = "2026-11-13T23:47:42Z"
+actor = "lognd"
+rev = 1
