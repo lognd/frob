@@ -4,9 +4,10 @@ title = "Definition of Ready/Done: refuse close with empty acceptance criteria"
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T16:17:34Z"
+updated = "2026-11-13T17:01:29Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**"]
 
