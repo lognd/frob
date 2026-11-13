@@ -2,7 +2,8 @@
 id = "01M79PFSRDS1VEM1EZXPD8XKHB"
 title = "Test identical Rust twins across crates are each owned"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
