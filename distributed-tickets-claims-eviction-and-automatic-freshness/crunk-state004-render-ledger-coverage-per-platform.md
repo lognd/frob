@@ -8,13 +8,13 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-11-13T09:12:04Z"
+updated = "2026-11-13T09:20:16Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 
 [[acceptance]]
 text = "Given a screen state without a render entry for a platform, when checked, then STATE004 fires"
-bound = false
+bound = true
 +++
 
 found while working ~60E2DXH: each screen state needs a render-ledger entry per platform; needs render output.
