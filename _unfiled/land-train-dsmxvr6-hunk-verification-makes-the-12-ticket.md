@@ -7,7 +7,7 @@ priority = "critical"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T16:21:41Z"
-updated = "2026-11-13T16:22:04Z"
+updated = "2026-11-13T16:27:19Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
