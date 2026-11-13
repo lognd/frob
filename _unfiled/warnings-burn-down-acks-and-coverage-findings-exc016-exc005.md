@@ -2,12 +2,12 @@
 id = "01M7AYFADBZEDS3BQQNE0AN3EV"
 title = "warnings: burn down acks and coverage findings (EXC016 EXC005 COV001 COV004 SYS013 CAP001 AFFECT001)"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T17:14:51Z"
+updated = "2026-11-13T20:32:22Z"
 labels = ["no-story"]
 scope = ["crates/**"]
 
