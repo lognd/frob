@@ -2,7 +2,8 @@
 id = "01M7AYFA9AE50AM4617VSX6B8Q"
 title = "warnings: burn down small-rule code findings (ERR002 COH001 LOG001 VIS001 REL003 RES001 FMT001 CYCLE001)"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
