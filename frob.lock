@@ -1645,6 +1645,17 @@ acked_at = "2026-11-06T03:37:35.401689809Z"
 reason = "only added the profile field (None in tests, model.profile in bind); behavior unchanged"
 
 [[symbol]]
+identity = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_file_out"
+symref = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_file_out"
+sig = "6ec053c1ff0db05c48848489987a5868eacc9f4fe6acbd4de3707a3658fbd55b"
+body = "db5fbd0fa02b768c7ed579f242816f813ae2e106aab7c0434e880a90e8156087"
+doc = "225c6143382cef0e6a08df910374f06aab86dde9db2c608d8cc92266b67f4bc0"
+attr = "d880c6f943aba82ca8c42871bd6942e55ef03345488ef776162ab8922b6e23a1"
+contract = "8f0a55441f0c6b9f12982092a67bf98e50d74fb75fb25581b960f61e90de8f0e"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T08:50:13.931930546Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_out"
 symref = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_out"
 sig = "46cfed766e02be3186083ba9fc20b2e1ee5e09e380f2ca23cfebb0a16b6a696e"

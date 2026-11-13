@@ -92,9 +92,9 @@ fn c02_csharp_computed_type_name_is_unresolved() {
         "src/x.cs",
         "using System;\nclass A { void Go(string n){ Activator.CreateInstance(Type.GetType(n)); } }\n",
     );
-    assert!(has(&found, "ffi", false), "{found:?}");
-    assert!(has(&found, "process.spawn", false), "{found:?}");
-    assert!(has(&found, "code.eval", false), "{found:?}");
+    // an empty callee collapses into one unresolved finding (ticket NCV14W4)
+    assert!(has(&found, "unknown-callee", false), "{found:?}");
+    assert!(lacks(&found, "process.spawn"), "{found:?}");
 }
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
@@ -302,16 +302,18 @@ fn r22_rust_local_function_named_like_libc_names_nothing() {
 #[test]
 fn t02_javascript_computed_require_is_unresolved() {
     let found = cap001("src/x.js", "function go(n){ return require(n); }\n");
-    assert!(has(&found, "code.eval", false), "{found:?}");
-    assert!(has(&found, "process.spawn", false), "{found:?}");
+    // an empty callee collapses into one unresolved finding (ticket NCV14W4)
+    assert!(has(&found, "unknown-callee", false), "{found:?}");
+    assert!(lacks(&found, "process.spawn"), "{found:?}");
 }
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
 fn t02_javascript_computed_import_is_unresolved() {
     let found = cap001("src/x.js", "async function go(n){ return import(n); }\n");
-    assert!(has(&found, "code.eval", false), "{found:?}");
-    assert!(has(&found, "process.spawn", false), "{found:?}");
+    // an empty callee collapses into one unresolved finding (ticket NCV14W4)
+    assert!(has(&found, "unknown-callee", false), "{found:?}");
+    assert!(lacks(&found, "process.spawn"), "{found:?}");
 }
 
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
