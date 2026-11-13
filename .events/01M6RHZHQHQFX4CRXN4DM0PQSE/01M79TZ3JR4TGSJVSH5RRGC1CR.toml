@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Each manual test listed by grimble status is documented with how to run it."]
+new = ["Given grimble status lists manual tests, when a reader opens the docs page, then each test is documented with how to run it."]
+reason = "Given/When/Then acceptance (PM031)"
+moved = [0]
+at = "2026-11-13T06:54:20Z"
+actor = "lognd"
+rev = 1

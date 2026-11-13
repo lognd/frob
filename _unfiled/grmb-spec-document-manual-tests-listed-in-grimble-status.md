@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T13:50:12Z"
-updated = "2026-11-13T06:52:22Z"
+updated = "2026-11-13T06:54:20Z"
 idempotency_key = "grmb-status-manual"
 labels = ["good-first"]
 scope = ["docs/**"]
 
 [[acceptance]]
-text = "Each manual test listed by grimble status is documented with how to run it."
+text = "Given grimble status lists manual tests, when a reader opens the docs page, then each test is documented with how to run it."
 bound = false
 +++
 
