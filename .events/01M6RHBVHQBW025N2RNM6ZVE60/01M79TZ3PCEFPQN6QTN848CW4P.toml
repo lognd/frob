@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["COH004 corpus page carries an expect=fire example that passes."]
+new = ["Given the COH004 corpus page, when the corpus runs, then an expect=fire example fires and passes."]
+reason = "Given/When/Then acceptance (PM031)"
+moved = [0]
+at = "2026-11-13T06:54:20Z"
+actor = "lognd"
+rev = 1

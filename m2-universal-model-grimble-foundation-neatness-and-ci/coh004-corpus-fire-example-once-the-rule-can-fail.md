@@ -8,12 +8,12 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T13:39:26Z"
-updated = "2026-11-13T06:52:22Z"
+updated = "2026-11-13T06:54:20Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/grimble-check/**"]
 
 [[acceptance]]
-text = "COH004 corpus page carries an expect=fire example that passes."
+text = "Given the COH004 corpus page, when the corpus runs, then an expect=fire example fires and passes."
 bound = false
 +++
 
