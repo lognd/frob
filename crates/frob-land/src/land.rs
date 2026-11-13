@@ -129,8 +129,27 @@ fn settled_by_a_racing_land(
             return None;
         }
     }
+    // frob:ticket 01M7ATYEXWQEBT3NPC65JBQCNJ
+    // In branch ref mode the close rides on the ticket branch, so a done ticket proves nothing
+    // until its code reached the base: a failed fast-forward must surface, not read as done.
+    let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
+    if !code_reached_base(repo, base, &branch) {
+        tracing::warn!(ticket = %id, branch = %branch, base = %base, "ticket reads done but its branch is not on the base; surfacing the land failure");
+        return None;
+    }
     tracing::info!(ticket = %id, "land failed but the ticket is done: a racing land won; reporting a no-op");
     Some(already_done(&view, id, &view.summary.handle, base, opts))
+}
+
+/// True when `branch` is gone (a winner removed it) or its tip is contained in `base`.
+fn code_reached_base(repo: &Repo, base: &str, branch: &str) -> bool {
+    let Ok(tip) = repo.rev_parse(&format!("refs/heads/{branch}")) else {
+        return true;
+    };
+    repo.merge_base(&base_ref(base), &tip.to_string())
+        .ok()
+        .flatten()
+        == Some(tip)
 }
 
 /// Everything the preconditions established, ready to plan or publish.
@@ -2337,6 +2356,36 @@ mod tests {
             tip
         );
         assert!(lock.exists(), "the index lock was never touched");
+    }
+
+    // frob:ticket 01M7ATYEXWQEBT3NPC65JBQCNJ
+    // frob:tests crates/frob-land/src/land.rs::code_reached_base
+    #[test]
+    fn a_done_ticket_whose_branch_is_not_on_the_base_is_not_settled() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path().join("repo");
+        std::fs::create_dir(&dir).expect("mkdir");
+        let repo = Repo::init(&dir).expect("init");
+        run_git(&repo, &dir, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        run_git(&repo, &dir, &["config", "user.name", "T"]);
+        run_git(&repo, &dir, &["config", "user.email", "t@example.com"]);
+        run_git(
+            &repo,
+            &dir,
+            &["commit", "-q", "--allow-empty", "-m", "root"],
+        );
+        run_git(&repo, &dir, &["checkout", "-q", "-b", "ticket/x"]);
+        run_git(
+            &repo,
+            &dir,
+            &["commit", "-q", "--allow-empty", "-m", "work"],
+        );
+        run_git(&repo, &dir, &["checkout", "-q", "main"]);
+        assert!(!code_reached_base(&repo, "main", "ticket/x"), "failed FF");
+        run_git(&repo, &dir, &["merge", "-q", "--ff-only", "ticket/x"]);
+        assert!(code_reached_base(&repo, "main", "ticket/x"));
+        run_git(&repo, &dir, &["branch", "-q", "-D", "ticket/x"]);
+        assert!(code_reached_base(&repo, "main", "ticket/x"), "gone branch");
     }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40
