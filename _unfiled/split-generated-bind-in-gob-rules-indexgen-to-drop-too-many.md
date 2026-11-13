@@ -7,7 +7,7 @@ priority = "low"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T09:40:52Z"
-updated = "2026-11-13T12:57:23Z"
+updated = "2026-11-13T13:09:52Z"
 labels = ["no-story", "creates:crates/gob-rules/**"]
 scope = ["crates/gob-rules/**", "crates/grimble-model/src/rules/**", "crates/crunk-rules/**"]
 
