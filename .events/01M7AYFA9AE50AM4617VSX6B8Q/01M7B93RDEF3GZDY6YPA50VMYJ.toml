@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/**", "grimble.toml"]
+new = ["crates/**", "grimble.toml", "docs/reference/rules/**"]
+at = "2026-11-13T20:20:46Z"
+actor = "lognd"
+rev = 1
