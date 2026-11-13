@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "cause is grimble-arch anchoring, not the script; new ticket"
+at = "2026-11-13T23:08:12Z"
+actor = "lognd"
+rev = 1
