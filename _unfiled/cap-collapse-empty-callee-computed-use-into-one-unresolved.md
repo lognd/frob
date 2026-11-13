@@ -4,7 +4,8 @@ title = "CAP: collapse empty-callee computed use into one unresolved finding ins
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-12T20:58:39Z"
-updated = "2026-11-12T20:58:39Z"
+updated = "2026-11-13T05:48:25Z"
 +++
