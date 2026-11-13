@@ -527,7 +527,7 @@ mod tests {
 
     #[test]
     fn a_large_catalog_binds_through_chunked_parts() {
-        let rules: Vec<RuleSrc> = (0..BIND_CHUNK * 2 + 1)
+        let rules: Vec<RuleSrc> = (0..=BIND_CHUNK * 2)
             .map(|i| RuleSrc {
                 stem: format!("cov{i:03}"),
                 id: format!("COV{i:03}"),
