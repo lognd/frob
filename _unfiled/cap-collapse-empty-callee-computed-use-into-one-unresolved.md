@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-12T20:58:39Z"
-updated = "2026-11-13T06:52:22Z"
+updated = "2026-11-13T06:54:20Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/grimble-bind/**"]
 
 [[acceptance]]
-text = "Empty-callee computed use yields one unresolved finding, covered by a test."
+text = "Given an empty-callee computed use, when CAP runs, then exactly one unresolved finding is reported."
 bound = false
 +++
 

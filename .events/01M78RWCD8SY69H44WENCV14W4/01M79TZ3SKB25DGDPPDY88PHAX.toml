@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["Empty-callee computed use yields one unresolved finding, covered by a test."]
+new = ["Given an empty-callee computed use, when CAP runs, then exactly one unresolved finding is reported."]
+reason = "Given/When/Then acceptance (PM031)"
+moved = [0]
+at = "2026-11-13T06:54:20Z"
+actor = "lognd"
+rev = 1
