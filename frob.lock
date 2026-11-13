@@ -470,6 +470,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-13T10:09:52.455082688Z"
 
 [[symbol]]
+identity = "crates/crunk-rules/src/rules/state004.rs::State004"
+symref = "crates/crunk-rules/src/rules/state004.rs::State004"
+sig = "1d6a9176efb1125f84da9d4f62ecd949f3ee3a3f3e7fa4933e1e3bd1771d2a19"
+body = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+doc = "366c3da54c615af076154a2990697353f9697e769b05cfa12cbb6f7b77af1cee"
+attr = "b68d3ce92277bc9cdeeaeacd0d4a4ab48d797989c92aaf856fb1d594226ee5d8"
+contract = "9dad02482b629c5535bec641bdc683ae2f2f21bd798f259a8e8d8d7f3dd780d0"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T10:29:34.600319142Z"
+
+[[symbol]]
 identity = "crates/crunk-rules/tests/it/rules.rs::bind_yields_one_bound_rule_per_declaration"
 symref = "crates/crunk-rules/tests/it/rules.rs::bind_yields_one_bound_rule_per_declaration"
 sig = "204e9f50537f8ca6653774931db5dc2a3bbc98ac0cbcdf010154257a028ef7c4"
