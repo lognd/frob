@@ -776,7 +776,7 @@ fn vocab_hits<'a>(
     if let Some(star) = star {
         return star.hits.clone();
     }
-    // frob:ticket NCV14W4
+    // frob:ticket 01M78RWCD8SY69H44WENCV14W4
     if pu.computed && callee.is_empty() {
         tracing::debug!(
             line = pu.line,
@@ -3847,7 +3847,7 @@ mod cell_tests {
         assert!(counts.get("denied").copied().unwrap_or(0) > 0, "{counts:?}");
     }
 
-    // frob:ticket NCV14W4
+    // frob:ticket 01M78RWCD8SY69H44WENCV14W4
     // frob:tests crates/grimble-bind/src/caps.rs::vocab_hits
     /// An empty-callee computed use yields exactly one unresolved CAP001 finding, not one per atom.
     #[test]
