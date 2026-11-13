@@ -8,7 +8,8 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T06:50:45Z"
-updated = "2026-11-13T09:30:42Z"
+updated = "2026-11-13T09:50:01Z"
+labels = ["no-story"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
 
 [[acceptance]]
