@@ -13,5 +13,5 @@ scope = ["crates/gob-rules/**", "crates/grimble-model/src/rules/**", "crates/cru
 
 [[acceptance]]
 text = "Given a rule crate with more than 40 rules, when its index is generated, then bind is split into BindPart chunks and no too_many_lines allow is needed"
-bound = false
+bound = true
 +++
