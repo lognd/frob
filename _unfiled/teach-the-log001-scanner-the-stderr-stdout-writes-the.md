@@ -4,7 +4,8 @@ title = "Teach the LOG001 scanner the stderr/stdout writes the universal model r
 type = "chore"
 category = "todo"
 priority = "low"
+points = 1
 reporter = "lognd"
 created = "2026-11-13T05:43:08Z"
-updated = "2026-11-13T05:43:08Z"
+updated = "2026-11-13T05:43:12Z"
 +++
