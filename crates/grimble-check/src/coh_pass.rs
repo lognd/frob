@@ -96,6 +96,8 @@ pub struct CohPassOptions {
     pub coh001: CohOptions,
     /// COH002 vocabularies (the `[coh]` overrides on top of the effects capability).
     pub coh002: Coh002Options,
+    /// COH004 knobs (the cluster floor and stop words from the `[coh]` table).
+    pub coh004: Coh004Options,
     /// The largest layer distance COH003 still accepts as one level of abstraction.
     pub max_level_spread: u32,
     /// The layered nodes of the grimble model (empty when there is no model or it declares none).
@@ -107,6 +109,7 @@ impl Default for CohPassOptions {
         Self {
             coh001: CohOptions::default(),
             coh002: Coh002Options::default(),
+            coh004: Coh004Options::default(),
             max_level_spread: DEFAULT_MAX_LEVEL_SPREAD,
             model: ModelLayers::default(),
         }
@@ -404,14 +407,14 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         .collect();
     let mut coh003_opts = coh003_options(&opts.model, &defs);
     coh003_opts.max_level_spread = opts.max_level_spread;
-    let coh004_opts = Coh004Options::default();
+    let coh004_opts = &opts.coh004;
     let judged_each: Vec<(PathReport, Vec<String>)> = parsed
         .par_iter()
         .map(|p| {
             let mut each = PathReport::default();
             judge_coh001(p.file, &p.folded, &opts.coh001, &mut each);
             judge_coh002(p.file, &p.folded, &opts.coh002, &mut each);
-            judge_coh004(p.file, &p.folded, &coh004_opts, &mut each);
+            judge_coh004(p.file, &p.folded, coh004_opts, &mut each);
             let names = judge_coh003(p.file, &p.folded, &coh003_opts, &mut each);
             (each, names)
         })

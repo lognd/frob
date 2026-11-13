@@ -886,8 +886,16 @@
     },
     "coh": {
       "additionalProperties": false,
-      "description": "The `[coh]` table: project overrides for COH001 (\"independent jobs\"), COH002 (\"decision with effects\") and COH003 (\"mixed abstraction levels\").\n\nThe language adapter's effects capability decides by default (a call through `fs`, `os`,\n`subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on\nthe callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks\na name as an effect, `trivial` as never one, and a name in both is trivial. Both default to\nempty. A call the capability cannot place leaves the verdict Unresolved until it is listed.\n`max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.\n`min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a\njob; `trivial` also adds to COH001's built-in logging vocabulary.",
+      "description": "The `[coh]` table: project overrides for COH001 (\"independent jobs\"), COH002 (\"decision with effects\") and COH003 (\"mixed abstraction levels\").\n\nThe language adapter's effects capability decides by default (a call through `fs`, `os`,\n`subprocess` is an effect, `console.log` is not). A configured list adds to it and matches on\nthe callee's last path segment in any language, so `a.b.send` is `send`: `effect_calls` marks\na name as an effect, `trivial` as never one, and a name in both is trivial. Both default to\nempty. A call the capability cannot place leaves the verdict Unresolved until it is listed.\n`max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.\n`min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a\njob; `trivial` also adds to COH001's built-in logging vocabulary, so list only logging-like\nnames there and put plain non-effect callees in `callee_trivial`, which only COH002 reads.\n`vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a\nvocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.",
       "properties": {
+        "callee_trivial": {
+          "default": [],
+          "description": "Extra callee names COH002 treats as non-effects; unlike `trivial` they do not change COH001's job clustering.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "effect_calls": {
           "default": [],
           "description": "Extra callee names that perform an effect (IO, messaging, persistence) when called inside a decision.",
@@ -913,6 +921,21 @@
         "trivial": {
           "default": [],
           "description": "Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "vocab_min_cluster_words": {
+          "default": 2,
+          "description": "The fewest distinct words a cluster needs to count as a vocabulary for COH004.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "vocab_stop_words": {
+          "default": [],
+          "description": "Extra generic words COH004 drops before clustering (std method names, test scaffolding).",
           "items": {
             "type": "string"
           },

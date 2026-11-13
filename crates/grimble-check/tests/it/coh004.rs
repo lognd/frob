@@ -91,3 +91,18 @@ fn split_words_handles_snake_and_camel() {
     assert_eq!(split_words("invoiceTotal"), ["invoice", "total"]);
     assert_eq!(split_words("HTTPServer"), ["http", "server"]);
 }
+
+// frob:tests crates/grimble-check/src/coh004.rs::Coh004Options
+#[test]
+fn options_from_coh_table_apply_floor_and_stop_words() {
+    use grimble_check::config::CohTable;
+    let table = CohTable {
+        vocab_min_cluster_words: 4,
+        vocab_stop_words: vec!["zorp".to_owned()],
+        ..CohTable::default()
+    };
+    let opts = Coh004Options::from(&table);
+    assert_eq!(opts.min_cluster_words, 4);
+    assert!(opts.stop_words.iter().any(|w| w == "zorp"));
+    assert!(opts.stop_words.len() > 1);
+}
