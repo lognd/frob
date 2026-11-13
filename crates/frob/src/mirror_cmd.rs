@@ -63,7 +63,7 @@ impl Command for MirrorRender {
 
 /// The mirror host's ticket source over `ledger`: facts come from [`facts_of`], `exclude` is withheld.
 // frob:ticket 01M5EKM0HMCYE834CN3J9NEK8B
-// frob:ticket 01M7A3AHXFBFA5WT97NP16PG85
+// frob:ticket 01M7A32314FMETC15Y3P16PG85
 pub(crate) fn ledger_tickets<'a>(
     ledger: &'a Ledger,
     repository: String,
