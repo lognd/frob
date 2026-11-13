@@ -4,7 +4,8 @@ title = "grimble-model: plan_index registers spurious M.REF system for a system 
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-12T20:42:32Z"
-updated = "2026-11-12T20:42:32Z"
+updated = "2026-11-13T05:48:25Z"
 +++
