@@ -8,7 +8,7 @@ class = "expedite"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-13T09:12:28Z"
+updated = "2026-11-13T09:13:09Z"
 labels = ["ci"]
 scope = [".github/workflows/ci.yml", ".github/actions/**"]
 
