@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-13T12:10:34Z"
+digest = "7291203e0838acfb13016a99d77a0d970c6fc184c88ee702c67d1b8804da9cd0"
+head = "6b5b18e4b787f641adc757338e4e1fdb616bf974"
+provider = "file"
+ref = "crates/frob/tests/it/mirror_render.rs"
+size = 2672
+status = "measured"
+at = "2026-11-13T12:10:34Z"
+actor = "lognd"
+rev = 1
