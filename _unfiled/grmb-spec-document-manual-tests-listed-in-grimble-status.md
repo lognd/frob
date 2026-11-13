@@ -2,7 +2,8 @@
 id = "01M6RHZHQHQFX4CRXN4DM0PQSE"
 title = "grmb-spec: document manual tests listed in grimble status (follow-up to WZS7NG7)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
