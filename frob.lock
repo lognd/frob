@@ -1039,6 +1039,17 @@ acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
 
 [[symbol]]
+identity = "crates/frob/tests/it/sync_policy.rs::doable_once_probed"
+symref = "crates/frob/tests/it/sync_policy.rs::doable_once_probed"
+sig = "3c0f9ef208ce2376266b2ede854b5e2655385ccf42f10e1fab9a838f4059e229"
+body = "b6a96223f1fdba2e8836cdd5375d655cbbcbfaee38f3a34a05fa254a47159960"
+doc = "b47c7f5d3003f845609aa125732e27700f3b7bb4586ae2949c689dc675a0ca12"
+attr = "5600eda589995ebc08ac0a28e821ba3667a1b210805898c5d0a2a68170598eab"
+contract = "31b41141eb9462eacdc5dcabfcd533b9beb725f7386dc4d0cd3bbb4ce5e21cf5"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T19:19:24.009141375Z"
+
+[[symbol]]
 identity = "crates/frob/tests/it/sync_policy.rs::doable_warns_when_offline_and_the_view_is_old"
 symref = "crates/frob/tests/it/sync_policy.rs::doable_warns_when_offline_and_the_view_is_old"
 sig = "034e1abe5c070ef1cc3327a6995d4658fe5d920c088725b815cd99528eea0a6d"
