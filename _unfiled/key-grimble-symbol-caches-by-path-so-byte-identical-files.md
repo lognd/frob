@@ -2,7 +2,8 @@
 id = "01M79PFNT3MZQ91ME389AMYKG8"
 title = "Key grimble symbol caches by path so byte-identical files stay owned"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
