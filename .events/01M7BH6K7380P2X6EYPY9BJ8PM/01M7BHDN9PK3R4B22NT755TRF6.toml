@@ -1,0 +1,162 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T22:45:56Z"
+digest = "b11f3b30e73a36f5c995c7c26225e77aa6c0748819e577fc12677362008c44dc"
+exit_code = 0
+head = "bc5518261ed9c770744c6059ae7f3e3905e0ed94"
+inline = """
+
+running 29 tests
+test component_file::tests::minimal_component_needs_only_a_name ... ok
+test component_file::tests::parses_a_full_component ... ok
+test component_file::tests::rejects_bad_toml_missing_name_and_unknown_keys ... ok
+test component_file::tests::unicode_names_and_duplicates_load ... ok
+test content_file::tests::parses_keys_with_locale_and_budget ... ok
+test content_file::tests::rejects_empty_duplicate_and_unknown ... ok
+test flow_file::tests::a_dangling_from_is_located_and_an_unknown_key_is_named ... ok
+test flow_file::tests::bad_flows_get_a_code_and_a_location ... ok
+test ia::tests::a_content_model_rejects_a_repeated_type ... ok
+test flow_file::tests::valid_flow_passes_including_cycles_and_the_skeleton ... ok
+test ia::tests::a_content_model_with_distinct_types_parses ... ok
+test ia::tests::a_good_sitemap_measures_depth ... ok
+test ia::tests::a_sitemap_with_a_bad_route_is_a_field_error ... ok
+test ia::tests::a_sitemap_with_a_blank_label_is_a_field_error ... ok
+test ia::tests::a_sitemap_with_a_parent_cycle_is_refused ... ok
+test ia::tests::a_sitemap_with_a_repeated_route_is_refused ... ok
+test ia::tests::a_sitemap_with_an_unknown_key_is_a_parse_error ... ok
+test ia::tests::a_sitemap_with_an_unknown_parent_is_refused ... ok
+test ia::tests::a_sitemap_without_max_depth_uses_the_default_limit ... ok
+test ia::tests::children_are_reachable_through_their_parent ... ok
+test ia::tests::dynamic_segments_share_one_shape ... ok
+test ia::tests::links_extend_reachability_and_orphans_stay_out ... ok
+test screen_file::tests::old_screen_tables_serialize_without_new_fields ... ok
+test screen_file::tests::screen_file_parses_extended_fields ... ok
+test tells::tests::bad_day_and_empty_source_are_rejected ... ok
+test screen_file::tests::screen_file_rejects_bad_states ... ok
+test tells::tests::bundled_slop060_parses_with_dates_and_sources ... ok
+test tells::tests::provenance_prints_date_and_source ... ok
+test tells::tests::project_file_overrides_bundled ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 96 tests
+test cov_unresolved::a_default_game_table_lacks_every_coverage_key ... ok
+test cov_unresolved::a_default_review_table_reports_itself_default ... ok
+test cov_unresolved::phase_spells_itself_in_lowercase ... ok
+test naming::empty_color_prefix_drops_the_prefix_segment ... ok
+test naming::namespaces_default_and_collapse ... ok
+test naming::naming_scheme_edge_cases ... ok
+test naming::stack_tokens_honor_the_prefix ... ok
+test naming::size_tokens_honor_the_configured_prefix ... ok
+test spec::bad_toml_syntax_is_malformed_with_a_line ... ok
+test parity::corpus_covers_every_section ... ok
+test spec::catalog_rows ... ok
+test spec::breakpoints_precedence ... ok
+test spec::breakpoints_precedence_part_2 ... ok
+test spec::breakpoints_precedence_part_3 ... ok
+test spec::actions_round_trip_with_their_kind ... ok
+test spec::cell_triples_expand_tags_in_declaration_order ... ok
+test schema::schema_describes_every_table_and_rejects_unknown_keys ... ok
+test spec::a_rules_table_loads_without_error ... ok
+test spec::empty_palette_is_legal ... ok
+test spec::dangling_role_reference_is_invalid ... ok
+test spec::default_preset_declares_the_state_roles ... ok
+test schema::crunk_tables_are_scoped_to_the_crunk_product ... ok
+test spec::empty_required_scale_is_rejected ... ok
+test spec::full_example_loads_every_field ... ok
+test spec::error_display_names_file_line_and_column ... ok
+test spec::jsx_and_tailwind_defaults_and_values ... ok
+test spec::breakpoints_precedence_part_4 ... ok
+test spec::lint_absent_defaults ... ok
+test spec::lint_catalog_and_overrides ... ok
+test spec::lint_catalog_and_overrides_part_2 ... ok
+test spec::jsx_and_tailwind_defaults_and_values_part_2 ... ok
+test spec::layers_are_optional_ints ... ok
+test spec::decisions_table_declares_known_decisions_with_reasons ... ok
+test spec::missing_file_is_missing_with_exit_3 ... ok
+test spec::game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys ... ok
+test spec::load_spec_reads_the_file_at_root ... ok
+test spec::mono_preset_declares_the_state_roles_too ... ok
+test spec::org_values_and_defaults_part_2 ... ok
+test spec::game_profiles_actions_and_subtitles_load_and_validate ... ok
+test spec::org_values_and_defaults ... ok
+test spec::org_values_and_defaults_part_3 ... ok
+test spec::palette_value_must_be_a_string ... ok
+test spec::path_base_law_project_file_keys_resolve_against_css_root_others_against_root ... ok
+test spec::org_values_and_defaults_part_4 ... ok
+test spec::path_base_law_project_file_keys_resolve_against_css_root_others_against_root_part_2 ... ok
+test spec::palette_modes_overlay_declared_names_and_reject_unknown_ones ... ok
+test spec::paths_collapse_dot_segments_lexically ... ok
+test spec::paths_collapse_dot_segments_lexically_part_2 ... ok
+test spec::lint_errors_are_located ... ok
+test spec::packs_table_defaults_off_and_switches_crunk_web ... ok
+test spec::platform_errors_are_named_and_located_part_2 ... ok
+test spec::platform_errors_are_named_and_located ... ok
+test spec::platform_errors_are_named_and_located_part_3 ... ok
+test spec::platform_errors_are_named_and_located_part_4 ... ok
+test spec::platform_errors_are_named_and_located_part_5 ... ok
+test spec::missing_required_section_is_named ... ok
+test spec::platform_errors_are_named_and_located_part_6 ... ok
+test spec::platform_errors_are_named_and_located_part_9 ... ok
+test spec::platform_errors_are_named_and_located_part_7 ... ok
+test spec::platform_errors_are_named_and_located_part_8 ... ok
+test spec::roles_must_be_a_table ... ok
+test parity::every_fixture_equals_the_python_spec_dump ... ok
+test spec::screen_file_is_merged_into_spec_screens ... ok
+test spec::screens_and_platforms_absent_default_empty ... ok
+test spec::preset_comments_state_the_path_base_rule ... ok
+test spec::malformed_roles_name_the_role ... ok
+test spec::role_pair_floor_defaults_and_extended_form ... ok
+test spec::screens_resolve_tags_and_report_dangling_references ... ok
+test spec::screens_resolve_tags_and_report_dangling_references_part_3 ... ok
+test spec::rosters_and_duplicate_ids ... ok
+test spec::section_of_the_wrong_shape_is_invalid ... ok
+test spec::screens_resolve_tags_and_report_dangling_references_part_4 ... ok
+test spec::screens_resolve_tags_and_report_dangling_references_part_5 ... ok
+test spec::tables_owned_by_other_crates_are_left_to_their_owners ... ok
+test spec::review_table_and_screen_review_fields_load_and_validate ... ok
+test spec::tables_owned_by_other_crates_are_left_to_their_owners_part_2 ... ok
+test spec::tokens_defaults_and_prefix_rules ... ok
+test spec::platform_numeric_params_are_range_checked ... ok
+test spec::tokens_defaults_and_prefix_rules_part_4 ... ok
+test spec::tokens_defaults_and_prefix_rules_part_3 ... ok
+test spec::tokens_defaults_and_prefix_rules_part_5 ... ok
+test spec::sizes_and_radii_validate_only_when_declared ... ok
+test spec::unknown_key_in_a_section_names_key_line_and_suggestion ... ok
+test spec::unknown_key_without_a_close_match_has_no_suggestion ... ok
+test spec::unknown_top_level_key_names_key_line_and_suggestion ... ok
+test spec::unparseable_palette_color_names_the_key ... ok
+test spec::typography_validation ... ok
+test spec::unsorted_scale_names_the_offender ... ok
+test spec::stacks_default_empty_match_case_insensitively_and_reject_strangers ... ok
+test spec::web_and_command_platforms_resolve_defaults ... ok
+test spec::tokens_header_and_json_file ... ok
+test spec::tokens_defaults_and_prefix_rules_part_2 ... ok
+test spec::screens_resolve_tags_and_report_dangling_references_part_2 ... ok
+test spec::unknown_key_inside_every_fixed_table_is_rejected ... ok
+test inline::err_cases_report_errors ... ok
+test inline::ok_cases_parse_cleanly ... ok
+
+test result: ok. 96 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+
+running 1 test
+test crates/crunk-spec/src/lib.rs - (line 22) ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 1.92s; merged doctests compilation took 1.91s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.37s
+     Running unittests src/lib.rs (target/debug/deps/crunk_spec-c618dd15403f117f)
+     Running tests/it/main.rs (target/debug/deps/it-c2d75ec070d7237a)
+   Doc-tests crunk_spec
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p crunk-spec"
+size = 8354
+status = "measured"
+at = "2026-11-13T22:45:56Z"
+actor = "lognd"
+rev = 1

@@ -8,10 +8,10 @@ class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T22:42:08Z"
-updated = "2026-11-13T22:45:23Z"
+updated = "2026-11-13T22:45:56Z"
 scope = ["crates/crunk-spec/**"]
 
 [[acceptance]]
 text = "crunk-spec parity and inline snapshot tests pass with tailwind.engine"
-bound = false
+bound = true
 +++
