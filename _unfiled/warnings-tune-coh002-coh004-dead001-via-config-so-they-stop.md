@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T17:26:15Z"
+updated = "2026-11-13T18:29:36Z"
 labels = ["no-story"]
 scope = ["frob.toml", "grimble.toml", "crates/grimble-check/**", "crates/grimble-arch/**", "docs/reference/**", "docs/schemas/config.json"]
 
