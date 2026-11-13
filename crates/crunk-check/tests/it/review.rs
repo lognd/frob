@@ -284,6 +284,8 @@ fn the_identity_is_git_config_name_and_email_or_unknown() {
     };
     git(&["init", "-q"]);
     git(&["config", "user.name", "Ada"]);
+    // An empty local value shadows any ambient global/system email (read as unset).
+    git(&["config", "user.email", ""]);
     assert_eq!(review::current_identity(dir.path()), "Ada");
     git(&["config", "user.email", "ada@example.test"]);
     assert_eq!(
