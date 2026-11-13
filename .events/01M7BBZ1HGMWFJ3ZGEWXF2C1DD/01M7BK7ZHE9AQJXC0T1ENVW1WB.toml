@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-13T23:15:23Z"
+digest = "8ba27ae91f23d1fc2b21c52183e63f9141d733e0a3fe3c8484ab54b1bca9a9cd"
+exit_code = 0
+head = "ce148440f9e9bd1b27ea1afa7a25bf353728e291"
+inline = """
+
+running 1 test
+test land::a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 82 filtered out; finished in 0.60s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 26s
+     Running tests/it/main.rs (target/debug/deps/it-4f9098fc1a893ed9)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-land --test it a_base_move_in_an_unrelated_crate_reuses_the_cargo_stage_pass_at_land"
+size = 679
+status = "measured"
+at = "2026-11-13T23:15:23Z"
+actor = "lognd"
+rev = 1
