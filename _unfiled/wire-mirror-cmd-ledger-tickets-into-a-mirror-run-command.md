@@ -4,10 +4,10 @@ title = "Wire mirror_cmd::ledger_tickets into a mirror run command"
 type = "task"
 category = "todo"
 priority = "medium"
-points = 3
+points = 2
 reporter = "lognd"
 created = "2026-11-13T09:15:46Z"
-updated = "2026-11-13T09:15:48Z"
+updated = "2026-11-13T12:01:42Z"
 labels = ["no-story", "creates:crates/frob/src/mirror_cmd.rs"]
 scope = ["crates/frob/src/mirror_cmd.rs"]
 +++
