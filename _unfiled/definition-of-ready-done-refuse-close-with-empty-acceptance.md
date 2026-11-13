@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T17:02:17Z"
+updated = "2026-11-13T17:24:04Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**", "crates/frob-evidence/**", "crates/frob/tests/**", "crates/frob-land/tests/**", "docs/**"]
 
 [[acceptance]]
 text = "Closing done with no acceptance criteria fails unless explicitly waived."
-bound = false
+bound = true
 +++
 
 H5: 21 percent of tickets closed done since Oct 30 had no acceptance criteria. Source: frob-audit-meta.md (Opus audit).
