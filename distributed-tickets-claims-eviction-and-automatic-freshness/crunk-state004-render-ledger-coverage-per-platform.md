@@ -2,7 +2,8 @@
 id = "01M5EF4A7DQJQ2SHXYAYCAB73X"
 title = "crunk: STATE004 render-ledger coverage per platform"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
