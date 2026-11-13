@@ -47,8 +47,7 @@ impl From<&CohTable> for Coh004Options {
     /// The knobs of a loaded `[coh]` table: the cluster floor and extra stop words on the built-ins.
     fn from(table: &CohTable) -> Self {
         let mut opts = Self {
-            min_cluster_words: usize::try_from(table.vocab_min_cluster_words)
-                .unwrap_or(usize::MAX),
+            min_cluster_words: usize::try_from(table.vocab_min_cluster_words).unwrap_or(usize::MAX),
             ..Self::default()
         };
         for word in &table.vocab_stop_words {
