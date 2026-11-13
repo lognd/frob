@@ -2,13 +2,13 @@
 id = "01M7BH6K7380P2X6EYPY9BJ8PM"
 title = "crunk-spec: refresh parity dumps and snapshot for tailwind.engine"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T22:42:08Z"
-updated = "2026-11-13T22:42:08Z"
+updated = "2026-11-13T22:42:53Z"
 scope = ["crates/crunk-spec/**"]
 
 [[acceptance]]
