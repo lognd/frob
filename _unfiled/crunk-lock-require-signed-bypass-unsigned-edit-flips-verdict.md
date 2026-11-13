@@ -2,7 +2,8 @@
 id = "01M7AV387JMHAXX80G1009RTBM"
 title = "crunk.lock require_signed bypass: unsigned edit flips verdict"
 type = "security"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
