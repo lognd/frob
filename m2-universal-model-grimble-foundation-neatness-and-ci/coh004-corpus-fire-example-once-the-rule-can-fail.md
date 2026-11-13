@@ -8,13 +8,13 @@ points = 2
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T13:39:26Z"
-updated = "2026-11-13T08:12:09Z"
+updated = "2026-11-13T08:22:07Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/grimble-check/**"]
 
 [[acceptance]]
 text = "Given the COH004 corpus page, when the corpus runs, then an expect=fire example fires and passes."
-bound = false
+bound = true
 +++
 
 COH004 reports Unresolved only, so its page has no expect=fire example.
