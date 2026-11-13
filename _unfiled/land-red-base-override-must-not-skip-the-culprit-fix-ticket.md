@@ -2,7 +2,8 @@
 id = "01M7AV6DA56YMV88HFEMM9Z56N"
 title = "land: red-base override must not skip the culprit fix-ticket filing"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
