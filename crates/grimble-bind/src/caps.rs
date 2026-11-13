@@ -300,6 +300,10 @@ fn resolved_only(lang: &str) -> bool {
     )
 }
 
+/// The stand-in atom of a computed use with nothing known about its callee: it reaches no real
+/// atom, so the use is reported once as Unresolved instead of once per vocabulary atom.
+const UNKNOWN_CALLEE: &str = "unknown-callee";
+
 /// The atom of the code-evaluating builtins, whose use is only ever unresolved from a name.
 const CODE_EVAL: &str = "code.eval";
 
@@ -772,15 +776,22 @@ fn vocab_hits<'a>(
     if let Some(star) = star {
         return star.hits.clone();
     }
+    // frob:ticket NCV14W4
+    if pu.computed && callee.is_empty() {
+        tracing::debug!(
+            line = pu.line,
+            "empty-callee computed use collapsed to one unresolved use"
+        );
+        return vec![UNKNOWN_CALLEE];
+    }
     vocab
         .iter()
         .filter(|(_, names)| {
             if pu.computed {
                 // unknown tail: any atom whose vocabulary lives under the known prefix
                 // (or a vocabulary entry that is the path itself: a computed use of `eval`)
-                // an empty callee (nothing known) reaches every atom, always as an uncertain use
-                // (ticket 01M681KDM0YZZ6T0TJFPCEN1A8)
-                callee.is_empty() || names.iter().any(|n| computed_reaches(language, n, callee))
+                // an empty callee is handled above (ticket NCV14W4)
+                names.iter().any(|n| computed_reaches(language, n, callee))
             } else {
                 names_callee(language, names, callee)
             }
@@ -3777,10 +3788,15 @@ mod cell_tests {
 
     /// Runs CAP001 over one ungranted python file with the given `[packs.severity]` overrides.
     fn cap001_out(src: &str, sev: &[(&str, &str)]) -> Output {
+        cap001_file_out("src/a.py", src, sev)
+    }
+
+    /// Runs CAP001 over one ungranted file at `rel` (under `src/`) with `[packs.severity]` overrides.
+    fn cap001_file_out(rel: &str, src: &str, sev: &[(&str, &str)]) -> Output {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("src")).unwrap();
         // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
-        std::fs::write(dir.path().join("src/a.py"), src).unwrap();
+        std::fs::write(dir.path().join(rel), src).unwrap();
         let text = "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n}\n";
         let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
         let severity = sev
@@ -3829,6 +3845,22 @@ mod cell_tests {
         let out = cap001_out("def go():\n    return 1\n", &[]);
         let counts = out.matrix.values().next().expect("one node");
         assert!(counts.get("denied").copied().unwrap_or(0) > 0, "{counts:?}");
+    }
+
+    // frob:ticket NCV14W4
+    // frob:tests crates/grimble-bind/src/caps.rs::vocab_hits
+    /// An empty-callee computed use yields exactly one unresolved CAP001 finding, not one per atom.
+    #[test]
+    fn empty_callee_computed_use_is_one_unresolved_finding() {
+        let out = cap001_file_out("src/a.sh", "c=r\n$c\"m\" -rf x\n", &[]);
+        let f: Vec<_> = out.findings.iter().filter(|f| f.rule == "CAP001").collect();
+        let unknown: Vec<_> = f
+            .iter()
+            .filter(|f| f.message.contains(UNKNOWN_CALLEE))
+            .collect();
+        assert_eq!(unknown.len(), 1, "{f:?}");
+        assert_eq!(f.len(), 1, "{f:?}");
+        assert!(unknown[0].severity != Severity::Error, "{unknown:?}");
     }
 
     const ENV_USE: &str = "import os\n\ndef go():\n    return os.environ[\"HOME\"]\n";
@@ -3942,7 +3974,7 @@ mod relevance_tests {
 
     // frob:tests crates/grimble-bind/src/caps.rs::vocab_hits
     /// A computed use with a known prefix reaches only atoms under it; an empty callee (nothing
-    /// known) is the sole case that reaches every atom, and its use is never certain.
+    /// known) collapses to the single unknown-callee stand-in, never one hit per atom.
     #[test]
     fn computed_use_reaches_only_atoms_under_its_known_prefix() {
         let vocab = vec![
@@ -3961,7 +3993,10 @@ mod relevance_tests {
             wildcards: Vec::new(),
             maybe: false,
         };
-        assert_eq!(vocab_hits("python", &vocab, None, &pu, "").len(), 2);
+        assert_eq!(
+            vocab_hits("python", &vocab, None, &pu, ""),
+            vec![UNKNOWN_CALLEE]
+        );
         assert!(vocab_hits("python", &vocab, None, &pu, "json").is_empty());
         assert_eq!(vocab_hits("python", &vocab, None, &pu, "os"), vec!["a.one"]);
     }
