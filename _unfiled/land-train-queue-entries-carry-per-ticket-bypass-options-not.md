@@ -2,12 +2,12 @@
 id = "01M7ATYF0JJPY1SV1VP0BGSKE1"
 title = "land train: queue entries carry per-ticket bypass options, not the driver's"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:13:13Z"
-updated = "2026-11-13T17:11:58Z"
+updated = "2026-11-13T22:21:30Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
