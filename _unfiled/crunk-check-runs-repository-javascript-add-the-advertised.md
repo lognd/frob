@@ -4,9 +4,10 @@ title = "crunk check runs repository JavaScript; add the advertised static opt-o
 type = "security"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T16:15:50Z"
+updated = "2026-11-13T17:11:58Z"
 labels = ["no-story"]
 scope = ["crates/crunk-*/**"]
 
