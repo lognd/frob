@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T20:48:29Z"
+updated = "2026-11-13T20:52:23Z"
 labels = ["no-story"]
 scope = ["crates/**"]
 
