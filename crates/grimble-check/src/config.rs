@@ -110,6 +110,15 @@ pub struct CohTable {
     pub vocab_stop_words: Vec<String>,
 }
 
+/// Append each of `extra` to `base` unless already present (how `[coh]` lists add to built-ins).
+pub(crate) fn extend_unique(base: &mut Vec<String>, extra: &[String]) {
+    for name in extra {
+        if !base.contains(name) {
+            base.push(name.clone());
+        }
+    }
+}
+
 impl CohTable {
     /// Load `[coh]` from `<root>/grimble.toml` (a missing file or table means no overrides).
     ///

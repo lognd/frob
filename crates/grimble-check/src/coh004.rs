@@ -11,7 +11,7 @@ use gob_ir::{NodeId, Operator, Term, Universal};
 use tracing::debug;
 
 use crate::coh001::statements;
-use crate::config::CohTable;
+use crate::config::{CohTable, extend_unique};
 
 /// The built-in value of `[coh] vocab_min_cluster_words`.
 pub const DEFAULT_MIN_CLUSTER_WORDS: usize = 2;
@@ -50,11 +50,7 @@ impl From<&CohTable> for Coh004Options {
             min_cluster_words: usize::try_from(table.vocab_min_cluster_words).unwrap_or(usize::MAX),
             ..Self::default()
         };
-        for word in &table.vocab_stop_words {
-            if !opts.stop_words.contains(word) {
-                opts.stop_words.push(word.clone());
-            }
-        }
+        extend_unique(&mut opts.stop_words, &table.vocab_stop_words);
         debug!(
             min_cluster_words = opts.min_cluster_words,
             stop_words = opts.stop_words.len(),

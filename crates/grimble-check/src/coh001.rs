@@ -17,7 +17,7 @@ use gob_ir::{DefUseEdge, GroupOrder, MayCause, NodeId, Operator, Status, Term, U
 use gob_symbols::{Folded, def_use_of};
 use tracing::{debug, trace};
 
-use crate::config::CohTable;
+use crate::config::{CohTable, extend_unique};
 
 /// The built-in value of `[coh] min_slice_statements`: a job is at least this many statements.
 pub const DEFAULT_MIN_SLICE_STATEMENTS: usize = 2;
@@ -51,11 +51,7 @@ impl From<&CohTable> for CohOptions {
             min_slice_statements: usize::try_from(table.min_slice_statements).unwrap_or(usize::MAX),
             ..Self::default()
         };
-        for name in &table.trivial {
-            if !opts.trivial.contains(name) {
-                opts.trivial.push(name.clone());
-            }
-        }
+        extend_unique(&mut opts.trivial, &table.trivial);
         debug!(
             min_slice_statements = opts.min_slice_statements,
             trivial = opts.trivial.len(),
