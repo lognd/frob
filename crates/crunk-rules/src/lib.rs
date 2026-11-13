@@ -34,11 +34,6 @@
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
-// frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
-#![allow(
-    clippy::too_many_lines,
-    reason = "the generated `rules::bind` has one push per rule and grows with the catalog"
-)]
 
 pub mod breakpoints;
 pub mod color;

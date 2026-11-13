@@ -191,10 +191,16 @@ pub const INDEX: gob_rules::RuleIndex = gob_rules::RuleIndex {
 
 const _: () = gob_rules::assert_unique("crate", &[&[&INDEX]]);
 
-// frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
-/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
-#[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
-pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
+/// One chunk of this crate's rules, bound together so no generated function grows with the catalog.
+pub trait BindPart<P: ?Sized + 'static> {
+    /// Append this chunk's bound rules.
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>);
+}
+
+/// Marker for chunk 0 of the bound rules.
+pub struct Part0;
+
+impl<P: ?Sized + 'static> BindPart<P> for Part0
 where
     amb001::Amb001: gob_rules::RepoRule<P>,
     amb003::Amb003: gob_rules::RepoRule<P>,
@@ -236,6 +242,57 @@ where
     mdl026::Mdl026: gob_rules::RepoRule<P>,
     mdl027::Mdl027: gob_rules::RepoRule<P>,
     mdl028::Mdl028: gob_rules::RepoRule<P>,
+{
+    #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::repo(amb001::Amb001));
+        rules.push(gob_rules::BoundRule::repo(amb003::Amb003));
+        rules.push(gob_rules::BoundRule::repo(amb004::Amb004));
+        rules.push(gob_rules::BoundRule::repo(amb005::Amb005));
+        rules.push(gob_rules::BoundRule::repo(amb007::Amb007));
+        rules.push(gob_rules::BoundRule::repo(amb008::Amb008));
+        rules.push(gob_rules::BoundRule::repo(amb009::Amb009));
+        rules.push(gob_rules::BoundRule::repo(claim001::Claim001));
+        rules.push(gob_rules::BoundRule::repo(claim003::Claim003));
+        rules.push(gob_rules::BoundRule::repo(flow001::Flow001));
+        rules.push(gob_rules::BoundRule::repo(flow002::Flow002));
+        rules.push(gob_rules::BoundRule::repo(flow003::Flow003));
+        rules.push(gob_rules::BoundRule::repo(mdl000::Mdl000));
+        rules.push(gob_rules::BoundRule::repo(mdl001::Mdl001));
+        rules.push(gob_rules::BoundRule::repo(mdl002::Mdl002));
+        rules.push(gob_rules::BoundRule::repo(mdl003::Mdl003));
+        rules.push(gob_rules::BoundRule::repo(mdl004::Mdl004));
+        rules.push(gob_rules::BoundRule::repo(mdl005::Mdl005));
+        rules.push(gob_rules::BoundRule::repo(mdl006::Mdl006));
+        rules.push(gob_rules::BoundRule::repo(mdl007::Mdl007));
+        rules.push(gob_rules::BoundRule::repo(mdl008::Mdl008));
+        rules.push(gob_rules::BoundRule::repo(mdl009::Mdl009));
+        rules.push(gob_rules::BoundRule::repo(mdl010::Mdl010));
+        rules.push(gob_rules::BoundRule::repo(mdl011::Mdl011));
+        rules.push(gob_rules::BoundRule::repo(mdl012::Mdl012));
+        rules.push(gob_rules::BoundRule::repo(mdl013::Mdl013));
+        rules.push(gob_rules::BoundRule::repo(mdl014::Mdl014));
+        rules.push(gob_rules::BoundRule::repo(mdl015::Mdl015));
+        rules.push(gob_rules::BoundRule::repo(mdl016::Mdl016));
+        rules.push(gob_rules::BoundRule::repo(mdl017::Mdl017));
+        rules.push(gob_rules::BoundRule::repo(mdl019::Mdl019));
+        rules.push(gob_rules::BoundRule::repo(mdl020::Mdl020));
+        rules.push(gob_rules::BoundRule::repo(mdl021::Mdl021));
+        rules.push(gob_rules::BoundRule::repo(mdl022::Mdl022));
+        rules.push(gob_rules::BoundRule::repo(mdl023::Mdl023));
+        rules.push(gob_rules::BoundRule::repo(mdl024::Mdl024));
+        rules.push(gob_rules::BoundRule::repo(mdl025::Mdl025));
+        rules.push(gob_rules::BoundRule::repo(mdl026::Mdl026));
+        rules.push(gob_rules::BoundRule::repo(mdl027::Mdl027));
+        rules.push(gob_rules::BoundRule::repo(mdl028::Mdl028));
+    }
+}
+
+/// Marker for chunk 1 of the bound rules.
+pub struct Part1;
+
+impl<P: ?Sized + 'static> BindPart<P> for Part1
+where
     mdl029::Mdl029: gob_rules::RepoRule<P>,
     mdl030::Mdl030: gob_rules::RepoRule<P>,
     mdl031::Mdl031: gob_rules::RepoRule<P>,
@@ -255,65 +312,39 @@ where
     sys015::Sys015: gob_rules::RepoRule<P>,
     sys016::Sys016: gob_rules::RepoRule<P>,
 {
+    #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::repo(mdl029::Mdl029));
+        rules.push(gob_rules::BoundRule::repo(mdl030::Mdl030));
+        rules.push(gob_rules::BoundRule::repo(mdl031::Mdl031));
+        rules.push(gob_rules::BoundRule::repo(mdl032::Mdl032));
+        rules.push(gob_rules::BoundRule::repo(mdl033::Mdl033));
+        rules.push(gob_rules::BoundRule::repo(mdl034::Mdl034));
+        rules.push(gob_rules::BoundRule::repo(plan012::Plan012));
+        rules.push(gob_rules::BoundRule::repo(plan013::Plan013));
+        rules.push(gob_rules::BoundRule::repo(plan014::Plan014));
+        rules.push(gob_rules::BoundRule::repo(plan015::Plan015));
+        rules.push(gob_rules::BoundRule::repo(plan016::Plan016));
+        rules.push(gob_rules::BoundRule::repo(plan018::Plan018));
+        rules.push(gob_rules::BoundRule::repo(plan027::Plan027));
+        rules.push(gob_rules::BoundRule::repo(plan041::Plan041));
+        rules.push(gob_rules::BoundRule::repo(plan042::Plan042));
+        rules.push(gob_rules::BoundRule::repo(plan044::Plan044));
+        rules.push(gob_rules::BoundRule::repo(sys015::Sys015));
+        rules.push(gob_rules::BoundRule::repo(sys016::Sys016));
+    }
+}
+
+// frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
+/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
+pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
+where
+    Part0: BindPart<P>,
+    Part1: BindPart<P>,
+{
     let mut rules = Vec::new();
-    rules.push(gob_rules::BoundRule::repo(amb001::Amb001));
-    rules.push(gob_rules::BoundRule::repo(amb003::Amb003));
-    rules.push(gob_rules::BoundRule::repo(amb004::Amb004));
-    rules.push(gob_rules::BoundRule::repo(amb005::Amb005));
-    rules.push(gob_rules::BoundRule::repo(amb007::Amb007));
-    rules.push(gob_rules::BoundRule::repo(amb008::Amb008));
-    rules.push(gob_rules::BoundRule::repo(amb009::Amb009));
-    rules.push(gob_rules::BoundRule::repo(claim001::Claim001));
-    rules.push(gob_rules::BoundRule::repo(claim003::Claim003));
-    rules.push(gob_rules::BoundRule::repo(flow001::Flow001));
-    rules.push(gob_rules::BoundRule::repo(flow002::Flow002));
-    rules.push(gob_rules::BoundRule::repo(flow003::Flow003));
-    rules.push(gob_rules::BoundRule::repo(mdl000::Mdl000));
-    rules.push(gob_rules::BoundRule::repo(mdl001::Mdl001));
-    rules.push(gob_rules::BoundRule::repo(mdl002::Mdl002));
-    rules.push(gob_rules::BoundRule::repo(mdl003::Mdl003));
-    rules.push(gob_rules::BoundRule::repo(mdl004::Mdl004));
-    rules.push(gob_rules::BoundRule::repo(mdl005::Mdl005));
-    rules.push(gob_rules::BoundRule::repo(mdl006::Mdl006));
-    rules.push(gob_rules::BoundRule::repo(mdl007::Mdl007));
-    rules.push(gob_rules::BoundRule::repo(mdl008::Mdl008));
-    rules.push(gob_rules::BoundRule::repo(mdl009::Mdl009));
-    rules.push(gob_rules::BoundRule::repo(mdl010::Mdl010));
-    rules.push(gob_rules::BoundRule::repo(mdl011::Mdl011));
-    rules.push(gob_rules::BoundRule::repo(mdl012::Mdl012));
-    rules.push(gob_rules::BoundRule::repo(mdl013::Mdl013));
-    rules.push(gob_rules::BoundRule::repo(mdl014::Mdl014));
-    rules.push(gob_rules::BoundRule::repo(mdl015::Mdl015));
-    rules.push(gob_rules::BoundRule::repo(mdl016::Mdl016));
-    rules.push(gob_rules::BoundRule::repo(mdl017::Mdl017));
-    rules.push(gob_rules::BoundRule::repo(mdl019::Mdl019));
-    rules.push(gob_rules::BoundRule::repo(mdl020::Mdl020));
-    rules.push(gob_rules::BoundRule::repo(mdl021::Mdl021));
-    rules.push(gob_rules::BoundRule::repo(mdl022::Mdl022));
-    rules.push(gob_rules::BoundRule::repo(mdl023::Mdl023));
-    rules.push(gob_rules::BoundRule::repo(mdl024::Mdl024));
-    rules.push(gob_rules::BoundRule::repo(mdl025::Mdl025));
-    rules.push(gob_rules::BoundRule::repo(mdl026::Mdl026));
-    rules.push(gob_rules::BoundRule::repo(mdl027::Mdl027));
-    rules.push(gob_rules::BoundRule::repo(mdl028::Mdl028));
-    rules.push(gob_rules::BoundRule::repo(mdl029::Mdl029));
-    rules.push(gob_rules::BoundRule::repo(mdl030::Mdl030));
-    rules.push(gob_rules::BoundRule::repo(mdl031::Mdl031));
-    rules.push(gob_rules::BoundRule::repo(mdl032::Mdl032));
-    rules.push(gob_rules::BoundRule::repo(mdl033::Mdl033));
-    rules.push(gob_rules::BoundRule::repo(mdl034::Mdl034));
-    rules.push(gob_rules::BoundRule::repo(plan012::Plan012));
-    rules.push(gob_rules::BoundRule::repo(plan013::Plan013));
-    rules.push(gob_rules::BoundRule::repo(plan014::Plan014));
-    rules.push(gob_rules::BoundRule::repo(plan015::Plan015));
-    rules.push(gob_rules::BoundRule::repo(plan016::Plan016));
-    rules.push(gob_rules::BoundRule::repo(plan018::Plan018));
-    rules.push(gob_rules::BoundRule::repo(plan027::Plan027));
-    rules.push(gob_rules::BoundRule::repo(plan041::Plan041));
-    rules.push(gob_rules::BoundRule::repo(plan042::Plan042));
-    rules.push(gob_rules::BoundRule::repo(plan044::Plan044));
-    rules.push(gob_rules::BoundRule::repo(sys015::Sys015));
-    rules.push(gob_rules::BoundRule::repo(sys016::Sys016));
+    <Part0 as BindPart<P>>::push_all(&mut rules);
+    <Part1 as BindPart<P>>::push_all(&mut rules);
     rules
 }
 
