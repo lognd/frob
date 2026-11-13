@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-11-13T09:54:23Z"
+updated = "2026-11-13T10:09:50Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "docs/**"]
 
 [[acceptance]]
 text = "Given two near-identical state renders, when checked, then STATE005 fires"
