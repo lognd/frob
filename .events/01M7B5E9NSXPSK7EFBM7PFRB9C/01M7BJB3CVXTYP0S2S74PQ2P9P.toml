@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = [".github/scripts/**"]
+at = "2026-11-13T23:02:04Z"
+actor = "lognd"
+rev = 1

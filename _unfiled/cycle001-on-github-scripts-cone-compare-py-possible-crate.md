@@ -7,6 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T19:16:38Z"
-updated = "2026-11-13T23:01:47Z"
+updated = "2026-11-13T23:02:04Z"
 idempotency_key = "cycle001-cone-compare"
+scope = [".github/scripts/**"]
 +++
