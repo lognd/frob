@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T17:14:51Z"
-updated = "2026-11-13T18:42:20Z"
+updated = "2026-11-13T19:10:34Z"
 labels = ["no-story"]
-scope = ["crates/**"]
+scope = ["crates/**", "grimble.toml"]
 
 [[acceptance]]
 text = "Zero unresolved findings for ERR002, COH001, LOG001, VIS001, REL003, RES001, FMT001 in frob check."
