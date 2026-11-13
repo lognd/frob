@@ -739,6 +739,9 @@ skip = "needs a rule id argument and its cost is a single table lookup; covered 
 [scenario."frob mirror recreate"]
 skip = "recreates a remote mirror repository and needs credentials and network, which the repo fixture does not provide"
 
+[scenario."frob mirror run"]
+skip = "needs a configured [mirror] section, which the repo fixture does not provide"
+
 [scenario."frob mirror render"]
 skip = "needs a configured [mirror] section and a remote, which the repo fixture does not provide"
 

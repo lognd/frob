@@ -383,6 +383,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `coord status` | frob | frob (bin) | yes, read-only | 0 2 3 4 | 1 | object: the live full `frob check` runs across worktrees, the coordination noun |
 | `milestone criterion add\|remove`, `milestone evidence add\|list` | frob | frob (bin) | `criterion add` yes, the others no; `evidence list` is read-only | 0 2 3 4 | 1 | effect: writes milestone criteria and their evidence |
 | `mirror render\|recreate` | frob | frob (bin) | `render` yes, read-only; `recreate` no | 0 2 3 4 | 1 | effect: `recreate` rewrites the tickets mirror |
+| `mirror run` | frob | frob (bin) | yes, read-only (ledger-side report; no tracker calls) | 0 2 3 4 | 1 | object: the ledger-side mirror reconcile report |
 | `mirror alias` | frob | frob (bin) | yes, a repeat reports `added: false` | 0 2 3 4 | 1 | effect: records a tracker key as an alias of a ticket in the ledger |
 | `profile` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: writes the measured verb timings |
 | `refresh` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: rebuilds the derived caches |
