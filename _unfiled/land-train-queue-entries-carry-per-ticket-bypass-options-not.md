@@ -4,9 +4,10 @@ title = "land train: queue entries carry per-ticket bypass options, not the driv
 type = "bug"
 category = "todo"
 priority = "high"
+points = 3
 reporter = "lognd"
 created = "2026-11-13T16:13:13Z"
-updated = "2026-11-13T16:13:13Z"
+updated = "2026-11-13T17:11:58Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
