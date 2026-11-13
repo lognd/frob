@@ -235,7 +235,7 @@ fn merge_all(
         }
         let pre = head(repo, dir)?;
         let outcome = match merge_one(repo, dir, shared_files, m)? {
-            // frob:ticket ~DSMXVR6
+            // frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
             Ok(()) => verify_member(repo, dir, &pre, m)?,
             err => err,
         };
@@ -256,7 +256,7 @@ fn merge_all(
     Ok((merged, skipped))
 }
 
-// frob:ticket ~DSMXVR6
+// frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
 /// After merging `m` onto the candidate tip `pre`: skip it (candidate reset to `pre`) if the merge dropped its own hunks.
 fn verify_member(
     repo: &Repo,
@@ -416,7 +416,7 @@ mod tests {
         sh(dir, &["for-each-ref", "refs/frob/train/"])
     }
 
-    // frob:ticket ~DSMXVR6
+    // frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
     // frob:tests crates/frob-land/src/candidate.rs::verify_member
     // frob:tests crates/frob-land/src/candidate.rs::merge_all
     #[test]

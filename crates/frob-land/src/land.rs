@@ -218,7 +218,9 @@ fn merge_or_assume(
         if let Some(l) = lock {
             l.progress("merge");
         }
-        base_merge = Some(merge_base_verified(wt, wt_path, base, handle)?);
+        let pre = wt.head()?.oid;
+        base_merge = Some(merge_base_in(wt, wt_path, base, handle)?);
+        verify_merge_kept_hunks(wt, wt_path, base, handle, pre)?;
         base_merged = true;
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
@@ -1114,19 +1116,18 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
 }
 
 // frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
-// frob:ticket ~DSMXVR6
-/// [`merge_base_in`], then refuse (`E-LAND-HUNKS-DROPPED`) when the merge resolved the ticket's own hunks away.
+// frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
+/// Refuse (`E-LAND-HUNKS-DROPPED`) when a base merge from the tip `pre` resolved the ticket's own hunks away.
 ///
-/// Every land-time merge of the base goes through here (the pre-land merge and the stale-base
-/// re-merge), so a stacked successor cannot lose hunks to a base squash-land unnoticed.
-pub(crate) fn merge_base_verified(
+/// Every land-time merge of the base (the pre-land merge and the stale-base re-merge) calls this
+/// after [`merge_base_in`], so a stacked successor cannot lose hunks to a base squash-land unnoticed.
+pub(crate) fn verify_merge_kept_hunks(
     wt: &Repo,
     wt_path: &Path,
     base: &str,
     handle: &str,
-) -> Result<String, LandError> {
-    let pre = wt.head()?.oid;
-    let how = merge_base_in(wt, wt_path, base, handle)?;
+    pre: Option<Oid>,
+) -> Result<(), LandError> {
     if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
         && pre != post
     {
@@ -1139,7 +1140,7 @@ pub(crate) fn merge_base_verified(
             handle,
         )?;
     }
-    Ok(how)
+    Ok(())
 }
 
 /// Merge `base` into the ticket branch inside its worktree; conflicts are listed (`E-LAND-CONFLICT`) and the merge aborted.
@@ -1589,7 +1590,9 @@ impl Publish<'_> {
             .work_dir()
             .map(Path::to_path_buf)
             .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))?;
-        let how = merge_base_verified(self.wt, &wt_path, self.base, self.handle)?;
+        let pre = self.wt.head()?.oid;
+        let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
+        verify_merge_kept_hunks(self.wt, &wt_path, self.base, self.handle, pre)?;
         let now = self.wt.rev_parse(&base_ref(self.base))?;
         let code_changed = match had {
             Some(old) if old != now => {
@@ -2061,21 +2064,18 @@ mod tests {
         (tmp, repo)
     }
 
-    // frob:ticket ~DSMXVR6
-    // frob:tests crates/frob-land/src/land.rs::merge_base_verified
+    // frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
+    // frob:tests crates/frob-land/src/land.rs::verify_merge_kept_hunks
     #[test]
     fn the_stale_retry_merge_keeps_a_stacked_successors_hunks() {
         let (tmp, repo) = stacked_fixture();
         let d = tmp.path();
-        let how = merge_base_verified(&repo, d, "dev", "~X").expect("clean merge passes the check");
+        let pre = repo.head().expect("head").oid;
+        let how = merge_base_in(&repo, d, "dev", "~X").expect("merge");
         assert_eq!(how, "merged");
+        verify_merge_kept_hunks(&repo, d, "dev", "~X", pre).expect("clean merge passes the check");
         let text = std::fs::read_to_string(d.join("m.txt")).expect("read");
         assert!(text.contains("e2"), "{text}");
-        // A second call is a no-op: the base is already merged.
-        assert_eq!(
-            merge_base_verified(&repo, d, "dev", "~X").expect("again"),
-            "up-to-date"
-        );
     }
 
     // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
