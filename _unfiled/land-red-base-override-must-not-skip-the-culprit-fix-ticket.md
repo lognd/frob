@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T21:02:12Z"
+updated = "2026-11-13T21:07:49Z"
 labels = ["no-story"]
 scope = ["crates/frob-land/**"]
 
 [[acceptance]]
 text = "An overridden land still files the culprit ticket; test proves it."
-bound = false
+bound = true
 +++
 
 H1: --override-base-ci used 685 times and also disables the auto-filed fix ticket. Source: frob-audit-meta.md (Opus audit).
