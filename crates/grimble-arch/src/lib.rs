@@ -119,6 +119,25 @@ pub struct ArchReport {
     pub not_applicable: BTreeMap<&'static str, String>,
 }
 
+/// Run `VIS001`, recording its subject count and, when there is nothing to judge, why it does not apply.
+fn check_vis(input: &ArchInput<'_>, report: &mut ArchReport) -> Vec<Verdict> {
+    let (findings, candidates) = vis::check(input.graph, input.crates);
+    report.subjects.insert(VIS, candidates);
+    if !vis::has_rust(input.graph) {
+        tracing::debug!("no Rust units in the walk; VIS001 does not apply");
+        report
+            .not_applicable
+            .insert(VIS, "no Rust source files in the walk".to_owned());
+    } else if candidates == 0 {
+        tracing::debug!("no pub Rust free function outside the public API; VIS001 does not apply");
+        report.not_applicable.insert(
+            VIS,
+            "no pub Rust free function outside the public API to judge".to_owned(),
+        );
+    }
+    findings
+}
+
 /// Run `CYCLE001`, `LARGE001`, `DEAD001`, `VIS001` and `DUP001` over `input`.
 pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     let mut report = ArchReport::default();
@@ -153,20 +172,7 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     let (findings, candidates) = dead::check(input.graph, input.is_engine_entry);
     report.subjects.insert(DEAD, candidates);
     report.findings.extend(findings);
-    let (findings, candidates) = vis::check(input.graph, input.crates);
-    report.subjects.insert(VIS, candidates);
-    if !vis::has_rust(input.graph) {
-        tracing::debug!("no Rust units in the walk; VIS001 does not apply");
-        report
-            .not_applicable
-            .insert(VIS, "no Rust source files in the walk".to_owned());
-    } else if candidates == 0 {
-        tracing::debug!("no pub Rust free function outside the public API; VIS001 does not apply");
-        report.not_applicable.insert(
-            VIS,
-            "no pub Rust free function outside the public API to judge".to_owned(),
-        );
-    }
+    let findings = check_vis(input, &mut report);
     report.findings.extend(findings);
     let (findings, lexed) = dup::check(
         input.graph,
