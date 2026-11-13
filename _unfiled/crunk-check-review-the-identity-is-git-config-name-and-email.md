@@ -12,5 +12,5 @@ idempotency_key = "identity-test-ambient-git"
 
 [[acceptance]]
 text = "Given an ambient git config with a user.email, when the identity test runs, then it passes with name-only then name+email results"
-bound = false
+bound = true
 +++
