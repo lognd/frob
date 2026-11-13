@@ -2,7 +2,8 @@
 id = "01M7ATYETF63DD8V49QW6C7VZ0"
 title = "land: hunk-presence refusal leaves bad merge on the ticket branch; retry lands it unchecked"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
