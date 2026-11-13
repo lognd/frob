@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "out-of-repo goway item, not actionable here"
+at = "2026-11-13T12:48:53Z"
+actor = "lognd"
+rev = 1
