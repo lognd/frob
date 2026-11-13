@@ -9,14 +9,14 @@ use std::path::Path;
 use crunk_check::review::{self, AckRequest, SignatureSource};
 use crunk_check::{CheckOptions, run};
 use crunk_rules::review::AckSignature;
-use gob_lock::{LockFile, ReviewVerdict};
+use gob_lock::{LockFile, ReviewEntry, ReviewVerdict};
 use gob_rules::Gate;
 use gob_rules::Severity;
 
 struct Fixed(AckSignature);
 
 impl SignatureSource for Fixed {
-    fn signature(&self, _digest: &str) -> AckSignature {
+    fn signature(&self, _subject: &str, _entry: &ReviewEntry) -> AckSignature {
         self.0.clone()
     }
 }
@@ -250,23 +250,154 @@ fn git(dir: &Path, args: &[&str]) {
 
 // frob:tests crates/crunk-check/src/review.rs::GitSignatures
 #[test]
-fn git_signatures_find_the_commit_that_added_the_digest() {
+fn git_signatures_read_the_commit_that_last_changed_the_entry() {
     let dir = project("#2f6fed", SIGNED);
     git(dir.path(), &["init", "-q"]);
     ack(dir.path(), "Alice <alice@example.com>");
     let lock = LockFile::load(&review::lock_path(dir.path())).expect("lock");
-    let digest = lock.reviews.values().next().expect("entry").digest.clone();
+    let (subject, entry) = lock.reviews.iter().next().expect("entry");
     let git_sigs = review::GitSignatures::new(dir.path());
-    match git_sigs.signature(&digest) {
+    match git_sigs.signature(subject, entry) {
         AckSignature::Unsigned(why) => assert!(why.contains("not committed"), "{why}"),
         other @ AckSignature::Good(_) => panic!("{other:?}"),
     }
     git(dir.path(), &["add", "crunk.lock"]);
     git(dir.path(), &["commit", "-q", "-m", "ack"]);
-    match git_sigs.signature(&digest) {
+    match git_sigs.signature(subject, entry) {
         AckSignature::Unsigned(why) => assert!(why.contains("not signed"), "{why}"),
         other @ AckSignature::Good(_) => panic!("{other:?}"),
     }
+}
+
+#[allow(
+    clippy::disallowed_methods,
+    reason = "a test reads a key it just generated, not a walked snapshot"
+)]
+/// Make `dir` a repository that can sign commits with a fresh throwaway ssh key.
+fn signing_repo(dir: &Path, keys: &Path) {
+    let key = keys.join("id");
+    let ok = std::process::Command::new("ssh-keygen")
+        .args([
+            "-q",
+            "-t",
+            "ed25519",
+            "-N",
+            "",
+            "-C",
+            "alice@example.com",
+            "-f",
+        ])
+        .arg(&key)
+        .status()
+        .expect("ssh-keygen runs")
+        .success();
+    assert!(ok, "ssh-keygen");
+    let public = std::fs::read_to_string(keys.join("id.pub")).expect("pub");
+    let signers = keys.join("signers");
+    std::fs::write(&signers, format!("alice@example.com {public}")).expect("signers");
+    git_in(dir, &["init", "-q"]);
+    for (k, v) in [
+        ("gpg.format", "ssh"),
+        ("user.name", "T"),
+        ("user.email", "t@example.com"),
+        ("user.signingkey", key.to_str().expect("utf8")),
+        (
+            "gpg.ssh.allowedSignersFile",
+            signers.to_str().expect("utf8"),
+        ),
+    ] {
+        git_in(dir, &["config", k, v]);
+    }
+}
+
+/// Rewrite the only review entry's verdict in the working `crunk.lock`.
+fn set_verdict(dir: &Path, verdict: ReviewVerdict) {
+    let path = review::lock_path(dir);
+    let mut lock = LockFile::load(&path).expect("lock");
+    lock.reviews.values_mut().next().expect("entry").verdict = verdict;
+    lock.save(&path).expect("save");
+}
+
+/// The signature `GitSignatures` reports for the only review entry in `dir`.
+fn git_signature(dir: &Path) -> AckSignature {
+    let lock = LockFile::load(&review::lock_path(dir)).expect("lock");
+    let (subject, entry) = lock.reviews.iter().next().expect("entry");
+    review::GitSignatures::new(dir).signature(subject, entry)
+}
+
+/// A repository whose signed commit records a rejection by Alice.
+fn signed_rejection(keys: &Path) -> tempfile::TempDir {
+    let dir = project("#2f6fed", SIGNED);
+    signing_repo(dir.path(), keys);
+    ack(dir.path(), "Alice <alice@example.com>");
+    set_verdict(dir.path(), ReviewVerdict::Rejected);
+    git_in(dir.path(), &["add", "crunk.lock"]);
+    git_in(dir.path(), &["commit", "-q", "-S", "-m", "reject"]);
+    dir
+}
+
+// frob:ticket 01M7AV387JMHAXX80G1009RTBM
+// frob:tests crates/crunk-check/src/review.rs::GitSignatures
+#[test]
+fn a_signed_commit_vouches_for_its_entry() {
+    let keys = tempfile::tempdir().expect("keys");
+    let dir = signed_rejection(keys.path());
+    assert!(matches!(git_signature(dir.path()), AckSignature::Good(_)));
+}
+
+// frob:ticket 01M7AV387JMHAXX80G1009RTBM
+// frob:tests crates/crunk-check/src/review.rs::GitSignatures
+#[test]
+fn an_unsigned_commit_that_flips_the_verdict_is_not_vouched_for() {
+    let keys = tempfile::tempdir().expect("keys");
+    let dir = signed_rejection(keys.path());
+    set_verdict(dir.path(), ReviewVerdict::Approved);
+    git_in(dir.path(), &["add", "crunk.lock"]);
+    git_in(
+        dir.path(),
+        &["-c", "commit.gpgsign=false", "commit", "-q", "-m", "flip"],
+    );
+    assert!(matches!(
+        git_signature(dir.path()),
+        AckSignature::Unsigned(_)
+    ));
+}
+
+// frob:ticket 01M7AV387JMHAXX80G1009RTBM
+// frob:tests crates/crunk-check/src/review.rs::GitSignatures
+#[test]
+fn an_uncommitted_verdict_flip_is_not_vouched_for() {
+    let keys = tempfile::tempdir().expect("keys");
+    let dir = signed_rejection(keys.path());
+    set_verdict(dir.path(), ReviewVerdict::Approved);
+    match git_signature(dir.path()) {
+        AckSignature::Unsigned(why) => assert!(why.contains("edited"), "{why}"),
+        other @ AckSignature::Good(_) => panic!("{other:?}"),
+    }
+}
+
+// frob:ticket 01M7AV387JMHAXX80G1009RTBM
+// frob:tests crates/crunk-check/src/review.rs::gather
+#[test]
+fn require_signed_fails_an_unsigned_flip_through_gather() {
+    let keys = tempfile::tempdir().expect("keys");
+    let dir = signed_rejection(keys.path());
+    set_verdict(dir.path(), ReviewVerdict::Approved);
+    git_in(dir.path(), &["add", "crunk.lock"]);
+    git_in(
+        dir.path(),
+        &["-c", "commit.gpgsign=false", "commit", "-q", "-m", "flip"],
+    );
+    let spec = crunk_spec::load_spec(dir.path()).expect("spec");
+    let facts = review::gather(&spec, &review::GitSignatures::new(dir.path()));
+    assert!(
+        facts
+            .findings
+            .iter()
+            .all(|f| matches!(f.status, Unsigned(_))),
+        "{:?}",
+        facts.findings
+    );
 }
 
 /// Run `git args` in `dir`, asserting success.
