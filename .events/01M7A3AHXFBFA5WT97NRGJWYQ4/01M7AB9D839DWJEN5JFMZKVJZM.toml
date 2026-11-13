@@ -1,0 +1,11 @@
+kind = "evidence"
+captured_at = "2026-11-13T11:39:34Z"
+digest = "7b0ce5e54a0baac81cff3d64f2825ce0c55be9afb6167b9903cfb5902446abbc"
+head = "135409a735de6f012de6718238b24fa35026d3d0"
+provider = "file"
+ref = "crates/crunk-check/src/render_ledger.rs"
+size = 4387
+status = "measured"
+at = "2026-11-13T11:39:34Z"
+actor = "lognd"
+rev = 1
