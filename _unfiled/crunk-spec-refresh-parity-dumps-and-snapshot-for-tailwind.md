@@ -8,7 +8,7 @@ class = "expedite"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T22:42:08Z"
-updated = "2026-11-13T22:45:56Z"
+updated = "2026-11-13T22:51:33Z"
 scope = ["crates/crunk-spec/**"]
 
 [[acceptance]]
