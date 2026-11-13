@@ -2,13 +2,13 @@
 id = "01M6VYQYX4EBQTWGTR81JC3PFH"
 title = "CI Windows nextest step runs out of disk linking test binaries (LNK1180)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "critical"
 class = "expedite"
 points = 3
 reporter = "lognd"
 created = "2026-11-07T21:30:58Z"
-updated = "2026-11-12T12:36:39Z"
+updated = "2026-11-13T09:11:36Z"
 labels = ["ci"]
 scope = [".github/workflows/ci.yml", ".github/actions/**"]
 
