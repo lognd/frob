@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the clone is offline with a 2h-old view, when ticket doable runs, then W-SYNC-OFFLINE is reported even if a straggling refresh holds the lock"]
+reason = "needed to close"
+moved = []
+at = "2026-11-13T10:29:22Z"
+actor = "lognd"
+rev = 1

@@ -7,6 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-13T07:01:30Z"
-updated = "2026-11-13T10:29:14Z"
+updated = "2026-11-13T10:29:22Z"
 scope = ["crates/frob/tests/it/sync_policy.rs"]
+
+[[acceptance]]
+text = "Given the clone is offline with a 2h-old view, when ticket doable runs, then W-SYNC-OFFLINE is reported even if a straggling refresh holds the lock"
+bound = false
 +++
