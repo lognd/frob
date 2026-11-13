@@ -2,12 +2,12 @@
 id = "01M6RHZHQHQFX4CRXN4DM0PQSE"
 title = "grmb-spec: document manual tests listed in grimble status (follow-up to WZS7NG7)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-06T13:50:12Z"
-updated = "2026-11-13T06:54:20Z"
+updated = "2026-11-13T08:12:20Z"
 idempotency_key = "grmb-status-manual"
 labels = ["good-first"]
 scope = ["docs/**"]
