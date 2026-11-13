@@ -218,23 +218,8 @@ fn merge_or_assume(
         if let Some(l) = lock {
             l.progress("merge");
         }
-        let pre = wt.head()?.oid;
-        base_merge = Some(merge_base_in(wt, wt_path, base, handle)?);
+        base_merge = Some(merge_base_verified(wt, wt_path, base, handle)?);
         base_merged = true;
-        // frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
-        // A merge that resolved the ticket's own hunks away must refuse here, not as "evidence no longer resolves".
-        if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
-            && pre != post
-        {
-            hunk_presence::verify_after_merge(
-                wt,
-                wt_path,
-                &base_ref(base),
-                &pre.to_string(),
-                &post.to_string(),
-                handle,
-            )?;
-        }
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
     } else if ledger_only_ahead(wt, fork, base_oid, &site.ledger.config().dir)? {
@@ -1128,6 +1113,35 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
     ))
 }
 
+// frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
+// frob:ticket ~DSMXVR6
+/// [`merge_base_in`], then refuse (`E-LAND-HUNKS-DROPPED`) when the merge resolved the ticket's own hunks away.
+///
+/// Every land-time merge of the base goes through here (the pre-land merge and the stale-base
+/// re-merge), so a stacked successor cannot lose hunks to a base squash-land unnoticed.
+pub(crate) fn merge_base_verified(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    handle: &str,
+) -> Result<String, LandError> {
+    let pre = wt.head()?.oid;
+    let how = merge_base_in(wt, wt_path, base, handle)?;
+    if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
+        && pre != post
+    {
+        hunk_presence::verify_after_merge(
+            wt,
+            wt_path,
+            &base_ref(base),
+            &pre.to_string(),
+            &post.to_string(),
+            handle,
+        )?;
+    }
+    Ok(how)
+}
+
 /// Merge `base` into the ticket branch inside its worktree; conflicts are listed (`E-LAND-CONFLICT`) and the merge aborted.
 ///
 /// Configuration is read from the base's committed `frob.toml` before the merge
@@ -1575,7 +1589,7 @@ impl Publish<'_> {
             .work_dir()
             .map(Path::to_path_buf)
             .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))?;
-        let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
+        let how = merge_base_verified(self.wt, &wt_path, self.base, self.handle)?;
         let now = self.wt.rev_parse(&base_ref(self.base))?;
         let code_changed = match had {
             Some(old) if old != now => {
@@ -2020,6 +2034,48 @@ mod tests {
     fn run_git(repo: &Repo, dir: &Path, args: &[&str]) {
         let run = git(repo, dir, args).expect("spawn git");
         assert!(run.ok(), "git {args:?}: {}", run.text);
+    }
+
+    /// A stacked successor whose base squash-landed, in a fresh repo: `dev` carries A1 squashed, HEAD is A2.
+    fn stacked_fixture() -> (tempfile::TempDir, Repo) {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(tmp.path()).expect("init");
+        let d = tmp.path();
+        let write = |body: &str| std::fs::write(d.join("m.txt"), body).expect("write");
+        run_git(&repo, d, &["config", "user.name", "T"]);
+        run_git(&repo, d, &["config", "user.email", "t@example.com"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "dev"]);
+        write("a\nb\nc\nd\ne\nf\n");
+        run_git(&repo, d, &["add", "m.txt"]);
+        run_git(&repo, d, &["commit", "-q", "-m", "base"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "a1"]);
+        write("a\nB1\nc\nd\ne\nf\n");
+        run_git(&repo, d, &["commit", "-q", "-am", "a1"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "a2"]);
+        write("a\nB1\nc\nd\ne2\nf\n");
+        run_git(&repo, d, &["commit", "-q", "-am", "a2 feature"]);
+        run_git(&repo, d, &["checkout", "-q", "dev"]);
+        run_git(&repo, d, &["merge", "-q", "--squash", "a1"]);
+        run_git(&repo, d, &["commit", "-q", "-m", "a1 squashed"]);
+        run_git(&repo, d, &["checkout", "-q", "a2"]);
+        (tmp, repo)
+    }
+
+    // frob:ticket ~DSMXVR6
+    // frob:tests crates/frob-land/src/land.rs::merge_base_verified
+    #[test]
+    fn the_stale_retry_merge_keeps_a_stacked_successors_hunks() {
+        let (tmp, repo) = stacked_fixture();
+        let d = tmp.path();
+        let how = merge_base_verified(&repo, d, "dev", "~X").expect("clean merge passes the check");
+        assert_eq!(how, "merged");
+        let text = std::fs::read_to_string(d.join("m.txt")).expect("read");
+        assert!(text.contains("e2"), "{text}");
+        // A second call is a no-op: the base is already merged.
+        assert_eq!(
+            merge_base_verified(&repo, d, "dev", "~X").expect("again"),
+            "up-to-date"
+        );
     }
 
     // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0

@@ -13,6 +13,7 @@ use gob_git::Repo;
 
 use crate::error::LandError;
 use crate::git::git;
+use crate::hunk_presence;
 use crate::lockfile;
 
 /// Namespace of the temp refs a train candidate lives on.
@@ -232,13 +233,19 @@ fn merge_all(
             });
             continue;
         }
-        match merge_one(repo, dir, shared_files, m)? {
+        let pre = head(repo, dir)?;
+        let outcome = match merge_one(repo, dir, shared_files, m)? {
+            // frob:ticket ~DSMXVR6
+            Ok(()) => verify_member(repo, dir, &pre, m)?,
+            err => err,
+        };
+        match outcome {
             Ok(()) => {
                 tracing::info!(handle = %m.handle, "merged into candidate");
                 merged.push(m.handle.clone());
             }
             Err(reason) => {
-                tracing::warn!(handle = %m.handle, "skipped, merge conflict: {reason}");
+                tracing::warn!(handle = %m.handle, "skipped: {reason}");
                 skipped.push(Skipped {
                     handle: m.handle.clone(),
                     reason,
@@ -247,6 +254,34 @@ fn merge_all(
         }
     }
     Ok((merged, skipped))
+}
+
+// frob:ticket ~DSMXVR6
+/// After merging `m` onto the candidate tip `pre`: skip it (candidate reset to `pre`) if the merge dropped its own hunks.
+fn verify_member(
+    repo: &Repo,
+    dir: &Path,
+    pre: &str,
+    m: &CandidateMember,
+) -> Result<Result<(), String>, LandError> {
+    let merged = head(repo, dir)?;
+    if merged == pre {
+        return Ok(Ok(()));
+    }
+    let dropped = hunk_presence::dropped_hunks(repo, dir, pre, &m.oid, &merged)?;
+    if dropped.is_empty() {
+        return Ok(Ok(()));
+    }
+    let reset = git(repo, dir, &["reset", "--hard", pre])?;
+    tracing::warn!(handle = %m.handle, hunks = dropped.len(), reset = reset.ok(), "candidate merge dropped member hunks; skipped");
+    let detail: Vec<String> = dropped
+        .iter()
+        .map(|d| format!("{} `{}`", d.path, d.lines.join("` / `")))
+        .collect();
+    Ok(Err(format!(
+        "merging into the candidate dropped its own lines: {}",
+        detail.join("; ")
+    )))
 }
 
 /// Why `m` must not merge: its branch no longer points at the oid frozen at enqueue.
@@ -379,6 +414,35 @@ mod tests {
 
     fn refs(dir: &Path) -> String {
         sh(dir, &["for-each-ref", "refs/frob/train/"])
+    }
+
+    // frob:ticket ~DSMXVR6
+    // frob:tests crates/frob-land/src/candidate.rs::verify_member
+    // frob:tests crates/frob-land/src/candidate.rs::merge_all
+    #[test]
+    fn a_stacked_successor_keeps_its_hunks_in_the_train_candidate_after_its_base_squash_lands() {
+        let (dir, repo, _) = fixture(&[]);
+        let p = dir.path();
+        std::fs::write(p.join("m.txt"), "a\nb\nc\nd\ne\nf\n").expect("write");
+        sh(p, &["add", "m.txt"]);
+        sh(p, &["commit", "-m", "m"]);
+        let base = sh(p, &["rev-parse", "HEAD"]);
+        sh(p, &["checkout", "-b", "ticket-a1", &base]);
+        std::fs::write(p.join("m.txt"), "a\nB1\nc\nd\ne\nf\n").expect("write");
+        sh(p, &["commit", "-am", "a1"]);
+        sh(p, &["checkout", "-b", "ticket-a2"]);
+        std::fs::write(p.join("m.txt"), "a\nB1\nc\nd\ne2\nf\n").expect("write");
+        sh(p, &["commit", "-am", "a2 feature"]);
+        // The base squash-lands A1 (a detached commit on top of `base`).
+        sh(p, &["checkout", "--detach", &base]);
+        sh(p, &["merge", "--squash", "ticket-a1"]);
+        sh(p, &["commit", "-m", "a1 squashed"]);
+        let squashed = sh(p, &["rev-parse", "HEAD"]);
+        let ms = [member(p, "a2", "m.txt")];
+        let c = build_candidate(&repo, p, "t1", &squashed, &ms).expect("build");
+        assert_eq!(c.merged, ["a2"], "{:?}", c.skipped);
+        let tree = sh(p, &["show", &format!("{}:m.txt", c.oid)]);
+        assert!(tree.contains("e2"), "{tree}");
     }
 
     // frob:ticket 01M4Z1MYPEJ6HDVBJVPDVHR8MA
