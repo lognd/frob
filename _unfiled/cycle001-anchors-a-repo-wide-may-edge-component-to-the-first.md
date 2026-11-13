@@ -2,12 +2,12 @@
 id = "01M7BJPF2BB15JWV88XXFEA9MD"
 title = "CYCLE001 anchors a repo-wide May-edge component to the first file and cannot be waived"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T23:08:17Z"
-updated = "2026-11-13T23:08:17Z"
+updated = "2026-11-13T23:11:31Z"
 idempotency_key = "cycle001-root-anchor"
 labels = ["audit"]
 scope = ["crates/grimble-arch/**"]
