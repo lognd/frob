@@ -137,7 +137,11 @@ fn waiver_exceptions(snap: &Snapshot<Crunk>) -> Vec<BoundException> {
 
 /// The crunk product driving the shared check pipeline.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Crunk;
+pub struct Crunk {
+    // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+    /// `--static`: never run the project's Tailwind, whatever `[tailwind] engine` says.
+    pub static_tailwind: bool,
+}
 
 impl Product for Crunk {
     type Shared = CrunkShared;
@@ -184,10 +188,9 @@ impl Product for Crunk {
                 }
             }
         });
-        let tailwind = spec
-            .as_ref()
-            .zip(styles.as_ref())
-            .map(|(spec, styles)| crate::tailwind::collect(spec, styles, &self.state_dir()));
+        let tailwind = spec.as_ref().zip(styles.as_ref()).map(|(spec, styles)| {
+            crate::tailwind::collect(spec, styles, &self.state_dir(), self.static_tailwind)
+        });
         // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
         let reviews = spec.as_ref().map(|spec| {
             crate::review::gather(spec, &crate::review::GitSignatures::new(&cx.core.root))

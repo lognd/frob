@@ -99,6 +99,12 @@ struct GateArgs {
         help = "Run rules up to this tier; rules above it are listed under not_run, never clean"
     )]
     tier: String,
+    // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+    #[arg(
+        long = "static",
+        help = "Never execute repository JavaScript: Tailwind is not run and its utilities stay Unresolved"
+    )]
+    static_tailwind: bool,
 }
 
 /// The `--tier` choice as a [`crunk_check::Tier`]; the value parser has already vetted it.
@@ -146,6 +152,8 @@ impl Product for CrunkProduct {
                 fail_on: opts.fail_on,
                 base: opts.base.clone(),
                 ticket_scope: opts.ticket_scope.clone(),
+                // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+                static_tailwind: gate_args.as_ref().is_some_and(|a| a.static_tailwind),
                 // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
                 gate: match gob_cli::parse::<GateArgs>(matches)
                     .ok()
