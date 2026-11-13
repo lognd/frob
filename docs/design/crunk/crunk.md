@@ -116,8 +116,9 @@ STATE003 (form) and STATE006 (game) require the states each kind needs;
 STATE007 fires when a ready or completed screen's `content_hash` is
 missing or no longer matches the screen's content. STATE004 fires for
 each screen state with no render-ledger entry on a platform it applies
-to; the gallery manifest feeds the ledger. STATE005 (state diff
-threshold) needs render output and is a follow-up.
+to; the gallery manifest feeds the ledger. STATE005 fires when the
+ledger's measured pixel difference between two states of a screen on a
+platform is under the minimum (one percent of pixels).
 
 Component spec files (`design/components/*.component.toml`) carry `name`,
 `kinds`, `status`, `content_hash`, an `[anatomy]` node list, `[[props]]`

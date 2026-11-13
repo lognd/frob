@@ -461,13 +461,35 @@ acked_at = "2026-10-03T18:50:49.848073329Z"
 [[symbol]]
 identity = "crates/crunk-rules/src/rules/mod.rs::bind"
 symref = "crates/crunk-rules/src/rules/mod.rs::bind"
-sig = "c32e5deda067ea6e85fc69ec88a3a1770bf83919578709ea5a97320b8c015dba"
-body = "2c0ae214506a9ff76d9ad9b62aaabdcc3674a81b324d77e7cf951fb141da5087"
+sig = "ab31065ced0b61c84de64d2781121ee735a43d82ef56cc087ac053f14cd9d789"
+body = "bcea650a3af5d82825685665e49a131c156fd62dae4cf99c0301e1bf3a7f23e9"
 doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
 attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
-contract = "e0bb0a07d38889b75c6463ab62bea672c5227a36575795b1c07b3434d1424ddc"
+contract = "4e71371f989c4910ca32523286236da7a9461e63067a0bf9698b725a6dabab4a"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-13T09:40:33.914615987Z"
+acked_at = "2026-11-13T10:09:52.455082688Z"
+
+[[symbol]]
+identity = "crates/crunk-rules/src/rules/state004.rs::State004"
+symref = "crates/crunk-rules/src/rules/state004.rs::State004"
+sig = "1d6a9176efb1125f84da9d4f62ecd949f3ee3a3f3e7fa4933e1e3bd1771d2a19"
+body = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+doc = "366c3da54c615af076154a2990697353f9697e769b05cfa12cbb6f7b77af1cee"
+attr = "b68d3ce92277bc9cdeeaeacd0d4a4ab48d797989c92aaf856fb1d594226ee5d8"
+contract = "9dad02482b629c5535bec641bdc683ae2f2f21bd798f259a8e8d8d7f3dd780d0"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T10:29:34.600319142Z"
+
+[[symbol]]
+identity = "crates/crunk-rules/src/rules/state005.rs::State005"
+symref = "crates/crunk-rules/src/rules/state005.rs::State005"
+sig = "9db8b1f1a61b373203084b5143f42bf6b7a003c236ff103cb8b5f515bdbe35c6"
+body = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+doc = "c3a2701d7357a8ac363d44e5b34e90e6eac8bc8162694ac28191ffba0b62a2f6"
+attr = "4c4bb71a943749329c6d6fb22fb7df9a31428784aeb175be1c206f294f06fd92"
+contract = "45c8f001da7eca36f5fab1abdb358aeb2c4f458e07f2ee0c7d4f2d6f8d8be3ea"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T10:29:40.400974773Z"
 
 [[symbol]]
 identity = "crates/crunk-rules/tests/it/rules.rs::bind_yields_one_bound_rule_per_declaration"
@@ -1013,6 +1035,17 @@ contract = "5a49af059d6a938e1b91466ce4680b30e5dd177c59c23cf7c96a1a290955b447"
 acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-03T06:12:05.195275758Z"
 reason = "owner directive: warnings to errors; each accept re-read and still justified"
+
+[[symbol]]
+identity = "crates/frob/tests/it/sync_policy.rs::doable_warns_when_offline_and_the_view_is_old"
+symref = "crates/frob/tests/it/sync_policy.rs::doable_warns_when_offline_and_the_view_is_old"
+sig = "034e1abe5c070ef1cc3327a6995d4658fe5d920c088725b815cd99528eea0a6d"
+body = "b780ecba2671460c189a250a83429a0cde520557b0df47a0a23fc66447edff94"
+doc = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+attr = "3f3a4d7857ab0f28131432da10e75ccb4eec6b4ab12e001dd15f5ea25516dda5"
+contract = "c7f882324869886d6b17fd66fc32c94caffedee22b8456bc61dcd6442bb09c1c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-13T10:52:50.033460526Z"
 
 [[symbol]]
 identity = "crates/frob/tests/it/ticket_scrub.rs::Repo.frob"

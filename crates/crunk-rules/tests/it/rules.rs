@@ -23,11 +23,11 @@ use crunk_rules::rules::{
     slop020::Slop020, slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027,
     slop028::Slop028, slop029::Slop029, slop040::Slop040, slop060::Slop060, space001::Space001,
     state001::State001, state002::State002, state003::State003, state004::State004,
-    state006::State006, state007::State007, token002::Token002, token003::Token003,
-    token004::Token004, token005::Token005, token006::Token006, token007::Token007,
-    token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
-    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    state005::State005, state006::State006, state007::State007, token002::Token002,
+    token003::Token003, token004::Token004, token005::Token005, token006::Token006,
+    token007::Token007, token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001,
+    tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002,
+    type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -99,6 +99,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/state002.rs::State002
     // frob:tests crates/crunk-rules/src/rules/state003.rs::State003
     // frob:tests crates/crunk-rules/src/rules/state004.rs::State004
+    // frob:tests crates/crunk-rules/src/rules/state005.rs::State005
     // frob:tests crates/crunk-rules/src/rules/state006.rs::State006
     // frob:tests crates/crunk-rules/src/rules/state007.rs::State007
     // frob:tests crates/crunk-rules/src/rules/org001.rs::Org001
@@ -214,6 +215,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "STATE002" => support::run_case::<State002>(&host, case),
         "STATE003" => support::run_case::<State003>(&host, case),
         "STATE004" => support::run_case::<State004>(&host, case),
+        "STATE005" => support::run_case::<State005>(&host, case),
         "STATE006" => support::run_case::<State006>(&host, case),
         "STATE007" => support::run_case::<State007>(&host, case),
         "RESP001" => support::run_case::<Resp001>(&host, case),
@@ -360,6 +362,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "STATE002",
             "STATE003",
             "STATE004",
+            "STATE005",
             "STATE006",
             "STATE007",
             "TOKEN002",
@@ -519,7 +522,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 99);
+    assert_eq!(ids.len(), 100);
     assert!(ids.contains(&"SPACE001"));
 }
 
@@ -616,4 +619,17 @@ fn renders_host_accessor_reports_the_ledger_only_for_render_cases() {
             .renders()
             .is_some_and(|l| l.has("home", "default", "desk"))
     );
+}
+
+// frob:ticket 01M5EF4A9VM42NW2805KJJ86Q4
+// frob:tests crates/crunk-rules/src/render_ledger.rs::ledger_inapplicable
+#[test]
+fn ledger_inapplicable_reports_a_missing_ledger_only() {
+    let plain = support::project("css/a.css", "a { color: red; }", None);
+    assert_eq!(
+        crunk_rules::render_ledger::ledger_inapplicable(&plain).as_deref(),
+        Some("no render ledger was gathered")
+    );
+    let rendered = support::project("css/a.css", "a { color: red; }", Some("render-complete"));
+    assert!(crunk_rules::render_ledger::ledger_inapplicable(&rendered).is_none());
 }
