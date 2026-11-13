@@ -25,7 +25,13 @@ fn git_out(dir: &Path, args: &[&str]) -> (i32, String) {
         program: Program::Git,
         args: args.iter().map(|s| (*s).to_owned()).collect(),
         cwd: Some(dir.to_path_buf()),
-        env: Vec::new(),
+        // frob:ticket 01M7BBZ1HGMWFJ3ZGEWXF2C1DD
+        // The managed post-commit hook would otherwise run a detached `frob check` from PATH,
+        // spawning every configured stage behind the test's back.
+        env: vec![(
+            frob_worktree::post_commit::OPT_OUT_ENV.to_owned(),
+            "1".to_owned(),
+        )],
         timeout: Duration::from_secs(60),
         capture: true,
     };
