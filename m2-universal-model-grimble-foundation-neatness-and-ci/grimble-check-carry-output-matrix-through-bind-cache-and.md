@@ -2,13 +2,13 @@
 id = "01M6RSBRV13JSNWD55VA3YCEZ9"
 title = "grimble-check: carry Output.matrix through bind_cache and show full capability matrix in check --summary"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T15:59:12Z"
-updated = "2026-11-12T12:36:38Z"
+updated = "2026-11-14T21:39:40Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/**"]
 +++
