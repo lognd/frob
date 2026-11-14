@@ -13,7 +13,7 @@ scope = ["crates/gob-check/**"]
 
 [[acceptance]]
 text = "gofmt and clang-format std tool defs parse, carry unattended fixes, and clang-format diagnostics parse to FMT001 files"
-bound = false
+bound = true
 +++
 
 found while working ~H36992B; gofmt has no --version
