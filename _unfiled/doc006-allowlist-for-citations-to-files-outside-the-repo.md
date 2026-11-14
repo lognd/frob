@@ -2,7 +2,8 @@
 id = "01M5NCNPMEMKNHGB2VRBSW1ZT6"
 title = "DOC006: allowlist for citations to files outside the repo"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
