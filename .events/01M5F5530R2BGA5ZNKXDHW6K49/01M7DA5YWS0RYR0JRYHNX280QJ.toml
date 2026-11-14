@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T15:17:55Z"
+digest = "0a160ef78132d872802d426080f008778580fc466a0b122427ab857181203d7a"
+exit_code = 0
+head = "0a22b6617e9639ee51bcf0e9881a94f2dd292cf3"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 86e4c916-51bb-4c62-bd63-641274c9d5ee with nextest profile: default
+    Starting 1 test across 2 binaries (413 tests skipped)
+        PASS [   0.124s] grimble-check::it websec_pack::every_rule_passes_its_examples
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.125s] 1 test run: 1 passed, 413 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=websec_pack::every_rule_passes_its_examples)"
+size = 606
+status = "measured"
+test_count = 1
+tests_digest = "bb4a626157593aee27e6321f4e7f48cb5a03cc7d6e41d0d3a395619b3bc16628"
+at = "2026-11-14T15:17:55Z"
+actor = "lognd"
+rev = 1
