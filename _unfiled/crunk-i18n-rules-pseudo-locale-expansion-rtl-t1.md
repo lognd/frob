@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:44:59Z"
-updated = "2026-11-14T17:53:13Z"
-scope = ["crates/crunk-rules/src/rules/i18n001.rs", "crates/crunk-rules/src/rules/i18n001.md"]
+updated = "2026-11-14T17:53:14Z"
+scope = ["crates/crunk-rules/src/rules/i18n001.rs", "crates/crunk-rules/src/rules/i18n001.md", "crates/crunk-rules/src/rules/i18n002.rs"]
 +++
 
 found while working ~VAAWD0R: I18N T0/T1 rules were cut.
