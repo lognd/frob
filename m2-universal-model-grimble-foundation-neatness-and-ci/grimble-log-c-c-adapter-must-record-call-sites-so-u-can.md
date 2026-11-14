@@ -8,9 +8,13 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-09T12:11:11Z"
-updated = "2026-11-14T20:52:32Z"
+updated = "2026-11-14T20:55:42Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/c*.rs"]
+
+[[acceptance]]
+text = "extract_file on a C source records call sites with the enclosing function as caller"
+bound = false
 +++
 
 found while working ~MV8PWVD: extract_file yields no calls or uses for C

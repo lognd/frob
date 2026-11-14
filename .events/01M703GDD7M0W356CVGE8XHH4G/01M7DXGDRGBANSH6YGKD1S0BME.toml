@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["extract_file on a C source records call sites with the enclosing function as caller"]
+moved = []
+at = "2026-11-14T20:55:42Z"
+actor = "lognd"
+rev = 1
