@@ -2,7 +2,8 @@
 id = "01M5CQ4WJJRWTQ7J9K20EWC4K9"
 title = "Findings JSON FindingRecord/EditRecord file field as RelPath"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
