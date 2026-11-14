@@ -1,0 +1,11 @@
+kind = "create"
+title = "Fix release_status test for derived epic-closed criterion"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+scope = ["crates/frob/tests/it/release_status.rs"]
+acceptance = ["Given a member epic left open, when release status runs, then the derived epic-closed criterion is listed as unbound-criterion before the open-ticket blocker"]
+at = "2026-11-14T03:12:31Z"
+actor = "lognd"
+rev = 1
