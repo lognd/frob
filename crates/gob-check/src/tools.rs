@@ -1643,7 +1643,8 @@ mod tests {
     // frob:tests crates/gob-check/src/tools.rs::expand_files
     #[test]
     fn a_file_stage_fans_out_to_one_stage_per_matching_scoped_file() {
-        let mut stage = named_stage("fmt");
+        let mut stage = sh_stage("fmt", ToolParser::None, "", "");
+        stage.command = "fmt".to_owned();
         stage.args = vec!["--check".to_owned(), FILE_TOKEN.to_owned()];
         stage.inputs = vec!["**/*.c".to_owned()];
         let tracked: std::collections::BTreeSet<String> =
