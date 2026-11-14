@@ -2,12 +2,12 @@
 id = "01M5H15J4NXP6NCBGSNTZZGJVR"
 title = "Responsive-section rules for component spec files"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-10-28T12:56:02Z"
+updated = "2026-11-14T16:53:14Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 +++
