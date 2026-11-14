@@ -2,7 +2,8 @@
 id = "01M5EYD7C5KV3WQWC3D1SY5VEZ"
 title = "Mirror: comment-posting bound property test (S6, F7)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 parent = "01M3ZX77302X3HQF4Z4P7WC0WS"
