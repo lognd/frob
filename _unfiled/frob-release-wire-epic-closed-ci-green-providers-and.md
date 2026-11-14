@@ -2,7 +2,8 @@
 id = "01M7BP3DVBGTPRC7R3THSP1Y5P"
 title = "frob-release: wire epic_closed/ci_green providers and attester doctor check into the CLI so exit criteria bind"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
