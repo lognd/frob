@@ -8,7 +8,7 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T15:59:12Z"
-updated = "2026-11-14T21:45:18Z"
+updated = "2026-11-14T21:53:20Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/**", "crates/grimble-bind/src/lib.rs", "crates/grimble/src/lib.rs", "crates/grimble-check/tests/it/summary.rs"]
 
