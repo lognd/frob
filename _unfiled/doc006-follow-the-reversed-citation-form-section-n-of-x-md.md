@@ -2,7 +2,8 @@
 id = "01M5NCNPFPX6AGBN3T0Z097M21"
 title = 'DOC006: follow the reversed citation form "section N of x.md"'
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
