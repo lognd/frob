@@ -91,12 +91,18 @@ fn default_since() -> String {
     "2.0.0".to_owned()
 }
 
-/// True when `id` is 2..=12 uppercase letters followed by exactly 3 digits.
+/// Error text shared by every site that rejects a malformed rule id.
+const ID_EXPECTED: &str = "expected FAMILY (2-12 chars: an uppercase letter, then uppercase letters or digits) + 3 digits, e.g. COV006 or I18N001";
+
+/// Returns the family of `id` when it is a valid rule id: 2..=12 chars (an
+/// uppercase letter then uppercase letters or ASCII digits) plus exactly 3 digits.
 fn valid_id(id: &str) -> Option<&str> {
     let split = id.len().checked_sub(3)?;
     let (fam, digits) = id.split_at_checked(split)?;
+    let mut bytes = fam.bytes();
     let ok = (2..=12).contains(&fam.len())
-        && fam.bytes().all(|b| b.is_ascii_uppercase())
+        && bytes.next().is_some_and(|b| b.is_ascii_uppercase())
+        && bytes.all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
         && digits.bytes().all(|b| b.is_ascii_digit());
     ok.then_some(fam)
 }
@@ -181,7 +187,7 @@ fn expand(input: &DeriveInput) -> darling::Result<TokenStream2> {
     let fam = valid_id(&args.id);
     if fam.is_none() {
         errors.push(darling::Error::custom(format!(
-            "invalid rule id `{}`; expected FAMILY (2-12 uppercase letters) + 3 digits, e.g. COV006",
+            "invalid rule id `{}`; {ID_EXPECTED}",
             args.id
         )));
     }
@@ -351,5 +357,30 @@ pub fn derive_directive(input: TokenStream) -> TokenStream {
     match directive::expand(&input) {
         Ok(ts) => ts.into(),
         Err(e) => e.write_errors().into(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_id;
+
+    // frob:tests crates/gob-macros/src/lib.rs::valid_id
+    #[test]
+    fn valid_id_accepts_digits_after_first_letter() {
+        assert_eq!(valid_id("I18N001"), Some("I18N"));
+        assert_eq!(valid_id("COV006"), Some("COV"));
+        for bad in [
+            "",
+            "todo1",
+            "I18N01",
+            "1ABC001",
+            "I18n001",
+            "A001",
+            "ABCDEFGHIJKLM001",
+            "ABC0001x",
+            "ABCDEF",
+        ] {
+            assert!(valid_id(bad).is_none(), "{bad} should be rejected");
+        }
     }
 }

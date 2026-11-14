@@ -11,7 +11,7 @@ use syn::parse::{Parse, ParseStream};
 use syn::spanned::Spanned;
 use syn::{Ident, ItemStruct, Lit, LitStr, Token, bracketed, parenthesized};
 
-use crate::{rule_doc, valid_id, valid_slug};
+use crate::{ID_EXPECTED, rule_doc, valid_id, valid_slug};
 
 const SEVERITY: &[&str] = &["Error"];
 const POLARITY: &[&str] = &["Pplus", "Pminus", "P0", "Pn", "Pc"];
@@ -547,7 +547,10 @@ pub(crate) fn expand(attr: TokenStream, item: &ItemStruct) -> Result<TokenStream
     if let Some(id) = &id
         && valid_id(&id.value()).is_none()
     {
-        errs.at(id.span(), format!("invalid rule id `{}`; expected FAMILY (2-12 uppercase letters) + 3 digits, e.g. COV006", id.value()));
+        errs.at(
+            id.span(),
+            format!("invalid rule id `{}`; {ID_EXPECTED}", id.value()),
+        );
     }
     if let Some(s) = &slug
         && !valid_slug(&s.value())
