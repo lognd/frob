@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble-check: move TYPING004 pass to the cached report path"
+type = "task"
+category = "todo"
+priority = "low"
+scope = ["crates/grimble-check/**"]
+body = "TYPING004 (BMAZEDQ) is wired into grimble-check minimally: typing_report runs uncached each run (product.rs). Move it into the cached reports() tuple with a report_cache key (typing-v1) like res/err, and add a grimble-check integration test like tests/it/res_rules.rs."
+at = "2026-11-14T23:51:17Z"
+actor = "lognd"
+rev = 1
