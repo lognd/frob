@@ -40,24 +40,17 @@ pub struct PathFinding {
 impl PathFinding {
     /// Intern the span and build the pipeline [`Finding`]; `None` when the rule id is invalid.
     pub fn into_finding(self, files: &mut FileInterner) -> Option<Finding> {
-        let id: RuleId = match self.rule.parse() {
-            Ok(id) => id,
-            Err(err) => {
-                tracing::error!(rule = self.rule, %err, "path finding names an invalid rule id");
-                return None;
-            }
-        };
-        let size = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
-        let (start, end) = self.range;
-        let span = Span::new(
-            files.intern(&self.file),
-            TextRange::new(size(start), size(end.max(start))),
-        );
-        let finding = Finding::new(id, self.severity, Some(span), self.message, &self.anchor);
-        Some(match self.reason {
-            Some(r) => finding.with_reason(r),
-            None => finding,
-        })
+        let parsed = self.rule.parse::<RuleId>();
+        if let Err(err) = &parsed {
+            tracing::error!(rule = self.rule, %err, "path finding names an invalid rule id");
+        }
+        let id = parsed.ok()?;
+        let lo = TextSize::new(u32::try_from(self.range.0).unwrap_or(u32::MAX));
+        let hi = TextSize::new(u32::try_from(self.range.1).unwrap_or(u32::MAX)).max(lo);
+        let file = files.intern(&self.file);
+        let span = Span::new(file, TextRange::new(lo, hi));
+        let built = Finding::new(id, self.severity, Some(span), self.message, &self.anchor);
+        Some(self.reason.map_or(built.clone(), |r| built.with_reason(r)))
     }
 }
 
