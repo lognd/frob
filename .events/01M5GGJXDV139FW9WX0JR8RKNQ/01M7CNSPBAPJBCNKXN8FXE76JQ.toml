@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/JR8RKNQ; scope: crates/gob-symbols/src/**, crates/gob-frameworks/**, changelog.d/01M5GGJXDV139FW9WX0JR8RKNQ.*, crates/gob-symbols/tests/it/main.rs, crates/gob-symbols/tests/it/typescript_exports.rs; ttl 7200s"
+at = "2026-11-14T09:21:41Z"
+actor = "lognd"
+rev = 1
