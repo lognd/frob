@@ -2,13 +2,13 @@
 id = "01M5XCVZFESE41V1GVEYC5VP5X"
 title = "crunk export figma-variables plus the Figma plan-limit check"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-10-28T12:56:06Z"
+updated = "2026-11-14T23:02:48Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs"]
 
