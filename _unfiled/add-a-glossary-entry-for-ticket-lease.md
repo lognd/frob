@@ -2,12 +2,12 @@
 id = "01M7A50YY3CZZVZ3XS32P7S093"
 title = "Add a glossary entry for ticket lease"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-13T09:51:55Z"
+updated = "2026-11-14T04:32:53Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/glossary/**"]
 
