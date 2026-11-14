@@ -152,12 +152,12 @@ pub trait Exporter: Sync {
     fn comparison(&self) -> Comparison;
 }
 
-/// Render one target for `spec`.
+/// Render one target for `spec`, merging the authored `design/tokens` files like the managed exports.
 ///
 /// # Errors
 ///
 /// [`TokenError`] when the spec produces a colliding token name.
 pub fn render_target(spec: &DesignSpec, target: Target) -> Result<String, TokenError> {
-    let tokens = TokenSet::from_spec(spec)?;
+    let tokens = TokenSet::from_spec_with_authored(spec)?;
     Ok(target.exporter().render(spec, &tokens))
 }
