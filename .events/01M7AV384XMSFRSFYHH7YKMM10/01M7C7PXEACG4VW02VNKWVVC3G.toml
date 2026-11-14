@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T05:13:17Z"
+digest = "0eea5f499b79cab359bf053dd2eb7d71a84e2d7d69f9f205fb6ff450a0f8523d"
+exit_code = 0
+head = "7ed512bfda856562fb71328f729ff076177d535a"
+inline = """
+
+running 6 tests
+test box_beyond_tolerance_fails_naming_the_node ... ok
+test nodes_on_one_side_only_are_mismatches ... ok
+test boxes_within_tolerance_are_clean ... ok
+test unreadable_solver_document_is_an_error ... ok
+test real_solver_output_is_not_the_fixture_document ... ok
+test solver_and_real_browser_agree_on_an_absolute_page ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 14s
+     Running tests/parity.rs (target/debug/deps/parity-837f9e40100f42ce)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p crunk-gallery --test parity"
+size = 582
+status = "measured"
+at = "2026-11-14T05:13:17Z"
+actor = "lognd"
+rev = 1
