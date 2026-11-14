@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T21:45:17Z"
+digest = "2f5162fca06deb4fb88151bb00eccc80d589883a801ff0b77b3c4f280dad1211"
+exit_code = 0
+head = "6329f7c70342253035b412a2c13006a7a4c0cf0b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 84d76a08-ce8a-4cac-90d0-56e193ec33ed with nextest profile: default
+    Starting 1 test across 2 binaries (419 tests skipped)
+        PASS [   0.005s] grimble-check bind_cache::tests::matrix_counts_round_trip_through_the_payload
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 419 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=bind_cache::tests::matrix_counts_round_trip_through_the_payload)"
+size = 570
+status = "measured"
+test_count = 1
+tests_digest = "a3a52fbdf9026aea1104d78f3a87148ab9a6daae76139f74eaabe3bda41163a5"
+at = "2026-11-14T21:45:17Z"
+actor = "lognd"
+rev = 1

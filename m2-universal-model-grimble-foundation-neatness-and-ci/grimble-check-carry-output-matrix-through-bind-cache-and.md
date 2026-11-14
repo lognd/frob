@@ -14,7 +14,7 @@ scope = ["crates/grimble-check/src/**", "crates/grimble-bind/src/lib.rs", "crate
 
 [[acceptance]]
 text = "Binding carries Output.matrix and bind_cache encodes it (schema bumped to 7)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "check --summary shows the full capability matrix (incl. denied) as capabilities.matrix"
