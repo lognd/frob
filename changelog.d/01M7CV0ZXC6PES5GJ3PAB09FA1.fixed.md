@@ -1,0 +1,1 @@
+gob-check: a tool stage whose `args` carry `{file}` now runs once per matching tracked file (the scope files, or every tracked file when unscoped), so the clang-format def no longer receives a literal `{file}`.

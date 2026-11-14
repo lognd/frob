@@ -29,7 +29,7 @@ use crate::status::{
 };
 use crate::telemetry;
 use crate::tool_key::tool_failure_key;
-use crate::tools::{ToolRun, applicable_stages, start_tools};
+use crate::tools::{ToolRun, applicable_stages, expand_files, start_tools};
 
 /// The engine fingerprint scoping every cached rule result: binary identity plus `EXTRACTOR_VERSION`.
 ///
@@ -204,9 +204,15 @@ fn begin_tools(
         None => (None, Vec::new()),
     };
     let tiered = tier_stages(table, opts);
+    let tracked: std::collections::BTreeSet<String> = core.index.ids.keys().cloned().collect();
+    let planned = expand_files(
+        applicable_stages(&tiered, scope_files, affected.as_ref(), &outside),
+        scope_files,
+        &tracked,
+    );
     start_tools(
         &core.root,
-        &applicable_stages(&tiered, scope_files, affected.as_ref(), &outside),
+        &planned,
         opts.tool_memo.as_ref(),
         opts.tool_trust.as_ref(),
         &table.setup,

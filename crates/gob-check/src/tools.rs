@@ -1135,10 +1135,6 @@ fn expand_packages(stage: &ToolStage, affected: Option<&Affected>) -> Option<Too
 ///
 /// A message naming the stage and the path when `path` is outside `tracked`.
 // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
-#[allow(
-    dead_code,
-    reason = "no stage runs per file yet; the typed expander lands first"
-)]
 pub(crate) fn expand_file(
     stage: &ToolStage,
     path: &str,
@@ -1167,6 +1163,47 @@ pub(crate) fn expand_file(
         })
         .collect();
     Ok(out)
+}
+
+/// `planned` with every stage that takes a `{file}` token fanned out to one stage per matching file.
+///
+/// The candidates are the `scope` files, else every `tracked` file; a stage with `inputs` keeps
+/// only the files they match. A stage left with no file is dropped. Stages without the token pass
+/// through unchanged (frob:ticket 01M7CV0ZXC6PES5GJ3PAB09FA1).
+// frob:tests crates/gob-check/src/tools.rs::expand_files
+pub(crate) fn expand_files(
+    planned: Vec<Planned>,
+    scope: Option<&std::collections::BTreeSet<String>>,
+    tracked: &std::collections::BTreeSet<String>,
+) -> Vec<Planned> {
+    let candidates = scope.unwrap_or(tracked);
+    let mut out = Vec::with_capacity(planned.len());
+    for p in planned {
+        if !p.stage.args.iter().any(|a| a == FILE_TOKEN) {
+            out.push(p);
+            continue;
+        }
+        let globs = (!p.stage.inputs.is_empty()).then(|| input_globs(&p.stage));
+        let before = out.len();
+        for path in candidates {
+            let wanted = match &globs {
+                Some(Some(set)) => set.is_match(path),
+                Some(None) | None => true,
+            };
+            if !wanted || !tracked.contains(path) {
+                continue;
+            }
+            match expand_file(&p.stage, path, tracked) {
+                Ok(stage) => out.push(Planned {
+                    stage,
+                    excluded: p.excluded.clone(),
+                }),
+                Err(e) => tracing::warn!(error = %e, "per-file tool stage skipped"),
+            }
+        }
+        tracing::info!(stage = %p.stage.name, files = out.len() - before, "per-file tool stage expanded");
+    }
+    out
 }
 
 /// A stage ready to run, with the package directories its memo key ignores.
@@ -1242,6 +1279,9 @@ fn group_key(stage: &ToolStage, index: usize) -> String {
     let wraps_cargo = stage.command == "env" && stage.args.iter().any(|a| a == "cargo");
     if stage.command == "cargo" || wraps_cargo {
         "cargo".to_owned()
+    } else if stage.args.iter().any(|a| a.starts_with("./")) {
+        // Per-file expansions of one stage share a thread rather than one thread per file.
+        format!("stage-{}", stage.name)
     } else {
         format!("stage-{index}")
     }
@@ -1597,6 +1637,33 @@ mod tests {
         assert!(
             err.contains("`t`") && err.contains("not a tracked path"),
             "{err}"
+        );
+    }
+
+    // frob:ticket 01M3ZX7VJE22Y68R184Y9WQC2N
+    // frob:tests crates/gob-check/src/tools.rs::expand_files
+    #[test]
+    fn a_file_stage_fans_out_to_one_stage_per_matching_scoped_file() {
+        let mut stage = named_stage("fmt");
+        stage.args = vec!["--check".to_owned(), FILE_TOKEN.to_owned()];
+        stage.inputs = vec!["**/*.c".to_owned()];
+        let tracked: std::collections::BTreeSet<String> =
+            ["a.c", "b.c", "c.rs"].map(str::to_owned).into();
+        let all = expand_files(vec![Planned::plain(stage.clone())], None, &tracked);
+        let args: Vec<_> = all.iter().map(|p| p.stage.args[1].clone()).collect();
+        assert_eq!(args, ["./a.c", "./b.c"]);
+        let scope: std::collections::BTreeSet<String> = ["b.c", "c.rs"].map(str::to_owned).into();
+        let one = expand_files(vec![Planned::plain(stage.clone())], Some(&scope), &tracked);
+        assert_eq!(one.len(), 1);
+        assert_eq!(one[0].stage.args[1], "./b.c");
+        let none: std::collections::BTreeSet<String> = ["c.rs".to_owned()].into();
+        assert!(
+            expand_files(vec![Planned::plain(stage.clone())], Some(&none), &tracked).is_empty()
+        );
+        stage.args = vec!["x".to_owned()];
+        assert_eq!(
+            expand_files(vec![Planned::plain(stage)], None, &tracked).len(),
+            1
         );
     }
 
