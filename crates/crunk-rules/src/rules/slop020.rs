@@ -5,6 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
+use crate::scene_docs::SceneDocFile;
 use crate::slop_layout::{SceneView, identical_cards};
 
 /// Three or more sibling cards that each run icon, heading, paragraph with one structure and one size.
@@ -30,6 +31,10 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Slop020 {
             return;
         };
         for file in &facts.files {
+            if let Err(why) = file.solve() {
+                tracing::warn!(path = %file.path, %why, "SLOP020: scene does not solve; geometry unjudged");
+                out.unresolved_in(&file.path, 0, SceneDocFile::unsolved_message(why));
+            }
             let view = SceneView::new(file);
             for tell in identical_cards(&view) {
                 tracing::debug!(path = %file.path, "SLOP020: fires");
