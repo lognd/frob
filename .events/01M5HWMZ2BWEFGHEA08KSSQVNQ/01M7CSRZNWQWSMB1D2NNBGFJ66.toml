@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T10:30:54Z"
+digest = "7e6fe307bfb52e52dd0222831aa7b6a0db4c788eeac343ee1b8131101ad9bf69"
+exit_code = 0
+head = "b0d688556a0f8d3c259eec38110a3e5f5fb5dfd2"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.52s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 15e4c97a-185d-44b5-9bca-b5d0f13ddd8a with nextest profile: default
+    Starting 1 test across 5 binaries (232 tests skipped)
+        PASS [   0.014s] gob-check fmt_parse::tests::clang_format_diagnostics_name_the_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 232 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-check -E test(=fmt_parse::tests::clang_format_diagnostics_name_the_file)"
+size = 622
+status = "measured"
+test_count = 1
+tests_digest = "4bc93c1bc40931fb611dd9dca245a2e6b819cd272804f269199eb2c592915af8"
+at = "2026-11-14T10:30:54Z"
+actor = "lognd"
+rev = 1
