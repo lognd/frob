@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T21:30:56Z"
+digest = "407c774ce8ae253bf79e5d8c315e589999fe6aa42aa37eac7c575b68ed36b3b9"
+exit_code = 0
+head = "acaff0ca290181d4ddca86f80099617b98f45184"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c69916d0-3ebc-41a4-a2a9-40cd8f6b4a8a with nextest profile: default
+    Starting 1 test across 2 binaries (417 tests skipped)
+        PASS [   0.013s] grimble-check log::tests_lang::rust_written_lock_handle_is_reported_but_a_query_is_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 417 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=log::tests_lang::rust_written_lock_handle_is_reported_but_a_query_is_not)"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "7bc339c337f1911aaea4c14f26b00b28e8e0fb9f97c4f8eeaec828189306c585"
+at = "2026-11-14T21:30:56Z"
+actor = "lognd"
+rev = 1
