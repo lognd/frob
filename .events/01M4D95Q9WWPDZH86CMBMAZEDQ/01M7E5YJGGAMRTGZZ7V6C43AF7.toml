@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T23:23:14Z"
+digest = "1c752bf517ff0ce1e9442e9c397acc20bf9036999e975ee3e85c8b860d23b235"
+exit_code = 0
+head = "5a4b6549104411105e9fd8af531907f793e416d3"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ba04cf75-5194-4ed1-883a-bafdd9ec30e0 with nextest profile: default
+    Starting 1 test across 2 binaries (250 tests skipped)
+        PASS [   0.006s] grimble-lints::it typing_pass::awaited_json_cast_fires
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 250 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints -E test(=typing_pass::awaited_json_cast_fires)"
+size = 547
+status = "measured"
+test_count = 1
+tests_digest = "8f1531d813a174f1a29a8ef68b7eead893e55f3c1c0d8371b48fca93c9c33c33"
+at = "2026-11-14T23:23:14Z"
+actor = "lognd"
+rev = 1
