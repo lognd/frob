@@ -2,7 +2,8 @@
 id = "01M7AV3827P32YDAGDXDVS8CWV"
 title = "crunk T1 layout rules silently pass on token-using scenes"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
