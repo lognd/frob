@@ -1,5 +1,10 @@
 # Ticket lease
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 A ticket lease is the write claim a holder takes on a ticket's `scope`
 globs when work starts (`frob work`, `frob ticket start`). While the
 lease is live, no other holder can claim overlapping paths; a second
