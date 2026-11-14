@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["I18N001 flags length-budgeted keys whose text fits but whose 40% pseudo-locale expansion does not; I18N002 flags physical left/right CSS beside an RTL locale"]
+moved = []
+at = "2026-11-14T18:31:21Z"
+actor = "lognd"
+rev = 1
