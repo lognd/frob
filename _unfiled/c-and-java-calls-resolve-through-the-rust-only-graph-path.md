@@ -2,7 +2,8 @@
 id = "01M7BSMQWJ77EENS87BQBQWFB4"
 title = "C and Java calls resolve through the Rust-only graph path (DEAD001 false positives likely)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
