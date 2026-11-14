@@ -2,7 +2,8 @@
 id = "01M7A50YY3CZZVZ3XS32P7S093"
 title = "Add a glossary entry for ticket lease"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
