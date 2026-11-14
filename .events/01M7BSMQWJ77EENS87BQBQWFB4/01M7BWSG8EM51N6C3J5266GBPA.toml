@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T02:02:27Z"
+digest = "8ce6e6bf88b9a63ac6f929c9b4731a5c2873b040bdedb0a1a75d7863b78c7509"
+exit_code = 0
+head = "564f4f299ff3af35d99b56a7a5a1e63cffb6888a"
+inline = """
+
+running 1 test
+test called_private_c_and_java_functions_are_not_dead ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.04s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 15s
+     Running tests/rules.rs (target/debug/deps/rules-40a9c6807bc1670d)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p grimble-arch --test rules called_private_c_and_java_functions_are_not_dead"
+size = 319
+status = "measured"
+at = "2026-11-14T02:02:27Z"
+actor = "lognd"
+rev = 1
