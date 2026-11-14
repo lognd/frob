@@ -2,7 +2,8 @@
 id = "01M7C0NP7PDEG4TAERS90D3M8V"
 title = "Fix release_status test for derived epic-closed criterion"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
