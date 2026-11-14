@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T13:26:16Z"
-updated = "2026-11-14T10:20:11Z"
+updated = "2026-11-14T10:30:26Z"
 labels = ["no-story"]
-scope = ["crates/gob-check/**"]
+scope = ["crates/gob-check/**", "docs/reference/tool-stages.md"]
 
 [[acceptance]]
 text = "gofmt and clang-format std tool defs parse, carry unattended fixes, and clang-format diagnostics parse to FMT001 files"
