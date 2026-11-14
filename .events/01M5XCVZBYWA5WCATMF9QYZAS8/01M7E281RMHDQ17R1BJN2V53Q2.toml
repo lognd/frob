@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T22:18:26Z"
+digest = "633cc89f1cce9ff4cdfa27e32f1a2fbd4fb226e94fb307c65ab8afc0f09e584d"
+exit_code = 0
+head = "1e846ae61c92735d3a3ac16ec323741c3f3417c6"
+inline = '''
+   Compiling crunk-tokens v0.532.0 (<worktree>/crates/crunk-tokens)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a37e4301-7350-4263-a235-8cad97e3f1e9 with nextest profile: default
+    Starting 1 test across 2 binaries (66 tests skipped)
+        PASS [   0.008s] crunk-tokens::it dialect::bezier_with_x_outside_unit_range_is_rejected_with_its_token
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tokens -E test(=dialect::bezier_with_x_outside_unit_range_is_rejected_with_its_token)"
+size = 644
+status = "measured"
+test_count = 1
+tests_digest = "cbbca50e9dfc06409a3af8e0343965cc2c0fb7ec6d92c738c47be8fc8a13249c"
+at = "2026-11-14T22:18:26Z"
+actor = "lognd"
+rev = 1
