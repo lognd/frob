@@ -57,6 +57,12 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/shared/sibling-contract.md](design/shared/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
 | [design/shared/universal-model.md](design/shared/universal-model.md) | The universal structural model (gob-ir) | current | gob |
 
+## glossary
+
+| Document | Title | Status | Owner |
+|---|---|---|---|
+| [glossary/ticket-lease.md](glossary/ticket-lease.md) | Ticket lease | current | frob |
+
 ## grimble
 
 | Document | Title | Status | Owner |
