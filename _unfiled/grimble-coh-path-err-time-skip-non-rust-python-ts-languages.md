@@ -2,7 +2,8 @@
 id = "01M7AV38AAVKP80JZ6XEW8J39T"
 title = "grimble COH/PATH/ERR/TIME skip non-Rust/Python/TS languages without reporting"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
