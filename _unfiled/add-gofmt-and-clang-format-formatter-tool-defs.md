@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T13:26:16Z"
-updated = "2026-11-14T10:11:35Z"
+updated = "2026-11-14T10:17:41Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/**"]
+
+[[acceptance]]
+text = "gofmt and clang-format std tool defs parse, carry unattended fixes, and clang-format diagnostics parse to FMT001 files"
+bound = false
 +++
 
 found while working ~H36992B; gofmt has no --version

@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["gofmt and clang-format std tool defs parse, carry unattended fixes, and clang-format diagnostics parse to FMT001 files"]
+moved = []
+at = "2026-11-14T10:17:41Z"
+actor = "lognd"
+rev = 1
