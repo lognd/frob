@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "target 1.3x unreachable by micro-opts (7.09x); needs executor redesign (precompiled slots); branch ticket/4E3SVYY kept, commit f98df80f0a"
+at = "2026-11-14T17:27:57Z"
+actor = "lognd"
+rev = 1
