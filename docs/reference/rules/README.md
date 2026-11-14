@@ -673,6 +673,7 @@
 | [UNITY001](UNITY001.md) | asset-missing-meta | error | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
 | [UNITY002](UNITY002.md) | orphan-meta | error | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
 | [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
+| [UNITY004](UNITY004.md) | field-never-written | error | manual | P+ | false | A C# field is declared but no code assigns it and the engine does not write it either. |
 | [UNITY201](UNITY201.md) | lookup-in-hot-code | error | manual | P- | true | A component or object lookup (GetComponent, Find, Camera.main) in code Unity runs every frame. |
 | [UNITY202](UNITY202.md) | allocation-in-hot-code | error | manual | P- | true | A managed allocation (collection, StringBuilder, array) in code Unity runs every frame. |
 | [UNITY301](UNITY301.md) | legacy-input-under-input-system | error | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |

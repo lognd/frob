@@ -83,6 +83,7 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "UNITY001",
     "UNITY002",
     "UNITY003",
+    "UNITY004",
     "COV004",
     "DOC003",
     "DOC006",
