@@ -7,7 +7,7 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-14T08:59:53Z"
-updated = "2026-11-14T11:12:44Z"
+updated = "2026-11-14T11:12:51Z"
 labels = ['["no-story"]']
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**", "docs/reference/rules/UNITY004.md"]
 
