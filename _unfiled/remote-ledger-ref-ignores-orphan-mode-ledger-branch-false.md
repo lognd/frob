@@ -4,9 +4,10 @@ title = "remote_ledger_ref ignores orphan-mode ledger branch (false CITED-UNPUSH
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-14T15:45:07Z"
-updated = "2026-11-14T15:45:07Z"
+updated = "2026-11-14T15:45:34Z"
 labels = ["no-story", "bug"]
 +++
 
