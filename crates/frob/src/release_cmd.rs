@@ -21,6 +21,7 @@ use frob_pm::{NewObject, PmStore};
 use frob_release::adopt::AdoptError;
 use frob_release::bump::{BumpError, BumpOptions, BumpReport, LockState};
 use frob_release::ci::{CiFacts, CiState, CiUnknown, check_tip};
+use frob_release::criteria::{EpicState, bind_builtin, derive_epic_criteria};
 use frob_release::cut::{CutError, CutLedger, CutPlan};
 use frob_release::status::{
     ChangelogFacts, EvidenceRef, ExemptTicket, Input, MilestoneFacts, OpenTicket, ReleaseTierFacts,
@@ -342,16 +343,17 @@ fn report_for(
     version: String,
 ) -> Result<Report, CliError> {
     let cfg = FrobConfig::load(root).map_err(|e| config_refusal(&e))?;
+    let ci = ci_facts(
+        root,
+        &frob_worktree::work::base_branch(ledger),
+        cfg.release.require_ci,
+    );
     let input = Input {
-        milestone: milestone.map(|m| facts(m, ledger)).transpose()?,
+        milestone: milestone.map(|m| facts(m, ledger, &ci)).transpose()?,
         open_tickets: open_tickets(ledger, milestone, &version)?,
         exempt_tickets: exempt_tickets(ledger, milestone, &version)?,
         changelog: changelog_facts(root, ledger, &version),
-        ci: ci_facts(
-            root,
-            &frob_worktree::work::base_branch(ledger),
-            cfg.release.require_ci,
-        ),
+        ci,
         release_tier: release_tier_facts(root),
         forecast: Some(release_forecast(
             ledger,
@@ -511,8 +513,8 @@ fn no_milestone_message(all: &[Milestone]) -> String {
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
-/// Milestone facts for the report: criteria with evidence, member epics, and its PM034 findings.
-fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
+/// Milestone facts for the report: criteria with evidence (built-in `epic-closed`/`ci-green` providers bound), member epics, and its PM034 findings.
+fn facts(m: &Milestone, ledger: &Ledger, ci: &CiFacts) -> Result<MilestoneFacts, CliError> {
     let view = MilestoneView::of(m, ledger);
     let tickets = claimants(ledger).map_err(pm_err)?;
     let pm034 = pm034(std::slice::from_ref(m), &tickets)
@@ -520,6 +522,37 @@ fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
         .into_iter()
         .map(|f| f.message)
         .collect();
+    let mut criteria: Vec<frob_release::status::CriterionStatus> = view
+        .criteria
+        .into_iter()
+        .map(|c| frob_release::status::CriterionStatus {
+            position: c.position,
+            text: c.text,
+            state: c.state,
+            evidence: c
+                .bound_by
+                .into_iter()
+                .map(|b| EvidenceRef {
+                    provider: b.provider,
+                    reference: b.reference,
+                    label: b.label,
+                })
+                .collect(),
+        })
+        .collect();
+    let epic_handles: Vec<String> = view.epics.iter().filter_map(|e| e.handle.clone()).collect();
+    let derived = derive_epic_criteria(&epic_handles, &criteria);
+    let first = criteria.len() + 1;
+    criteria.extend(derived.into_iter().enumerate().map(|(i, text)| {
+        frob_release::status::CriterionStatus {
+            position: first + i,
+            text,
+            state: "unbound".to_owned(),
+            evidence: Vec::new(),
+        }
+    }));
+    let states = epic_states(ledger, m)?;
+    bind_criteria(&mut criteria, &states, ci);
     Ok(MilestoneFacts {
         handle: view.handle,
         goal: view.goal,
@@ -535,26 +568,57 @@ fn facts(m: &Milestone, ledger: &Ledger) -> Result<MilestoneFacts, CliError> {
                 )
             })
             .collect(),
-        criteria: view
-            .criteria
-            .into_iter()
-            .map(|c| frob_release::status::CriterionStatus {
-                position: c.position,
-                text: c.text,
-                state: c.state,
-                evidence: c
-                    .bound_by
-                    .into_iter()
-                    .map(|b| EvidenceRef {
-                        provider: b.provider,
-                        reference: b.reference,
-                        label: b.label,
-                    })
-                    .collect(),
-            })
-            .collect(),
+        criteria,
         pm034,
     })
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// Bind the built-in criteria shapes in place; criteria that cannot bind stay unbound and the reason is logged.
+fn bind_criteria(
+    criteria: &mut [frob_release::status::CriterionStatus],
+    epics: &[EpicState],
+    ci: &CiFacts,
+) {
+    for (position, why) in bind_builtin(criteria, epics, ci) {
+        tracing::info!(position, %why, "built-in criterion left unbound");
+    }
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// The ticket state of every member epic of `m`: its descendants and which are not done.
+fn epic_states(ledger: &Ledger, m: &Milestone) -> Result<Vec<EpicState>, CliError> {
+    let mut out = Vec::new();
+    for id in &m.epics {
+        let Ok(view) = ledger.show(*id) else {
+            tracing::warn!(epic = %id, "member epic unreadable; no state gathered");
+            continue;
+        };
+        let below = descendants(ledger, vec![*id])?;
+        out.push(epic_state(
+            view.summary.handle,
+            below.iter().map(|s| (s.handle.as_str(), s.category)),
+        ));
+    }
+    Ok(out)
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// The state of one epic from its descendants' `(handle, category)` pairs.
+fn epic_state<'a>(handle: String, below: impl Iterator<Item = (&'a str, Category)>) -> EpicState {
+    let mut total = 0;
+    let mut open = Vec::new();
+    for (h, category) in below {
+        total += 1;
+        if category != Category::Done {
+            open.push(h.to_owned());
+        }
+    }
+    EpicState {
+        handle,
+        open,
+        total,
+    }
 }
 
 // frob:ticket 01M4069WSTV5ZJMRPYR2YECX6Q
@@ -582,8 +646,19 @@ fn epic_descendants(
     ledger: &Ledger,
     milestone: Option<&Milestone>,
 ) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
+    descendants(
+        ledger,
+        milestone.map(|m| m.epics.clone()).unwrap_or_default(),
+    )
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// Every ticket below `roots`, breadth-first, roots excluded.
+fn descendants(
+    ledger: &Ledger,
+    mut queue: Vec<TicketId>,
+) -> Result<Vec<frob_ledger::index::Summary>, CliError> {
     let mut found = Vec::new();
-    let mut queue: Vec<TicketId> = milestone.map(|m| m.epics.clone()).unwrap_or_default();
     let mut visited: BTreeSet<TicketId> = queue.iter().copied().collect();
     while let Some(parent) = queue.pop() {
         let children = ledger
@@ -1358,5 +1433,61 @@ mod registry_setup_tests {
         assert!(listed.iter().any(|u| u.item == "registry setup"));
         let cleared = frob_release::status::unresolved_items(false);
         assert!(!cleared.iter().any(|u| u.item == "registry setup"));
+    }
+}
+
+#[cfg(test)]
+mod criteria_wiring_tests {
+    use super::{Category, CiFacts, CiState, CiUnknown, bind_criteria, epic_state};
+
+    // frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+    // frob:tests crates/frob/src/release_cmd.rs::epic_state
+    #[test]
+    fn epic_state_counts_children_and_lists_the_open_ones() {
+        let s = epic_state(
+            "~E1".to_owned(),
+            [("~A", Category::Done), ("~B", Category::InProgress)].into_iter(),
+        );
+        assert_eq!(
+            (s.total, s.open.as_slice()),
+            (2, ["~B".to_owned()].as_slice())
+        );
+    }
+
+    // frob:tests crates/frob/src/release_cmd.rs::epic_state
+    #[test]
+    fn epic_state_of_a_childless_epic_has_no_total() {
+        let empty = epic_state("~E2".to_owned(), std::iter::empty());
+        assert_eq!(empty.total, 0);
+    }
+
+    // frob:tests crates/frob/src/release_cmd.rs::bind_criteria
+    #[test]
+    fn bind_criteria_binds_a_closed_epic_and_leaves_an_open_one() {
+        let crit = |n, t: String| frob_release::status::CriterionStatus {
+            position: n,
+            text: t,
+            state: "unbound".to_owned(),
+            evidence: Vec::new(),
+        };
+        let mut cs = vec![
+            crit(1, frob_release::criteria::epic_criterion_text("~E1")),
+            crit(2, frob_release::criteria::epic_criterion_text("~E2")),
+        ];
+        let epics = [
+            epic_state("~E1".to_owned(), [("~A", Category::Done)].into_iter()),
+            epic_state("~E2".to_owned(), [("~B", Category::InProgress)].into_iter()),
+        ];
+        let ci = CiFacts {
+            sha: None,
+            state: CiState::Unknown(CiUnknown {
+                reason: "r".to_owned(),
+                remedy: "m".to_owned(),
+            }),
+            require: false,
+        };
+        bind_criteria(&mut cs, &epics, &ci);
+        assert_eq!(cs[0].state, "bound");
+        assert_eq!(cs[1].state, "unbound");
     }
 }
