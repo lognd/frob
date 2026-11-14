@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a line saying 'section N of x.md', when the citation scanner runs, then it yields a section citation of x.md with a span covering the phrase"]
+moved = []
+at = "2026-11-14T08:20:08Z"
+actor = "lognd"
+rev = 1

@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T22:04:01Z"
-updated = "2026-11-14T07:42:57Z"
+updated = "2026-11-14T08:20:08Z"
 labels = ["no-story"]
 scope = ["crates/gob-text/**"]
+
+[[acceptance]]
+text = "Given a line saying 'section N of x.md', when the citation scanner runs, then it yields a section citation of x.md with a span covering the phrase"
+bound = false
 +++
 
 found while working ~Q1ZG43K
