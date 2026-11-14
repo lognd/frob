@@ -14,7 +14,7 @@ scope = ["crates/frob-obligations/**", "crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "Given a C# field no code assigns and the unity pack enabled, when frob check runs, then UNITY004 reports it; an assigned field is clean"
-bound = false
+bound = true
 +++
 
 found while working ~9QK3N9A: no rule reports never-assigned fields and the C# symbol graph has no field-write edges. never_written_fields is a lexical, name-based list with no consumer; add a rule (id, doc) and a real field-write graph, and consider [Serializable] nested-class public fields.
