@@ -2,7 +2,8 @@
 id = "01M5XCVZBYWA5WCATMF9QYZAS8"
 title = "Timing and easing tokens: crunk.toml duration and cubic-bezier tokens with bound checks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
