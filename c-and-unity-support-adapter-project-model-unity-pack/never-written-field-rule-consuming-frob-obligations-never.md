@@ -2,7 +2,8 @@
 id = "01M5FRZGDQ88QYMF8R547WNTP3"
 title = "never-written field rule consuming frob_obligations::never_written_fields"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
