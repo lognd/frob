@@ -40,6 +40,11 @@ function readRequest() {
   return JSON.parse(fs.readFileSync(requestPath, "utf8"));
 }
 
+/** Write one diagnostic line to stderr (never stdout, which is the wire protocol). */
+function logError(message) {
+  fs.writeSync(2, `${message}\n`);
+}
+
 /** Emit the final JSON response on stdout and exit 0 (errors are in-band). */
 function emit(response) {
   // frob:accept LOG002 because="the stdout JSON response is the wire protocol read by the Rust parent, not log output"
@@ -68,20 +73,35 @@ function loadV3BaseConfig(request, require) {
  */
 async function runV3(request) {
   const require = createRequire(path.join(request.projectRoot, "package.json"));
+  const { configPath, baseConfig } = loadV3BaseConfig(request, require);
+  const css = await buildV3Css(require, baseConfig, request.candidates);
+  return { ok: true, version: "v3", configPath, css };
+}
+
+/** Run postcss+tailwindcss over `baseConfig` with `content` narrowed to
+ * exactly `candidates`, returning the generated CSS text.
+ */
+async function buildV3Css(require, baseConfig, candidates) {
   const postcss = require("postcss");
   const tailwindcss = require("tailwindcss");
-
-  const { configPath, baseConfig } = loadV3BaseConfig(request, require);
   const candidateConfig = {
     ...baseConfig,
-    content: [{ raw: request.candidates.join(" "), extension: "html" }],
+    content: [{ raw: candidates.join(" "), extension: "html" }],
   };
-
   const result = await postcss([tailwindcss({ config: candidateConfig })]).process(
     "@tailwind utilities;",
     { from: undefined },
   );
-  return { ok: true, version: "v3", configPath, css: result.css };
+  return result.css;
+}
+
+/** Read the v4 CSS entry named by the request: its absolute path, its text
+ * and the directory used as the compile/design-system `base`.
+ */
+function readV4Entry(request) {
+  const cssEntryPath = path.resolve(request.cssEntryPath);
+  const css = fs.readFileSync(cssEntryPath, "utf8");
+  return { cssEntryPath, css, base: path.dirname(cssEntryPath) };
 }
 
 /** Tailwind v4: `@tailwindcss/node`'s `compile(css, opts).build(candidates)`,
@@ -91,15 +111,18 @@ async function runV3(request) {
  */
 async function runV4(request) {
   const require = createRequire(path.join(request.projectRoot, "package.json"));
-  const { compile } = require("@tailwindcss/node");
-
-  const cssEntryPath = path.resolve(request.cssEntryPath);
-  const css = fs.readFileSync(cssEntryPath, "utf8");
-  const base = path.dirname(cssEntryPath);
-
-  const compiled = await compile(css, { base, onDependency: () => {} });
-  const built = compiled.build(request.candidates);
+  const { cssEntryPath, css, base } = readV4Entry(request);
+  const built = await buildV4Css(require, css, base, request.candidates);
   return { ok: true, version: "v4", configPath: cssEntryPath, css: built };
+}
+
+/** Compile `css` with `@tailwindcss/node` and build it against exactly
+ * `candidates`, returning the generated CSS text.
+ */
+async function buildV4Css(require, css, base, candidates) {
+  const { compile } = require("@tailwindcss/node");
+  const compiled = await compile(css, { base, onDependency: () => {} });
+  return compiled.build(candidates);
 }
 
 /** Call `value` if it is a Tailwind theme function (color opacity helpers
@@ -112,7 +135,8 @@ function callIfFunction(value) {
   try {
     const result = value({ opacityValue: "1" });
     return typeof result === "string" ? result : undefined;
-  } catch {
+  } catch (err) {
+    logError(`helper.mjs: theme function did not resolve: ${err}`);
     return undefined;
   }
 }
@@ -158,12 +182,18 @@ function flattenV3Theme(node, pathParts, out) {
  */
 async function runV3Theme(request) {
   const require = createRequire(path.join(request.projectRoot, "package.json"));
-  const resolveConfig = require("tailwindcss/resolveConfig");
-
   // T-0211/T-0210: `loadV3BaseConfig` is the ONE place this "no config
   // means Tailwind's own defaults" decision lives, shared with runV3.
   const { configPath, baseConfig } = loadV3BaseConfig(request, require);
+  const theme = diffV3Theme(require, baseConfig);
+  return { ok: true, version: "v3", configPath, theme };
+}
 
+/** Resolve `baseConfig` and Tailwind's pure defaults, flatten both and
+ * return only the entries the project itself contributed.
+ */
+function diffV3Theme(require, baseConfig) {
+  const resolveConfig = require("tailwindcss/resolveConfig");
   const resolved = resolveConfig(baseConfig);
   const pureDefault = resolveConfig({});
 
@@ -178,7 +208,7 @@ async function runV3Theme(request) {
       theme[dottedPath.split(".").pop()] = value;
     }
   }
-  return { ok: true, version: "v3", configPath, theme };
+  return theme;
 }
 
 /** Tailwind v4: `__unstable__loadDesignSystem` the project's own CSS entry
@@ -192,12 +222,16 @@ async function runV3Theme(request) {
  */
 async function runV4Theme(request) {
   const require = createRequire(path.join(request.projectRoot, "package.json"));
+  const { cssEntryPath, css, base } = readV4Entry(request);
+  const theme = await diffV4Theme(require, css, base);
+  return { ok: true, version: "v4", configPath: cssEntryPath, theme };
+}
+
+/** Load the project's v4 design system and a bare-import baseline, and
+ * return the custom-property entries the project itself contributed.
+ */
+async function diffV4Theme(require, css, base) {
   const { __unstable__loadDesignSystem } = require("@tailwindcss/node");
-
-  const cssEntryPath = path.resolve(request.cssEntryPath);
-  const css = fs.readFileSync(cssEntryPath, "utf8");
-  const base = path.dirname(cssEntryPath);
-
   const design = await __unstable__loadDesignSystem(css, { base });
   const baseline = await __unstable__loadDesignSystem('@import "tailwindcss";', {
     base,
@@ -213,7 +247,7 @@ async function runV4Theme(request) {
       theme[varName] = entry.value;
     }
   }
-  return { ok: true, version: "v4", configPath: cssEntryPath, theme };
+  return theme;
 }
 
 async function main() {
@@ -221,6 +255,7 @@ async function main() {
   try {
     request = readRequest();
   } catch (err) {
+    logError(`helper.mjs: bad request: ${err.stack ?? err}`);
     emit({ ok: false, error: `bad request: ${err.message}` });
     return;
   }
@@ -238,6 +273,7 @@ async function main() {
       emit({ ok: false, error: `unknown mode: ${request.mode}` });
     }
   } catch (err) {
+    logError(`helper.mjs: ${request.mode} failed: ${err.stack ?? err}`);
     emit({ ok: false, error: `${err.name}: ${err.message}` });
   }
 }
