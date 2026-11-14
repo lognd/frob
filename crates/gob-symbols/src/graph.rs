@@ -28,6 +28,7 @@ use crate::symref::{Symref, Target, split_qual};
 
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 mod csharp;
+mod go;
 mod linkcache;
 mod python;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
@@ -37,6 +38,7 @@ use csharp::CsIndex;
 pub use linkcache::{InputsHasher, LinkCache};
 
 use crate::types::TypeFacts;
+use go::{GoIndex, is_go};
 use python::{PyIndex, is_python};
 use typescript::{TsIndex, is_ts};
 
@@ -280,6 +282,8 @@ struct Index {
     aliases: HashSet<(String, String)>,
     /// Lookup tables of the Python files (their calls resolve by name and import, not by crate).
     py: PyIndex,
+    /// Lookup tables of the Go files (a package is a directory).
+    go: GoIndex,
     // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
     /// Lookup tables of the C# files (their calls resolve by namespace, `using` and type, not by crate).
     cs: CsIndex,
@@ -961,6 +965,7 @@ impl SymbolGraph {
             file_types: HashMap::new(),
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
+            go: GoIndex::build(self, files),
             cs: CsIndex::build(self, files, deps.as_deref_mut()),
             ts: TsIndex::build(self, files, deps.as_deref_mut()),
         };
@@ -2151,6 +2156,12 @@ impl SymbolGraph {
                 for &call in chunk {
                     if is_python(call.caller.path()) {
                         let outcome = self.resolve_python(&idx.py, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
+                    // frob:ticket 01M7AV38DKR1SA56E17SY378XX
+                    if is_go(call.caller.path()) {
+                        let outcome = self.resolve_go(&idx.go, call);
                         self.record_call(&mut sink, call, outcome, None, false);
                         continue;
                     }

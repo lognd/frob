@@ -157,6 +157,25 @@ fn dead_through_may_edge_is_unresolved() {
     }
 }
 
+#[test]
+fn called_unexported_go_function_is_not_dead() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "a.go",
+        "package a\n\nfunc helper() int {\n\treturn 1\n}\n\nfunc caller() int {\n\treturn helper()\n}\n",
+    );
+    let found: Vec<_> = run(dir.path(), 0)
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .collect();
+    assert!(
+        found.iter().all(|f| !f.message.contains("`helper`")),
+        "{found:?}"
+    );
+}
+
 /// A host with fixed subject counts.
 struct Fixed;
 
