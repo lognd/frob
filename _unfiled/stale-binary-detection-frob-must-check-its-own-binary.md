@@ -2,7 +2,8 @@
 id = "01M7AV6DHZ6KG77GJ74CAT8CDF"
 title = "stale-binary detection: frob must check its own binary against the source"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
