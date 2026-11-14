@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Public fields of a [Serializable] class nested in an engine type are not reported by UNITY004, and writes are kept in a gob-symbols FieldWrites graph"]
+moved = []
+at = "2026-11-14T10:20:38Z"
+actor = "lognd"
+rev = 1
