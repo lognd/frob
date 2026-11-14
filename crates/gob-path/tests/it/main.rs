@@ -2,3 +2,4 @@
 // frob:ticket 01M5AH5JNAB2APDDP317HGFM86
 mod confinement;
 mod paths;
+mod relpath_serde;
