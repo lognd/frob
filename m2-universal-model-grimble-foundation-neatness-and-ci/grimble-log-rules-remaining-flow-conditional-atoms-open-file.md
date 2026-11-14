@@ -8,13 +8,13 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-06T22:52:11Z"
-updated = "2026-11-14T21:28:30Z"
+updated = "2026-11-14T21:28:31Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/log/**"]
 
 [[acceptance]]
 text = "Chained Path('/dev/stderr').write_text, js src.pipe(process.stdout) and written rust stdout().lock() handles are reported; local-file equivalents stay clean"
-bound = false
+bound = true
 +++
 
 split from ~T3JQNPF: std-stream sinks landed (json.dump/csv.writer/shutil); remaining needs local file-handle flow tracking and advisory-severity decisions

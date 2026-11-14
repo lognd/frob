@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T21:28:31Z"
+digest = "23d6cb1f8525ffb4028a2b765c0caec31c29a7e103171808ad88c39b84e19b6b"
+exit_code = 0
+head = "acaff0ca290181d4ddca86f80099617b98f45184"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.98s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9e637527-fe68-4c70-825d-f46afc8c39a9 with nextest profile: default
+    Starting 1 test across 2 binaries (417 tests skipped)
+        PASS [   0.014s] grimble-check log::tests_lang::python_chained_path_write_to_a_std_stream_path_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.015s] 1 test run: 1 passed, 417 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=log::tests_lang::python_chained_path_write_to_a_std_stream_path_is_reported)"
+size = 652
+status = "measured"
+test_count = 1
+tests_digest = "8ab7b3d553f4b010b0dd229b15da316390700aa184152695df04be683313850d"
+at = "2026-11-14T21:28:31Z"
+actor = "lognd"
+rev = 1
