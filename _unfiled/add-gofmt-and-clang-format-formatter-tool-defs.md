@@ -2,7 +2,8 @@
 id = "01M5HWMZ2BWEFGHEA08KSSQVNQ"
 title = "Add gofmt and clang-format formatter tool defs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
