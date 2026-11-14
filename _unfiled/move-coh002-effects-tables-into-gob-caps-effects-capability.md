@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T09:06:18Z"
-updated = "2026-11-14T11:02:27Z"
+updated = "2026-11-14T11:31:14Z"
 labels = ["no-story"]
-scope = ["crates/gob-caps/**", "crates/grimble-check/**", "crates/gob-ir/**", "docs/design/grimble/rule-families.md", "docs/**"]
+scope = ["crates/gob-caps/**", "crates/grimble-check/**", "crates/gob-ir/**", "docs/design/grimble/rule-families.md", "docs/**", "crates/gob-check/src/applicability.rs"]
 
 [[acceptance]]
 text = "COH002 effects tables live in gob-caps (Capability::Effects provided per language adapter) and grimble-check reads them from there; effects.rs holds no per-language tables"
