@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Chained Path('/dev/stderr').write_text, js src.pipe(process.stdout) and written rust stdout().lock() handles are reported; local-file equivalents stay clean"]
+moved = []
+at = "2026-11-14T21:28:30Z"
+actor = "lognd"
+rev = 1
