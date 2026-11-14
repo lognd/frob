@@ -336,7 +336,7 @@ fn evaluate_located_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner
     out
 }
 
-/// Every repo-level rule (`COV001`, `COV004`, `DOC003`, `DOC006`, `DOC007`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY003`); new files are interned into `files`.
+/// Every repo-level rule (`COV001`, `COV004`, `DOC003`, `DOC006`, `DOC007`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY004`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
@@ -347,13 +347,24 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
     out.extend(docstatus::doc003(inputs.root, files));
     // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K
-    out.extend(doc_citation::doc006(inputs.root, files));
+    out.extend(doc_citation::doc006(
+        inputs.root,
+        &inputs.config.external_citations,
+        files,
+    ));
     // frob:ticket 01M67VEKBESFK2C23JMXV82RW9
     out.extend(doc_orphan::doc007(inputs.root, files));
     // frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
     out.extend(unity::unity001(inputs.root, inputs.unity, files));
     out.extend(unity::unity002(inputs.root, inputs.unity, files));
     out.extend(unity::unity003(inputs.root, inputs.unity, files));
+    // frob:ticket 01M5FRZGDQ88QYMF8R547WNTP3
+    out.extend(unity::unity004(
+        inputs.root,
+        inputs.graph,
+        inputs.unity,
+        files,
+    ));
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     // Every exception counts, expired ones included: this result is cached by file digests, which
     // do not change when the day does, and an expired defer already raises EXC014.

@@ -170,3 +170,37 @@ fn self_contained_cycles_off_the_entry_are_unreachable_not_traps() {
     assert_eq!(names(&g, &g.unreachable()), vec!["x", "y"]);
     assert!(g.traps().is_empty());
 }
+
+const GRID: &str = "<div data-focus-group style=\"display: grid; grid-template-columns: repeat(2, 1fr)\">\n<button data-id=\"a\" data-focus-default></button>\n<button data-id=\"b\"></button>\n<button data-id=\"c\"></button>\n<button data-id=\"d\"></button>\n</div>\n";
+
+fn moves(g: &FocusGraph, from: &str, dir: Direction) -> Option<String> {
+    let f = g
+        .nodes
+        .iter()
+        .position(|n| n.data_id.as_deref() == Some(from))?;
+    let e = g.edges.iter().find(|e| e.from == f && e.direction == dir)?;
+    g.nodes[e.to].data_id.clone()
+}
+
+// frob:tests FocusGraph.from_scene
+#[test]
+fn a_grid_group_resolves_neighbours_along_both_axes() {
+    let g = graph(GRID);
+    assert_eq!(moves(&g, "a", Direction::Right).as_deref(), Some("b"));
+    assert_eq!(moves(&g, "a", Direction::Down).as_deref(), Some("c"));
+    assert_eq!(moves(&g, "d", Direction::Left).as_deref(), Some("c"));
+    assert_eq!(moves(&g, "d", Direction::Up).as_deref(), Some("b"));
+    assert_eq!(moves(&g, "b", Direction::Right), None);
+    assert!(g.unreachable().is_empty());
+}
+
+// frob:tests FocusGraph.traps
+#[test]
+fn nodes_inside_a_modal_are_not_traps() {
+    let html = "<button data-id=\"open\" data-focus-default data-nav-down=\"ok\"></button>\n<div aria-modal=\"true\">\n<button data-id=\"ok\" data-nav-up=\"none\" data-nav-down=\"none\"></button>\n</div>\n";
+    let g = graph(html);
+    assert!(g.traps().is_empty());
+    assert_eq!(g.modal_nodes.len(), 1);
+    let bare = html.replace(" aria-modal=\"true\"", "");
+    assert_eq!(names(&graph(&bare), &graph(&bare).traps()), vec!["ok"]);
+}

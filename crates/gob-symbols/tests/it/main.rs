@@ -1,6 +1,7 @@
 //! One integration-test binary per crate (audit M17): fewer links, one process pool.
 // frob:ticket 01M4CTE9W9QH6SBZSJ3E0E8M28
 mod api_surface;
+mod c_java_calls;
 mod call_edges;
 mod cicd;
 mod corpus;
@@ -26,6 +27,7 @@ mod symbolic_guard;
 mod symbols;
 mod typescript;
 mod typescript_consteval;
+mod typescript_exports;
 mod typescript_inherit;
 mod typescript_types;
 mod unity_project;

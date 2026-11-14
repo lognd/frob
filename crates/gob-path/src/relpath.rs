@@ -2,6 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 use crate::style::PathStyle;
 use crate::{PathError, validate_component};
 
@@ -99,5 +101,18 @@ impl RelPath {
 impl std::fmt::Display for RelPath {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+impl Serialize for RelPath {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(&self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for RelPath {
+    /// Validates on read, so a persisted document can never hold an unvalidated path.
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        Self::new(String::deserialize(d)?).map_err(serde::de::Error::custom)
     }
 }

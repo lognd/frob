@@ -553,6 +553,8 @@
 | [STATE001](STATE001.md) | interactive-states-missing | error | manual | P+ | true | A screen declared `interactive` declares default, hover, focus-visible, active and disabled states. Each block is one screen file under `design/screens/` of a default-preset project. |
 | [STATE002](STATE002.md) | data-states-missing | error | manual | P+ | true | A screen declared `data_bound` declares loading, empty, error and partial states. Each block is one screen file under `design/screens/` of a default-preset project. |
 | [STATE003](STATE003.md) | form-states-missing | error | manual | P+ | true | A screen declared `form` declares error, success and validation states. Each block is one screen file under `design/screens/` of a default-preset project. |
+| [STATE004](STATE004.md) | render-missing | error | manual | P+ | false | Every screen state has a render-ledger entry for each platform it applies to. Each block is one source file in a project whose `crunk.toml` is the default preset plus the platforms `desk` and `phone` and one screen `home` with a `default` state; the case's `config` selects the ledger. |
+| [STATE005](STATE005.md) | state-diff-low | error | manual | P+ | false | Two states of one screen differ visibly on every platform. Each block is one source file in a project whose `crunk.toml` is the default preset plus the platforms `desk` and `phone` and one screen `home` with `default` and `hover` states; the case's `config` selects the ledger. |
 | [STATE006](STATE006.md) | game-states-missing | error | manual | P+ | true | A screen declared `game` declares menu-default, pause, disconnect, low-hull and death states. Each block is one screen file under `design/screens/` of a default-preset project. |
 | [STATE007](STATE007.md) | screen-hash-stale | error | manual | P+ | true | A screen locked as `ready` or `completed` records the hash of its content. Each block is one screen file under `design/screens/` of a default-preset project. |
 
@@ -672,6 +674,7 @@
 | [UNITY001](UNITY001.md) | asset-missing-meta | error | manual | P+ | false | A tracked file or folder under `Assets/` (or an embedded package under `Packages/`) has no tracked `.meta`. |
 | [UNITY002](UNITY002.md) | orphan-meta | error | manual | P+ | false | A tracked `.meta` file whose asset is not tracked. |
 | [UNITY003](UNITY003.md) | duplicate-guid | error | manual | P+ | false | Two or more tracked `.meta` files carry the same `guid`. |
+| [UNITY004](UNITY004.md) | field-never-written | error | manual | P+ | false | A C# field is declared but no code assigns it and the engine does not write it either. |
 | [UNITY201](UNITY201.md) | lookup-in-hot-code | error | manual | P- | true | A component or object lookup (GetComponent, Find, Camera.main) in code Unity runs every frame. |
 | [UNITY202](UNITY202.md) | allocation-in-hot-code | error | manual | P- | true | A managed allocation (collection, StringBuilder, array) in code Unity runs every frame. |
 | [UNITY301](UNITY301.md) | legacy-input-under-input-system | error | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |

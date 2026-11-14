@@ -182,3 +182,31 @@ fn malformed_row_and_cycle_are_reported_once_part_2() {
     ]);
     assert_eq!(cyc.len(), 1, "{cyc:?}");
 }
+
+// frob:tests doc006
+#[test]
+fn external_citation_glob_exempts_matching_files_only() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    common::write_tree(
+        dir.path(),
+        &[
+            (
+                "frob.toml",
+                "[invariants]\nexternal_citations = [\"~/.claude/**\", \"other.md\"]\n",
+            ),
+            (
+                "docs/a.md",
+                "# A\n\nSee ~/.claude/refs/x.md section 2, other.md#x and gone.md section 1.\n",
+            ),
+        ],
+    );
+    let config = InvariantsConfig::load(dir.path()).expect("config");
+    let eval = common::evaluate_tree(dir.path(), None, &config, None);
+    let found: Vec<_> = eval
+        .findings
+        .into_iter()
+        .filter(|f| f.rule.as_str() == "DOC006")
+        .collect();
+    assert_eq!(found.len(), 1, "{found:?}");
+    assert!(found[0].message.contains("gone.md"), "{found:?}");
+}

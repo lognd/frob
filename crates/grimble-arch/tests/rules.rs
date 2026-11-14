@@ -72,6 +72,7 @@ fn run_dup(
         dup_index: index.is_dir().then_some(index.as_path()),
         changed,
         dup_scan,
+        is_engine_entry: &|_| false,
     })
     .findings
 }
@@ -156,6 +157,52 @@ fn dead_through_may_edge_is_unresolved() {
     }
 }
 
+#[test]
+fn called_unexported_go_function_is_not_dead() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "a.go",
+        "package a\n\nfunc helper() int {\n\treturn 1\n}\n\nfunc caller() int {\n\treturn helper()\n}\n",
+    );
+    let found: Vec<_> = run(dir.path(), 0)
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .collect();
+    assert!(
+        found.iter().all(|f| !f.message.contains("`helper`")),
+        "{found:?}"
+    );
+}
+
+// frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+#[test]
+fn called_private_c_and_java_functions_are_not_dead() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "a.c",
+        "static int chelper(void) { return 1; }\nint ccaller(void) { return chelper(); }\n",
+    );
+    write(
+        dir.path(),
+        "A.java",
+        "class A {\n  private int jhelper() { return 1; }\n  int jcaller() { return jhelper(); }\n}\n",
+    );
+    let found: Vec<_> = run(dir.path(), 0)
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .collect();
+    for name in ["chelper", "jhelper"] {
+        assert!(
+            found.iter().all(|f| !f.message.contains(name)),
+            "{name}: {found:?}"
+        );
+    }
+}
+
 /// A host with fixed subject counts.
 struct Fixed;
 
@@ -204,6 +251,7 @@ fn empty_repository_makes_the_rules_not_applicable() {
         dup_index: None,
         changed: &BTreeSet::new(),
         dup_scan: false,
+        is_engine_entry: &|_| false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(
@@ -245,9 +293,50 @@ fn a_repository_without_rust_makes_only_vis001_not_applicable() {
         dup_index: None,
         changed: &BTreeSet::new(),
         dup_scan: false,
+        is_engine_entry: &|_| false,
     });
     let ids: Vec<_> = report.not_applicable.keys().copied().collect();
     assert_eq!(ids, ["DUP004", "DUP005", "VIS001"]);
+}
+
+/// A Rust repository with no `pub` free function left to judge makes `VIS001` not applicable.
+// frob:tests crates/grimble-arch/src/lib.rs::analyze
+#[test]
+fn a_rust_repository_without_pub_free_functions_makes_vis001_not_applicable() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "Cargo.toml",
+        "[package]\nname = \"solo\"\nversion = \"0.1.0\"\nedition = \"2021\"\n",
+    );
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "fn helper() {}\n\nfn other() {\n    helper();\n}\n",
+    );
+    let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(dir.path(), &walked.files);
+    let graph = grimble_bind::edges::build_graph(dir.path(), &code);
+    let mut deps = CrateDeps::new(dir.path());
+    let crates: BTreeMap<String, String> = walked
+        .files
+        .iter()
+        .filter_map(|f| deps.crate_of(&f.path).map(|c| (f.path.clone(), c)))
+        .collect();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 0,
+        dup_min_tokens: 50,
+        dup_min_occurrences: 3,
+        read: &read,
+        dup_index: None,
+        changed: &BTreeSet::new(),
+        dup_scan: false,
+        is_engine_entry: &|_| false,
+    });
+    assert!(report.not_applicable.contains_key("VIS001"));
 }
 
 /// The findings of `rule` over the repository at `root`.
@@ -521,4 +610,60 @@ fn dup005_anchor_is_stable_so_a_baseline_keeps_matching() {
     let second = dup005(true);
     assert_eq!(first[0].anchor, second[0].anchor);
     assert!(first[0].anchor.starts_with("S:"));
+}
+
+/// The `DEAD001` verdict messages over `root` when `is_entry` names the engine entry points.
+fn dead_messages(root: &Path, is_entry: &dyn Fn(&str) -> bool) -> Vec<String> {
+    let walked = gob_walk::walk(root, &gob_walk::WalkConfig::default()).expect("walk");
+    let code = Code::build(root, &walked.files);
+    let graph = grimble_bind::edges::build_graph(root, &code);
+    let crates = BTreeMap::new();
+    let read = |_: &str| None;
+    let report = analyze(&ArchInput {
+        graph: &graph,
+        crates: &crates,
+        large_lines: 0,
+        dup_min_tokens: 0,
+        dup_min_occurrences: 0,
+        read: &read,
+        dup_index: None,
+        changed: &BTreeSet::new(),
+        dup_scan: false,
+        is_engine_entry: is_entry,
+    });
+    report
+        .findings
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .map(|f| f.message)
+        .collect()
+}
+
+/// A C# message the engine calls (`Update`) is a live root, while an unreferenced helper still fires.
+// frob:ticket 01M5F8MNMXE10ZQFN7BRA0V3XC
+// frob:tests crates/grimble-arch/src/rules/dead001.rs::Dead001
+#[test]
+fn dead001_treats_engine_entry_points_as_live_roots() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "Assets/Player.cs",
+        "class Player\n{\n    void Update() { }\n    void Helper() { }\n}\n",
+    );
+    let without = dead_messages(dir.path(), &|_| false);
+    assert!(
+        without.iter().any(|m| m.contains("`Update`")),
+        "{without:?}"
+    );
+    let with = dead_messages(dir.path(), &|n| n == "Update");
+    assert!(!with.iter().any(|m| m.contains("`Update`")), "{with:?}");
+    assert!(with.iter().any(|m| m.contains("`Helper`")), "{with:?}");
+}
+
+/// The clone index directory is absent outside a git checkout.
+// frob:tests crates/grimble-arch/src/lib.rs::dup_index_dir
+#[test]
+fn dup_index_dir_is_none_outside_git() {
+    let tmp = tempfile::tempdir().expect("tmp");
+    assert!(grimble_arch::dup_index_dir(tmp.path()).is_none());
 }

@@ -25,7 +25,13 @@ fn git_out(dir: &Path, args: &[&str]) -> (i32, String) {
         program: Program::Git,
         args: args.iter().map(|s| (*s).to_owned()).collect(),
         cwd: Some(dir.to_path_buf()),
-        env: Vec::new(),
+        // frob:ticket 01M7BBZ1HGMWFJ3ZGEWXF2C1DD
+        // The managed post-commit hook would otherwise run a detached `frob check` from PATH,
+        // spawning every configured stage behind the test's back.
+        env: vec![(
+            frob_worktree::post_commit::OPT_OUT_ENV.to_owned(),
+            "1".to_owned(),
+        )],
         timeout: Duration::from_secs(60),
         capture: true,
     };
@@ -201,6 +207,10 @@ impl Fixture {
         let mut req = NewTicket::new(title, ty);
         req.scope = scope.iter().map(|s| (*s).to_owned()).collect();
         req.acceptance = acceptance.iter().map(|s| (*s).to_owned()).collect();
+        if ty == TicketType::Task && acceptance.is_empty() {
+            // Task fixtures that are not about criteria waive the zero-criteria refusal explicitly (~SEWGFDJ).
+            req.labels = vec!["no-criteria".to_owned()];
+        }
         let created = ledger.new_ticket(req).expect("new");
         let id = created.ticket.front.id;
         let ws = Workspace {
@@ -256,6 +266,31 @@ impl Fixture {
 
 fn refusal(e: &LandError) -> &gob_diagnostics::Refusal {
     e.refusal().unwrap_or_else(|| panic!("not a refusal: {e}"))
+}
+
+// frob:tests crates/frob-land/src/cited_tickets.rs::gate
+#[test]
+fn dangling_ticket_citation_blocks_land_before_push() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Cite", &["src/**"]);
+    Fixture::commit_in(
+        &s.wt,
+        "src/c.rs",
+        "// frob:ticket 01M7ZZZZZZZZZZZZZZZZZZZZZZ\nfn c() {}\n",
+    );
+    Fixture::evidence(&s, "src/c.rs");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("dangling citation must refuse");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-CITED-MISSING", "{r:?}");
+    assert!(r.message.contains("E-DOCTOR-CITED-MISSING"), "{r:?}");
 }
 
 #[test]
@@ -324,6 +359,14 @@ fn happy_path_lands_closes_and_cleans_up() {
     assert!(again.already && !again.closed, "second land is a no-op");
 }
 
+/// Seconds recorded for `a` in a land summary's per-activity totals, if it has an entry.
+fn activity_secs(
+    totals: &[frob_metrics::activity::ActivityTotal],
+    a: frob_metrics::activity::Activity,
+) -> Option<i64> {
+    totals.iter().find(|t| t.activity == a).map(|t| t.secs)
+}
+
 // frob:ticket 01M48Q2BWRT117K8E163MWHDN2
 // frob:tests crates/frob-land/src/land.rs::land
 #[test]
@@ -353,17 +396,11 @@ fn land_summary_carries_per_activity_totals_and_writes_nothing_to_the_code_branc
     )
     .expect("land");
 
-    let secs = |a: Activity| {
-        out.activity
-            .iter()
-            .find(|t| t.activity == a)
-            .map(|t| t.secs)
-    };
     // The real lease signal from `start` adds a second or so of implementing time after the seeded span.
-    assert!(secs(Activity::Implementing).is_some_and(|i| i >= 150));
-    assert_eq!(secs(Activity::Testing), Some(100));
-    assert_eq!(secs(Activity::Waiting), Some(0));
-    assert!(secs(Activity::Landing).is_some_and(|l| l >= 0));
+    assert!(activity_secs(&out.activity, Activity::Implementing).is_some_and(|i| i >= 150));
+    assert_eq!(activity_secs(&out.activity, Activity::Testing), Some(100));
+    assert_eq!(activity_secs(&out.activity, Activity::Waiting), Some(0));
+    assert!(activity_secs(&out.activity, Activity::Landing).is_some_and(|l| l >= 0));
 
     let (_, after) = git_out(&fx.root, &["ls-tree", "-r", "--name-only", "main"]);
     let added: Vec<&str> = after
@@ -1021,7 +1058,7 @@ fn the_close_guards_refuse_before_the_base_is_merged_or_checked() {
 // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
 // frob:tests crates/frob-evidence/src/done.rs::DoneGuard.check
 #[test]
-fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands() {
+fn a_story_without_criteria_refuses_its_own_land_and_a_chore_without_still_lands() {
     if !git_available() {
         return;
     }
@@ -1042,7 +1079,7 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
     assert!(r.message.contains("story"), "{}", r.message);
     assert_eq!(fx.main_tip(), before, "base did not move");
 
-    let t = fx.start_typed("Add i", TicketType::Task, &["lib/**"], &[]);
+    let t = fx.start_typed("Add i", TicketType::Chore, &["lib/**"], &[]);
     Fixture::commit_in(&t.wt, "lib/i.rs", "fn i() {}\n");
     Fixture::evidence(&t, "lib/i.rs");
     land(
@@ -1050,7 +1087,7 @@ fn a_story_without_criteria_refuses_its_own_land_and_a_task_without_still_lands(
         &Fixture::opts(&t),
         &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
     )
-    .expect("task is exempt");
+    .expect("chore is exempt");
 }
 
 #[test]
@@ -2294,6 +2331,34 @@ fn an_override_lands_on_a_red_base_and_records_a_decision_on_the_ticket() {
             .any(|e| format!("{:?}", e.body).contains("hotfix for the red base")),
         "the override is on the ticket"
     );
+}
+
+// frob:ticket 01M7AV6DA56YMV88HFEMM9Z56N
+// frob:tests crates/frob-land/src/base_ci.rs::file_fix_ticket
+#[test]
+fn an_overridden_land_on_a_red_base_still_files_the_culprit_ticket() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let red = vec![frob_release::culprit::RunRecord {
+        sha: fx.main_tip(),
+        verdict: frob_release::culprit::Verdict::Red,
+    }];
+    let ci = CannedCi::with_runs(failing("rust (linux)"), red);
+    let (_, out) = ci_land(&fx, ci, |o| {
+        o.override_base_ci = Some("hotfix for the red base".to_owned());
+    });
+    assert!(out.expect("overridden land").closed);
+    let blockers = fx
+        .ledger()
+        .list(&frob_ledger::index::ListFilter {
+            label: Some("blocks-lands".to_owned()),
+            ..Default::default()
+        })
+        .expect("list")
+        .len();
+    assert_eq!(blockers, 1, "the culprit fix ticket was filed");
 }
 
 // frob:ticket 01M4CTDWJRKBC64EBQPGHMWDGG

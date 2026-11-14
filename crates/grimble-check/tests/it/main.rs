@@ -21,6 +21,7 @@ mod default_proof;
 mod design_docs;
 mod document;
 mod dup_knobs;
+mod effects_registry;
 mod err_rules;
 mod example_model;
 mod finding_floods;

@@ -428,6 +428,67 @@ fn tick002_and_tick003(layout: Layout) {
 }
 both_layouts!(tick002_and_tick003);
 
+// frob:tests crates/frob-ledger/src/doctor.rs::cited_ticket_issues
+// frob:ticket 01M7AV6DFBVMPWMR9KED4YR4SJ
+fn cited_ids_missing_or_unpushed_are_unwaivable_issues(layout: Layout) {
+    let (dir, ledger) = fixture(layout, RefMode::Trunk);
+    let pushed = ledger
+        .new_ticket(NewTicket::new("Pushed", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    let tip = ledger.repo().rev_parse(MAIN).expect("tip").to_string();
+    let status = std::process::Command::new("git")
+        .current_dir(dir.path())
+        .args(["update-ref", "refs/remotes/origin/main", &tip])
+        .status()
+        .expect("git");
+    assert!(status.success());
+    let local_only = ledger
+        .new_ticket(NewTicket::new("Local only", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    let ghost = TicketId::mint();
+    let (p, l, g) = (
+        pushed.to_string(),
+        local_only.to_string(),
+        ghost.to_string(),
+    );
+    let issues = ledger
+        .cited_ticket_issues(&[
+            ("a.rs:1", &p),
+            ("b.rs:2", &l),
+            ("c.rs:3", &g),
+            ("d.rs:4", "~x"),
+        ])
+        .expect("cited");
+    let codes: Vec<(&str, TicketId)> = issues.iter().map(|i| (i.code.as_str(), i.ticket)).collect();
+    assert_eq!(
+        codes,
+        vec![
+            ("E-DOCTOR-CITED-UNPUSHED", local_only),
+            ("E-DOCTOR-CITED-MISSING", ghost),
+        ]
+    );
+    // Deleting the remote-tracking ref (or any citation) cannot make the loss vanish: a ticket
+    // in no ledger stays flagged however the references change.
+    let status = std::process::Command::new("git")
+        .current_dir(dir.path())
+        .args(["update-ref", "-d", "refs/remotes/origin/main"])
+        .status()
+        .expect("git");
+    assert!(status.success());
+    let again = ledger
+        .cited_ticket_issues(&[("c.rs:3", &g)])
+        .expect("cited");
+    assert_eq!(again.len(), 1);
+    assert_eq!(again[0].code, "E-DOCTOR-CITED-MISSING");
+}
+both_layouts!(cited_ids_missing_or_unpushed_are_unwaivable_issues);
+
 fn alias_ambiguity_lists_both_candidates(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
     for title in ["first", "second"] {
@@ -1769,3 +1830,19 @@ fn doable_filters_by_derived_crate_and_product() {
     assert_eq!(sa.crates, vec!["frob-ledger"]);
     assert_eq!(sa.products, vec!["frob"]);
 }
+
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.design_links
+fn design_links_lists_only_tickets_that_implement(layout: Layout) {
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    ledger
+        .new_ticket(NewTicket::new("Plain", TicketType::Task))
+        .expect("plain");
+    let mut req = NewTicket::new("Impl", TicketType::Task);
+    req.implements = vec!["design:impl/w.a".to_owned()];
+    let made = ledger.new_ticket(req).expect("impl");
+    let links = ledger.design_links().expect("links");
+    assert_eq!(links.len(), 1);
+    assert_eq!(links[0].0.id, made.ticket.front.id);
+    assert_eq!(links[0].1, vec!["design:impl/w.a".to_owned()]);
+}
+both_layouts!(design_links_lists_only_tickets_that_implement);

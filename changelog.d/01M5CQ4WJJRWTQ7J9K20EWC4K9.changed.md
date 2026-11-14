@@ -1,0 +1,1 @@
+gob-path: `RelPath` now implements serde (validated on read), and the findings JSON `file` fields of `FindingRecord` and `EditRecord` are `RelPath` (a display path that is not repo-relative is omitted with a warning); the persisted-paths audit allowlist is empty.

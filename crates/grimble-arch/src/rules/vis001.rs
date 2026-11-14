@@ -18,7 +18,7 @@ use crate::host::ArchHost;
     fix = Manual,
     applies = project,
     host = ArchHost,
-    version = 1,
+    version = 2,
     since = "0.532.0",
 )]
 pub struct Vis001;

@@ -362,7 +362,7 @@ Status: COH001 is a registered rule (`grimble-check`, `src/rules/coh001.rs`) run
 pass as COH002 and COH003 (`coh_pass::analyze`). Its knobs are `[coh] min_slice_statements`
 (default 2) and `[coh] trivial`, which adds to COH001's built-in logging vocabulary. COH002 is a registered rule (`grimble-check`, `src/rules/coh002.rs`) run by
 `grimble check`. COH002 decides what is an effect from the language's effects capability
-(`grimble-check`, `src/effects.rs`), which classifies a call from its qualified path: `fs.write`,
+(`gob-caps`, `src/effects.rs`, tables derived in `gob-ir`, `src/effects_capability.rs`), which classifies a call from its qualified path: `fs.write`,
 `os.remove`, `subprocess.run` are effects, `console.log`, `logging.info` are trivial. Every fact
 the capability holds is registry data: IO qualifiers from the fs/net/process atoms, and the
 non-atom `coh002.methods`, `coh002.qualifiers` (persistence modules such as `sqlite3`,

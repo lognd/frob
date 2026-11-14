@@ -10,13 +10,14 @@
 
 // frob:ticket 01M4CXSQB9YJGH0FRSHX5ECTEM
 
+use crate::union_find::Union;
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::{DefUseEdge, GroupOrder, MayCause, NodeId, Operator, Status, Term, Universal};
 use gob_symbols::{Folded, def_use_of};
 use tracing::{debug, trace};
 
-use crate::config::CohTable;
+use crate::config::{CohTable, extend_unique};
 
 /// The built-in value of `[coh] min_slice_statements`: a job is at least this many statements.
 pub const DEFAULT_MIN_SLICE_STATEMENTS: usize = 2;
@@ -50,11 +51,7 @@ impl From<&CohTable> for CohOptions {
             min_slice_statements: usize::try_from(table.min_slice_statements).unwrap_or(usize::MAX),
             ..Self::default()
         };
-        for name in &table.trivial {
-            if !opts.trivial.contains(name) {
-                opts.trivial.push(name.clone());
-            }
-        }
+        extend_unique(&mut opts.trivial, &table.trivial);
         debug!(
             min_slice_statements = opts.min_slice_statements,
             trivial = opts.trivial.len(),
@@ -113,29 +110,9 @@ pub enum Coh001 {
     },
 }
 
-struct Union(Vec<usize>);
-
-impl Union {
-    fn new(n: usize) -> Self {
-        Self((0..n).collect())
-    }
-    fn find(&mut self, x: usize) -> usize {
-        let p = self.0[x];
-        if p == x {
-            return x;
-        }
-        let r = self.find(p);
-        self.0[x] = r;
-        r
-    }
-    fn join(&mut self, a: usize, b: usize) {
-        let (a, b) = (self.find(a), self.find(b));
-        self.0[a.max(b)] = a.min(b);
-    }
-}
-
-fn is_let(term: &Term, id: NodeId) -> bool {
-    matches!(term.node(id).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == "let")
+/// True when node `id` is a universal `Bind` of the given `kind` (for example `let`, `pattern`).
+pub(crate) fn is_bind_kind(term: &Term, id: NodeId, want: &str) -> bool {
+    matches!(term.node(id).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == want)
 }
 
 fn is_punct(term: &Term, id: NodeId) -> bool {
@@ -147,7 +124,7 @@ fn is_punct(term: &Term, id: NodeId) -> bool {
 
 fn flatten(term: &Term, list: NodeId, out: &mut Vec<NodeId>) {
     for &c in term.node(list).children() {
-        if is_let(term, c) {
+        if is_bind_kind(term, c, "let") {
             if let [scope, rhs, ..] = term.node(c).children() {
                 if matches!(
                     term.node(*scope).op(),
@@ -185,7 +162,7 @@ pub(crate) fn statements(term: &Term, unit: NodeId) -> Vec<NodeId> {
 }
 
 fn statement_of(term: &Term, stmts: &BTreeMap<NodeId, usize>, mut n: NodeId) -> Option<usize> {
-    if is_let(term, n) {
+    if is_bind_kind(term, n, "let") {
         n = *term.node(n).children().get(1)?;
     }
     loop {

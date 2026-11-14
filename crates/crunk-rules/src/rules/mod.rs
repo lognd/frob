@@ -159,6 +159,10 @@ pub mod state001;
 pub mod state002;
 /// Rule `STATE003`.
 pub mod state003;
+/// Rule `STATE004`.
+pub mod state004;
+/// Rule `STATE005`.
+pub mod state005;
 /// Rule `STATE006`.
 pub mod state006;
 /// Rule `STATE007`.
@@ -282,6 +286,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <state001::State001 as gob_rules::RuleDecl>::DEF,
     <state002::State002 as gob_rules::RuleDecl>::DEF,
     <state003::State003 as gob_rules::RuleDecl>::DEF,
+    <state004::State004 as gob_rules::RuleDecl>::DEF,
+    <state005::State005 as gob_rules::RuleDecl>::DEF,
     <state006::State006 as gob_rules::RuleDecl>::DEF,
     <state007::State007 as gob_rules::RuleDecl>::DEF,
     <token002::Token002 as gob_rules::RuleDecl>::DEF,
@@ -314,10 +320,16 @@ pub const INDEX: gob_rules::RuleIndex = gob_rules::RuleIndex {
 
 const _: () = gob_rules::assert_unique("crate", &[&[&INDEX]]);
 
-// frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
-/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
-#[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
-pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
+/// One chunk of this crate's rules, bound together so no generated function grows with the catalog.
+pub trait BindPart<P: ?Sized + 'static> {
+    /// Append this chunk's bound rules.
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>);
+}
+
+/// Marker for chunk 0 of the bound rules.
+pub struct Part0;
+
+impl<P: ?Sized + 'static> BindPart<P> for Part0
 where
     bp001::Bp001: gob_rules::Measured<P>,
     bp002::Bp002: gob_rules::Measured<P>,
@@ -360,6 +372,58 @@ where
     gx005::Gx005: gob_rules::Measured<P>,
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
+{
+    #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(bp001::Bp001));
+        rules.push(gob_rules::BoundRule::measured(bp002::Bp002));
+        rules.push(gob_rules::BoundRule::measured(bp003::Bp003));
+        rules.push(gob_rules::BoundRule::measured(color001::Color001));
+        rules.push(gob_rules::BoundRule::measured(color002::Color002));
+        rules.push(gob_rules::BoundRule::measured(comp001::Comp001));
+        rules.push(gob_rules::BoundRule::measured(comp002::Comp002));
+        rules.push(gob_rules::BoundRule::measured(comp003::Comp003));
+        rules.push(gob_rules::BoundRule::measured(comp004::Comp004));
+        rules.push(gob_rules::BoundRule::measured(comp005::Comp005));
+        rules.push(gob_rules::BoundRule::measured(comp006::Comp006));
+        rules.push(gob_rules::BoundRule::measured(comp007::Comp007));
+        rules.push(gob_rules::BoundRule::measured(comp008::Comp008));
+        rules.push(gob_rules::BoundRule::measured(comp009::Comp009));
+        rules.push(gob_rules::BoundRule::measured(content001::Content001));
+        rules.push(gob_rules::BoundRule::measured(content002::Content002));
+        rules.push(gob_rules::BoundRule::measured(content003::Content003));
+        rules.push(gob_rules::BoundRule::measured(content004::Content004));
+        rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
+        rules.push(gob_rules::BoundRule::repo(craft001::Craft001));
+        rules.push(gob_rules::BoundRule::repo(craft002::Craft002));
+        rules.push(gob_rules::BoundRule::repo(craft003::Craft003));
+        rules.push(gob_rules::BoundRule::repo(craft004::Craft004));
+        rules.push(gob_rules::BoundRule::repo(craft005::Craft005));
+        rules.push(gob_rules::BoundRule::repo(craft006::Craft006));
+        rules.push(gob_rules::BoundRule::repo(craft007::Craft007));
+        rules.push(gob_rules::BoundRule::repo(craft008::Craft008));
+        rules.push(gob_rules::BoundRule::repo(craft009::Craft009));
+        rules.push(gob_rules::BoundRule::repo(craft010::Craft010));
+        rules.push(gob_rules::BoundRule::repo(craft011::Craft011));
+        rules.push(gob_rules::BoundRule::repo(craft012::Craft012));
+        rules.push(gob_rules::BoundRule::repo(craft013::Craft013));
+        rules.push(gob_rules::BoundRule::measured(export001::Export001));
+        rules.push(gob_rules::BoundRule::measured(export002::Export002));
+        rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
+        rules.push(gob_rules::BoundRule::measured(gx002::Gx002));
+        rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
+        rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
+        rules.push(gob_rules::BoundRule::measured(gx005::Gx005));
+        rules.push(gob_rules::BoundRule::repo(human001::Human001));
+        rules.push(gob_rules::BoundRule::repo(human002::Human002));
+    }
+}
+
+/// Marker for chunk 1 of the bound rules.
+pub struct Part1;
+
+impl<P: ?Sized + 'static> BindPart<P> for Part1
+where
     layer001::Layer001: gob_rules::Measured<P>,
     layout001::Layout001: gob_rules::Measured<P>,
     layout002::Layout002: gob_rules::Measured<P>,
@@ -398,6 +462,59 @@ where
     state001::State001: gob_rules::Measured<P>,
     state002::State002: gob_rules::Measured<P>,
     state003::State003: gob_rules::Measured<P>,
+    state004::State004: gob_rules::RepoRule<P>,
+    state005::State005: gob_rules::RepoRule<P>,
+{
+    #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(layer001::Layer001));
+        rules.push(gob_rules::BoundRule::measured(layout001::Layout001));
+        rules.push(gob_rules::BoundRule::measured(layout002::Layout002));
+        rules.push(gob_rules::BoundRule::measured(layout003::Layout003));
+        rules.push(gob_rules::BoundRule::measured(layout004::Layout004));
+        rules.push(gob_rules::BoundRule::measured(layout005::Layout005));
+        rules.push(gob_rules::BoundRule::measured(org001::Org001));
+        rules.push(gob_rules::BoundRule::measured(org002::Org002));
+        rules.push(gob_rules::BoundRule::measured(org003::Org003));
+        rules.push(gob_rules::BoundRule::measured(org004::Org004));
+        rules.push(gob_rules::BoundRule::measured(org005::Org005));
+        rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
+        rules.push(gob_rules::BoundRule::measured(resp001::Resp001));
+        rules.push(gob_rules::BoundRule::measured(scene001::Scene001));
+        rules.push(gob_rules::BoundRule::measured(scene002::Scene002));
+        rules.push(gob_rules::BoundRule::measured(scene003::Scene003));
+        rules.push(gob_rules::BoundRule::measured(scene004::Scene004));
+        rules.push(gob_rules::BoundRule::measured(scene005::Scene005));
+        rules.push(gob_rules::BoundRule::measured(size001::Size001));
+        rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
+        rules.push(gob_rules::BoundRule::repo(slop003::Slop003));
+        rules.push(gob_rules::BoundRule::repo(slop004::Slop004));
+        rules.push(gob_rules::BoundRule::repo(slop010::Slop010));
+        rules.push(gob_rules::BoundRule::repo(slop011::Slop011));
+        rules.push(gob_rules::BoundRule::repo(slop014::Slop014));
+        rules.push(gob_rules::BoundRule::measured(slop020::Slop020));
+        rules.push(gob_rules::BoundRule::measured(slop021::Slop021));
+        rules.push(gob_rules::BoundRule::repo(slop022::Slop022));
+        rules.push(gob_rules::BoundRule::measured(slop026::Slop026));
+        rules.push(gob_rules::BoundRule::measured(slop027::Slop027));
+        rules.push(gob_rules::BoundRule::measured(slop028::Slop028));
+        rules.push(gob_rules::BoundRule::measured(slop029::Slop029));
+        rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
+        rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
+        rules.push(gob_rules::BoundRule::measured(space001::Space001));
+        rules.push(gob_rules::BoundRule::measured(state001::State001));
+        rules.push(gob_rules::BoundRule::measured(state002::State002));
+        rules.push(gob_rules::BoundRule::measured(state003::State003));
+        rules.push(gob_rules::BoundRule::repo(state004::State004));
+        rules.push(gob_rules::BoundRule::repo(state005::State005));
+    }
+}
+
+/// Marker for chunk 2 of the bound rules.
+pub struct Part2;
+
+impl<P: ?Sized + 'static> BindPart<P> for Part2
+where
     state006::State006: gob_rules::Measured<P>,
     state007::State007: gob_rules::Measured<P>,
     token002::Token002: gob_rules::Measured<P>,
@@ -419,106 +536,43 @@ where
     type003::Type003: gob_rules::Measured<P>,
     waive001::Waive001: gob_rules::FileRule<P>,
 {
+    #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
+    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(state006::State006));
+        rules.push(gob_rules::BoundRule::measured(state007::State007));
+        rules.push(gob_rules::BoundRule::measured(token002::Token002));
+        rules.push(gob_rules::BoundRule::measured(token003::Token003));
+        rules.push(gob_rules::BoundRule::measured(token004::Token004));
+        rules.push(gob_rules::BoundRule::measured(token005::Token005));
+        rules.push(gob_rules::BoundRule::measured(token006::Token006));
+        rules.push(gob_rules::BoundRule::measured(token007::Token007));
+        rules.push(gob_rules::BoundRule::measured(token008::Token008));
+        rules.push(gob_rules::BoundRule::measured(token009::Token009));
+        rules.push(gob_rules::BoundRule::measured(tokens001::Tokens001));
+        rules.push(gob_rules::BoundRule::measured(tw001::Tw001));
+        rules.push(gob_rules::BoundRule::measured(tw002::Tw002));
+        rules.push(gob_rules::BoundRule::measured(tw003::Tw003));
+        rules.push(gob_rules::BoundRule::measured(tw004::Tw004));
+        rules.push(gob_rules::BoundRule::measured(tw005::Tw005));
+        rules.push(gob_rules::BoundRule::measured(type001::Type001));
+        rules.push(gob_rules::BoundRule::measured(type002::Type002));
+        rules.push(gob_rules::BoundRule::measured(type003::Type003));
+        rules.push(gob_rules::BoundRule::file(waive001::Waive001));
+    }
+}
+
+// frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
+/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
+pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
+where
+    Part0: BindPart<P>,
+    Part1: BindPart<P>,
+    Part2: BindPart<P>,
+{
     let mut rules = Vec::new();
-    rules.push(gob_rules::BoundRule::measured(bp001::Bp001));
-    rules.push(gob_rules::BoundRule::measured(bp002::Bp002));
-    rules.push(gob_rules::BoundRule::measured(bp003::Bp003));
-    rules.push(gob_rules::BoundRule::measured(color001::Color001));
-    rules.push(gob_rules::BoundRule::measured(color002::Color002));
-    rules.push(gob_rules::BoundRule::measured(comp001::Comp001));
-    rules.push(gob_rules::BoundRule::measured(comp002::Comp002));
-    rules.push(gob_rules::BoundRule::measured(comp003::Comp003));
-    rules.push(gob_rules::BoundRule::measured(comp004::Comp004));
-    rules.push(gob_rules::BoundRule::measured(comp005::Comp005));
-    rules.push(gob_rules::BoundRule::measured(comp006::Comp006));
-    rules.push(gob_rules::BoundRule::measured(comp007::Comp007));
-    rules.push(gob_rules::BoundRule::measured(comp008::Comp008));
-    rules.push(gob_rules::BoundRule::measured(comp009::Comp009));
-    rules.push(gob_rules::BoundRule::measured(content001::Content001));
-    rules.push(gob_rules::BoundRule::measured(content002::Content002));
-    rules.push(gob_rules::BoundRule::measured(content003::Content003));
-    rules.push(gob_rules::BoundRule::measured(content004::Content004));
-    rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
-    rules.push(gob_rules::BoundRule::repo(craft001::Craft001));
-    rules.push(gob_rules::BoundRule::repo(craft002::Craft002));
-    rules.push(gob_rules::BoundRule::repo(craft003::Craft003));
-    rules.push(gob_rules::BoundRule::repo(craft004::Craft004));
-    rules.push(gob_rules::BoundRule::repo(craft005::Craft005));
-    rules.push(gob_rules::BoundRule::repo(craft006::Craft006));
-    rules.push(gob_rules::BoundRule::repo(craft007::Craft007));
-    rules.push(gob_rules::BoundRule::repo(craft008::Craft008));
-    rules.push(gob_rules::BoundRule::repo(craft009::Craft009));
-    rules.push(gob_rules::BoundRule::repo(craft010::Craft010));
-    rules.push(gob_rules::BoundRule::repo(craft011::Craft011));
-    rules.push(gob_rules::BoundRule::repo(craft012::Craft012));
-    rules.push(gob_rules::BoundRule::repo(craft013::Craft013));
-    rules.push(gob_rules::BoundRule::measured(export001::Export001));
-    rules.push(gob_rules::BoundRule::measured(export002::Export002));
-    rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
-    rules.push(gob_rules::BoundRule::measured(gx002::Gx002));
-    rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
-    rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
-    rules.push(gob_rules::BoundRule::measured(gx005::Gx005));
-    rules.push(gob_rules::BoundRule::repo(human001::Human001));
-    rules.push(gob_rules::BoundRule::repo(human002::Human002));
-    rules.push(gob_rules::BoundRule::measured(layer001::Layer001));
-    rules.push(gob_rules::BoundRule::measured(layout001::Layout001));
-    rules.push(gob_rules::BoundRule::measured(layout002::Layout002));
-    rules.push(gob_rules::BoundRule::measured(layout003::Layout003));
-    rules.push(gob_rules::BoundRule::measured(layout004::Layout004));
-    rules.push(gob_rules::BoundRule::measured(layout005::Layout005));
-    rules.push(gob_rules::BoundRule::measured(org001::Org001));
-    rules.push(gob_rules::BoundRule::measured(org002::Org002));
-    rules.push(gob_rules::BoundRule::measured(org003::Org003));
-    rules.push(gob_rules::BoundRule::measured(org004::Org004));
-    rules.push(gob_rules::BoundRule::measured(org005::Org005));
-    rules.push(gob_rules::BoundRule::measured(radius001::Radius001));
-    rules.push(gob_rules::BoundRule::measured(resp001::Resp001));
-    rules.push(gob_rules::BoundRule::measured(scene001::Scene001));
-    rules.push(gob_rules::BoundRule::measured(scene002::Scene002));
-    rules.push(gob_rules::BoundRule::measured(scene003::Scene003));
-    rules.push(gob_rules::BoundRule::measured(scene004::Scene004));
-    rules.push(gob_rules::BoundRule::measured(scene005::Scene005));
-    rules.push(gob_rules::BoundRule::measured(size001::Size001));
-    rules.push(gob_rules::BoundRule::repo(slop001::Slop001));
-    rules.push(gob_rules::BoundRule::repo(slop003::Slop003));
-    rules.push(gob_rules::BoundRule::repo(slop004::Slop004));
-    rules.push(gob_rules::BoundRule::repo(slop010::Slop010));
-    rules.push(gob_rules::BoundRule::repo(slop011::Slop011));
-    rules.push(gob_rules::BoundRule::repo(slop014::Slop014));
-    rules.push(gob_rules::BoundRule::measured(slop020::Slop020));
-    rules.push(gob_rules::BoundRule::measured(slop021::Slop021));
-    rules.push(gob_rules::BoundRule::repo(slop022::Slop022));
-    rules.push(gob_rules::BoundRule::measured(slop026::Slop026));
-    rules.push(gob_rules::BoundRule::measured(slop027::Slop027));
-    rules.push(gob_rules::BoundRule::measured(slop028::Slop028));
-    rules.push(gob_rules::BoundRule::measured(slop029::Slop029));
-    rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
-    rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
-    rules.push(gob_rules::BoundRule::measured(space001::Space001));
-    rules.push(gob_rules::BoundRule::measured(state001::State001));
-    rules.push(gob_rules::BoundRule::measured(state002::State002));
-    rules.push(gob_rules::BoundRule::measured(state003::State003));
-    rules.push(gob_rules::BoundRule::measured(state006::State006));
-    rules.push(gob_rules::BoundRule::measured(state007::State007));
-    rules.push(gob_rules::BoundRule::measured(token002::Token002));
-    rules.push(gob_rules::BoundRule::measured(token003::Token003));
-    rules.push(gob_rules::BoundRule::measured(token004::Token004));
-    rules.push(gob_rules::BoundRule::measured(token005::Token005));
-    rules.push(gob_rules::BoundRule::measured(token006::Token006));
-    rules.push(gob_rules::BoundRule::measured(token007::Token007));
-    rules.push(gob_rules::BoundRule::measured(token008::Token008));
-    rules.push(gob_rules::BoundRule::measured(token009::Token009));
-    rules.push(gob_rules::BoundRule::measured(tokens001::Tokens001));
-    rules.push(gob_rules::BoundRule::measured(tw001::Tw001));
-    rules.push(gob_rules::BoundRule::measured(tw002::Tw002));
-    rules.push(gob_rules::BoundRule::measured(tw003::Tw003));
-    rules.push(gob_rules::BoundRule::measured(tw004::Tw004));
-    rules.push(gob_rules::BoundRule::measured(tw005::Tw005));
-    rules.push(gob_rules::BoundRule::measured(type001::Type001));
-    rules.push(gob_rules::BoundRule::measured(type002::Type002));
-    rules.push(gob_rules::BoundRule::measured(type003::Type003));
-    rules.push(gob_rules::BoundRule::file(waive001::Waive001));
+    <Part0 as BindPart<P>>::push_all(&mut rules);
+    <Part1 as BindPart<P>>::push_all(&mut rules);
+    <Part2 as BindPart<P>>::push_all(&mut rules);
     rules
 }
 

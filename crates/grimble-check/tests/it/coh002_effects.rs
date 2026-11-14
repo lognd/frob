@@ -2,13 +2,14 @@
 
 // frob:ticket 01M5HJ07DTC2JQT9MP5T0TGDAS
 
+use gob_caps::EffectClass;
+use gob_ir::effects_for;
 use gob_ir::{NodeId, Operator, Universal};
 use gob_languages::Language;
 use gob_symbols::{Folded, def_use_of, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 use grimble_check::coh_pass::{CohPassOptions, analyze};
 use grimble_check::coh002::{Coh002, Coh002Options, Coh002Unresolved, UnitRole, coh002, judge};
-use grimble_check::effects::{EffectClass, effects_for};
 use grimble_lints::pass::PathFile;
 
 fn fold(path: &str, text: &str) -> Folded {
@@ -73,7 +74,7 @@ fn unknown(v: &Coh002) -> Option<&Vec<String>> {
 }
 
 // frob:tests crates/grimble-check/src/coh002.rs::coh002
-// frob:tests crates/grimble-check/src/effects.rs::EffectsCapability.classify
+// frob:tests crates/gob-caps/src/effects.rs::EffectsCapability.classify
 #[test]
 fn module_qualified_io_fires_in_python_rust_and_typescript() {
     assert!(is_fire(&verdict("a.py", "python", &py("os.remove(x)"))));
@@ -86,7 +87,7 @@ fn module_qualified_io_fires_in_python_rust_and_typescript() {
 }
 
 // frob:tests crates/grimble-check/src/coh002.rs::coh002
-// frob:tests crates/grimble-check/src/effects.rs::EffectsCapability.classify
+// frob:tests crates/gob-caps/src/effects.rs::EffectsCapability.classify
 #[test]
 fn logging_is_trivial_and_clean_in_python_rust_and_typescript() {
     assert_eq!(
@@ -103,7 +104,7 @@ fn logging_is_trivial_and_clean_in_python_rust_and_typescript() {
     );
 }
 
-// frob:tests crates/grimble-check/src/effects.rs::EffectsCapability.classify
+// frob:tests crates/gob-caps/src/effects.rs::EffectsCapability.classify
 #[test]
 fn builtin_io_is_an_effect_only_unqualified() {
     assert!(is_fire(&verdict("a.py", "python", &py("open(x)"))));

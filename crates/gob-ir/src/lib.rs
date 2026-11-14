@@ -64,6 +64,7 @@ pub mod core_pack;
 mod defuse;
 mod digest;
 pub mod effect_class;
+mod effects_capability;
 pub mod engine;
 pub mod error_flow;
 pub mod eval;
@@ -89,6 +90,7 @@ pub use answer::{Answer, Truth};
 pub use attrs::{AttrValue, Attributes, reserved};
 pub use defuse::{DefUseEdge, DefUseSyntax, MayCause, def_use};
 pub use digest::{DIGEST_SCHEME, Digest, Facet, FacetDigest};
+pub use effects_capability::effects_for;
 pub use eval::{
     Ctx, EvalConfig, EvalError, Observation, Poison, PoisonReason, Polarity, Relation, RuleOutcome,
     RuleProgram, SubjectResult, ThresholdKind, Verdict,

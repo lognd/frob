@@ -24,7 +24,7 @@ A component variant matrix lists every combination of its axis props exactly onc
 
 ## What it does
 
-Fires when a `[[variants]]` cell names an unknown axis or value, omits an axis, repeats another cell, when variants exist but no enum prop sets `axis = true`, or when the cells cover fewer combinations than the axes allow.
+Fires when a `[[variants]]` cell names an unknown axis or value, omits an axis, repeats another cell, when variants exist but no enum prop sets `axis = true`, or when the cells cover fewer combinations than the axes allow. Every combination of the axes' values is enumerated and resolved to a cell; each combination no cell renders is named in the finding (up to eight, then a count). Components are specs, not scenes, so "render" here means resolving the combination to a declared cell.
 
 ## Why it matters
 

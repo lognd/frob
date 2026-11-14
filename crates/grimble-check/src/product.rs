@@ -22,6 +22,7 @@ use crate::bind_cache::{self, BindSummary};
 use crate::coh_pass::CohPassOptions;
 use crate::coh001::CohOptions;
 use crate::coh002::Coh002Options;
+use crate::coh004::Coh004Options;
 use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, PacksTable, RuleOverrides};
 use crate::fidelity::language_tag;
 use crate::layers::ModelLayers;
@@ -775,7 +776,7 @@ fn cached_log_report(
 fn coh_kind(opts: &CohPassOptions) -> String {
     // The version tag invalidates reports cached before COH003 joined the pass; the model's layers
     // are a function of the walk digest, which already keys the artifact.
-    let mut text = String::from("coh001-v4\u{1f}");
+    let mut text = String::from("coh001-v5\u{1f}");
     text.push_str(&opts.coh002.effect_calls.join("\n"));
     text.push('\u{1f}');
     text.push_str(&opts.coh002.trivial.join("\n"));
@@ -785,7 +786,26 @@ fn coh_kind(opts: &CohPassOptions) -> String {
     text.push_str(&opts.coh001.min_slice_statements.to_string());
     text.push('\u{1f}');
     text.push_str(&opts.coh001.trivial.join("\n"));
+    text.push('\u{1f}');
+    text.push_str(&opts.coh004.min_cluster_words.to_string());
+    text.push('\u{1f}');
+    text.push_str(&opts.coh004.stop_words.join("\n"));
     format!("coh-{}", gob_walk::Digest::of(text.as_bytes()))
+}
+
+/// The engine vocabulary of the built-in `unity` pack when `root` enables it, else `None`.
+fn unity_vocab(root: &std::path::Path) -> Option<gob_ir::engine::EngineVocab> {
+    let table = PacksTable::load(root).ok()?;
+    if !table.enabled.iter().any(|id| id == "unity") {
+        return None;
+    }
+    match gob_packs::unity::UnityPack::builtin() {
+        Ok(pack) => Some(pack.vocab),
+        Err(err) => {
+            tracing::warn!(%err, "builtin unity pack failed to load; DEAD001 sees no engine roots");
+            None
+        }
+    }
 }
 
 /// Run the architecture rules over the walk (graph built from the bound code, uncached).
@@ -795,7 +815,9 @@ fn arch_report(
     table: &GrimbleTable,
     read: &dyn Fn(&str) -> Option<String>,
     changed: &BTreeSet<String>,
+    vocab: Option<&gob_ir::engine::EngineVocab>,
 ) -> ArchReport {
+    let is_entry = |name: &str| vocab.is_some_and(|v| v.is_message(name));
     let code = grimble_bind::code::Code::build(root, entries);
     let graph = grimble_bind::edges::build_graph(root, &code);
     let mut deps = gob_symbols::CrateDeps::new(root);
@@ -813,6 +835,7 @@ fn arch_report(
         dup_index: grimble_arch::dup_index_dir(root).as_deref(),
         changed,
         dup_scan: table.scan_enabled(),
+        is_engine_entry: &is_entry,
     })
 }
 
@@ -922,11 +945,14 @@ fn reports(
             .join("\n")
             .as_bytes(),
     );
+    // The unity pack roots engine messages for DEAD001, so enabling it changes the report.
+    let vocab = unity_vocab(&cx.core.root);
     let arch_kind = format!(
-        "arch-{}-{}-{changed_digest}-{}",
+        "arch-{}-{}-{changed_digest}-{}-{}",
         table.dup_min_tokens,
         table.dup_min_occurrences,
-        u8::from(table.scan_enabled())
+        u8::from(table.scan_enabled()),
+        u8::from(vocab.is_some())
     );
     let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
     let path_key = report_cache::key("path", digest, &engine, table.large_lines);
@@ -1008,7 +1034,14 @@ fn reports(
                 let read = |p: &str| reader.borrow_mut().read_text(p).ok();
                 let started = std::time::Instant::now();
                 let arch = arch_hit.unwrap_or_else(|| {
-                    arch_report(&cx.core.root, &cx.core.entries, table, &read, changed)
+                    arch_report(
+                        &cx.core.root,
+                        &cx.core.entries,
+                        table,
+                        &read,
+                        changed,
+                        vocab.as_ref(),
+                    )
                 });
                 let arch_took = started.elapsed();
                 let started = std::time::Instant::now();
@@ -1173,6 +1206,7 @@ impl Product for Grimble {
         let coh_opts = CohPassOptions {
             coh001: CohOptions::from(&coh_table),
             coh002: Coh002Options::from(&coh_table),
+            coh004: Coh004Options::from(&coh_table),
             max_level_spread: u32::try_from(coh_table.max_level_spread).unwrap_or(u32::MAX),
             model: ModelLayers::from_model(&model),
         };

@@ -3,6 +3,12 @@
 
 #[test]
 fn ui_product() {
-    let t = trybuild::TestCases::new();
-    t.compile_fail("tests/ui_product/*.rs");
+    let run = std::panic::catch_unwind(|| {
+        let t = trybuild::TestCases::new();
+        t.compile_fail("tests/ui_product/*.rs");
+    });
+    assert!(
+        run.is_ok(),
+        "a ui_product case did not fail to compile as expected"
+    );
 }

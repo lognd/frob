@@ -107,3 +107,13 @@ macro_rules! lang_tests {
 lang_tests!(fire_py, clean_py, unres_py, shell_py, "python", "py");
 lang_tests!(fire_rs, clean_rs, unres_rs, shell_rs, "rust", "rs");
 lang_tests!(fire_ts, clean_ts, unres_ts, shell_ts, "typescript", "ts");
+
+// frob:ticket 01M5HJDX45JB4H214VWY6M378S
+// frob:tests crates/grimble-check/src/coh002.rs::judge
+// frob:tests crates/grimble-check/src/coh002.rs::coh002
+#[test]
+fn nested_function_statement_is_another_unit() {
+    let text = "def f(a, sink):\n    def g(b):\n        x = compute(b)\n        if x > 3:\n            sink.send(x)\n    return a\n";
+    let v = verdict("nested.py", "python", text, UnitRole::None);
+    assert_eq!(v, Coh002::Clean, "{v:?}");
+}

@@ -5,7 +5,7 @@
 //! inherited one), `$description`, `$extensions`, every unknown key and every `$value` verbatim
 //! (so `16` and `16.0`, a legacy `"16px"` string and a `{value, unit}` object all survive).
 //! Parsing validates what a consumer relies on: names, a resolvable `$type` per token, the
-//! shape of the known value types and that every `{a.b}` reference resolves without a cycle.
+//! shape of the known value types and that every `{a.b}` or `{"$ref": "#/a/b/$value"}` reference resolves without a cycle.
 
 // frob:ticket 01M4CXQYFA9ACDVWF4R62C50FH
 
@@ -17,6 +17,8 @@ use indexmap::IndexMap;
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 use serde_json::{Map, Number, Value};
 use thiserror::Error;
+
+use crate::model::{Tier, Token, TokenKind, TokenSet, TokenValue, Unit};
 
 /// Why a DTCG file was refused.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -46,7 +48,7 @@ pub enum DtcgError {
     BrokenReference {
         /// The referencing token.
         path: String,
-        /// The `{...}` target path as written.
+        /// The reference as written: the `{...}` path or the `$ref` JSON pointer.
         target: String,
     },
     /// The file could not be read or written.
@@ -68,6 +70,14 @@ pub enum DtcgError {
         second: String,
         /// The shared custom property name.
         property: String,
+    },
+    /// The document is valid DTCG but has no faithful [`TokenSet`] form.
+    #[error("`{path}`: cannot compile to a token set: {reason}")]
+    Unsupported {
+        /// The dotted token path.
+        path: String,
+        /// What crunk's token model cannot represent.
+        reason: String,
     },
     /// A chain of whole-value aliases loops back on itself.
     #[error("`{path}`: reference chain is cyclic")]
@@ -324,16 +334,51 @@ fn parse_node(raw: Raw, path: &mut Vec<String>) -> Result<Node, DtcgError> {
     }
 }
 
-/// The `{a.b}` target of a string that is wholly one reference.
-fn whole_reference(value: &Value) -> Option<&str> {
-    let inner = value.as_str()?.strip_prefix('{')?.strip_suffix('}')?;
-    (!inner.is_empty() && !inner.contains(['{', '}'])).then_some(inner)
+/// A whole-value reference: the dotted token path it names and the text as written.
+struct Reference {
+    /// The dotted path looked up in the document (the raw text when a pointer is malformed).
+    target: String,
+    /// The reference as written (`a.b` for `{a.b}`, the pointer for a `$ref`).
+    written: String,
 }
 
-/// Every whole-string reference nested anywhere in `value`.
-fn references<'a>(value: &'a Value, out: &mut Vec<&'a str>) {
+/// Decode a `#/a/b/$value` JSON pointer (RFC 6901, `~0` and `~1` escapes) to a dotted path.
+fn pointer_target(pointer: &str) -> Option<String> {
+    let rest = pointer.strip_prefix("#/")?;
+    let rest = rest.strip_suffix("/$value").unwrap_or(rest);
+    let parts: Vec<String> = rest
+        .split('/')
+        .map(|p| p.replace("~1", "/").replace("~0", "~"))
+        .collect();
+    (parts.iter().all(|p| !p.is_empty() && !p.contains('.'))).then(|| parts.join("."))
+}
+
+/// The target of a value that is wholly one reference: `{a.b}` or `{"$ref": "#/a/b/$value"}`.
+fn whole_reference(value: &Value) -> Option<Reference> {
+    if let Value::Object(map) = value {
+        let (1, Some(Value::String(pointer))) = (map.len(), map.get("$ref")) else {
+            return None;
+        };
+        let target = pointer_target(pointer).unwrap_or_else(|| pointer.clone());
+        return Some(Reference {
+            target,
+            written: pointer.clone(),
+        });
+    }
+    let inner = value.as_str()?.strip_prefix('{')?.strip_suffix('}')?;
+    (!inner.is_empty() && !inner.contains(['{', '}'])).then(|| Reference {
+        target: inner.to_owned(),
+        written: inner.to_owned(),
+    })
+}
+
+/// Every whole-value reference nested anywhere in `value`.
+fn references(value: &Value, out: &mut Vec<Reference>) {
+    if let Some(reference) = whole_reference(value) {
+        out.push(reference);
+        return;
+    }
     match value {
-        Value::String(_) => out.extend(whole_reference(value)),
         Value::Array(items) => items.iter().for_each(|v| references(v, out)),
         Value::Object(map) => map.values().for_each(|v| references(v, out)),
         _ => {}
@@ -513,8 +558,8 @@ impl Document {
             }
         }
         inherited.or_else(|| {
-            let target = whole_reference(&token.value)?;
-            let (resolved, _) = self.target(target)?;
+            let reference = whole_reference(&token.value)?;
+            let (resolved, _) = self.target(&reference.target)?;
             self.resolve_type(&resolved, seen)
         })
     }
@@ -555,24 +600,194 @@ impl Document {
         Ok(())
     }
 
+    /// Compile the document into a [`TokenSet`]: one token per DTCG token in file order, each
+    /// holding its resolved value (references replaced by the value they name).
+    ///
+    /// # Errors
+    ///
+    /// [`DtcgError::Unsupported`] for a `$type` or value crunk's model cannot hold, or when two
+    /// tokens (a group and its `$root`) compile to one custom property.
+    pub fn compile(&self) -> Result<TokenSet, DtcgError> {
+        let mut tokens = Vec::new();
+        for (path, node) in self.tokens() {
+            let unsupported = |reason: String| DtcgError::Unsupported {
+                path: path.clone(),
+                reason,
+            };
+            let ty = self
+                .resolved_type(&path)
+                .ok_or_else(|| DtcgError::MissingType { path: path.clone() })?;
+            let value = self
+                .convert(&ty, &node.value, &mut BTreeSet::new())
+                .map_err(unsupported)?;
+            let key = path.strip_suffix(".$root").unwrap_or(&path).to_owned();
+            tokens.push(Token {
+                name: crate::dialect::name_of_path(&key),
+                kind: if matches!(value, TokenValue::Color(_)) {
+                    TokenKind::Color
+                } else {
+                    TokenKind::Custom
+                },
+                origin: format!("dtcg {path}"),
+                key,
+                tier: Tier::Primitive,
+                value,
+                modes: IndexMap::new(),
+                scopes: Vec::new(),
+                description: node.description.clone(),
+                deprecated: match node.extra.get("$deprecated") {
+                    Some(Value::String(why)) => Some(why.clone()),
+                    Some(Value::Bool(true)) => Some("deprecated".to_owned()),
+                    _ => None,
+                },
+            });
+        }
+        let set = TokenSet::from_tokens(tokens).map_err(|e| {
+            tracing::warn!(error = %e, "dtcg: compile collided");
+            DtcgError::Unsupported {
+                path: String::new(),
+                reason: e.to_string(),
+            }
+        })?;
+        tracing::debug!(count = set.len(), "dtcg: compiled to token set");
+        Ok(set)
+    }
+
+    /// Convert a `$value` of DTCG type `ty` to a model value, following references.
+    fn convert(
+        &self,
+        ty: &str,
+        value: &Value,
+        seen: &mut BTreeSet<String>,
+    ) -> Result<TokenValue, String> {
+        if let Some(Reference { target, written }) = whole_reference(value) {
+            let (path, node) = self
+                .target(&target)
+                .ok_or_else(|| format!("reference `{written}` does not resolve"))?;
+            if !seen.insert(path.clone()) {
+                return Err(format!("reference `{written}` is cyclic"));
+            }
+            let target_ty = self.resolved_type(&path).unwrap_or_else(|| ty.to_owned());
+            let out = self.convert(&target_ty, &node.value, seen);
+            seen.remove(&path);
+            return out;
+        }
+        match ty {
+            "color" => color_value(value),
+            "dimension" => dimension(value, "px").map(|value| TokenValue::Dimension {
+                value,
+                unit: Unit::Px,
+            }),
+            "duration" => dimension(value, "ms").map(TokenValue::Duration),
+            "number" => Ok(number_value(value)?),
+            "cubicBezier" => {
+                let items = value
+                    .as_array()
+                    .ok_or("a cubicBezier is a list of 4 numbers")?;
+                let mut out = [0.0; 4];
+                if items.len() != 4 {
+                    return Err("a cubicBezier needs exactly 4 numbers".to_owned());
+                }
+                for (slot, item) in out.iter_mut().zip(items) {
+                    *slot = item
+                        .as_f64()
+                        .or_else(|| match self.convert("number", item, seen) {
+                            Ok(TokenValue::Float(f)) => Some(f),
+                            _ => None,
+                        })
+                        .ok_or("a cubicBezier member is not a number")?;
+                }
+                Ok(TokenValue::CubicBezier(out))
+            }
+            "fontFamily" => match value {
+                Value::String(name) => Ok(TokenValue::FontFamily(vec![name.clone()])),
+                Value::Array(names) => names
+                    .iter()
+                    .map(|n| {
+                        n.as_str()
+                            .map(str::to_owned)
+                            .ok_or("a font family is not text")
+                    })
+                    .collect::<Result<_, _>>()
+                    .map(TokenValue::FontFamily)
+                    .map_err(str::to_owned),
+                _ => Err("a fontFamily is text or a list of text".to_owned()),
+            },
+            "string" => value
+                .as_str()
+                .map(|s| TokenValue::Text(s.to_owned()))
+                .ok_or_else(|| "a string token holds text".to_owned()),
+            "typography" | "shadow" | "border" | "transition" => {
+                let object = match value {
+                    Value::Array(layers) if layers.len() == 1 => &layers[0],
+                    other => other,
+                };
+                let members = object
+                    .as_object()
+                    .ok_or("a composite is an object (a shadow list needs exactly one layer)")?;
+                let mut out = IndexMap::new();
+                for (key, member) in members {
+                    out.insert(key.clone(), self.member(member, seen)?);
+                }
+                Ok(TokenValue::Composite(out))
+            }
+            other => Err(format!("$type `{other}` has no token model form")),
+        }
+    }
+
+    /// Convert a composite member, whose type is read from its shape.
+    fn member(&self, value: &Value, seen: &mut BTreeSet<String>) -> Result<TokenValue, String> {
+        if let Some(Reference { target, written }) = whole_reference(value) {
+            let ty = self
+                .target(&target)
+                .and_then(|(path, _)| self.resolved_type(&path))
+                .ok_or_else(|| format!("reference `{written}` does not resolve"))?;
+            return self.convert(&ty, value, seen);
+        }
+        match value {
+            Value::Number(_) => number_value(value),
+            Value::Array(items) if items.iter().all(Value::is_number) => {
+                self.convert("cubicBezier", value, seen)
+            }
+            Value::Array(_) => self.convert("fontFamily", value, seen),
+            Value::Object(map) if map.contains_key("colorSpace") => color_value(value),
+            Value::Object(map) if map.contains_key("unit") => {
+                dimension(value, "px").map(|value| TokenValue::Dimension {
+                    value,
+                    unit: Unit::Px,
+                })
+            }
+            Value::String(s) => Ok(color_value(value)
+                .or_else(|_| {
+                    dimension(value, "px").map(|value| TokenValue::Dimension {
+                        value,
+                        unit: Unit::Px,
+                    })
+                })
+                .unwrap_or_else(|_| TokenValue::Text(s.clone()))),
+            _ => Err("a composite member has no token model form".to_owned()),
+        }
+    }
+
     fn validate(&self) -> Result<(), DtcgError> {
         self.check_css_names()?;
         for (path, token) in self.tokens() {
             let parts: Vec<String> = path.split('.').map(str::to_owned).collect();
             let Some(ty) = self.resolved_type(&path) else {
                 return Err(match whole_reference(&token.value) {
-                    Some(target) if self.target(target).is_some() => DtcgError::Cycle { path },
+                    Some(r) if self.target(&r.target).is_some() => DtcgError::Cycle { path },
                     _ => DtcgError::MissingType { path },
                 });
             };
             check_shape(&ty, &token.value, &parts)?;
             let mut refs = Vec::new();
             references(&token.value, &mut refs);
-            for target in refs {
-                if self.target(target).is_none() {
+            for reference in refs {
+                if self.target(&reference.target).is_none() {
+                    tracing::warn!(%path, target = %reference.written, "dtcg: unresolvable reference");
                     return Err(DtcgError::BrokenReference {
                         path,
-                        target: target.to_owned(),
+                        target: reference.written,
                     });
                 }
             }
@@ -658,4 +873,82 @@ fn token_value(token: &TokenNode) -> Value {
     out.extend(token.extra.iter().map(|(k, v)| (k.clone(), v.clone())));
     out.insert("$value".to_owned(), token.value.clone());
     Value::Object(out)
+}
+
+/// A JSON number as the model's integer (`16`) or fractional (`16.0`) value.
+fn number_value(value: &Value) -> Result<TokenValue, String> {
+    let number = value.as_number().ok_or("expected a number")?;
+    if let Some(n) = number.as_i64() {
+        return Ok(TokenValue::Number(n));
+    }
+    number
+        .as_f64()
+        .map(TokenValue::Float)
+        .ok_or_else(|| "number out of range".to_owned())
+}
+
+/// A DTCG color: a hex or CSS string, or an sRGB `{colorSpace, components, alpha}` object.
+fn color_value(value: &Value) -> Result<TokenValue, String> {
+    use crunk_values::Color;
+    if let Some(text) = value.as_str() {
+        return Color::parse(text)
+            .map(TokenValue::Color)
+            .map_err(|e| format!("bad color `{text}`: {e}"));
+    }
+    let object = value.as_object().ok_or("a color is text or an object")?;
+    let space = object
+        .get("colorSpace")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if space != "srgb" {
+        return Err(format!(
+            "color space `{space}` is not supported (only srgb)"
+        ));
+    }
+    let comps: Vec<f64> = object
+        .get("components")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_f64).collect())
+        .unwrap_or_default();
+    let [r, g, b] = comps[..] else {
+        return Err("srgb components need exactly 3 numbers".to_owned());
+    };
+    let alpha = object.get("alpha").and_then(Value::as_f64).unwrap_or(1.0);
+    Ok(TokenValue::Color(Color::new(r, g, b, alpha)))
+}
+
+/// A dimension or duration magnitude: `"16px"`, `"0.2s"`, or `{value, unit}`; durations are
+/// returned in ms and dimensions in px (`default_unit` names which).
+fn dimension(value: &Value, default_unit: &str) -> Result<f64, String> {
+    let (magnitude, unit) = match value {
+        Value::String(text) => {
+            let at = text
+                .find(|c: char| c.is_ascii_alphabetic())
+                .unwrap_or(text.len());
+            let (n, u) = text.split_at(at);
+            (
+                n.trim()
+                    .parse::<f64>()
+                    .map_err(|_| format!("cannot read `{text}`"))?,
+                u.to_owned(),
+            )
+        }
+        Value::Object(map) => {
+            let n = map
+                .get("value")
+                .and_then(Value::as_f64)
+                .ok_or("missing numeric value")?;
+            let u = map
+                .get("unit")
+                .and_then(Value::as_str)
+                .unwrap_or(default_unit);
+            (n, u.to_owned())
+        }
+        _ => return Err("expected a string or a {value, unit} object".to_owned()),
+    };
+    match (default_unit, unit.as_str()) {
+        ("px", "px") | ("ms", "ms") => Ok(magnitude),
+        ("ms", "s") => Ok(magnitude * 1000.0),
+        (_, other) => Err(format!("unit `{other}` is not supported")),
+    }
 }

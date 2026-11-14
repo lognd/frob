@@ -16,4 +16,5 @@ serde = ["dep:serde"]
 workspace = true
 
 [dependencies]
+tracing = "0.1"
 serde = { version = "1", features = ["derive"], optional = true }

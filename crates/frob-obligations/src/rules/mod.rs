@@ -33,6 +33,8 @@ pub mod unity001;
 pub mod unity002;
 /// Rule `UNITY003`.
 pub mod unity003;
+/// Rule `UNITY004`.
+pub mod unity004;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -53,6 +55,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <unity001::Unity001 as gob_rules::RuleDecl>::DEF,
     <unity002::Unity002 as gob_rules::RuleDecl>::DEF,
     <unity003::Unity003 as gob_rules::RuleDecl>::DEF,
+    <unity004::Unity004 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -86,6 +89,7 @@ where
     unity001::Unity001: gob_rules::RelayRule<P>,
     unity002::Unity002: gob_rules::RelayRule<P>,
     unity003::Unity003: gob_rules::RelayRule<P>,
+    unity004::Unity004: gob_rules::RelayRule<P>,
 {
     let mut rules = Vec::new();
     rules.push(gob_rules::BoundRule::measured(cov001::Cov001));
@@ -104,6 +108,7 @@ where
     rules.push(gob_rules::BoundRule::relay(unity001::Unity001));
     rules.push(gob_rules::BoundRule::relay(unity002::Unity002));
     rules.push(gob_rules::BoundRule::relay(unity003::Unity003));
+    rules.push(gob_rules::BoundRule::relay(unity004::Unity004));
     rules
 }
 

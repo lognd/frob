@@ -37,33 +37,42 @@ fn data(out: &Output) -> Value {
     v["data"].clone()
 }
 
-// frob:tests crates/frob/src/plan_cmd.rs::Plan.run
-#[test]
-fn a_second_apply_proposes_nothing_and_every_ticket_implements_an_anchor() {
+/// Run `git args` in `dir`, asserting success.
+fn git_in(dir: &Path, args: &[&str]) {
+    let st = std::process::Command::new("git")
+        .args(args)
+        .current_dir(dir)
+        .status()
+        .expect("git");
+    assert!(st.success(), "git {args:?}");
+}
+
+/// A fresh git repository on `main` with `frob init` applied and committed.
+fn initialised_repo() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
-    let git = |args: &[&str]| {
-        let st = std::process::Command::new("git")
-            .args(args)
-            .current_dir(dir.path())
-            .status()
-            .expect("git");
-        assert!(st.success(), "git {args:?}");
-    };
-    git(&["init", "-q"]);
-    git(&["symbolic-ref", "HEAD", "refs/heads/main"]);
-    git(&["config", "user.name", "Test User"]);
-    git(&["config", "user.email", "test@example.com"]);
+    let root = dir.path();
+    git_in(root, &["init", "-q"]);
+    git_in(root, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+    git_in(root, &["config", "user.name", "Test User"]);
+    git_in(root, &["config", "user.email", "test@example.com"]);
     assert!(
         common::frob_command()
-            .current_dir(dir.path())
+            .current_dir(root)
             .arg("init")
             .output()
             .expect("init")
             .status
             .success()
     );
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "base"]);
+    git_in(root, &["add", "-A"]);
+    git_in(root, &["commit", "-q", "-m", "base"]);
+    dir
+}
+
+// frob:tests crates/frob/src/plan_cmd.rs::Plan.run
+#[test]
+fn a_second_apply_proposes_nothing_and_every_ticket_implements_an_anchor() {
+    let dir = initialised_repo();
     let script = dir.path().join("fake-grimble");
     std::fs::write(&script, format!("#!/bin/sh\ncat <<'EOF'\n{GRAPH}\nEOF\n")).expect("script");
     std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).expect("chmod");
@@ -102,30 +111,7 @@ const GRAPH_REQ: &str = r#"{"schema":"grimble.graph/1","entities":[{"anchor":"go
 // frob:tests crates/frob/src/plan_cmd.rs::Plan.run
 #[test]
 fn requires_becomes_blocked_by_scope_is_seeded_and_findings_list_unmapped() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let git = |args: &[&str]| {
-        let st = std::process::Command::new("git")
-            .args(args)
-            .current_dir(dir.path())
-            .status()
-            .expect("git");
-        assert!(st.success(), "git {args:?}");
-    };
-    git(&["init", "-q"]);
-    git(&["symbolic-ref", "HEAD", "refs/heads/main"]);
-    git(&["config", "user.name", "Test User"]);
-    git(&["config", "user.email", "test@example.com"]);
-    assert!(
-        common::frob_command()
-            .current_dir(dir.path())
-            .arg("init")
-            .output()
-            .expect("init")
-            .status
-            .success()
-    );
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "base"]);
+    let dir = initialised_repo();
     let script = dir.path().join("fake-grimble");
     std::fs::write(
         &script,

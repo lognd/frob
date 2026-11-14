@@ -254,9 +254,12 @@ ignored = [
   "tempfile",        # removal tracked in ~MKG678C (crunk-check, gob-cli)
   "thiserror",       # removal tracked in ~MKG678C (gob-cache)
   "toml",            # removal tracked in ~MKG678C (frob-land, grimble-check)
+  "crunk-check",     # optional dep of frob behind the bundle feature, not yet linked in code
 ]
 # Fixture sources read by tests at run time (trybuild ui, corpora), never compiled as modules.
 ignored-paths = [
   "crates/gob-macros/tests/ui/*.rs",
-  "crates/*/tests/corpus/**/*.rs",
+  "crates/gob-check/tests/ui_product/*.rs",
+  "crates/gob-macros/tests/ui_rule/**/*.rs",
+  "crates/grimble-model/src/atoms.rs", # ticket bindings only, no items
 ]

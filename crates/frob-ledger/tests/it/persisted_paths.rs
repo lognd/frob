@@ -14,16 +14,7 @@ const CRATES: [&str; 4] = ["frob-ledger", "gob-lock", "gob-diagnostics", "gob-co
 const PATH_NAMES: [&str; 4] = ["file", "files", "path", "paths"];
 
 /// Audited exceptions: `file:Type.field` and the reason the field stays a display string.
-const ALLOWED: [(&str, &str); 2] = [
-    (
-        "gob-diagnostics/src/record.rs:EditRecord.file",
-        "findings JSON output only; the source provider hands out display paths (follow-up ticket ~0EWC4K9)",
-    ),
-    (
-        "gob-diagnostics/src/record.rs:FindingRecord.file",
-        "findings JSON output only; the source provider hands out display paths (follow-up ticket ~0EWC4K9)",
-    ),
-];
+const ALLOWED: [(&str, &str); 0] = [];
 
 // frob:ticket 01M5PC8M49F53YSPKKT7XXMDFH
 /// Every `.rs` file under a crate's `src` as (`/`-separated key, text).

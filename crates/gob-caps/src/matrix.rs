@@ -42,14 +42,14 @@ use Fidelity::{F0, F1, F2, F3, F4};
 /// construction.
 #[rustfmt::skip]
 pub const MATRIX: [Row; 19] = [
-    r(Lang::Rust,       F4, [LexI, By,  Kw,  G,  Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
-    r(Lang::Python,     F3, [Lex,  By,  Syn, G,  Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::Rust,       F4, [LexI, By,  Kw,  Syn, Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
+    r(Lang::Python,     F3, [Lex,  By,  Syn, Syn, Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::CSharp,     F1, [By,   G,   Kw,  G,  Syn, G,    G,  G,   Man, Syn, NA,  NA ]),
     r(Lang::Go,         F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Java,       F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::C,          F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Shell,      F1, [G,    G,   NA,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::TypeScript, F3, [Lex,  By,  Kw,  G,  Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
+    r(Lang::TypeScript, F3, [Lex,  By,  Kw,  Syn, Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
     r(Lang::Css,        F2, [By,   G,   NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, NA ]),
     r(Lang::Html,       F1, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),
     r(Lang::Markdown,   F3, [Lnk,  Lnk, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
@@ -78,6 +78,42 @@ const _: () = {
 /// Empty: Dockerfile stage references (`FROM ... AS`, `COPY --from`) are measured as F2 refs and
 /// its `resolve_ref` cell now says so.
 pub const UNJUSTIFIED: [Lang; 0] = [];
+
+// frob:ticket 01M5GM4B049PYVSS1CVA1XEKJS
+/// A gap cell that names the ticket which will fill it (docs/design/shared/code-model.md section 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GapTicket {
+    /// The language whose cell is a gap.
+    pub lang: Lang,
+    /// The capability whose cell is a gap.
+    pub cap: Capability,
+    /// The ticket reference, e.g. `~A1XEKJS`.
+    pub ticket: &'static str,
+}
+
+/// Gap cells with a named ticket; cells absent here are bare gaps. Every entry must sit on a `Gap` cell.
+pub const GAP_TICKETS: [GapTicket; 0] = [];
+
+/// The ticket named for the gap at (`lang`, `cap`), if any; `None` for bare gaps and non-gap cells.
+pub fn gap_ticket(lang: Lang, cap: Capability) -> Option<&'static str> {
+    GAP_TICKETS
+        .iter()
+        .find(|g| g.lang == lang && g.cap == cap)
+        .map(|g| g.ticket)
+}
+
+// A gap ticket on a provided or not-applicable cell fails the build.
+const _: () = {
+    let mut i = 0;
+    while i < GAP_TICKETS.len() {
+        let g = &GAP_TICKETS[i];
+        assert!(
+            matches!(precision(g.lang, g.cap), Precision::None),
+            "GAP_TICKETS entry is not on a Gap cell"
+        );
+        i += 1;
+    }
+};
 
 const fn has(cells: &[Precision; 12], cap: Capability) -> bool {
     cells[cap as usize].is_provided()
@@ -223,7 +259,8 @@ mod tests {
 
     #[test]
     fn spike_expectations_hold() {
-        assert!(!provides(Lang::Rust, Capability::Effects));
+        assert!(provides(Lang::Rust, Capability::Effects));
+        assert!(!provides(Lang::Go, Capability::Effects));
         assert!(!provides(Lang::Css, Capability::TestItems));
         assert_eq!(
             precision(Lang::Yaml, Capability::Visibility),
@@ -235,8 +272,8 @@ mod tests {
         );
         assert!(universal_satisfiable(&[Capability::Comments], Fidelity::F1));
         assert!(!universal_satisfiable(
-            &[Capability::Comments, Capability::Effects],
-            Fidelity::F1
+            &[Capability::Comments, Capability::Effects, Capability::Style],
+            Fidelity::F4
         ));
     }
 

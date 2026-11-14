@@ -61,6 +61,7 @@
 | `mirror alias` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record a tracker key (such as PROJ-123) as an alias of a ticket, so `ticket show` finds it by that key. |
 | `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
+| `mirror run` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Run the ledger side of a mirror pass: list the tickets to mirror and check each renders (no tracker call). |
 | `plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose or create tickets for design entities no live ticket implements; goal to epic, scenario to story, impl to task. |
 | `profile` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the reader profile, or set it to `newcomer` or `experienced`. |
 | `refresh` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Probe the remote for freshness (bounded, never prompts) or, with `--status`, print the cached one-line freshness. |

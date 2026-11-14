@@ -325,3 +325,27 @@ impl Command for Snapshot {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn solve(width: f32) -> LayoutSolve {
+        LayoutSolve {
+            version: 1,
+            viewport_width: width,
+            viewport_height: 600.0,
+            nodes: Vec::new(),
+            focus_order: Vec::new(),
+        }
+    }
+
+    // frob:tests crates/crunk/src/snapshot.rs::diff_layouts
+    #[test]
+    fn identical_solves_have_no_diff_and_viewport_change_is_reported() {
+        assert!(diff_layouts(&solve(800.0), &solve(800.0)).is_empty());
+        let d = diff_layouts(&solve(800.0), &solve(900.0));
+        assert_eq!(d.len(), 1);
+        assert_eq!(d[0].id, DOCUMENT);
+    }
+}

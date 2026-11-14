@@ -76,3 +76,14 @@ fn focus_graph_lists_the_focusable_controls_of_a_scene() {
     let facts = crunk_rules::CrunkHost::scene_docs(&host).expect("scene docs");
     assert_eq!(facts.files[0].focus_graph().nodes.len(), 2);
 }
+
+// frob:tests crates/crunk-rules/src/rules/gx003.rs::Gx003
+#[test]
+fn gx003_resolves_grid_neighbours_and_exempts_a_modal_trap() {
+    let grid = "<div data-focus-group style=\"display:grid;grid-template-columns:1fr 1fr\">\n<button data-id=\"a\" data-focus-default></button>\n<button data-id=\"b\"></button>\n<button data-id=\"c\"></button>\n<button data-id=\"d\"></button>\n</div>\n";
+    assert!(msgs::<Gx003>(grid).is_empty());
+    let trap = "<button data-id=\"open\" data-focus-default data-nav-down=\"ok\"></button>\n<div aria-modal=\"true\">\n<button data-id=\"ok\" data-nav-up=\"none\" data-nav-down=\"none\"></button>\n</div>\n";
+    assert!(msgs::<Gx003>(trap).is_empty());
+    let open = trap.replace(" aria-modal=\"true\"", "");
+    assert_eq!(msgs::<Gx003>(&open).len(), 1);
+}

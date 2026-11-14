@@ -123,7 +123,9 @@ fn flipped_bytes_never_panic() {
     for i in 0..bytes.len() {
         let mut bad = bytes.clone();
         bad[i] ^= 0xff;
-        let _ = postcard::from_bytes::<(Term, ScopeGraph)>(&bad);
+        // Either outcome is fine; the point is that decoding returns instead of panicking.
+        let decoded = postcard::from_bytes::<(Term, ScopeGraph)>(&bad);
+        assert!(decoded.is_ok() || decoded.is_err());
     }
 }
 

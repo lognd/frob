@@ -4,7 +4,7 @@
 
 > Generated: do not edit this page. Regenerate with `cargo dev gen languages`.
 
-Cells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown).
+Cells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown; `Gap (~ID)` names the ticket that fills it).
 
 ## Extensions
 
@@ -57,7 +57,7 @@ Fidelity F4; extensions `.rs`.
 | resolve_ref | Implemented | lexical+imports |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | keyword |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | syntactic |
 | expand | Gap | none |
@@ -105,7 +105,7 @@ Fidelity F3; extensions `.py`, `.pyi`.
 | resolve_ref | Implemented | lexical |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | syntactic |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | syntactic |
 | expand | Gap | none |
@@ -217,7 +217,7 @@ Fidelity F3; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.
 | resolve_ref | Implemented | lexical |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | keyword |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | lexical+imports |
 | expand | Gap | none |

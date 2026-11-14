@@ -161,3 +161,10 @@ fn rule_trait_defaults_apply_everywhere_and_measure_nothing() {
     assert_eq!(RelayRule::<()>::inapplicable(&Relay, &()), None);
     assert_eq!(RelayRule::<()>::examined(&Relay, &()), None);
 }
+
+// frob:tests crates/gob-rules/src/index.rs::BoundRule.file
+#[test]
+fn binding_a_file_rule_keeps_its_declaration() {
+    let bound = gob_rules::BoundRule::<()>::file(Filey);
+    assert_eq!(bound.def.id, DEF.id);
+}

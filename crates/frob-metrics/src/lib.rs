@@ -6,7 +6,7 @@
 //! `Unresolved` with the sample count, never a number (pm-and-releases.md, forecasts).
 // frob:ticket 01M48Q2AQXY69YKK3D2DC05ZWR
 
-pub mod activity;
+pub use frob_ledger::activity;
 pub mod cost;
 pub mod figure;
 pub mod fit;
@@ -15,7 +15,7 @@ pub mod percentile;
 pub mod remaining;
 pub mod report;
 pub mod times;
-pub mod usage;
+pub use frob_ledger::usage;
 pub mod velocity;
 
 pub use figure::Figure;

@@ -222,6 +222,108 @@ fn parse_rule_file(path: &Path, stem: &str, text: &str) -> Result<Option<RuleSrc
     }))
 }
 
+/// Rules per generated `BindPart` impl; keeps every generated function under clippy's line limit.
+const BIND_CHUNK: usize = 40;
+
+/// The host trait a rule needs to be bound, as the generated `where` clause spells it.
+fn host_trait(r: &RuleSrc) -> &'static str {
+    match (r.scope, r.relay, r.must_measure) {
+        (SrcScope::File, _, _) => "gob_rules::FileRule<P>",
+        (SrcScope::Repo, false, false) => "gob_rules::RepoRule<P>",
+        (SrcScope::Repo, false, true) => "gob_rules::Measured<P>",
+        // the macro rejects `must_measure = true` on a relay rule, so the flag cannot differ here
+        (SrcScope::Repo, true, _) => "gob_rules::RelayRule<P>",
+    }
+}
+
+/// The `BoundRule` constructor matching a rule's host trait.
+fn bound_ctor(r: &RuleSrc) -> &'static str {
+    match (r.scope, r.relay, r.must_measure) {
+        (SrcScope::File, _, _) => "file",
+        (SrcScope::Repo, false, false) => "repo",
+        (SrcScope::Repo, false, true) => "measured",
+        (SrcScope::Repo, true, _) => "relay",
+    }
+}
+
+/// One `where` bound line per rule.
+fn bound_lines(rules: &[RuleSrc]) -> String {
+    let mut s = String::new();
+    for r in rules {
+        writeln!(s, "    {}::{}: {},", r.stem, r.ty, host_trait(r)).ok();
+    }
+    s
+}
+
+/// One `rules.push(..)` line per rule.
+fn push_lines(rules: &[RuleSrc]) -> String {
+    let mut s = String::new();
+    for r in rules {
+        writeln!(
+            s,
+            "    rules.push(gob_rules::BoundRule::{}({}::{}));",
+            bound_ctor(r),
+            r.stem,
+            r.ty
+        )
+        .ok();
+    }
+    s
+}
+
+/// The generated `bind`, split into per-chunk `BindPart` impls once the catalog is large.
+fn render_bind(rules: &[RuleSrc]) -> String {
+    let mut s = String::new();
+    let head = "// frob:accept DUP004 because=\"generated bind: one push per rule, shape-identical across crates by construction\"\n/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n";
+    if rules.len() <= BIND_CHUNK {
+        writeln!(
+            s,
+            "{head}#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
+        )
+        .ok();
+        s.push_str(&bound_lines(rules));
+        writeln!(s, "{{\n    let mut rules = Vec::new();").ok();
+        s.push_str(&push_lines(rules));
+        writeln!(s, "    rules\n}}").ok();
+        return s;
+    }
+    let chunks: Vec<&[RuleSrc]> = rules.chunks(BIND_CHUNK).collect();
+    writeln!(
+        s,
+        "/// One chunk of this crate's rules, bound together so no generated function grows with the catalog.\npub trait BindPart<P: ?Sized + 'static> {{\n    /// Append this chunk's bound rules.\n    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>);\n}}\n"
+    )
+    .ok();
+    for (i, chunk) in chunks.iter().enumerate() {
+        writeln!(
+            s,
+            "/// Marker for chunk {i} of the bound rules.\npub struct Part{i};\n\nimpl<P: ?Sized + 'static> BindPart<P> for Part{i}\nwhere"
+        )
+        .ok();
+        s.push_str(&bound_lines(chunk));
+        writeln!(
+            s,
+            "{{\n    #[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\n    fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {{"
+        )
+        .ok();
+        s.push_str(&push_lines(chunk).replace("    rules.push", "        rules.push"));
+        writeln!(s, "    }}\n}}\n").ok();
+    }
+    writeln!(
+        s,
+        "{head}pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
+    )
+    .ok();
+    for i in 0..chunks.len() {
+        writeln!(s, "    Part{i}: BindPart<P>,").ok();
+    }
+    writeln!(s, "{{\n    let mut rules = Vec::new();").ok();
+    for i in 0..chunks.len() {
+        writeln!(s, "    <Part{i} as BindPart<P>>::push_all(&mut rules);").ok();
+    }
+    writeln!(s, "    rules\n}}").ok();
+    s
+}
+
 /// Render the generated `mod.rs` for `rules`; `has_retired` adds the hand-written `retired` module.
 pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
     // Laid out the way rustfmt leaves it (the comment keeps a one-rule list vertical), so
@@ -270,37 +372,7 @@ pub fn render(rules: &[RuleSrc], has_retired: bool) -> String {
         "];\n\n/// This crate's rule index: the declarations plus renamed and retired ids.\npub const INDEX: gob_rules::RuleIndex = gob_rules::RuleIndex {{\n    krate: env!(\"CARGO_PKG_NAME\"),\n    metas: METAS,\n    renamed: {renamed},\n    retired: {retired},\n}};\n\nconst _: () = gob_rules::assert_unique(\"crate\", &[&[&INDEX]]);\n\n"
     )
     .ok();
-    writeln!(
-        s,
-        "// frob:accept DUP004 because=\"generated bind: one push per rule, shape-identical across crates by construction\"\n/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(clippy::vec_init_then_push, reason = \"generated: one push per rule\")]\npub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>\nwhere"
-    )
-    .ok();
-    for r in rules {
-        let tr = match (r.scope, r.relay, r.must_measure) {
-            (SrcScope::File, _, _) => "gob_rules::FileRule<P>",
-            (SrcScope::Repo, false, false) => "gob_rules::RepoRule<P>",
-            (SrcScope::Repo, false, true) => "gob_rules::Measured<P>",
-            // the macro rejects `must_measure = true` on a relay rule, so the flag cannot differ here
-            (SrcScope::Repo, true, _) => "gob_rules::RelayRule<P>",
-        };
-        writeln!(s, "    {}::{}: {tr},", r.stem, r.ty).ok();
-    }
-    writeln!(s, "{{\n    let mut rules = Vec::new();").ok();
-    for r in rules {
-        let ctor = match (r.scope, r.relay, r.must_measure) {
-            (SrcScope::File, _, _) => "file",
-            (SrcScope::Repo, false, false) => "repo",
-            (SrcScope::Repo, false, true) => "measured",
-            (SrcScope::Repo, true, _) => "relay",
-        };
-        writeln!(
-            s,
-            "    rules.push(gob_rules::BoundRule::{ctor}({}::{}));",
-            r.stem, r.ty
-        )
-        .ok();
-    }
-    writeln!(s, "    rules\n}}").ok();
+    s.push_str(&render_bind(rules));
     write!(
         s,
         "\n#[cfg(test)]\nmod tests {{\n    /// The committed index equals what the rule files imply.\n    #[test]\n    fn rules_index_is_fresh() {{\n        gob_rules::indexgen::assert_fresh(env!(\"CARGO_MANIFEST_DIR\")).expect(\"rules index\");\n    }}\n}}\n"
@@ -451,6 +523,27 @@ mod tests {
         assert!(text.contains("renamed: &[],"));
         assert!(text.is_ascii());
         assert!(render(&rules, true).contains("renamed: retired::RENAMED,"));
+    }
+
+    #[test]
+    fn a_large_catalog_binds_through_chunked_parts() {
+        let rules: Vec<RuleSrc> = (0..=BIND_CHUNK * 2)
+            .map(|i| RuleSrc {
+                stem: format!("cov{i:03}"),
+                id: format!("COV{i:03}"),
+                ty: format!("Cov{i:03}"),
+                scope: SrcScope::File,
+                must_measure: false,
+                relay: false,
+            })
+            .collect();
+        let text = render(&rules, false);
+        assert!(text.contains("struct Part2;"));
+        assert!(!text.contains("struct Part3;"));
+        assert!(text.contains("<Part1 as BindPart<P>>::push_all(&mut rules);"));
+        assert!(text.contains("    Part0: BindPart<P>,"));
+        let small = render(&rules[..BIND_CHUNK], false);
+        assert!(!small.contains("BindPart"));
     }
 
     #[test]

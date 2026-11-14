@@ -410,6 +410,30 @@ impl SymbolGraph {
         out
     }
 
+    /// The units TypeScript file `path` exports as `name`: its own public declarations, then re-export bindings and `export *`.
+    ///
+    /// Empty when nothing in the repository answers it (a package re-export, a computed export, a tsconfig alias);
+    /// several entries, or an `export *` approximation, are a May answer.
+    // frob:ticket 01M5GGJXDV139FW9WX0JR8RKNQ
+    pub fn ts_export_targets(&self, path: &str, name: &str) -> Vec<(Symref, Status)> {
+        let out: Vec<(Symref, Status)> = self
+            .ts_export(&self.ts, path, name, 0)
+            .into_iter()
+            .flat_map(|f| {
+                f.nodes
+                    .into_iter()
+                    .map(move |n| (self.graph[n].symref.clone(), f.status))
+            })
+            .collect();
+        tracing::trace!(
+            path,
+            name,
+            targets = out.len(),
+            "typescript export resolved"
+        );
+        out
+    }
+
     /// The module specifier and imported member (`default`, `*` or a name) of the import binding `local` in `from`.
     pub fn ts_import_source(&self, from: &str, local: &str) -> Option<(String, String)> {
         let u = *Self::ts_uses(&self.ts, &Symref::file(from), local).first()?;
@@ -520,29 +544,12 @@ impl SymbolGraph {
 
     /// The innermost enclosing class of `n` (itself excluded), through nested functions.
     fn ts_class_of(&self, n: NodeIndex) -> Option<NodeIndex> {
-        let mut cur = self.parent_of(n);
-        while let Some(p) = cur {
-            if self.graph[p].kind == SymbolKind::Class {
-                return Some(p);
-            }
-            cur = self.parent_of(p);
-        }
-        None
+        self.class_of(n)
     }
 
     /// The units named `name` visible lexically from `caller`: nested declarations, then module level (class scopes are skipped).
     fn ts_lexical(&self, ts: &TsIndex, caller: NodeIndex, name: &str) -> Vec<NodeIndex> {
-        let mut cur = Some(caller);
-        while let Some(n) = cur {
-            if self.graph[n].kind != SymbolKind::Class {
-                let found = ts.kids_of(n, name);
-                if !found.is_empty() {
-                    return found.to_vec();
-                }
-            }
-            cur = self.parent_of(n);
-        }
-        Vec::new()
+        self.lexical_units(|n, k| ts.kids_of(n, k), caller, name)
     }
 
     /// The use bindings of the caller's file named `local` that are in scope at `caller`.
@@ -562,18 +569,7 @@ impl SymbolGraph {
 
     /// A class result becomes its `constructor` when it has one.
     fn ts_construct(&self, ts: &TsIndex, nodes: Vec<NodeIndex>) -> Vec<NodeIndex> {
-        nodes
-            .into_iter()
-            .map(|n| {
-                if self.graph[n].kind == SymbolKind::Class
-                    && let Some(&ctor) = ts.kids_of(n, "constructor").first()
-                {
-                    ctor
-                } else {
-                    n
-                }
-            })
-            .collect()
+        self.construct_units(|n, k| ts.kids_of(n, k), "constructor", nodes)
     }
 
     /// The units a bare name stands for at `caller`, or `None` when nothing in the repository does.

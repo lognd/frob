@@ -380,6 +380,6 @@ mod tests {
     #[test]
     fn every_derive_rule_type_in_the_workspace_is_registered() {
         let crates = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
-        scan_sources(&crates).unwrap();
+        assert!(scan_sources(&crates).is_ok());
     }
 }

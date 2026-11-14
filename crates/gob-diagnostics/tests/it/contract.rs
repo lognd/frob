@@ -551,3 +551,22 @@ fn unresolved_reason_and_remedy_render_in_words() {
     assert!(out.contains("remedy: "), "{out}");
     insta::assert_snapshot!(out);
 }
+
+// frob:tests crates/gob-diagnostics/src/record.rs::FindingRecord
+/// Given a display path that is not repo-relative, when projected, then `file` is omitted rather than holding an unvalidated string.
+#[test]
+fn non_relative_display_path_is_omitted_from_record() {
+    let mut files = FileInterner::new();
+    let a = files.intern("/abs/a.rs");
+    let mut sources = MemorySources::new();
+    sources.insert(a, "/abs/a.rs", SourceText::new("x\n").unwrap());
+    let f = Finding::new(
+        "DOC001".parse().unwrap(),
+        Severity::Error,
+        Some(Span::new(a, range(0, 1))),
+        "m",
+        "a",
+    );
+    let rec = FindingRecord::from_finding(&f, &sources, Registry::global());
+    assert!(rec.file.is_none());
+}

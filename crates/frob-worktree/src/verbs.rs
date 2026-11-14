@@ -348,6 +348,13 @@ struct WorkArgs {
         help = "Claim without syncing first and skip the E-SYNC-STALE refusal (needs --reason)"
     )]
     offline: bool,
+    // frob:ticket 01M5DFKY6K8AH7K75XGTQMVAVA
+    #[arg(
+        long,
+        conflicts_with_all = ["next", "here"],
+        help = "Take over your evicted claim by restoring its newest parked work"
+    )]
+    reclaim: bool,
     #[arg(
         long = "anyway-scope",
         value_name = "GLOB",
@@ -413,6 +420,7 @@ pub struct Work {
     opts: WorkOptions,
     here: bool,
     offline: Option<String>,
+    reclaim: bool,
 }
 
 impl Command for Work {
@@ -449,6 +457,7 @@ impl Command for Work {
             },
             here: a.here,
             offline,
+            reclaim: a.reclaim,
         })
     }
 
@@ -498,6 +507,16 @@ impl Work {
             return start_here(opened, ctx, ticket, &self.opts);
         }
         let notices = opened.collect_garbage();
+        if self.reclaim {
+            // frob:ticket 01M5DFKY6K8AH7K75XGTQMVAVA
+            tracing::info!(ticket = %ticket, "work --reclaim: restoring parked work");
+            let started = opened
+                .workspace()
+                .work_reclaiming(ticket, &opened.gated(&self.opts))?;
+            return Ok(notices
+                .into_iter()
+                .fold(start_payload(started), Payload::with_warning));
+        }
         // frob:ticket 01M5DFKXZZDX2431STJ5W10BBD
         let in_ci = std::env::var_os("CI").is_some_and(|v| !v.is_empty());
         let policy = evict_policy(&opened.root, in_ci, opened.ledger.clock().now());
@@ -787,7 +806,7 @@ impl Command for ClaimEvict {
 /// Ask `question` on the terminal and report whether the answer was yes.
 // frob:ticket 01M5DZJ99WRFPNK6WS3KZWDC0G
 fn prompt_yes(question: &str) -> bool {
-    // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
+    // frob:defer LOG001 because="the interactive confirm prompt is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
     let mut out = std::io::stdout().lock();
     write!(out, "{question} [y/N] ").ok();
     out.flush().ok();

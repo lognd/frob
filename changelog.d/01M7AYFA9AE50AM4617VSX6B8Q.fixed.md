@@ -1,0 +1,1 @@
+Burned down the small-rule code findings (ERR002, COH001, LOG001, VIS001, RES001): shared helpers replace capturing closures, serde helper functions are crate-private, and a discarded result is now logged.

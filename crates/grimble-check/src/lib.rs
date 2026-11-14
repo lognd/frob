@@ -44,7 +44,6 @@ pub mod coh003;
 pub mod coh004;
 pub mod coh_pass;
 pub mod config;
-pub mod effects;
 pub mod example_model;
 pub mod fidelity;
 mod host;
@@ -62,6 +61,7 @@ pub mod rules;
 pub mod sibling;
 pub mod summary;
 pub mod testq_pass;
+mod union_find;
 pub mod unit_role;
 pub mod websec_pack;
 

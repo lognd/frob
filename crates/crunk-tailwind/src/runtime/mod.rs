@@ -162,7 +162,7 @@ impl std::fmt::Debug for Runtime {
 /// The default notice sink: the text on standard error.
 fn stderr_sink() -> NoticeSink {
     Arc::new(|text: &str| {
-        // frob:accept LOG001 because="the default notice sink is the helper's user-facing stderr notice"
+        // frob:defer LOG001 because="the default notice sink is the helper's user-facing stderr notice" ticket=01M79PWQP03T5YH7QVM72KW077
         let mut err = std::io::stderr().lock();
         if let Err(e) = writeln!(err, "{text}") {
             tracing::debug!(error = %e, "cannot write the exec notice to stderr");

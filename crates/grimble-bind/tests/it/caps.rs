@@ -288,6 +288,24 @@ fn shrink_fixture(body: &str) -> (tempfile::TempDir, Binding) {
     (dir, b)
 }
 
+/// Plans a shrink of the fixture, answering the excuse prompt with `answer`; returns the plan and the prompt text.
+fn plan_answering(
+    dir: &tempfile::TempDir,
+    b: &Binding,
+    answer: &[u8],
+) -> (grimble_bind::shrink::Plan, String) {
+    let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
+    let mut input = std::io::Cursor::new(answer.to_vec());
+    let mut out = Vec::new();
+    let plan = {
+        let mut decide = |r: &grimble_bind::shrink::Removal| {
+            grimble_bind::shrink::prompt_excuse(r, &mut input, &mut out)
+        };
+        grimble_bind::shrink::plan_with_decider(&b.findings, &[], &mut read, &mut decide)
+    };
+    (plan, String::from_utf8(out).unwrap())
+}
+
 // frob:tests crates/grimble-bind/src/shrink.rs::plan
 // frob:tests crates/grimble-bind/src/shrink.rs::Plan.apply
 #[test]
@@ -341,16 +359,9 @@ fn shrink_leaves_a_used_model_alone() {
 fn an_excuse_keeps_the_grant_and_writes_a_kept_comment() {
     let body = "  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n";
     let (dir, b) = shrink_fixture(body);
-    let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
-    let mut input = std::io::Cursor::new(b"needed at \"deploy\"\n".to_vec());
-    let mut out = Vec::new();
-    let mut decide = |r: &grimble_bind::shrink::Removal| {
-        grimble_bind::shrink::prompt_excuse(r, &mut input, &mut out)
-    };
-    let plan = grimble_bind::shrink::plan_with_decider(&b.findings, &[], &mut read, &mut decide);
+    let (plan, prompt) = plan_answering(&dir, &b, b"needed at \"deploy\"\n");
     assert!(plan.removals.is_empty(), "{plan:?}");
     assert_eq!(plan.kept.len(), 1);
-    let prompt = String::from_utf8(out).unwrap();
     assert!(prompt.contains("may fs.write;"), "{prompt}");
     plan.apply(dir.path()).unwrap();
     let after = std::fs::read_to_string(dir.path().join("design/model.grmb")).unwrap();
@@ -368,14 +379,7 @@ fn a_blank_or_missing_answer_removes_the_grant_as_before() {
     let (dir, b) =
         shrink_fixture("  may fs.read;\n  may exec;\n  may net.listen;\n  may fs.write;\n");
     for answer in ["\n", ""] {
-        let mut read = |f: &str| std::fs::read_to_string(dir.path().join(f)).ok();
-        let mut input = std::io::Cursor::new(answer.as_bytes().to_vec());
-        let mut out = Vec::new();
-        let mut decide = |r: &grimble_bind::shrink::Removal| {
-            grimble_bind::shrink::prompt_excuse(r, &mut input, &mut out)
-        };
-        let plan =
-            grimble_bind::shrink::plan_with_decider(&b.findings, &[], &mut read, &mut decide);
+        let (plan, _prompt) = plan_answering(&dir, &b, answer.as_bytes());
         assert_eq!(plan.removals.len(), 1);
         assert!(plan.kept.is_empty());
     }

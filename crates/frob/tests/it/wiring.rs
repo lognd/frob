@@ -76,7 +76,16 @@ fn new_ticket(dir: &Path, title: &str, ty: &str, scope: &str) -> String {
     ok(
         dir,
         &[
-            "ticket", "new", "--title", title, "--type", ty, "--scope", scope,
+            "ticket",
+            "new",
+            "--title",
+            title,
+            "--type",
+            ty,
+            "--scope",
+            scope,
+            "--label",
+            "no-criteria",
         ],
     )["data"]["id"]
         .as_str()

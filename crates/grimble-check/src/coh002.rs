@@ -7,7 +7,7 @@
 //! call, or reads a variable the body itself defined (a def-use edge whose definition is not the
 //! unit's parameter list). A guard on a bare parameter is a dispatch guard (NEAT031), not a
 //! decision. An effect is a call in a branch body that the language's effects capability
-//! ([`crate::effects`]) classifies as an effect from its qualified path; trivial calls (logging)
+//! ([`gob_caps::EffectsCapability`]) classifies as an effect from its qualified path; trivial calls (logging)
 //! are not effects. The `[coh]` lists only add project overrides on top of the capability.
 //! P+: the rule fires only on a proven effect. A branch whose bodies call something the capability
 //! cannot place leaves the verdict Unresolved with those callees named, never a silent pass; a
@@ -26,7 +26,8 @@ use tracing::{debug, trace};
 
 use crate::coh001::{is_within, statements};
 use crate::config::CohTable;
-use crate::effects::{EffectClass, EffectsCapability, effects_for};
+use gob_caps::{EffectClass, EffectsCapability};
+use gob_ir::effects_for;
 
 /// The built-in `[coh] effect_calls` default: empty, the adapter capability supplies the effects.
 pub fn default_effect_calls() -> Vec<String> {
@@ -62,11 +63,17 @@ impl From<&CohTable> for Coh002Options {
         debug!(
             effect_calls = table.effect_calls.len(),
             trivial = table.trivial.len(),
+            callee_trivial = table.callee_trivial.len(),
             "COH002 options from the [coh] table"
         );
         Self {
             effect_calls: table.effect_calls.clone(),
-            trivial: table.trivial.clone(),
+            trivial: table
+                .trivial
+                .iter()
+                .chain(&table.callee_trivial)
+                .cloned()
+                .collect(),
         }
     }
 }
@@ -241,11 +248,6 @@ fn is_sequence(term: &Term, n: NodeId) -> bool {
     )
 }
 
-/// True when `n` is a Rust match arm: a `pattern` bind.
-fn is_arm(term: &Term, n: NodeId) -> bool {
-    matches!(term.node(n).op(), Operator::Universal(Universal::Bind { kind, .. }) if kind == "pattern")
-}
-
 /// A Rust `match`: the adapter folds it to a sequence of the scrutinee and a sequence of arm binds.
 fn match_of(term: &Term, n: NodeId) -> Option<Decision> {
     if !is_sequence(term, n) {
@@ -255,12 +257,16 @@ fn match_of(term: &Term, n: NodeId) -> Option<Decision> {
         return None;
     };
     let arm_list = term.node(*arms).children();
-    (is_sequence(term, *arms) && !arm_list.is_empty() && arm_list.iter().all(|&a| is_arm(term, a)))
-        .then(|| Decision {
-            node: n,
-            condition: *scrutinee,
-            bodies: vec![*arms],
-        })
+    (is_sequence(term, *arms)
+        && !arm_list.is_empty()
+        && arm_list
+            .iter()
+            .all(|&a| crate::coh001::is_bind_kind(term, a, "pattern")))
+    .then(|| Decision {
+        node: n,
+        condition: *scrutinee,
+        bodies: vec![*arms],
+    })
 }
 
 fn decision_of(term: &Term, n: NodeId, syntax: &gob_ir::DefUseSyntax) -> Option<Decision> {
@@ -377,6 +383,10 @@ pub fn judge(
     };
     let mut found = Vec::new();
     for stmt in statements(term, unit) {
+        if is_nested_unit(term, stmt) {
+            trace!("coh002 skips a nested unit that is a top-level statement");
+            continue;
+        }
         if let Some(d) = decision_of(term, stmt, syntax) {
             found.push(d);
         }

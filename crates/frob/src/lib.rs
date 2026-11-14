@@ -46,6 +46,7 @@ pub mod profile_cmd;
 pub mod refresh_cmd;
 pub mod release_cmd;
 pub mod rule_cmd;
+mod stale;
 pub mod stats_cmd;
 mod sync_hook;
 pub mod teach_cmd;

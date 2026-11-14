@@ -1,5 +1,7 @@
-//! Solver-browser parity tests: pure comparison, plus a real-browser run that skips when no
-//! Playwright is installed (and fails instead when `CRUNK_REQUIRE_PLAYWRIGHT` is set, as in CI).
+//! Solver-browser parity tests: pure comparison over fixture documents, plus a run that solves a
+//! page with the real solver and diffs it against what Chromium reports for the same page. The
+//! browser run skips with a logged reason when no Playwright is installed (and fails instead when
+//! `CRUNK_REQUIRE_PLAYWRIGHT` is set, as in CI).
 
 // frob:ticket 01M4CXRWBYR6P0WFRW5GBBJGEY
 
@@ -9,8 +11,20 @@ use crunk_gallery::boxes::{BoxesError, BrowserBoxes, capture_boxes};
 use crunk_gallery::cells::enumerate;
 use crunk_gallery::parity::{DEFAULT_TOLERANCE_PX, Mismatch, compare, parse_solver};
 use crunk_gallery::render::{RenderError, RenderOptions};
+use crunk_layout::solve::solve_scene_html;
+use crunk_layout::style::TokenMap;
+use crunk_layout::text::TextMeasurer;
+use crunk_scene::parse_scene_html;
 use crunk_spec::parse_spec;
+use tracing::{info, warn};
 
+/// The page both engines measure: the solver reads it as a scene, Chromium loads it from a file.
+const PAGE: &str = r#"<!doctype html><html><body style="margin:0">
+<div data-id="root" style="position:absolute;left:0;top:0;width:400px;height:300px">
+<div data-id="card" style="position:absolute;left:20px;top:30px;width:200px;height:100px"></div>
+</div></body></html>"#;
+
+/// Fixture solver document for the pure comparison tests (not used for the real-engine run).
 const SOLVER: &str = r#"{"version":1,"viewport_width":400,"viewport_height":300,"nodes":[
 {"id":"root","parent":null,"kind":"box","x":0,"y":0,"width":400,"height":300},
 {"id":"card","parent":"root","kind":"box","x":20,"y":30,"width":200,"height":100}]}"#;
@@ -83,19 +97,44 @@ fn workspace_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// Route `tracing` to the test writer so a skip reason shows in the test output.
+fn init_logging() {
+    let _ = tracing_subscriber::fmt()
+        .with_test_writer()
+        .with_max_level(tracing::Level::DEBUG)
+        .try_init();
+}
+
+/// Solve [`PAGE`] with the real solver and read it back as the parity document.
+fn real_solver_boxes() -> Result<crunk_gallery::parity::SolverBoxes, String> {
+    let doc = parse_scene_html(PAGE).map_err(|e| e.to_string())?;
+    let mut fonts = TextMeasurer::new();
+    let solved = solve_scene_html(&doc, &TokenMap::new(), (400.0, 300.0), &mut fonts)
+        .map_err(|e| e.to_string())?;
+    let json = solved.doc.to_json().map_err(|e| e.to_string())?;
+    parse_solver(&json)
+}
+
+// frob:tests crates/crunk-gallery/src/parity.rs::compare
+#[test]
+fn real_solver_output_is_not_the_fixture_document() {
+    init_logging();
+    let solver = real_solver_boxes().expect("real solver output");
+    let ids: Vec<&str> = solver.nodes.iter().map(|n| n.id.as_str()).collect();
+    assert_eq!(ids, ["root", "card"]);
+    info!(
+        nodes = solver.nodes.len(),
+        "real solver produced the parity document"
+    );
+}
+
 // frob:tests crates/crunk-gallery/src/parity.rs::compare
 #[test]
 fn solver_and_real_browser_agree_on_an_absolute_page() {
+    init_logging();
     let dir = tempfile::tempdir().expect("dir");
     let page = dir.path().join("page.html");
-    std::fs::write(
-        &page,
-        r#"<!doctype html><html><body style="margin:0">
-<div data-id="root" style="position:absolute;left:0;top:0;width:400px;height:300px">
-<div data-id="card" style="position:absolute;left:20px;top:30px;width:200px;height:100px"></div>
-</div></body></html>"#,
-    )
-    .expect("page");
+    std::fs::write(&page, PAGE).expect("page");
     let entry = format!("file://{}", gob_path::Shown::of(&page));
     let text = format!(
         "[project]\ncss_root = \".\"\ntokens_file = \"t.css\"\nroot_font_size = 10\n\n\
@@ -116,12 +155,12 @@ fn solver_and_real_browser_agree_on_an_absolute_page() {
                 std::env::var_os("CRUNK_REQUIRE_PLAYWRIGHT").is_none(),
                 "playwright required but missing: {reason}; {remedy}"
             );
-            eprintln!("skipping browser parity: playwright not available ({reason})");
+            warn!(%reason, %remedy, "skipping browser parity: playwright not available");
             return;
         }
         Err(e) => panic!("capture failed: {e}"),
     };
-    let solver = parse_solver(SOLVER).expect("solver");
+    let solver = real_solver_boxes().expect("real solver output");
     let report = compare(&solver, &boxes, DEFAULT_TOLERANCE_PX);
     assert!(report.is_clean(), "{}", report.summary());
 }

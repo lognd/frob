@@ -12,18 +12,38 @@ use crunk_ingest::ProjectStyles;
 use crunk_ingest::tailwind::{Engine, ingest_tailwind, runtime_sources};
 use crunk_rules::tailwind::TailwindFacts;
 use crunk_spec::DesignSpec;
+use crunk_spec::table::TailwindEngine;
 use crunk_tailwind::runtime::{Evaluation, Options, Runtime};
 use gob_cache::Cache;
 
 /// The Tailwind facts of the project: the theme (node-resolved, else static) and the compiled
 /// utilities of every class the ingest scanned, with the reason when Tailwind could not answer.
-pub fn collect(spec: &DesignSpec, styles: &ProjectStyles, state_dir: &str) -> TailwindFacts {
+///
+/// Static mode (`static_flag`, or `[tailwind] engine = "static"`) never spawns node, so no
+/// repository JavaScript runs; every utility is then Unresolved.
+// frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+pub fn collect(
+    spec: &DesignSpec,
+    styles: &ProjectStyles,
+    state_dir: &str,
+    static_flag: bool,
+) -> TailwindFacts {
+    let static_mode = static_flag || spec.tailwind.engine == TailwindEngine::Static;
+    tracing::info!(static_mode, static_flag, "tailwind facts: engine chosen");
     let runtime = Runtime::new(
         &spec.root,
-        Options::default(),
+        Options {
+            static_mode,
+            ..Options::default()
+        },
         Cache::open_shared(&spec.root, state_dir),
     );
-    let theme = ingest_tailwind(spec, Engine::Node(&runtime));
+    let engine = if static_mode {
+        Engine::Static
+    } else {
+        Engine::Node(&runtime)
+    };
+    let theme = ingest_tailwind(spec, engine);
     let candidates: Vec<String> = styles
         .sheets
         .iter()

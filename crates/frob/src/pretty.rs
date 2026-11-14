@@ -22,6 +22,8 @@ const ERR_WORDS: [&str; 5] = ["error", "failed", "denied", "blocked", "refused"]
 const WARN_WORDS: [&str; 4] = ["warning", "stale", "skipped", "snoozed"];
 /// A heading longer than this is prose, not a heading.
 const HEADING_MAX: usize = 40;
+/// A row with at least this many cells ends in a prose (title) cell.
+const WIDE_ROW_CELLS: usize = 4;
 /// A label longer than this is prose, not a `label  value` key.
 const LABEL_MAX: usize = 14;
 
@@ -135,14 +137,33 @@ impl Theme {
     }
 
     /// Colour the id and status tokens of `text`, leaving separators untouched.
+    ///
+    /// The text is split into cells at runs of two or more spaces. Status words are only coloured
+    /// in cells that are not prose (a multi-word cell, or the trailing title cell of a wide row),
+    /// so a ticket title containing "error" is not painted red; ids are coloured everywhere.
     fn tokens(&self, text: &str) -> String {
+        let cells = split_cells(text);
+        let wide = cells.iter().filter(|(c, _)| !c.is_empty()).count() >= WIDE_ROW_CELLS;
+        let last = cells.iter().rposition(|(c, _)| !c.is_empty());
+        let mut out = String::with_capacity(text.len() + 16);
+        for (i, (cell, gap)) in cells.iter().enumerate() {
+            let prose = cell.contains(' ') || (wide && Some(i) == last);
+            out.push_str(&self.cell_tokens(cell, !prose));
+            out.push_str(gap);
+        }
+        out
+    }
+
+    /// Colour the words of one cell; status words only when `status` is true.
+    fn cell_tokens(&self, text: &str, status: bool) -> String {
         let mut out = String::with_capacity(text.len() + 16);
         let mut word = String::new();
         let flush = |word: &mut String, out: &mut String| {
             if word.is_empty() {
                 return;
             }
-            out.push_str(&match role_of(word) {
+            let role = role_of(word).filter(|r| status || *r == Role::Id);
+            out.push_str(&match role {
                 Some(role) => self.paint(role, word),
                 None => word.clone(),
             });
@@ -174,6 +195,28 @@ impl Theme {
         tracing::debug!(max, "pretty: row truncated to terminal width");
         cut
     }
+}
+
+/// Split `text` into `(cell, following gap)` pairs; a gap is a run of two or more spaces.
+fn split_cells(text: &str) -> Vec<(&str, &str)> {
+    let mut cells = Vec::new();
+    let bytes = text.as_bytes();
+    let (mut start, mut i) = (0, 0);
+    while i < bytes.len() {
+        if bytes[i] == b' ' && bytes.get(i + 1) == Some(&b' ') {
+            let mut j = i;
+            while bytes.get(j) == Some(&b' ') {
+                j += 1;
+            }
+            cells.push((&text[start..i], &text[i..j]));
+            start = j;
+            i = j;
+        } else {
+            i += 1;
+        }
+    }
+    cells.push((&text[start..], ""));
+    cells
 }
 
 /// Whether `line` reads as a section heading: short, capitalised, no trailing punctuation.
@@ -343,6 +386,21 @@ mod tests {
         let out = Theme::colored(None).decorate(vec![styled.clone(), "the build is ok.".into()]);
         assert_eq!(out[0], styled);
         assert!(out[1].starts_with("the build is "));
+    }
+
+    // frob:tests crates/frob/src/pretty.rs::Theme.decorate
+    #[test]
+    fn status_words_inside_prose_cells_are_not_coloured() {
+        let t = Theme::colored(None);
+        let row = "~ABCDEFG  medium  todo  3  task  fix the error path in blocked lands";
+        let out = t.decorate(rows(&[row]));
+        assert!(out[0].contains("\x1b[1m~ABCDEFG"));
+        assert!(!out[0].contains("\x1b[1merror") && !out[0].ends_with("\x1b[0m"));
+        assert!(out[0].contains("fix the error path in blocked lands"));
+        let single = t.decorate(rows(&["~ABCDEFG  medium  done  3  task  error"]));
+        assert!(single[0].ends_with("error"));
+        let status = t.decorate(rows(&["~ABCDEFG  blocked"]));
+        assert!(status[0].contains('\x1b') && !status[0].ends_with("blocked"));
     }
 
     // frob:tests crates/frob/src/pretty.rs::Theme.fit

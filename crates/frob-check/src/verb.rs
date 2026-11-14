@@ -578,7 +578,11 @@ fn lead_lines(
     let mut full = Vec::new();
     let mut counts: BTreeMap<(String, String), usize> = BTreeMap::new();
     for (finding, record) in report.findings.iter().zip(records) {
-        let in_diff = record.file.as_deref().is_some_and(|f| diff.contains(f));
+        let in_diff = record
+            .file
+            .as_ref()
+            .map(gob_path::RelPath::as_str)
+            .is_some_and(|f| diff.contains(f));
         if in_diff || DIFF_RULES.contains(&record.rule.as_str()) || blocking(report, finding) {
             full.push(line_of(record));
         } else {

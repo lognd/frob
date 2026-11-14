@@ -135,6 +135,18 @@ pub enum TailwindVersion {
     V4,
 }
 
+// frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+/// Whether crunk may run the project's own Tailwind (repository JavaScript) to resolve facts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum TailwindEngine {
+    /// Run the project's Tailwind through node (executes repository JavaScript).
+    #[default]
+    Node,
+    /// Never execute repository code; read the config statically only.
+    Static,
+}
+
 /// The `[tailwind]` table: the config to cross-check and an optional generated theme mapping.
 ///
 /// Every `*_file` key here resolves against the project root, not `css_root`.
@@ -153,6 +165,9 @@ pub struct TailwindConfig {
     pub alpha_channels: bool,
     /// Shape of the `config` file.
     pub version: TailwindVersion,
+    // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+    /// `node` runs the project's Tailwind; `static` never executes repository JavaScript.
+    pub engine: TailwindEngine,
 }
 
 /// The `[tokens.prefixes]` table: custom-property name prefixes.

@@ -13,12 +13,14 @@
 pub const DIGEST_SCHEME: u32 = 2;
 
 mod capability;
+mod effects;
 mod lang;
 mod matrix;
 
 pub use capability::{Capability, Fidelity, Precision};
+pub use effects::{EffectClass, EffectsCapability};
 pub use lang::Lang;
 pub use matrix::{
-    MATRIX, Row, UNJUSTIFIED, fidelity_ceiling, is_justified, lang_fidelity, precision, provides,
-    row, universal_satisfiable,
+    GAP_TICKETS, GapTicket, MATRIX, Row, UNJUSTIFIED, fidelity_ceiling, gap_ticket, is_justified,
+    lang_fidelity, precision, provides, row, universal_satisfiable,
 };

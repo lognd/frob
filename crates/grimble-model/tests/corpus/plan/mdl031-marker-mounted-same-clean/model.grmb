@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+
+system web_app {
+}
+
+use "flow.grmb" as web_app;

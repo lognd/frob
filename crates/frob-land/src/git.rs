@@ -48,16 +48,24 @@ fn is_lock_collision(text: &str) -> bool {
 
 /// Run `git <args>` in `cwd` through `repo`'s runner, retrying with backoff while a concurrent writer holds a git lock (frob:ticket 01M4DYPDCTK6KR5DXFQW7NXA6R).
 pub(crate) fn git(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<GitRun, LandError> {
-    git_with_backoff(repo, cwd, args, LOCK_BACKOFF_BASE, LOCK_BACKOFF_MAX)
+    git_with_backoff(
+        repo,
+        cwd,
+        args,
+        LOCK_BACKOFF_BASE,
+        LOCK_BACKOFF_MAX,
+        &std::thread::sleep,
+    )
 }
 
-/// [`git`] with an explicit backoff, so a test need not wait seconds.
+/// [`git`] with an explicit backoff and an injected `pause`, so a test need not wait seconds.
 fn git_with_backoff(
     repo: &Repo,
     cwd: &Path,
     args: &[&str],
     base: Duration,
     max: Duration,
+    pause_for: &dyn Fn(Duration),
 ) -> Result<GitRun, LandError> {
     let mut run = spawn(repo, cwd, Program::Git, args)?;
     for attempt in 1..LOCK_ATTEMPTS {
@@ -70,7 +78,7 @@ fn git_with_backoff(
         let spread = u64::try_from(gob_time::SystemClock::entropy_nanos() % jitter_ns).unwrap_or(0);
         let pause = ceiling / 2 + Duration::from_nanos(spread);
         tracing::warn!(attempt, ?pause, args = %args.join(" "), "git lock held by another process; backing off");
-        std::thread::sleep(pause);
+        pause_for(pause);
         run = spawn(repo, cwd, Program::Git, args)?;
     }
     if !run.ok() && is_lock_collision(&run.text) {
@@ -146,22 +154,18 @@ mod tests {
             "{}",
             blocked.text
         );
-        let releaser = {
-            let lock = lock.clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(Duration::from_millis(300));
-                std::fs::remove_file(lock).expect("release");
-            })
-        };
+        // The injected pause stands in for the wait: the other process releases the lock "during" it.
+        let release_on_pause = |_: Duration| std::fs::remove_file(&lock).expect("release");
         let run = git_with_backoff(
             &repo,
             dir.path(),
             &["add", "f.txt"],
             Duration::from_millis(50),
             Duration::from_millis(400),
+            &release_on_pause,
         )
         .expect("git");
-        releaser.join().expect("join");
+        assert!(!lock.exists(), "the pause released the lock");
         assert!(run.ok(), "retried until the lock cleared: {}", run.text);
     }
 

@@ -391,7 +391,7 @@ impl Command for Accept {
         };
         let identities = read_identities(&root)?;
         let mut confirm = |diff: &Diff| {
-            // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
+            // frob:defer LOG001 because="the interactive confirm prompt is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
             let mut out = std::io::stdout().lock();
             write!(out, "{}Apply this change? [y/N] ", diff.render()).ok();
             out.flush().ok();

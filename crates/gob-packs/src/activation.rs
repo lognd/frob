@@ -229,15 +229,8 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(d.path().join("sub")).unwrap();
         std::fs::write(d.path().join("sub/pack.toml"), "[pack]\nname=\"zzz\"\n").unwrap();
-    }
-
-    // frob:ticket 01M3ZX7JWHQZQHD66HV2SB0498
-    #[test]
-    fn activation_ignores_nested_pack_toml_part_2() {
         let a = Activation::parse("grimble.toml", CFG).unwrap();
-        let before = a.resolve("sub/x.ts");
-        assert_eq!(before, a.resolve("sub/x.ts"));
-        assert!(before.iter().all(|x| x.name != "zzz"));
+        assert!(a.resolve("sub/x.ts").iter().all(|x| x.name != "zzz"));
     }
 
     // frob:ticket 01M3ZX7JWHQZQHD66HV2SB0498
