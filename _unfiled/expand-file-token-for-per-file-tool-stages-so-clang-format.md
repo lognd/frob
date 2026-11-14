@@ -2,7 +2,8 @@
 id = "01M7CV0ZXC6PES5GJ3PAB09FA1"
 title = "Expand {file} token for per-file tool stages so clang-format def runs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
