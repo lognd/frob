@@ -8,13 +8,13 @@ points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T08:13:14Z"
-updated = "2026-11-14T22:53:16Z"
+updated = "2026-11-14T23:03:51Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "crates/gob-rules/tests/it/family_owners.rs", "docs/**"]
 
 [[acceptance]]
 text = "Given await res.json() as User with no parse call on the value, when checked, then TYPING004 fires"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given schema.parse(await res.json()), when checked, then clean"
