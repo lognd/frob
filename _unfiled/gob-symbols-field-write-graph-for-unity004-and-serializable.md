@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-14T08:59:53Z"
-updated = "2026-11-14T10:20:40Z"
+updated = "2026-11-14T11:12:44Z"
 labels = ['["no-story"]']
-scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
+scope = ["crates/gob-symbols/**", "crates/frob-obligations/**", "docs/reference/rules/UNITY004.md"]
 
 [[acceptance]]
 text = "Public fields of a [Serializable] class nested in an engine type are not reported by UNITY004, and writes are kept in a gob-symbols FieldWrites graph"
