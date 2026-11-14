@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-23T22:04:01Z"
-updated = "2026-11-14T07:59:26Z"
+updated = "2026-11-14T08:06:19Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/**", "docs/schemas/config.json", "docs/reference/rules/DOC006.md", "docs/reference/rules/README.md", "docs/reference/config/frob.md"]
+
+[[acceptance]]
+text = "Given a doc that cites a file outside the repo matching external_citations, when DOC006 runs, then no finding is raised, and a missing in-repo citation still fires"
+bound = false
 +++
 
 found while working ~Q1ZG43K; external files report as missing

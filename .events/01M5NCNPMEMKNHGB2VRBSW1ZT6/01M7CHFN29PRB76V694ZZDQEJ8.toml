@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a doc that cites a file outside the repo matching external_citations, when DOC006 runs, then no finding is raised, and a missing in-repo citation still fires"]
+moved = []
+at = "2026-11-14T08:06:19Z"
+actor = "lognd"
+rev = 1
