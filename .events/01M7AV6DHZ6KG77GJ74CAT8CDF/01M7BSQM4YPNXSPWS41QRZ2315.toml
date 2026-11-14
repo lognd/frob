@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T01:10:36Z"
+digest = "a7fee4be5fef7b28c52f35e06aa4ab2aba812880488c7997b18e37b784adeef7"
+exit_code = 0
+head = "df0b2a2ae1b2f7e4c0b5d53decfab07b09456e39"
+inline = """
+
+running 4 tests
+test release_cmd::release_tier_tests::a_stale_human_review_in_the_envelope_blocks_and_other_shapes_do_not ... ok
+test stale::tests::same_head_other_checkout_or_unknown_is_quiet ... ok
+test stale::tests::differing_head_in_own_checkout_warns ... ok
+test ticket::tests::footer_names_stale_views_and_skips_fresh_ones ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 126 filtered out; finished in 0.00s
+
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.57s
+     Running unittests src/lib.rs (target/debug/deps/frob_cli-3b08c5ab7df9180f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-cli --lib stale"
+size = 1355
+status = "measured"
+at = "2026-11-14T01:10:36Z"
+actor = "lognd"
+rev = 1
