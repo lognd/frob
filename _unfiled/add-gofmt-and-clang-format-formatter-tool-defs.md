@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T13:26:16Z"
-updated = "2026-11-14T10:30:54Z"
+updated = "2026-11-14T11:03:17Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/**", "docs/reference/tool-stages.md"]
 
