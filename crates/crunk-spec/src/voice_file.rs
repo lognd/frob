@@ -38,6 +38,10 @@ impl VoiceRules {
 
 /// Parse the rules out of a voice file's text; text that is not valid TOML or does not fit the
 /// rule shapes gives `Err` with the reason (the caller decides whether that is fatal).
+///
+/// # Errors
+///
+/// Returns the parse reason when `text` is not valid TOML or does not fit the rule shapes.
 pub fn parse_voice_rules(text: &str) -> Result<VoiceRules, String> {
     let rules: VoiceRules = toml_edit::de::from_str(text).map_err(|e| e.to_string())?;
     tracing::debug!(
