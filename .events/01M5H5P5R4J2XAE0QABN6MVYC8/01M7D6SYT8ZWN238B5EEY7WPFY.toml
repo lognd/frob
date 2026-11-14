@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["CONTENT007 fires once per content key that one locale defines and another locale lacks, and passes when all locales define the same keys"]
+moved = []
+at = "2026-11-14T14:18:57Z"
+actor = "lognd"
+rev = 1

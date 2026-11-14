@@ -7,7 +7,11 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:44:59Z"
-updated = "2026-11-14T14:08:55Z"
+updated = "2026-11-14T14:18:57Z"
+
+[[acceptance]]
+text = "CONTENT007 fires once per content key that one locale defines and another locale lacks, and passes when all locales define the same keys"
+bound = false
 +++
 
 found while working ~VAAWD0R: keys missing from non-default locale files are unchecked.
