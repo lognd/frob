@@ -239,7 +239,7 @@ pub fn summary_document(doc: &Value) -> Value {
 ///
 /// `matrix` holds the cell counts per node (all spellings, including `uses`, `denied` and
 /// `excused`). Totals per spelling are always kept; the per-node rows only when they fit
-/// [`NODE_BUDGET`], so the summary stays under [`SUMMARY_BUDGET`].
+/// `NODE_BUDGET`, so the summary stays under `SUMMARY_BUDGET`.
 #[must_use]
 pub fn summary_with_matrix(doc: &Value, matrix: &MatrixCounts) -> Value {
     let mut summary = summary_document(doc);
