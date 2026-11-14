@@ -4,9 +4,10 @@ title = "gob-macros: rule id validator rejects digits in family (blocks I18N001/
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-14T17:59:52Z"
-updated = "2026-11-14T17:59:52Z"
+updated = "2026-11-14T18:00:07Z"
 scope = ["crates/gob-macros/**"]
 +++
 
