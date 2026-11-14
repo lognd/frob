@@ -41,6 +41,8 @@ pub mod content004;
 pub mod content005;
 /// Rule `CONTENT006`.
 pub mod content006;
+/// Rule `CONTENT007`.
+pub mod content007;
 /// Rule `CONTRAST001`.
 pub mod contrast001;
 /// Rule `CRAFT001`.
@@ -231,6 +233,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <content004::Content004 as gob_rules::RuleDecl>::DEF,
     <content005::Content005 as gob_rules::RuleDecl>::DEF,
     <content006::Content006 as gob_rules::RuleDecl>::DEF,
+    <content007::Content007 as gob_rules::RuleDecl>::DEF,
     <contrast001::Contrast001 as gob_rules::RuleDecl>::DEF,
     <craft001::Craft001 as gob_rules::RuleDecl>::DEF,
     <craft002::Craft002 as gob_rules::RuleDecl>::DEF,
@@ -357,6 +360,7 @@ where
     content004::Content004: gob_rules::Measured<P>,
     content005::Content005: gob_rules::Measured<P>,
     content006::Content006: gob_rules::Measured<P>,
+    content007::Content007: gob_rules::Measured<P>,
     contrast001::Contrast001: gob_rules::RepoRule<P>,
     craft001::Craft001: gob_rules::RepoRule<P>,
     craft002::Craft002: gob_rules::RepoRule<P>,
@@ -376,7 +380,6 @@ where
     gx001::Gx001: gob_rules::RepoRule<P>,
     gx002::Gx002: gob_rules::Measured<P>,
     gx003::Gx003: gob_rules::Measured<P>,
-    gx004::Gx004: gob_rules::Measured<P>,
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
@@ -400,6 +403,7 @@ where
         rules.push(gob_rules::BoundRule::measured(content004::Content004));
         rules.push(gob_rules::BoundRule::measured(content005::Content005));
         rules.push(gob_rules::BoundRule::measured(content006::Content006));
+        rules.push(gob_rules::BoundRule::measured(content007::Content007));
         rules.push(gob_rules::BoundRule::repo(contrast001::Contrast001));
         rules.push(gob_rules::BoundRule::repo(craft001::Craft001));
         rules.push(gob_rules::BoundRule::repo(craft002::Craft002));
@@ -419,7 +423,6 @@ where
         rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
         rules.push(gob_rules::BoundRule::measured(gx002::Gx002));
         rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
-        rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
     }
 }
 
@@ -428,6 +431,7 @@ pub struct Part1;
 
 impl<P: ?Sized + 'static> BindPart<P> for Part1
 where
+    gx004::Gx004: gob_rules::Measured<P>,
     gx005::Gx005: gob_rules::Measured<P>,
     human001::Human001: gob_rules::RepoRule<P>,
     human002::Human002: gob_rules::RepoRule<P>,
@@ -467,10 +471,10 @@ where
     slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
     state001::State001: gob_rules::Measured<P>,
-    state002::State002: gob_rules::Measured<P>,
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
         rules.push(gob_rules::BoundRule::measured(gx005::Gx005));
         rules.push(gob_rules::BoundRule::repo(human001::Human001));
         rules.push(gob_rules::BoundRule::repo(human002::Human002));
@@ -510,7 +514,6 @@ where
         rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
         rules.push(gob_rules::BoundRule::measured(space001::Space001));
         rules.push(gob_rules::BoundRule::measured(state001::State001));
-        rules.push(gob_rules::BoundRule::measured(state002::State002));
     }
 }
 
@@ -519,6 +522,7 @@ pub struct Part2;
 
 impl<P: ?Sized + 'static> BindPart<P> for Part2
 where
+    state002::State002: gob_rules::Measured<P>,
     state003::State003: gob_rules::Measured<P>,
     state004::State004: gob_rules::RepoRule<P>,
     state005::State005: gob_rules::RepoRule<P>,
@@ -545,6 +549,7 @@ where
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(state002::State002));
         rules.push(gob_rules::BoundRule::measured(state003::State003));
         rules.push(gob_rules::BoundRule::repo(state004::State004));
         rules.push(gob_rules::BoundRule::repo(state005::State005));

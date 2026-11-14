@@ -117,6 +117,7 @@
 | [CONTENT004](CONTENT004.md) | content-key-duplicate | error | manual | P+ | true | Every content key is defined in exactly one file. |
 | [CONTENT005](CONTENT005.md) | glossary-term-avoided | error | manual | P+ | true | Content text uses the glossary's preferred term, not a variant it lists to avoid. |
 | [CONTENT006](CONTENT006.md) | tone-banned-word | error | manual | P+ | true | Content text avoids the words and phrases the voice file bans. |
+| [CONTENT007](CONTENT007.md) | content-locale-gap | error | manual | P+ | true | Every locale defines every content key that any locale defines. |
 
 ## CONTRAST
 

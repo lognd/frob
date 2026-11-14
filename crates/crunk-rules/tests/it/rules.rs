@@ -10,15 +10,15 @@ use crunk_rules::rules::{
     comp001::Comp001, comp002::Comp002, comp003::Comp003, comp004::Comp004, comp005::Comp005,
     comp006::Comp006, comp007::Comp007, comp008::Comp008, comp009::Comp009, content001::Content001,
     content002::Content002, content003::Content003, content004::Content004, content005::Content005,
-    content006::Content006, contrast001::Contrast001, craft001::Craft001, craft002::Craft002,
-    craft003::Craft003, craft004::Craft004, craft005::Craft005, craft006::Craft006,
-    craft007::Craft007, craft008::Craft008, craft009::Craft009, craft010::Craft010,
-    craft011::Craft011, craft012::Craft012, craft013::Craft013, export001::Export001,
-    export002::Export002, gx001::Gx001, gx002::Gx002, gx003::Gx003, gx004::Gx004, gx005::Gx005,
-    human001::Human001, human002::Human002, layer001::Layer001, layout001::Layout001,
-    layout002::Layout002, layout003::Layout003, layout004::Layout004, layout005::Layout005,
-    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
-    radius001::Radius001, resp001::Resp001, scene001::Scene001, scene002::Scene002,
+    content006::Content006, content007::Content007, contrast001::Contrast001, craft001::Craft001,
+    craft002::Craft002, craft003::Craft003, craft004::Craft004, craft005::Craft005,
+    craft006::Craft006, craft007::Craft007, craft008::Craft008, craft009::Craft009,
+    craft010::Craft010, craft011::Craft011, craft012::Craft012, craft013::Craft013,
+    export001::Export001, export002::Export002, gx001::Gx001, gx002::Gx002, gx003::Gx003,
+    gx004::Gx004, gx005::Gx005, human001::Human001, human002::Human002, layer001::Layer001,
+    layout001::Layout001, layout002::Layout002, layout003::Layout003, layout004::Layout004,
+    layout005::Layout005, org001::Org001, org002::Org002, org003::Org003, org004::Org004,
+    org005::Org005, radius001::Radius001, resp001::Resp001, scene001::Scene001, scene002::Scene002,
     scene003::Scene003, scene004::Scene004, scene005::Scene005, size001::Size001, slop001::Slop001,
     slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014,
     slop020::Slop020, slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027,
@@ -146,6 +146,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/content004.rs::Content004
     // frob:tests crates/crunk-rules/src/rules/content005.rs::Content005
     // frob:tests crates/crunk-rules/src/rules/content006.rs::Content006
+    // frob:tests crates/crunk-rules/src/rules/content007.rs::Content007
     // frob:tests crates/crunk-rules/src/rules/slop001.rs::Slop001
     // frob:tests crates/crunk-rules/src/rules/slop003.rs::Slop003
     // frob:tests crates/crunk-rules/src/rules/slop004.rs::Slop004
@@ -234,6 +235,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "CONTENT004" => support::run_case::<Content004>(&host, case),
         "CONTENT005" => support::run_case::<Content005>(&host, case),
         "CONTENT006" => support::run_case::<Content006>(&host, case),
+        "CONTENT007" => support::run_case::<Content007>(&host, case),
         "ORG001" => support::run_case::<Org001>(&host, case),
         "ORG002" => support::run_case::<Org002>(&host, case),
         "ORG003" => support::run_case::<Org003>(&host, case),
@@ -310,6 +312,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "CONTENT004",
             "CONTENT005",
             "CONTENT006",
+            "CONTENT007",
             "CONTRAST001",
             "CRAFT001",
             "CRAFT002",
@@ -532,7 +535,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 103);
+    assert_eq!(ids.len(), 104);
     assert!(ids.contains(&"SPACE001"));
 }
 

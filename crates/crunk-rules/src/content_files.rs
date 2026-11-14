@@ -5,7 +5,7 @@
 // frob:ticket 01M5HM3W7MK7255AGEN27SXEXP
 // frob:ticket 01M5H5P5E98XTANP62H5TVTSC4
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crunk_scene::ElementKind;
 use crunk_spec::voice_file::{VoiceRules, parse_voice_rules};
@@ -460,6 +460,59 @@ pub fn duplicate_keys(facts: &ContentFacts) -> BTreeMap<String, Vec<String>> {
     }
     by_key.retain(|_, paths| paths.len() > 1);
     by_key
+}
+
+/// One key a locale lacks that another locale defines.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LocaleGap {
+    /// The locale that lacks the key (`default` for files that declare no locale).
+    pub locale: String,
+    /// The first file of that locale, where the finding anchors.
+    pub path: String,
+    /// The missing key.
+    pub key: String,
+    /// A locale that does define the key.
+    pub defined_in: String,
+}
+
+/// Every key some locale defines that another locale lacks; empty with fewer than two locales.
+#[must_use]
+pub fn locale_gaps(facts: &ContentFacts) -> Vec<LocaleGap> {
+    let mut by_locale: BTreeMap<String, (String, BTreeSet<&str>)> = BTreeMap::new();
+    for f in &facts.files {
+        let name = f
+            .content
+            .locale
+            .clone()
+            .unwrap_or_else(|| "default".to_owned());
+        let entry = by_locale
+            .entry(name)
+            .or_insert_with(|| (f.path.clone(), BTreeSet::new()));
+        entry.1.extend(f.content.keys.iter().map(|k| k.id.as_str()));
+    }
+    let mut owner: BTreeMap<&str, &str> = BTreeMap::new();
+    for (locale, (_, keys)) in &by_locale {
+        for key in keys {
+            owner.entry(key).or_insert(locale);
+        }
+    }
+    let mut gaps = Vec::new();
+    if by_locale.len() < 2 {
+        return gaps;
+    }
+    for (locale, (path, keys)) in &by_locale {
+        for (key, defined_in) in &owner {
+            if !keys.contains(key) {
+                gaps.push(LocaleGap {
+                    locale: locale.clone(),
+                    path: path.clone(),
+                    key: (*key).to_owned(),
+                    defined_in: (*defined_in).to_owned(),
+                });
+            }
+        }
+    }
+    gaps
 }
 
 /// Whether `text` uses `term` as a whole word or phrase, ignoring case: the characters on either

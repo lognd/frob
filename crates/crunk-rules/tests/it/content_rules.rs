@@ -13,6 +13,7 @@ use crunk_rules::rules::content003::Content003;
 use crunk_rules::rules::content004::Content004;
 use crunk_rules::rules::content005::Content005;
 use crunk_rules::rules::content006::Content006;
+use crunk_rules::rules::content007::Content007;
 use gob_rules::Finding;
 
 const SCENE: &str = "design/scenes/home.scene.html";
@@ -262,4 +263,22 @@ fn content006_fires_on_a_banned_word_as_a_whole_word_only() {
 
     let host = support::project("design/content/en.toml", toml, None);
     assert!(support::run::<Content006>(&host).is_empty());
+}
+
+// frob:ticket ~N6MVYC8
+// frob:tests crates/crunk-rules/src/rules/content007.rs::Content007
+// frob:tests crates/crunk-rules/src/content_files.rs::locale_gaps
+#[test]
+fn content007_fires_for_a_key_a_locale_lacks_and_passes_a_complete_locale() {
+    let toml = "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Hi\"\n[[key]]\nid = \"home.cta\"\ntext = \"Go\"\n";
+    let host = support::project("design/content/en.toml", toml, Some("content-locale-gap"));
+    let m: Vec<String> = support::run::<Content007>(&host)
+        .into_iter()
+        .map(|f| f.message)
+        .collect();
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("home.cta") && m[0].contains("'fr'"), "{m:?}");
+
+    let host = support::project("design/content/en.toml", toml, None);
+    assert!(support::run::<Content007>(&host).is_empty());
 }
