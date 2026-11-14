@@ -8,7 +8,7 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T11:25:58Z"
-updated = "2026-11-14T15:27:13Z"
+updated = "2026-11-14T16:39:02Z"
 scope = ["packs/crunk-web/**", "crates/crunk-check/**", "crates/gob-plan/**", "docs/design/shared/grl-spec.md", "docs/guides/crunk.md", "docs/reference/grl/catalog.md"]
 
 [[acceptance]]
