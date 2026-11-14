@@ -13,7 +13,7 @@ scope = ["crates/frob/**"]
 
 [[acceptance]]
 text = "Given the release status report, when epics exist, then epic_closed criteria are derived and bound and frob doctor surfaces attester problems"
-bound = false
+bound = true
 +++
 
 Follow-up of ~SKSTFYN: criteria.rs has pure providers; the CLI must gather epic ticket states and committer emails, call bind_builtin/derive_epic_criteria and surface attester_problems in frob doctor.
