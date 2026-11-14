@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs"]
+new = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/model.rs"]
+at = "2026-11-14T22:02:40Z"
+actor = "lognd"
+rev = 1
