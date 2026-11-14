@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json", "Cargo.lock"]
+new = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json", "Cargo.lock", "crates/frob-ledger/tests/it/persisted_paths.rs"]
+at = "2026-11-14T09:54:47Z"
+actor = "lognd"
+rev = 1
