@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T08:13:14Z"
-updated = "2026-11-14T23:03:51Z"
+updated = "2026-11-14T23:06:08Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "crates/gob-rules/tests/it/family_owners.rs", "docs/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "Given schema.parse(await res.json()), when checked, then clean"
-bound = false
+bound = true
 +++
 
 notes/research/lint-catalogue-2026-10-08.md row W07 (4.2 N15); notes/research/creators-web-2026-10-08.md 5.2 item 10 (Zod docs, Pocock: res.json() as T at the boundary).
