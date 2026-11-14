@@ -26,7 +26,7 @@ use serde_json::{Value, json};
 use crate::config::{GrimbleTable, PRODUCT};
 
 /// Schema version of the stored payload; bump when the encoding below changes.
-const SCHEMA: u32 = 6;
+const SCHEMA: u32 = 7;
 
 /// What `grimble check` keeps of a [`Binding`]: document rows, SYS findings and subject counts.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -43,7 +43,12 @@ pub struct BindSummary {
     pub plan: PlanReport,
     /// The capability matrix cells: grant cells plus CAP001 undeclared and unknown ones.
     pub cells: Vec<GrantCell>,
+    /// Cell counts per node anchor by cell spelling, including cells that raise no finding.
+    pub matrix: MatrixCounts,
 }
+
+/// Capability matrix cell counts: node anchor to cell spelling to count.
+pub type MatrixCounts = BTreeMap<String, BTreeMap<String, usize>>;
 
 /// Every [`Cell`], to map its output spelling back to the value when a payload is decoded.
 const CELLS: [Cell; 7] = [
@@ -99,6 +104,16 @@ impl BindSummary {
                 .collect(),
             plan: binding.plan.clone(),
             cells: binding.cells.clone(),
+            matrix: binding
+                .matrix
+                .iter()
+                .map(|(node, counts)| {
+                    (
+                        node.clone(),
+                        counts.iter().map(|(c, n)| ((*c).to_owned(), *n)).collect(),
+                    )
+                })
+                .collect(),
         }
     }
 
@@ -126,6 +141,7 @@ impl BindSummary {
             "subjects": self.subjects,
             "not_applicable": self.not_applicable,
             "cells": self.cells.iter().map(cell_json).collect::<Vec<_>>(),
+            "matrix": self.matrix,
             "plan": {
                 "fields": self.plan.fields,
                 "edges": self.plan.edges,
@@ -198,6 +214,7 @@ impl BindSummary {
                 .iter()
                 .map(cell_from_json)
                 .collect::<Option<Vec<_>>>()?,
+            matrix: serde_json::from_value(doc["matrix"].clone()).ok()?,
         })
     }
 }
@@ -280,5 +297,18 @@ mod tests {
         assert_ne!(a, key_over("d", "e", &[&[&v2]]));
         assert_ne!(a, key_over("d", "e", &[&[&v1, &v2]]));
         assert!(key("d", "e").producer_identity.contains("rules-"));
+    }
+
+    // frob:tests crates/grimble-check/src/bind_cache.rs::BindSummary::decode
+    /// The matrix counts, `denied` included, survive an encode/decode round trip.
+    #[test]
+    fn matrix_counts_round_trip_through_the_payload() {
+        let mut summary = BindSummary::default();
+        summary.matrix.insert(
+            "m.n".to_owned(),
+            BTreeMap::from([("denied".to_owned(), 2), ("uses".to_owned(), 1)]),
+        );
+        let back = BindSummary::decode(&summary.encode()).expect("decodes");
+        assert_eq!(back.matrix, summary.matrix);
     }
 }

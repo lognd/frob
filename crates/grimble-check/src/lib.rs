@@ -75,7 +75,7 @@ pub use host::GrimbleHost;
 pub use model_view::ModelView;
 pub use product::{Grimble, GrimbleInputs, GrimbleShared, MODEL_EXTENSION};
 pub use sibling::{SCHEMA_VERSION, exceptions_json, graph_document, sibling_document};
-pub use summary::{SUMMARY_BUDGET, summary_document};
+pub use summary::{SUMMARY_BUDGET, summary_document, summary_with_matrix};
 
 use config::{ComputeTable, GrimbleTable, PRODUCT, PacksTable};
 use gob_walk::FileEntry;
@@ -130,6 +130,8 @@ pub struct GrimbleRun {
     pub bind_cached: bool,
     /// The capability matrix cells of the binding: grant cells plus CAP001 undeclared and unknown ones.
     pub cells: Vec<grimble_bind::caps::GrantCell>,
+    /// Capability matrix cell counts per node, including cells that raise no finding.
+    pub matrix: bind_cache::MatrixCounts,
     /// Rules whose whole scope is `NotApplicable` on this model, with the reason (never findings).
     pub not_applicable: BTreeMap<String, String>,
     /// Wall time of the run in milliseconds.
@@ -190,6 +192,7 @@ pub fn run(root: &Path, opts: &CheckOptions) -> Result<GrimbleRun, CheckError> {
         plan: trace.plan,
         bind_cached: trace.bind_cached,
         cells: trace.cells,
+        matrix: trace.matrix,
         not_applicable: trace.not_applicable,
         elapsed_ms,
         warnings,

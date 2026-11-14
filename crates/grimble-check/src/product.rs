@@ -100,6 +100,8 @@ pub(crate) struct Trace {
     pub not_applicable: BTreeMap<String, String>,
     /// The capability matrix cells of the binding.
     pub cells: Vec<grimble_bind::caps::GrantCell>,
+    /// Capability matrix cell counts per node, including cells that raise no finding.
+    pub matrix: crate::bind_cache::MatrixCounts,
 }
 
 /// The grimble product driving the shared check pipeline.
@@ -1252,6 +1254,7 @@ impl Product for Grimble {
             trace.plan.clone_from(&binding.plan);
             trace.bind_cached = bind_cached;
             trace.cells.clone_from(&binding.cells);
+            trace.matrix.clone_from(&binding.matrix);
             trace.not_applicable = binding
                 .not_applicable
                 .iter()

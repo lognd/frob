@@ -11,7 +11,8 @@
 //! `undeclared` cell, a CAP001 unresolved site an `unknown` cell and a CAP002 finding a
 //! `declared-unused` cell. A finding belongs to the node whose entity row has the same file and
 //! byte range. The matrix cells that raise no finding (`uses`, `denied`, `excused`) are not in
-//! the document and so are not in the summary.
+//! the document, so [`summary_with_matrix`] adds the full matrix the binding recorded (every cell
+//! spelling, `denied` included) as `capabilities.matrix`.
 
 // frob:ticket 01M4HEMDB8A1X1RQFNVJB1G32M
 
@@ -19,6 +20,7 @@ use std::collections::BTreeMap;
 
 use serde_json::{Value, json};
 
+use crate::bind_cache::MatrixCounts;
 use crate::config::blake3_tagged;
 
 /// Schema tag of the summary document.
@@ -230,5 +232,38 @@ pub fn summary_document(doc: &Value) -> Value {
         detail,
         "check summary built"
     );
+    summary
+}
+
+/// [`summary_document`] plus the full capability matrix as `capabilities.matrix`.
+///
+/// `matrix` holds the cell counts per node (all spellings, including `uses`, `denied` and
+/// `excused`). Totals per spelling are always kept; the per-node rows only when they fit
+/// [`NODE_BUDGET`], so the summary stays under [`SUMMARY_BUDGET`].
+#[must_use]
+pub fn summary_with_matrix(doc: &Value, matrix: &MatrixCounts) -> Value {
+    let mut summary = summary_document(doc);
+    let mut totals: BTreeMap<&str, usize> = BTreeMap::new();
+    for counts in matrix.values() {
+        for (cell, n) in counts {
+            *totals.entry(cell.as_str()).or_default() += n;
+        }
+    }
+    let by_node = json!(matrix);
+    let fits = by_node.to_string().len() <= NODE_BUDGET;
+    let mut section = json!({
+        "nodes": matrix.len(),
+        "cells": totals,
+        "nodes_detail": if fits { "per-node" } else { "totals" },
+    });
+    if fits {
+        section["by_node"] = by_node;
+    }
+    tracing::debug!(
+        nodes = matrix.len(),
+        fits,
+        "capability matrix added to summary"
+    );
+    summary["capabilities"]["matrix"] = section;
     summary
 }

@@ -113,6 +113,8 @@ pub struct Binding {
     pub owns_sites: Vec<shrink::OwnsSite>,
     /// The capability matrix cells: grant cells plus CAP001 undeclared and unknown ones.
     pub cells: Vec<caps::GrantCell>,
+    /// Capability matrix cell counts per node anchor, keyed by cell spelling (includes `denied`).
+    pub matrix: BTreeMap<String, BTreeMap<&'static str, usize>>,
 }
 
 /// Declare the rules whose subject fact is absent, before any rule runs.
@@ -350,6 +352,7 @@ pub fn bind(input: &BindInput<'_>) -> Binding {
         plan,
         owns_sites: shrink::owns_sites(&model),
         cells: out.cells,
+        matrix: out.matrix,
         rows: rel.rows,
         findings: out.findings,
         subjects: out.subjects,

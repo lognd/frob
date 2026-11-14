@@ -78,3 +78,23 @@ fn unmatched_cap_findings_are_counted_not_dropped() {
     assert_eq!(summary["capabilities"]["unattributed_findings"], 1);
     assert_eq!(summary["findings"]["total"], 1);
 }
+
+// frob:tests crates/grimble-check/src/summary.rs::summary_with_matrix
+#[test]
+fn matrix_summary_totals_denied_and_uses_cells() {
+    let doc = document(4);
+    let mut matrix = grimble_check::bind_cache::MatrixCounts::new();
+    matrix.insert(
+        "m.n0".into(),
+        [("denied".to_owned(), 2), ("uses".to_owned(), 1)].into(),
+    );
+    matrix.insert("m.n1".into(), [("denied".to_owned(), 3)].into());
+    let summary = grimble_check::summary_with_matrix(&doc, &matrix);
+    assert_eq!(summary["capabilities"]["matrix"]["cells"]["denied"], 5);
+    assert_eq!(summary["capabilities"]["matrix"]["cells"]["uses"], 1);
+    assert_eq!(
+        summary["capabilities"]["matrix"]["by_node"]["m.n1"]["denied"],
+        3
+    );
+    assert!(summary.to_string().len() < SUMMARY_BUDGET);
+}

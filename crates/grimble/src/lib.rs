@@ -108,7 +108,8 @@ impl Product for GrimbleProduct {
         )
         .map(|run| {
             let document = grimble_check::sibling_document(&run);
-            let summary = summarize.then(|| grimble_check::summary_document(&document));
+            let summary =
+                summarize.then(|| grimble_check::summary_with_matrix(&document, &run.matrix));
             let mut warnings = run.warnings;
             // frob:ticket 01M406M2HX6Z6SEGM6HRPQKHAV
             if let Some(base) = opts.base.as_deref() {
