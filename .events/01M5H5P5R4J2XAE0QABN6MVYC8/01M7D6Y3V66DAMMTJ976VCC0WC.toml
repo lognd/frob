@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T14:18:57Z"
+digest = "4fcead58fd6f347d799668d000b68b6c536db7048dd51b79f7bb7cfce5dd14e2"
+exit_code = 0
+head = "2b0a7a1b70779901c10085894fc02be3a5c8f52c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 58724e44-80e6-4ebb-ae69-33247f99a2d4 with nextest profile: default
+    Starting 1 test across 2 binaries (300 tests skipped)
+        PASS [   0.030s] crunk-rules::it content_rules::content007_fires_for_a_key_a_locale_lacks_and_passes_a_complete_locale
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.032s] 1 test run: 1 passed, 300 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=content_rules::content007_fires_for_a_key_a_locale_lacks_and_passes_a_complete_locale)"
+size = 594
+status = "measured"
+test_count = 1
+tests_digest = "057fcae9dee81dd7829bb230ca9d7cd81c99b641baca8dc67b35acb08c37cb6d"
+at = "2026-11-14T14:18:57Z"
+actor = "lognd"
+rev = 1
