@@ -46,6 +46,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("GRL", "frob-check"),
     ("GX", "crunk-rules"),
     ("HUMAN", "crunk-rules"),
+    ("I18N", "crunk-rules"),
     ("INV", "frob-obligations"),
     ("LARGE", "grimble-arch"),
     ("LAYER", "crunk-rules"),
