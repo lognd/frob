@@ -2,12 +2,12 @@
 id = "01M7BSMQWJ77EENS87BQBQWFB4"
 title = "C and Java calls resolve through the Rust-only graph path (DEAD001 false positives likely)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-14T01:09:40Z"
-updated = "2026-11-14T01:52:32Z"
+updated = "2026-11-14T01:52:38Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
