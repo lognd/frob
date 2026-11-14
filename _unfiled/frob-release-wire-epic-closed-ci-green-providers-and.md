@@ -2,12 +2,12 @@
 id = "01M7BP3DVBGTPRC7R3THSP1Y5P"
 title = "frob-release: wire epic_closed/ci_green providers and attester doctor check into the CLI so exit criteria bind"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-14T00:07:47Z"
-updated = "2026-11-14T00:07:47Z"
+updated = "2026-11-14T01:51:47Z"
 idempotency_key = "skstfyn-wire"
 scope = ["crates/frob/**"]
 +++
