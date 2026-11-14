@@ -2,7 +2,8 @@
 id = "01M5XCW9WCHSZBR5F29VKYBM25"
 title = "crunk outline, search and guidelines read verbs (token-economy design-system access for agents, served over MCP)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
