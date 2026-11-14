@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-11-06T15:59:12Z"
 updated = "2026-11-14T21:40:14Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/src/**", "crates/grimble-bind/src/lib.rs"]
+scope = ["crates/grimble-check/src/**", "crates/grimble-bind/src/lib.rs", "crates/grimble/src/lib.rs"]
 +++
 
 Found while working ~Z7G326G. grimble-bind now records Output.matrix (per-node cell counts, incl. Denied). summary.rs derives cells from CAP findings only and bind_cache.rs does not encode Output.matrix; consume and serialize it so --summary shows the full matrix.
