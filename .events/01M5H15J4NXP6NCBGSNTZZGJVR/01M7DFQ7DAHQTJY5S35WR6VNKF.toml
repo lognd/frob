@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "needs crunk-spec responsive model first; design undefined"
+at = "2026-11-14T16:54:45Z"
+actor = "lognd"
+rev = 1
