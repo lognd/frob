@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A tool stage with a {file} arg runs once per matching tracked file as ./path, scoped to the scope files when given"]
+moved = []
+at = "2026-11-14T16:58:18Z"
+actor = "lognd"
+rev = 1
