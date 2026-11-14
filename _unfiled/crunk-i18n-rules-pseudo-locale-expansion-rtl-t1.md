@@ -16,7 +16,7 @@ target = "01M7DKEF5H542R72Z6VGQF7ZAJ"
 
 [[acceptance]]
 text = "I18N001 flags length-budgeted keys whose text fits but whose 40% pseudo-locale expansion does not; I18N002 flags physical left/right CSS beside an RTL locale"
-bound = false
+bound = true
 +++
 
 found while working ~VAAWD0R: I18N T0/T1 rules were cut.

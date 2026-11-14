@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T18:31:21Z"
+digest = "45d19c960ea37fa10eb6f20c41b82ffb6e377336d95cd99f30fdf41674934bb2"
+exit_code = 0
+head = "f10c26f2616a07d5e1474cc7f3ba705b2799adfb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cf163616-8221-488d-8bc1-a3700a518a2c with nextest profile: default
+    Starting 1 test across 2 binaries (306 tests skipped)
+        PASS [   0.071s] crunk-rules::it i18n_rules::i18n001_fires_only_when_the_text_fits_but_its_expansion_does_not
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.072s] 1 test run: 1 passed, 306 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=i18n_rules::i18n001_fires_only_when_the_text_fits_but_its_expansion_does_not)"
+size = 585
+status = "measured"
+test_count = 1
+tests_digest = "f205f45e179336c0a6170f0fda98f5acc629b1b740558cecf8d40e633546fd77"
+at = "2026-11-14T18:31:21Z"
+actor = "lognd"
+rev = 1
