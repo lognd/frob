@@ -2,13 +2,13 @@
 id = "01M5XK12082GJW5KQTMK4DJXGN"
 title = "crunk exports ignore design/tokens/*.toml: authored tokens never reach CSS, Tailwind, USS or C#"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T02:29:00Z"
-updated = "2026-10-27T02:58:43Z"
+updated = "2026-11-14T12:22:16Z"
 scope = ["crates/crunk-tokens/src/**,crates/crunk/src/tokens.rs,crates/crunk/src/export.rs"]
 +++
 
