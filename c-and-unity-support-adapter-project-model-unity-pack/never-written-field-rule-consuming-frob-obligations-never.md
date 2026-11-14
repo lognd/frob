@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-21T17:43:39Z"
 updated = "2026-11-14T08:44:38Z"
 labels = ["no-story"]
-scope = ["crates/frob-obligations/**", "crates/gob-symbols/**", "crates/frob/src/explain_cmd.rs", "docs/README.md"]
+scope = ["crates/frob-obligations/**", "crates/gob-symbols/**", "crates/frob/src/explain_cmd.rs", "docs/README.md", "docs/reference/rules/**"]
 
 [[acceptance]]
 text = "Given a C# field no code assigns and the unity pack enabled, when frob check runs, then UNITY004 reports it; an assigned field is clean"
