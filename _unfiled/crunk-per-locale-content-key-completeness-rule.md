@@ -2,7 +2,8 @@
 id = "01M5H5P5R4J2XAE0QABN6MVYC8"
 title = "crunk: per-locale content key completeness rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
