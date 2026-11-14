@@ -2719,6 +2719,59 @@ impl SymbolGraph {
             .map(|e| e.source())
     }
 
+    /// The innermost enclosing class of `n` (itself excluded), through nested functions; shared by the language adapters.
+    fn class_of(&self, n: NodeIndex) -> Option<NodeIndex> {
+        let mut cur = self.parent_of(n);
+        while let Some(p) = cur {
+            if self.graph[p].kind == SymbolKind::Class {
+                return Some(p);
+            }
+            cur = self.parent_of(p);
+        }
+        None
+    }
+
+    /// The units named `name` visible lexically from `caller` per the adapter's `kids` lookup (class scopes are skipped).
+    fn lexical_units<'a>(
+        &self,
+        kids: impl Fn(NodeIndex, &str) -> &'a [NodeIndex],
+        caller: NodeIndex,
+        name: &str,
+    ) -> Vec<NodeIndex> {
+        let mut cur = Some(caller);
+        while let Some(n) = cur {
+            if self.graph[n].kind != SymbolKind::Class {
+                let found = kids(n, name);
+                if !found.is_empty() {
+                    return found.to_vec();
+                }
+            }
+            cur = self.parent_of(n);
+        }
+        Vec::new()
+    }
+
+    /// A class result becomes its `ctor`-named member (per the adapter's `kids` lookup) when it has one.
+    fn construct_units<'a>(
+        &self,
+        kids: impl Fn(NodeIndex, &str) -> &'a [NodeIndex],
+        ctor: &str,
+        nodes: Vec<NodeIndex>,
+    ) -> Vec<NodeIndex> {
+        nodes
+            .into_iter()
+            .map(|n| {
+                if self.graph[n].kind == SymbolKind::Class
+                    && let Some(&c) = kids(n, ctor).first()
+                {
+                    c
+                } else {
+                    n
+                }
+            })
+            .collect()
+    }
+
     /// Everything that may be affected by a change to `symref`: callers and
     /// referrers (transitively, May candidates and functions passed as values
     /// included) and containing symbols.

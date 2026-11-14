@@ -276,29 +276,12 @@ impl SymbolGraph {
 
     /// The innermost enclosing class of `n` (itself excluded), through nested functions.
     fn py_class_of(&self, n: NodeIndex) -> Option<NodeIndex> {
-        let mut cur = self.parent_of(n);
-        while let Some(p) = cur {
-            if self.graph[p].kind == SymbolKind::Class {
-                return Some(p);
-            }
-            cur = self.parent_of(p);
-        }
-        None
+        self.class_of(n)
     }
 
     /// The units named `name` visible lexically from `caller`: nested defs, then module level (class scopes are skipped).
     fn py_lexical(&self, py: &PyIndex, caller: NodeIndex, name: &str) -> Vec<NodeIndex> {
-        let mut cur = Some(caller);
-        while let Some(n) = cur {
-            if self.graph[n].kind != SymbolKind::Class {
-                let found = py.kids_of(n, name);
-                if !found.is_empty() {
-                    return found.to_vec();
-                }
-            }
-            cur = self.parent_of(n);
-        }
-        Vec::new()
+        self.lexical_units(|n, k| py.kids_of(n, k), caller, name)
     }
 
     /// The use bindings of `file` named `local` that are in scope at `caller`.
@@ -318,18 +301,7 @@ impl SymbolGraph {
 
     /// A class result becomes its `__init__` when it has one.
     fn py_construct(&self, py: &PyIndex, nodes: Vec<NodeIndex>) -> Vec<NodeIndex> {
-        nodes
-            .into_iter()
-            .map(|n| {
-                if self.graph[n].kind == SymbolKind::Class
-                    && let Some(&init) = py.kids_of(n, "__init__").first()
-                {
-                    init
-                } else {
-                    n
-                }
-            })
-            .collect()
+        self.construct_units(|n, k| py.kids_of(n, k), "__init__", nodes)
     }
 
     /// The units a module-level or imported name `name` stands for at `caller`, or `None` when nothing in the repository does.
