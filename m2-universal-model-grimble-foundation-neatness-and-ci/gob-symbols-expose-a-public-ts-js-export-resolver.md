@@ -2,7 +2,8 @@
 id = "01M5GGJXDV139FW9WX0JR8RKNQ"
 title = "gob-symbols: expose a public TS/JS export resolver"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
