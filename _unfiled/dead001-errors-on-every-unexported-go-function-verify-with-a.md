@@ -2,12 +2,12 @@
 id = "01M7AV38DKR1SA56E17SY378XX"
 title = "DEAD001 errors on every unexported Go function (verify with a fixture first)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T17:11:59Z"
+updated = "2026-11-14T00:57:23Z"
 labels = ["no-story"]
 scope = ["crates/grimble-*/**"]
 
