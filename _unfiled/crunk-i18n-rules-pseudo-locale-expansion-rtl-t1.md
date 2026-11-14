@@ -2,7 +2,8 @@
 id = "01M5H5P5H1CSMP9Q3NF4RY4M26"
 title = "crunk: I18N rules (pseudo-locale expansion, RTL, T1)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
