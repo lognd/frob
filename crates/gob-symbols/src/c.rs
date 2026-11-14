@@ -496,6 +496,28 @@ mod tests {
         assert_eq!(uses, [("*", "std"), ("cout", "std::cout")]);
     }
 
+    // frob:ticket 01M703GDD7M0W356CVGE8XHH4G
+    // frob:tests crates/gob-symbols/src/c.rs::collect_calls
+    #[test]
+    fn c_file_records_call_sites_through_extract_file() {
+        use crate::pipeline::extract_file;
+        use gob_walk::{Digest, FileEntry, LanguageHint};
+        let src = "#include <stdio.h>\nstatic void log_it(const char *m) { printf(\"%s\", m); }\nint main(void) {\n  log_it(\"hi\");\n  return 0;\n}\n";
+        let entry = FileEntry {
+            path: "m.c".to_owned(),
+            size: src.len() as u64,
+            digest: Digest::of(src.as_bytes()),
+            language: LanguageHint::from_path("m.c"),
+        };
+        let file = extract_file(&entry, src);
+        let callee = |n: &str| file.calls.iter().find(|c| c.callee == n);
+        let printf = callee("printf").expect("printf call recorded for C");
+        assert_eq!(printf.caller.to_string(), "m.c::log_it");
+        let log_it = callee("log_it").expect("log_it call recorded for C");
+        assert_eq!(log_it.caller.to_string(), "m.c::main");
+        assert_eq!(&src[log_it.start..log_it.end], "log_it(\"hi\")");
+    }
+
     // frob:tests crates/gob-symbols/src/c.rs::is_c_path
     // frob:tests crates/gob-symbols/src/c.rs::is_cpp_path
     #[test]
