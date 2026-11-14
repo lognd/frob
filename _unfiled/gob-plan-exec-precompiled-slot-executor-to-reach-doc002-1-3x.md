@@ -4,9 +4,10 @@ title = "gob-plan exec: precompiled slot executor to reach DOC002 1.3x (follow-u
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-14T17:27:57Z"
-updated = "2026-11-14T17:27:57Z"
+updated = "2026-11-14T19:52:16Z"
 labels = ["no-story"]
 +++
 
