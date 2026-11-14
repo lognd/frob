@@ -28,6 +28,7 @@ use crate::symref::{Symref, Target, split_qual};
 
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 mod csharp;
+mod flat;
 mod go;
 mod linkcache;
 mod python;
@@ -38,6 +39,7 @@ use csharp::CsIndex;
 pub use linkcache::{InputsHasher, LinkCache};
 
 use crate::types::TypeFacts;
+use flat::{FlatIndex, is_c_family, is_java};
 use go::{GoIndex, is_go};
 use python::{PyIndex, is_python};
 use typescript::{TsIndex, is_ts};
@@ -284,6 +286,12 @@ struct Index {
     py: PyIndex,
     /// Lookup tables of the Go files (a package is a directory).
     go: GoIndex,
+    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+    /// Lookup tables of the C and C++ files (a bare call names a function of its own file first).
+    c: FlatIndex,
+    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+    /// Lookup tables of the Java files (a bare call names a method of its own file first).
+    java: FlatIndex,
     // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
     /// Lookup tables of the C# files (their calls resolve by namespace, `using` and type, not by crate).
     cs: CsIndex,
@@ -966,6 +974,8 @@ impl SymbolGraph {
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
             go: GoIndex::build(self, files),
+            c: FlatIndex::build(self, files, is_c_family),
+            java: FlatIndex::build(self, files, is_java),
             cs: CsIndex::build(self, files, deps.as_deref_mut()),
             ts: TsIndex::build(self, files, deps.as_deref_mut()),
         };
@@ -2162,6 +2172,19 @@ impl SymbolGraph {
                     // frob:ticket 01M7AV38DKR1SA56E17SY378XX
                     if is_go(call.caller.path()) {
                         let outcome = Self::resolve_go(&idx.go, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
+                    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+                    let flat = if is_c_family(call.caller.path()) {
+                        Some(&idx.c)
+                    } else if is_java(call.caller.path()) {
+                        Some(&idx.java)
+                    } else {
+                        None
+                    };
+                    if let Some(ix) = flat {
+                        let outcome = Self::resolve_flat(ix, call);
                         self.record_call(&mut sink, call, outcome, None, false);
                         continue;
                     }
