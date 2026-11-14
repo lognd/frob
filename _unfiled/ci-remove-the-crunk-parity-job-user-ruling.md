@@ -7,13 +7,13 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T16:34:56Z"
-updated = "2026-11-14T16:35:25Z"
+updated = "2026-11-14T16:35:30Z"
 labels = ["no-story", "chore"]
 scope = [".github/workflows/ci.yml"]
 
 [[acceptance]]
 text = "ci.yml has no crunk-parity job and docs/guides/crunk.md no longer says it runs in CI"
-bound = false
+bound = true
 +++
 
 Owner ruled the Chromium parity check must not be a CI job. Remove the crunk-parity job from ci.yml and update docs/guides/crunk.md; the test stays runnable locally. No-story chore.
