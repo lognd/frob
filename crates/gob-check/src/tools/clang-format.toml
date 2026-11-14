@@ -1,0 +1,17 @@
+# clang-format: C/C++ formatter in dry-run mode (FMT001, fix tier A); it needs explicit files, so it runs per `{file}`.
+name = "clang-format"
+command = "clang-format"
+pinned_version = "18.1.0"
+parser = "formatter-list"
+version_args = ["--version"]
+args = ["--dry-run", "-Werror", "{file}"]
+inputs = ["**/*.c", "**/*.cc", "**/*.cpp", "**/*.h", "**/*.hpp"]
+config_files = [".clang-format", "_clang-format"]
+
+[fix]
+args = ["-i"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]

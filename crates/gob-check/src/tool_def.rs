@@ -170,8 +170,9 @@ impl ToolDef {
     }
 }
 
+// frob:ticket 01M5HWMZ2BWEFGHEA08KSSQVNQ
 /// The embedded std tool definitions as `(name, toml text)`; kept here, below `gob-packs` in the layering.
-const TOOL_DEFS: [(&str, &str); 10] = [
+const TOOL_DEFS: [(&str, &str); 12] = [
     ("zizmor", include_str!("tools/zizmor.toml")),
     ("actionlint", include_str!("tools/actionlint.toml")),
     ("ruff", include_str!("tools/ruff.toml")),
@@ -179,6 +180,8 @@ const TOOL_DEFS: [(&str, &str); 10] = [
     ("ruff-format", include_str!("tools/ruff-format.toml")),
     ("prettier", include_str!("tools/prettier.toml")),
     ("dotnet-format", include_str!("tools/dotnet-format.toml")),
+    ("gofmt", include_str!("tools/gofmt.toml")),
+    ("clang-format", include_str!("tools/clang-format.toml")),
     (
         "cargo-semver-checks",
         include_str!("tools/cargo-semver-checks.toml"),
@@ -228,6 +231,8 @@ mod tests {
             "ruff-format",
             "prettier",
             "dotnet-format",
+            "gofmt",
+            "clang-format",
             "cargo-semver-checks",
             "griffe",
             "api-extractor",
@@ -236,7 +241,7 @@ mod tests {
             assert!(!def.pinned_version.is_empty());
             assert!(!def.normal_exits().is_empty());
         }
-        assert_eq!(names().len(), 10);
+        assert_eq!(names().len(), 12);
     }
 
     // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.default_args
@@ -254,7 +259,14 @@ mod tests {
     // frob:tests crates/gob-check/src/tool_def.rs::ToolDef.fix_args
     #[test]
     fn formatter_defs_carry_an_unattended_fix() {
-        for name in ["rustfmt", "ruff-format", "prettier", "dotnet-format"] {
+        for name in [
+            "rustfmt",
+            "ruff-format",
+            "prettier",
+            "dotnet-format",
+            "gofmt",
+            "clang-format",
+        ] {
             let def = lookup(name).unwrap();
             assert_eq!(def.parser, crate::config::ToolParser::FormatterList);
             assert!(def.fix_args().is_some(), "{name} has an unattended fix");
