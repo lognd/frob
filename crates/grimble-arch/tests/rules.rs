@@ -176,6 +176,33 @@ fn called_unexported_go_function_is_not_dead() {
     );
 }
 
+// frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+#[test]
+fn called_private_c_and_java_functions_are_not_dead() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "a.c",
+        "static int chelper(void) { return 1; }\nint ccaller(void) { return chelper(); }\n",
+    );
+    write(
+        dir.path(),
+        "A.java",
+        "class A {\n  private int jhelper() { return 1; }\n  int jcaller() { return jhelper(); }\n}\n",
+    );
+    let found: Vec<_> = run(dir.path(), 0)
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .collect();
+    for name in ["chelper", "jhelper"] {
+        assert!(
+            found.iter().all(|f| !f.message.contains(name)),
+            "{name}: {found:?}"
+        );
+    }
+}
+
 /// A host with fixed subject counts.
 struct Fixed;
 
