@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope too narrow: needs RuleMeta flag in many rule files plus coverage.rs; needs re-scoping"
+at = "2026-11-14T08:32:15Z"
+actor = "lognd"
+rev = 1

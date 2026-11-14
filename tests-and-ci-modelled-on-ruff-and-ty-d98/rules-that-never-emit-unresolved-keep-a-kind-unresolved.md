@@ -2,13 +2,13 @@
 id = "01M5G4YPZX0N4W0ZZSFG6YQBDT"
 title = "Rules that never emit Unresolved keep a kind=unresolved allowlist entry"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-21T21:12:56Z"
-updated = "2026-11-14T08:31:35Z"
+updated = "2026-11-14T08:32:15Z"
 labels = ["no-story"]
 scope = ["crates/gob-mdtest/coverage-allowlist.toml"]
 +++
