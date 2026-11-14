@@ -115,6 +115,8 @@
 | [CONTENT002](CONTENT002.md) | content-over-budget | error | manual | P+ | true | A copy key stays inside its length budget. |
 | [CONTENT003](CONTENT003.md) | content-key-undefined | error | manual | P+ | true | Every copy key a scene references is defined. |
 | [CONTENT004](CONTENT004.md) | content-key-duplicate | error | manual | P+ | true | Every content key is defined in exactly one file. |
+| [CONTENT005](CONTENT005.md) | glossary-term-avoided | error | manual | P+ | true | Content text uses the glossary's preferred term, not a variant it lists to avoid. |
+| [CONTENT006](CONTENT006.md) | tone-banned-word | error | manual | P+ | true | Content text avoids the words and phrases the voice file bans. |
 
 ## CONTRAST
 

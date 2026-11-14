@@ -68,6 +68,7 @@ pub mod screen_file;
 pub mod table;
 pub mod tells;
 mod validate;
+pub mod voice_file;
 
 pub use catalog::{CATALOG, CONTRAST_AA_FLOOR, CatalogRow, Severity};
 pub use component_file::{ComponentFileError, parse_component_file};

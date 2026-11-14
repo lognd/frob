@@ -3,10 +3,12 @@
 
 // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
 // frob:ticket 01M5HM3W7MK7255AGEN27SXEXP
+// frob:ticket 01M5H5P5E98XTANP62H5TVTSC4
 
 use std::collections::BTreeMap;
 
 use crunk_scene::ElementKind;
+use crunk_spec::voice_file::{VoiceRules, parse_voice_rules};
 use crunk_spec::{ContentFile, DesignSpec, parse_content_file};
 
 use crate::scene_docs::{SCENE_DOC_SUFFIX, SceneDocFile};
@@ -92,18 +94,25 @@ impl VoiceFile {
         if live { Self::Present } else { Self::Blank }
     }
 
-    /// Read the voice file under `spec`'s root; an unreadable file counts as present.
+    /// Read the voice file under `spec`'s root, with the glossary and tone rules it carries; an
+    /// unreadable file counts as present with no rules, and so does one whose rules do not parse.
     #[must_use]
-    pub fn load(spec: &DesignSpec) -> Self {
+    pub fn load(spec: &DesignSpec) -> (Self, VoiceRules) {
         let path = spec.root.join(CONTENT_DIR).join(VOICE_FILE);
         if !path.is_file() {
-            return Self::Missing;
+            return (Self::Missing, VoiceRules::default());
         }
         match std::fs::read_to_string(&path) {
-            Ok(text) => Self::of_text(&text),
+            Ok(text) => {
+                let rules = parse_voice_rules(&text).unwrap_or_else(|err| {
+                    tracing::warn!(%err, "voice rules invalid; glossary and tone rules skipped");
+                    VoiceRules::default()
+                });
+                (Self::of_text(&text), rules)
+            }
             Err(err) => {
                 tracing::warn!(%err, "voice file unreadable; counted as present");
-                Self::Present
+                (Self::Present, VoiceRules::default())
             }
         }
     }
@@ -116,6 +125,8 @@ pub struct ContentFacts {
     pub files: Vec<ContentDocFile>,
     /// The state of `design/content/voice.toml`.
     pub voice: VoiceFile,
+    /// The glossary and banned words `design/content/voice.toml` declares.
+    pub rules: VoiceRules,
 }
 
 impl ContentFacts {
@@ -155,9 +166,18 @@ impl ContentFacts {
                 })
             })
             .collect();
-        let voice = VoiceFile::load(spec);
-        tracing::debug!(?voice, "voice file state");
-        Self { files, voice }
+        let (voice, rules) = VoiceFile::load(spec);
+        tracing::debug!(
+            ?voice,
+            banned = rules.banned.len(),
+            terms = rules.glossary.len(),
+            "voice file state"
+        );
+        Self {
+            files,
+            voice,
+            rules,
+        }
     }
 
     /// How many keys the files define in all.
@@ -185,6 +205,7 @@ impl ContentFacts {
             hasher.update(b"\0");
         }
         hasher.update(format!("voice:{:?}", self.voice).as_bytes());
+        hasher.update(format!("{:?}", self.rules).as_bytes());
         hasher.finalize().to_hex().to_string()
     }
 }
@@ -439,4 +460,82 @@ pub fn duplicate_keys(facts: &ContentFacts) -> BTreeMap<String, Vec<String>> {
     }
     by_key.retain(|_, paths| paths.len() > 1);
     by_key
+}
+
+/// Whether `text` uses `term` as a whole word or phrase, ignoring case: the characters on either
+/// side of a match are not letters or digits, so `log in` is in `Log in now` but not in `catalog in`.
+#[must_use]
+pub fn uses_term(text: &str, term: &str) -> bool {
+    let needle = term.trim().to_lowercase();
+    if needle.is_empty() {
+        return false;
+    }
+    let hay = text.to_lowercase();
+    hay.match_indices(&needle).any(|(at, m)| {
+        let before = hay[..at].chars().next_back();
+        let after = hay[at + m.len()..].chars().next();
+        !before.is_some_and(char::is_alphanumeric) && !after.is_some_and(char::is_alphanumeric)
+    })
+}
+
+/// One content key's text that breaks a voice rule, for CONTENT005 and CONTENT006.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VoiceHit {
+    /// The file defining the key, relative to the project root.
+    pub path: String,
+    /// Byte offset of the key's id in that file.
+    pub offset: usize,
+    /// The key's id.
+    pub key: String,
+    /// The term found in the text (the avoided variant or the banned word, as the voice file spells it).
+    pub found: String,
+    /// The glossary's preferred term for `found`, `None` for a banned word.
+    pub preferred: Option<String>,
+}
+
+/// Every key text in `facts` that uses an avoided glossary variant, in file then key order.
+#[must_use]
+pub fn glossary_hits(facts: &ContentFacts) -> Vec<VoiceHit> {
+    let mut out = Vec::new();
+    for file in &facts.files {
+        for key in &file.content.keys {
+            for term in &facts.rules.glossary {
+                for variant in term.avoid.iter().filter(|v| uses_term(&key.text, v)) {
+                    out.push(VoiceHit {
+                        path: file.path.clone(),
+                        offset: file.offset_of_key(&key.id),
+                        key: key.id.clone(),
+                        found: variant.clone(),
+                        preferred: Some(term.preferred.clone()),
+                    });
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Every key text in `facts` that uses a banned word or phrase, in file then key order.
+#[must_use]
+pub fn banned_hits(facts: &ContentFacts) -> Vec<VoiceHit> {
+    let mut out = Vec::new();
+    for file in &facts.files {
+        for key in &file.content.keys {
+            for word in facts
+                .rules
+                .banned
+                .iter()
+                .filter(|w| uses_term(&key.text, w))
+            {
+                out.push(VoiceHit {
+                    path: file.path.clone(),
+                    offset: file.offset_of_key(&key.id),
+                    key: key.id.clone(),
+                    found: word.clone(),
+                    preferred: None,
+                });
+            }
+        }
+    }
+    out
 }

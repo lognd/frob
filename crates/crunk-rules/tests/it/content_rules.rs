@@ -11,6 +11,8 @@ use crunk_rules::rules::content001::Content001;
 use crunk_rules::rules::content002::Content002;
 use crunk_rules::rules::content003::Content003;
 use crunk_rules::rules::content004::Content004;
+use crunk_rules::rules::content005::Content005;
+use crunk_rules::rules::content006::Content006;
 use gob_rules::Finding;
 
 const SCENE: &str = "design/scenes/home.scene.html";
@@ -220,4 +222,44 @@ fn content004_fires_for_a_key_in_two_files_and_passes_a_single_definition() {
 
     let host = support::project("design/content/en.toml", toml, None);
     assert!(support::run::<Content004>(&host).is_empty());
+}
+
+// frob:ticket 01M5H5P5E98XTANP62H5TVTSC4
+/// The `config=content-voice-rules` voice file (glossary `log in` -> `sign in`, banned `seamless`).
+const VOICE_RULES: &str = "content-voice-rules";
+
+// frob:tests crates/crunk-rules/src/rules/content005.rs::Content005
+// frob:tests crates/crunk-rules/src/content_files.rs::glossary_hits
+// frob:tests crates/crunk-rules/src/content_files.rs::uses_term
+#[test]
+fn content005_names_the_avoided_variant_and_the_preferred_term() {
+    let toml = "[[key]]\nid = \"a\"\ntext = \"Log in now\"\n[[key]]\nid = \"b\"\ntext = \"Catalog in stock\"\n[[key]]\nid = \"c\"\ntext = \"Sign in\"\n";
+    let host = support::project("design/content/en.toml", toml, Some(VOICE_RULES));
+    let m: Vec<String> = support::run::<Content005>(&host)
+        .into_iter()
+        .map(|f| f.message)
+        .collect();
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("'a'") && m[0].contains("'log in'"), "{m:?}");
+    assert!(m[0].contains("prefers 'sign in'"), "{m:?}");
+
+    let host = support::project("design/content/en.toml", toml, None);
+    assert!(support::run::<Content005>(&host).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/content006.rs::Content006
+// frob:tests crates/crunk-rules/src/content_files.rs::banned_hits
+#[test]
+fn content006_fires_on_a_banned_word_as_a_whole_word_only() {
+    let toml = "[[key]]\nid = \"a\"\ntext = \"A Seamless day\"\n[[key]]\nid = \"b\"\ntext = \"Seamlessly done\"\n";
+    let host = support::project("design/content/en.toml", toml, Some(VOICE_RULES));
+    let m: Vec<String> = support::run::<Content006>(&host)
+        .into_iter()
+        .map(|f| f.message)
+        .collect();
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("'a'") && m[0].contains("bans"), "{m:?}");
+
+    let host = support::project("design/content/en.toml", toml, None);
+    assert!(support::run::<Content006>(&host).is_empty());
 }

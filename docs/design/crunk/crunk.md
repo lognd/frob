@@ -146,9 +146,13 @@ for `alt`, `aria-label`, `title` and `placeholder`. CONTENT001 flags literal
 copy in a scene (text or those attributes with at least one letter; numbers
 and punctuation pass) and suggests a key named from the scene and element.
 CONTENT002 flags key text over its `max_chars` (counted in characters).
-CONTENT003 flags a reference to a key no content file defines. Glossary and
-tone rules, the I18N tier (pseudo-locale expansion, RTL) and per-locale
-completeness are follow-up work.
+CONTENT003 flags a reference to a key no content file defines. The voice file
+`design/content/voice.toml` may carry a `banned` list and `[[term]]` glossary
+entries (`preferred` and an `avoid` list); CONTENT005 flags key text using an
+avoided variant and CONTENT006 flags key text using a banned word, both as
+whole words ignoring case. A voice file with no such lists passes. The I18N
+tier (pseudo-locale expansion, RTL) and per-locale completeness are follow-up
+work.
 
 ## 3. Scenes and the layout engine (D111, D113)
 

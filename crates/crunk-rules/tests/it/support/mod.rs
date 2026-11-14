@@ -546,6 +546,14 @@ fn write_content(root: &Path, config: Option<&str>) {
             "voice = \"plain and warm\"\n",
         );
     }
+    // frob:ticket 01M5H5P5E98XTANP62H5TVTSC4
+    if config == Some("content-voice-rules") {
+        write(
+            root,
+            "design/content/voice.toml",
+            "banned = [\"seamless\"]\n\n[[term]]\npreferred = \"sign in\"\navoid = [\"log in\", \"login\"]\n",
+        );
+    }
     // frob:ticket 01M5HM3WE0PDTYAJ31B2C2A8A0
     if config == Some("content-placeholder") {
         write(
