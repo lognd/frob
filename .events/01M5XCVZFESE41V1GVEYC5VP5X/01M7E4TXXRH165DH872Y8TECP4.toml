@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs"]
+new = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/load.rs"]
+at = "2026-11-14T23:03:46Z"
+actor = "lognd"
+rev = 1
