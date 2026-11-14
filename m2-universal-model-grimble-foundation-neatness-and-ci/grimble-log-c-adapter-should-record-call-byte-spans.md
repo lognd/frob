@@ -2,7 +2,8 @@
 id = "01M703GDJ132187FES7K76C4D1"
 title = "Grimble LOG: C# adapter should record call byte spans"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
