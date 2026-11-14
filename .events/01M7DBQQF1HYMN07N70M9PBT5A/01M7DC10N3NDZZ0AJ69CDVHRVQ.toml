@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Orphan-mode cited-ticket check compares against origin/<tickets.branch>, not origin/<tickets.ref>"]
+moved = []
+at = "2026-11-14T15:50:11Z"
+actor = "lognd"
+rev = 1
