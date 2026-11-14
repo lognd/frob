@@ -2,12 +2,12 @@
 id = "01M7DEJYD4XMEPRQXPTRFY1X8T"
 title = "ci: remove the crunk-parity job (user ruling)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T16:34:56Z"
-updated = "2026-11-14T16:34:59Z"
+updated = "2026-11-14T16:35:06Z"
 labels = ["no-story", "chore"]
 
 [[acceptance]]
