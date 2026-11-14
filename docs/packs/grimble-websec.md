@@ -28,6 +28,7 @@ code. It is embedded by `grimble_check::websec_pack` so it ships in the binary.
 | `packs/grimble-websec/rules/route/ROUTE104.grl` | ROUTE: view exempted from CSRF protection |
 | `packs/grimble-websec/rules/route/ROUTE105.grl` | ROUTE: admin or internal route with no auth decorator |
 | `packs/grimble-websec/rules/route/ROUTE106.grl` | ROUTE: handler returns environment, config or a traceback |
+| `packs/grimble-websec/rules/route/ROUTE107.grl` | ROUTE: handler returns the text of a caught exception (`return str(e)`) |
 | `packs/grimble-websec/rules/comply-pii/PII101.grl` | PII: personal data sent to a third-party service |
 | `packs/grimble-websec/rules/comply-pii/PII102.grl` | PII: personal data in an exception or error message |
 | `packs/grimble-websec/rules/comply-pii/PII103.grl` | PII: personal data cached with no expiry |
@@ -42,8 +43,8 @@ a rule without a firing and a clean example fails to compile (GRL011).
 SQL102 to SQL104 are the first SQL slice (string-built queries and raw ORM calls in Python; the store-shape rules STORE103 and STORE104 stay in sysdesign; other languages are NotApplicable or Unresolved, never clean). SEC102 to SEC104 are the first WEBSEC slice (Python call shapes; injection sinks, unsafe HTML and client-side secrets need the shared web engine and are follow-ups). PII101 to PII103 are the first PII slice (Python call shapes; consent-marker and retention-schedule rules need
 a data-flow adapter and are follow-ups). ROUTE102 to ROUTE104 are the first ROUTE slice and read Flask-style Python calls. ROUTE105 (auth on
 an admin or internal route) and ROUTE106 (handler exposure) are the adapter-free slice: they read
-Flask-style decorators and `jsonify(...)` calls by text. Full auth-on-route and handler-exposure
-rules need framework adapters (route tables, decorators); until an adapter exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
+Flask-style decorators and `jsonify(...)` calls by text. ROUTE105 reads Flask and FastAPI verb decorators and accepts any guard decorator or `Depends(...)` whose name carries login, auth, permission, role or admin; ROUTE107 reads `return str(e)`. Full auth-on-route and handler-exposure
+rules need framework adapters (route tables, decorators); the pack has no adapter mechanism or Unresolved result yet (follow-up), until an adapter exists, other languages and frameworks are NotApplicable (the markdown example) or Unresolved,
 never clean.
 
 ## Namespaces

@@ -44,6 +44,7 @@ fn catalog_has_one_rule_per_family_with_websec_under_sec() {
             ("ROUTE", "ROUTE", "ROUTE104"),
             ("ROUTE", "ROUTE", "ROUTE105"),
             ("ROUTE", "ROUTE", "ROUTE106"),
+            ("ROUTE", "ROUTE", "ROUTE107"),
             ("PII", "PII", "PII101"),
             ("PII", "PII", "PII102"),
             ("PII", "PII", "PII103"),
@@ -107,7 +108,9 @@ fn every_rule_passes_its_examples() {
 // frob:tests compile_rule
 #[test]
 fn route_slice_rules_fire_on_their_example_and_teach_a_remedy() {
-    for id in ["ROUTE102", "ROUTE103", "ROUTE104", "ROUTE105", "ROUTE106"] {
+    for id in [
+        "ROUTE102", "ROUTE103", "ROUTE104", "ROUTE105", "ROUTE106", "ROUTE107",
+    ] {
         let (file, src) = pack::RULES
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))
@@ -120,9 +123,26 @@ fn route_slice_rules_fire_on_their_example_and_teach_a_remedy() {
 
 // frob:tests compile_rule
 #[test]
+fn route105_reads_fastapi_verbs_and_custom_guards() {
+    let (file, src) = pack::RULES
+        .iter()
+        .find(|(f, _)| f.ends_with("ROUTE105.grl"))
+        .unwrap();
+    assert!(src.contains("(route|get|post|put|patch|delete)"), "{file}");
+    assert!(src.contains("Depends"), "{file}");
+    assert!(src.contains("@\\w*(login|auth"), "{file}");
+    let t = gob_plan::verbs::test::test_file(file, src);
+    assert!(t.passed(), "{file}: {:?} {:?}", t.diagnostics, t.examples);
+    assert_eq!(t.examples.len(), 3, "{file}");
+}
+
+// frob:tests compile_rule
+#[test]
 fn route_rules_are_not_applicable_outside_python() {
     // No adapter for other languages: the markdown example proves NotApplicable, never clean.
-    for id in ["ROUTE102", "ROUTE103", "ROUTE104", "ROUTE105", "ROUTE106"] {
+    for id in [
+        "ROUTE102", "ROUTE103", "ROUTE104", "ROUTE105", "ROUTE106", "ROUTE107",
+    ] {
         let (_, src) = pack::RULES
             .iter()
             .find(|(f, _)| f.ends_with(&format!("{id}.grl")))

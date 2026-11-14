@@ -1,0 +1,31 @@
+rule ROUTE107 "handler-returns-exception-text" {
+  lang python
+  severity error
+
+  find fn: function where fn.text ~ /return\s+(str|repr)\(\s*(e|ex|exc|err|error|exception)\s*\)/
+  report fn "a handler returns the text of a caught exception to the client"
+
+  example fire python """
+    def view():  #~ error
+        try:
+            return work()
+        except Exception as e:
+            return str(e), 500
+  """
+  example clean python """
+    def view():
+        try:
+            return work()
+        except Exception:
+            log.exception("work failed")
+            return "internal error", 500
+  """
+  example notapplicable markdown """
+    Prose returns nothing.
+  """
+  explain """
+    The text of an exception names files, queries and library internals. Returning it to the client leaks them. The check reads `return str(e)` and `return repr(e)` by text inside any Python function; other languages and frameworks need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Log the exception server side and return a generic message with an error id.
+  """
+}
