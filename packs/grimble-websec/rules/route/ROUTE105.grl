@@ -1,0 +1,27 @@
+rule ROUTE105 "admin-route-without-auth" {
+  lang python
+  severity error
+
+  find fn: function where fn.text ~ /@\w+\.route\(\s*["']\/(admin|internal)/ and not fn.text ~ /@(login_required|jwt_required|auth_required|requires_auth|permission_required|admin_required)/
+  report fn "an admin or internal route has no authentication decorator"
+
+  example fire python """
+    @app.route("/admin/users")  #~ error
+    def list_users():
+        return users()
+  """
+  example clean python """
+    @app.route("/admin/users")
+    @login_required
+    def list_users():
+        return users()
+  """
+  example notapplicable markdown """
+    Prose has no routes.
+  """
+  explain """
+    An admin or internal route that nothing guards is open to every client that can reach the server. The check reads Flask-style `@app.route("/admin...")` decorators and a fixed set of auth decorators; other frameworks, languages and custom guards need a route-table adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Add the framework's authentication decorator (for example `@login_required`) below the route decorator, and check the caller's role inside the handler.
+  """
+}

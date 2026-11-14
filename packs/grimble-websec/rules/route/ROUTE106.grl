@@ -1,0 +1,22 @@
+rule ROUTE106 "handler-exposes-internals" {
+  lang python
+  severity error
+
+  find c: call where c.text ~ /jsonify\(\s*(dict\()?(os\.environ|app\.config|traceback\.format_exc\(\))/
+  report c "a handler returns process environment, configuration or a traceback to the client"
+
+  example fire python """
+    return jsonify(dict(os.environ))  #~ error
+  """
+  example clean python """
+    return jsonify({"status": "ok"})
+  """
+  example notapplicable markdown """
+    Prose returns nothing.
+  """
+  explain """
+    Environment variables, application config and tracebacks carry secrets, paths and library versions that help an attacker. The check reads Flask-style `jsonify(...)` calls; other frameworks and languages need an adapter and are reported Unresolved by the family, never clean.
+    ## Remedy
+    Return a fixed, minimal payload, log the detail server side, and answer errors with a generic message and an error id.
+  """
+}
