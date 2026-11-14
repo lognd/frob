@@ -1,0 +1,24 @@
+kind = "evidence"
+captured_at = "2026-11-14T07:49:35Z"
+digest = "bcda4984c43e8810f72419c1f4137b788caeaa802dac1ce095c0da4a68fc591b"
+exit_code = 0
+head = "d53532d45de73611ca09dee1a32abc4cacd6c315"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.27s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1e1db31b-c5be-4b10-922f-6da306837f87 with nextest profile: default
+    Starting 1 test across 2 binaries (138 tests skipped)
+        PASS [   0.081s] frob-obligations::it doc_citation::external_citation_glob_exempts_matching_files_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.083s] 1 test run: 1 passed, 138 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E test(external_citation_glob)"
+size = 578
+status = "measured"
+test_count = 1
+tests_digest = "3c5f96dc592c8c98a4b6537af948cdba81f906ab2fe80f6e4f532a109f781686"
+at = "2026-11-14T07:49:35Z"
+actor = "lognd"
+rev = 1
