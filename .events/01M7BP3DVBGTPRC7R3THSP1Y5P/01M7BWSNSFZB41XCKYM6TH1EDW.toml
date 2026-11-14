@@ -1,0 +1,28 @@
+kind = "evidence"
+captured_at = "2026-11-14T02:04:45Z"
+digest = "5c2a079e8477828331bb7a652ef0eabf3054bd77082289ae68f805a409df0d6d"
+exit_code = 0
+head = "564f4f299ff3af35d99b56a7a5a1e63cffb6888a"
+inline = """
+
+running 3 tests
+test release_cmd::criteria_wiring_tests::epic_state_counts_children_and_lists_the_open_ones ... ok
+test release_cmd::criteria_wiring_tests::bind_criteria_binds_a_closed_epic_and_leaves_an_open_one ... ok
+test doctor::protection_tests::committer_emails_are_distinct_sorted_and_feed_the_attester_check ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 130 filtered out; finished in 0.00s
+
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.03s
+     Running unittests src/lib.rs (target/debug/deps/frob_cli-3b08c5ab7df9180f)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -j2 -p frob-cli --lib -- criteria_wiring committer_emails"
+size = 731
+status = "measured"
+at = "2026-11-14T02:04:45Z"
+actor = "lognd"
+rev = 1

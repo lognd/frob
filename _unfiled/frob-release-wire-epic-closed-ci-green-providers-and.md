@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-14T00:07:47Z"
-updated = "2026-11-14T01:51:47Z"
+updated = "2026-11-14T02:04:45Z"
 idempotency_key = "skstfyn-wire"
 scope = ["crates/frob/**"]
 +++
