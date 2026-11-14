@@ -24,7 +24,7 @@ A C# field is declared but no code assigns it and the engine does not write it e
 
 ## What it does
 
-With the opt-in `unity` pack enabled, every C# field (or auto-property with `[field: ...]` attributes) that has no initializer and whose name is never assigned in the repository's `.cs` files is reported. A `[SerializeField]` field, or a public instance field of a `MonoBehaviour` or `ScriptableObject` type, is written by the engine (scenes, prefabs, the Inspector) and is not reported; `[NonSerialized]`, static, const and readonly members still are. The assignment scan is lexical and name based.
+With the opt-in `unity` pack enabled, every C# field (or auto-property with `[field: ...]` attributes) that has no initializer and whose name is never assigned in the repository's `.cs` files is reported. A `[SerializeField]` field, or a public instance field of a `MonoBehaviour` or `ScriptableObject` type or of a `[Serializable]` class nested in one, is written by the engine (scenes, prefabs, the Inspector) and is not reported; `[NonSerialized]`, static, const and readonly members still are. The assignments form a field-write graph (writing files per name) built by a lexical, name-based scan.
 
 ## Why it matters
 

@@ -72,6 +72,7 @@ mod java_uses;
 mod shell;
 // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
 mod docstatus;
+mod field_writes;
 // frob:ticket 01M44YQW33GJMXQ8PQBECEBCQ1
 mod dotnet;
 mod fold;
@@ -136,6 +137,7 @@ pub use dotnet::{
     Assignment, DotnetError, DotnetProjects, MalformedProject, Project, SolutionEntry,
     parse_project, parse_solution,
 };
+pub use field_writes::{FieldWrites, written_names};
 pub use go::{GoAdapter, is_go_path};
 pub use gob_caps::Lang;
 /// The facet digest scheme these digests are computed under (recorded in every lock file).
