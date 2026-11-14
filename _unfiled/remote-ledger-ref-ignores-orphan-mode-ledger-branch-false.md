@@ -7,8 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T15:45:07Z"
-updated = "2026-11-14T15:50:47Z"
+updated = "2026-11-14T15:53:51Z"
 labels = ["no-story", "bug"]
+scope = ["crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "Orphan-mode cited-ticket check compares against origin/<tickets.branch>, not origin/<tickets.ref>"
