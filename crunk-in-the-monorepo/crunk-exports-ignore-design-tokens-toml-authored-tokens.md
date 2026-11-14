@@ -8,7 +8,7 @@ points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T02:29:00Z"
-updated = "2026-11-14T12:42:04Z"
+updated = "2026-11-14T13:09:42Z"
 scope = ["crates/crunk-tokens/src/**,crates/crunk/src/tokens.rs,crates/crunk/src/export.rs", "crates/crunk-tokens/src/export/mod.rs", "crates/crunk-tokens/tests/it/design_tokens_export.rs"]
 
 [[acceptance]]
