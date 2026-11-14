@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-14T10:53:05Z"
-updated = "2026-11-14T16:53:03Z"
+updated = "2026-11-14T16:55:05Z"
 labels = ["no-story"]
-scope = ["crates/gob-check/**"]
+scope = ["crates/gob-check/**", "crates/gob-check/src/pipeline.rs"]
 +++
 
 found while working ~KSSQVNQ: expand_file is dead code, so the clang-format def passes a literal {file}
