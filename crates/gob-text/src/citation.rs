@@ -128,6 +128,52 @@ fn section_after(rest: &str) -> Option<(String, usize)> {
     Some((number.to_owned(), rest.len() - num.len() + number.len()))
 }
 
+/// The reversed form `section N of x.md` ending right before the file token at `start` of `line`:
+/// the section number and the offset where the citation begins (at the word `section`).
+fn section_before(line: &str, start: usize) -> Option<(String, usize)> {
+    let head = line[..start].trim_end_matches(['`', '\'', '"', '(', '*', '_']);
+    let spaced = head.trim_end();
+    if spaced.len() == head.len() {
+        return None;
+    }
+    let lead = spaced
+        .strip_suffix("of")
+        .or_else(|| spaced.strip_suffix("in"))?;
+    let before_word = lead.trim_end();
+    if before_word.len() == lead.len() {
+        return None;
+    }
+    let digits = before_word
+        .bytes()
+        .rev()
+        .take_while(|b| b.is_ascii_digit() || *b == b'.')
+        .count();
+    let num_start = before_word.len() - digits;
+    let number = before_word[num_start..]
+        .trim_start_matches('.')
+        .trim_end_matches('.');
+    if !number.starts_with(|c: char| c.is_ascii_digit()) || number.contains("..") {
+        return None;
+    }
+    let marker = before_word[..num_start].trim_end();
+    let cite_start = if let Some(m) = marker.strip_suffix(SECTION_SIGN) {
+        m.len()
+    } else {
+        let marker = marker.strip_suffix('.').unwrap_or(marker);
+        let word_len = marker
+            .bytes()
+            .rev()
+            .take_while(u8::is_ascii_alphabetic)
+            .count();
+        let word = marker[marker.len() - word_len..].to_ascii_lowercase();
+        if !matches!(word.as_str(), "section" | "sections" | "sec") {
+            return None;
+        }
+        marker.len() - word_len
+    };
+    Some((number.to_owned(), cite_start))
+}
+
 /// Append the citations of one line of prose to `out`; offsets are `base` plus the line offset.
 pub fn scan_line(line: &str, base: usize, out: &mut Vec<Citation>) {
     for (i, _) in line.match_indices(".md") {
@@ -139,6 +185,15 @@ pub fn scan_line(line: &str, base: usize, out: &mut Vec<Citation>) {
             continue;
         };
         let rest = &line[end..];
+        if let Some((n, from)) = section_before(line, start) {
+            out.push(Citation {
+                file: token.to_owned(),
+                locator: Locator::Section(n),
+                start: base + from,
+                len: end - from,
+            });
+            continue;
+        }
         let found = anchor_after(rest)
             .map(|(a, n)| (Locator::Anchor(a), n))
             .or_else(|| section_after(rest).map(|(s, n)| (Locator::Section(s), n)));
@@ -368,6 +423,23 @@ mod tests {
                 "z.md#a"
             ]
         );
+    }
+
+    // frob:tests scan_markdown
+    #[test]
+    fn finds_reversed_form() {
+        let text = "See section 6.2 of tickets.md, Section 3 in `a/b.md` and \u{a7}4 of y.md.\n";
+        assert_eq!(
+            cites(text),
+            [
+                "tickets.md section 6.2",
+                "a/b.md section 3",
+                "y.md section 4"
+            ]
+        );
+        let c = &scan_markdown(text)[0];
+        assert_eq!(&text[c.start..c.start + c.len], "section 6.2 of tickets.md");
+        assert!(cites("the part of x.md and 3 of y.md and section of z.md").is_empty());
     }
 
     // frob:tests scan_markdown
