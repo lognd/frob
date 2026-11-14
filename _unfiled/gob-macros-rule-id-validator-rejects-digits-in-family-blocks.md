@@ -2,12 +2,12 @@
 id = "01M7DKEF5H542R72Z6VGQF7ZAJ"
 title = "gob-macros: rule id validator rejects digits in family (blocks I18N001/I18N002)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-14T17:59:52Z"
-updated = "2026-11-14T18:00:07Z"
+updated = "2026-11-14T18:00:13Z"
 scope = ["crates/gob-macros/**"]
 +++
 
