@@ -193,6 +193,8 @@ pub mod token007;
 pub mod token008;
 /// Rule `TOKEN009`.
 pub mod token009;
+/// Rule `TOKEN010`.
+pub mod token010;
 /// Rule `TOKENS001`.
 pub mod tokens001;
 /// Rule `TW001`.
@@ -313,6 +315,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <token007::Token007 as gob_rules::RuleDecl>::DEF,
     <token008::Token008 as gob_rules::RuleDecl>::DEF,
     <token009::Token009 as gob_rules::RuleDecl>::DEF,
+    <token010::Token010 as gob_rules::RuleDecl>::DEF,
     <tokens001::Tokens001 as gob_rules::RuleDecl>::DEF,
     <tw001::Tw001 as gob_rules::RuleDecl>::DEF,
     <tw002::Tw002 as gob_rules::RuleDecl>::DEF,
@@ -544,6 +547,7 @@ where
     token007::Token007: gob_rules::Measured<P>,
     token008::Token008: gob_rules::Measured<P>,
     token009::Token009: gob_rules::Measured<P>,
+    token010::Token010: gob_rules::Measured<P>,
     tokens001::Tokens001: gob_rules::Measured<P>,
     tw001::Tw001: gob_rules::Measured<P>,
     tw002::Tw002: gob_rules::Measured<P>,
@@ -573,6 +577,7 @@ where
         rules.push(gob_rules::BoundRule::measured(token007::Token007));
         rules.push(gob_rules::BoundRule::measured(token008::Token008));
         rules.push(gob_rules::BoundRule::measured(token009::Token009));
+        rules.push(gob_rules::BoundRule::measured(token010::Token010));
         rules.push(gob_rules::BoundRule::measured(tokens001::Tokens001));
         rules.push(gob_rules::BoundRule::measured(tw001::Tw001));
         rules.push(gob_rules::BoundRule::measured(tw002::Tw002));

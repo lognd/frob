@@ -179,6 +179,7 @@ pub const RUST_ONLY_RULES: &[&str] = &[
     "TOKEN007",
     "TOKEN008",
     "TOKEN009",
+    "TOKEN010",
     "CRAFT001",
     "CRAFT002",
     "CRAFT003",

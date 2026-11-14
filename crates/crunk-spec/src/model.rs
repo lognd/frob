@@ -81,6 +81,8 @@ pub struct TokensConfig {
     pub header: String,
     /// Committed flat-JSON export path relative to the project root, or empty.
     pub json_file: String,
+    /// Longest allowed duration token in milliseconds, or `None` for no bound.
+    pub max_duration_ms: Option<f64>,
 }
 
 impl Default for TokensConfig {
@@ -96,6 +98,7 @@ impl Default for TokensConfig {
             size: prefixes.size,
             header: String::new(),
             json_file: String::new(),
+            max_duration_ms: None,
         }
     }
 }

@@ -218,3 +218,50 @@ fn malformed_tokens_are_rejected() {
         Err(DialectError::Syntax { .. })
     ));
 }
+
+// frob:ticket 01M5XCVZBYWA5WCATMF9QYZAS8
+// frob:tests crates/crunk-tokens/src/dialect/timing.rs::bezier_problem
+#[test]
+fn bezier_with_x_outside_unit_range_is_rejected_with_its_token() {
+    let err = parse(
+        "[motion]\nease = [1.4, 0, 0.2, 1]\n",
+        "design/tokens/m.toml",
+    )
+    .unwrap_err();
+    let DialectError::Invalid {
+        origin,
+        path,
+        reason,
+    } = err
+    else {
+        panic!("expected Invalid, got {err:?}");
+    };
+    assert_eq!(origin, "design/tokens/m.toml");
+    assert_eq!(path, "motion.ease");
+    assert!(reason.contains("x1"), "{reason}");
+}
+
+// frob:tests crates/crunk-tokens/src/dialect/timing.rs::bezier_problem
+#[test]
+fn valid_timing_pair_exports_unchanged() {
+    let set = parse(
+        "[motion]\nfast = \"150ms\"\nease = [0.4, 0, 0.2, 1]\n",
+        "m.toml",
+    )
+    .unwrap();
+    let spec = crunk_spec::parse_spec(
+        crunk_spec::presets::DEFAULT,
+        Path::new("crunk.toml"),
+        Path::new("/proj"),
+    )
+    .unwrap();
+    let css = Target::Css.exporter().render(&spec, &set);
+    assert!(css.contains("--motion-fast: 150ms;"), "{css}");
+    assert!(
+        css.contains("--motion-ease: cubic-bezier(0.4, 0, 0.2, 1);"),
+        "{css}"
+    );
+    for target in [Target::Uss, Target::Csharp] {
+        assert!(!target.exporter().render(&spec, &set).is_empty());
+    }
+}

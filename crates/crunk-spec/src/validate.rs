@@ -88,7 +88,7 @@ fn render_path(path: &[Seg]) -> String {
     }
 }
 
-fn fail(path: Vec<Seg>, msg: impl AsRef<str>) -> Problem {
+pub(crate) fn fail(path: Vec<Seg>, msg: impl AsRef<str>) -> Problem {
     Problem {
         detail: format!("{}: {}", render_path(&path), msg.as_ref()),
         path,
@@ -246,6 +246,7 @@ pub(crate) fn tokens(raw: &RawTokens) -> Res<TokensConfig> {
         size: p.size.clone(),
         header: raw.header.clone(),
         json_file: raw.json_file.clone(),
+        max_duration_ms: crate::timing::max_duration(raw.max_duration_ms)?,
     })
 }
 

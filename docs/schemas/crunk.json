@@ -1749,6 +1749,11 @@
           "description": "Path of a committed flat JSON export of the tokens, relative to the project root; empty\nmeans none.",
           "type": "string"
         },
+        "max_duration_ms": {
+          "description": "Longest allowed duration token in milliseconds (TOKEN010); greater than zero, unset means\nno bound.",
+          "format": "double",
+          "type": "number"
+        },
         "prefixes": {
           "$ref": "#/$defs/TokenPrefixes",
           "default": {

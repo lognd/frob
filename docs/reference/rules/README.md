@@ -645,6 +645,7 @@
 | [TOKEN007](TOKEN007.md) | token-scope-violation | error | manual | P+ | true | Tokens are bound to properties they are scoped for. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 | [TOKEN008](TOKEN008.md) | token-near-duplicate | error | manual | P+ | true | Tokens do not duplicate each other. Each block is one source file in a project whose `crunk.toml` is the default preset. |
 | [TOKEN009](TOKEN009.md) | token-deprecated-used | error | manual | P+ | true | Deprecated tokens are not used. Each block is one source file in a project whose `crunk.toml` is the default preset. |
+| [TOKEN010](TOKEN010.md) | token-duration-too-long | error | manual | P+ | true | Duration tokens stay within the configured bound. Each block is one source file in a project whose `crunk.toml` is the default preset, plus `[tokens] max_duration_ms = 1000` for the `max-duration` config. |
 
 ## TOKENS
 

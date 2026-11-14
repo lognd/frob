@@ -64,6 +64,7 @@ pub mod slop;
 pub mod slop_layout;
 pub mod tailwind;
 pub mod token_files;
+pub mod token_timing;
 pub mod tokens_drift;
 pub mod typography;
 pub mod ux;

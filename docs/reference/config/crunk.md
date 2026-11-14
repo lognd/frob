@@ -325,6 +325,7 @@ The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON expor
 |---|---|---|---|---|
 | `header` | `String` | no | `""` | A complete CSS comment block emitted verbatim above the generated marker; empty means no header. Must start with `/*`, end with `*/` and hold no interior `*/`. |
 | `json_file` | `String` | no | `""` | Path of a committed flat JSON export of the tokens, relative to the project root; empty means none. |
+| `max_duration_ms` | `f64` | no | - | Longest allowed duration token in milliseconds (TOKEN010); greater than zero, unset means no bound. |
 | `prefixes` | `TokenPrefixes` | no | `{ color = "color", font_family = "font-family", font_size = "font-size", layer = "layer", radius = "radius", size = "size", space = "space" }` | Custom-property prefixes, see `[tokens.prefixes]`. |
 
 ## `[tokens.prefixes]`

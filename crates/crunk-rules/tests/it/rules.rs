@@ -27,9 +27,9 @@ use crunk_rules::rules::{
     state002::State002, state003::State003, state004::State004, state005::State005,
     state006::State006, state007::State007, token002::Token002, token003::Token003,
     token004::Token004, token005::Token005, token006::Token006, token007::Token007,
-    token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
-    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
-    waive001::Waive001,
+    token008::Token008, token009::Token009, token010::Token010, tokens001::Tokens001, tw001::Tw001,
+    tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002,
+    type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -120,6 +120,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/token007.rs::Token007
     // frob:tests crates/crunk-rules/src/rules/token008.rs::Token008
     // frob:tests crates/crunk-rules/src/rules/token009.rs::Token009
+    // frob:tests crates/crunk-rules/src/rules/token010.rs::Token010
     // frob:tests crates/crunk-rules/src/rules/export001.rs::Export001
     // frob:tests crates/crunk-rules/src/rules/export002.rs::Export002
     // frob:tests crates/crunk-rules/src/rules/tokens001.rs::Tokens001
@@ -257,6 +258,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "TOKEN007" => support::run_case::<Token007>(&host, case),
         "TOKEN008" => support::run_case::<Token008>(&host, case),
         "TOKEN009" => support::run_case::<Token009>(&host, case),
+        "TOKEN010" => support::run_case::<Token010>(&host, case),
         "EXPORT001" => support::run_case::<Export001>(&host, case),
         "EXPORT002" => support::run_case::<Export002>(&host, case),
         "TOKENS001" => support::run_case::<Tokens001>(&host, case),
@@ -393,6 +395,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "TOKEN007",
             "TOKEN008",
             "TOKEN009",
+            "TOKEN010",
             "TOKENS001",
             "TW001",
             "TW002",
@@ -542,7 +545,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 106);
+    assert_eq!(ids.len(), 107);
     assert!(ids.contains(&"SPACE001"));
 }
 

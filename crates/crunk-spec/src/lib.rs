@@ -67,6 +67,7 @@ pub mod schema;
 pub mod screen_file;
 pub mod table;
 pub mod tells;
+mod timing;
 mod validate;
 pub mod voice_file;
 

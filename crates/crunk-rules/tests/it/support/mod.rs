@@ -351,6 +351,10 @@ fn build(
     {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
+    // frob:ticket 01M5XCVZBYWA5WCATMF9QYZAS8
+    if config == Some("max-duration") {
+        spec_text.push_str("\n[tokens]\nmax_duration_ms = 1000\n");
+    }
     write(dir.path(), "crunk.toml", &spec_text);
     if file != "crunk.toml" {
         write(dir.path(), file, text);

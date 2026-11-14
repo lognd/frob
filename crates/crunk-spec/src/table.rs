@@ -212,6 +212,9 @@ pub struct RawTokens {
     /// Path of a committed flat JSON export of the tokens, relative to the project root; empty
     /// means none.
     pub json_file: String,
+    /// Longest allowed duration token in milliseconds (TOKEN010); greater than zero, unset means
+    /// no bound.
+    pub max_duration_ms: Option<f64>,
 }
 
 /// A `[[platform]]` web viewport size in CSS pixels.

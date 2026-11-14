@@ -21,6 +21,8 @@ use thiserror::Error;
 use crate::model::{Scope, Tier, Token, TokenError, TokenKind, TokenSet, TokenValue, Unit};
 use crunk_values::Color;
 
+mod timing;
+
 /// Why a dialect file did not compile to a [`TokenSet`].
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum DialectError {
@@ -342,7 +344,10 @@ fn string_value(s: &str, ctx: &Ctx<'_>) -> Result<TokenValue, DialectError> {
 fn array_value(items: &[Raw], ctx: &Ctx<'_>) -> Result<TokenValue, DialectError> {
     if let Some(n) = number_list(items) {
         return match n[..] {
-            [a, b, c, d] => Ok(TokenValue::CubicBezier([a, b, c, d])),
+            [a, b, c, d] => match timing::bezier_problem([a, b, c, d]) {
+                Some(why) => Err(ctx.invalid(why)),
+                None => Ok(TokenValue::CubicBezier([a, b, c, d])),
+            },
             _ => Err(ctx.invalid("a number list is a cubic bezier and needs exactly 4 numbers")),
         };
     }
