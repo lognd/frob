@@ -8,7 +8,7 @@ use crate::tool_parse::{RawFinding, RawMeta, RawRange};
 pub(crate) const FMT_TOOL_ID: &str = "fmt";
 
 // frob:ticket 01M4D94J5J2TZEXTB8GH36992B
-/// Parse formatter check output (rustfmt, ruff format, prettier, dotnet format, gofmt) into one file-level finding per distinct path.
+/// Parse formatter check output (rustfmt, ruff format, prettier, dotnet format, gofmt, clang-format) into one file-level finding per distinct path.
 pub(crate) fn parse_formatter_list(stdout: &str) -> Vec<RawFinding> {
     let mut seen = BTreeSet::new();
     let mut out = Vec::new();
@@ -31,6 +31,9 @@ pub(crate) fn parse_formatter_list(stdout: &str) -> Vec<RawFinding> {
     out
 }
 
+/// What follows the `path:LINE:COL` of a clang-format dry-run diagnostic.
+const CLANG_MARKER: &str = ": error: code should be clang-formatted";
+
 /// The unformatted file one output line names, if it names one.
 fn line_path(line: &str) -> Option<String> {
     let line = line.trim();
@@ -47,6 +50,9 @@ fn line_path(line: &str) -> Option<String> {
         let rest = rest.trim();
         return (!rest.starts_with("Code style issues")).then(|| rest.to_owned());
     }
+    if let Some((head, _)) = line.split_once(CLANG_MARKER) {
+        return Some(strip_diff_position(strip_diff_position(head)).to_owned());
+    }
     if let Some((head, _)) = line.split_once("): ") {
         let (path, _) = head.rsplit_once('(')?;
         return has_extension(path).then(|| path.to_owned());
@@ -54,7 +60,7 @@ fn line_path(line: &str) -> Option<String> {
     (!line.contains(": ") && has_extension(line)).then(|| line.to_owned())
 }
 
-/// Drop rustfmt's `:LINE:` or ` at line N:` tail from a `Diff in` path.
+/// Drop one rustfmt `:LINE:` or ` at line N:` tail, or one clang-format `:LINE`/`:COL` segment, from a path.
 fn strip_diff_position(rest: &str) -> &str {
     if let Some((path, _)) = rest.split_once(" at line ") {
         return path;
@@ -111,6 +117,13 @@ mod tests {
     fn dotnet_format_diagnostics_name_the_file() {
         let out = "/r/A.cs(3,5): error WHITESPACE: Fix whitespace formatting. [/r/p.csproj]\n/r/A.cs(9,1): error WHITESPACE: x\n";
         assert_eq!(paths(out), ["/r/A.cs"]);
+    }
+
+    // frob:tests crates/gob-check/src/fmt_parse.rs::parse_formatter_list
+    #[test]
+    fn clang_format_diagnostics_name_the_file() {
+        let out = "src/a.c:3:5: error: code should be clang-formatted [-Wclang-format-violations]\n  int x;\n";
+        assert_eq!(paths(out), ["src/a.c"]);
     }
 
     // frob:tests crates/gob-check/src/fmt_parse.rs::parse_formatter_list

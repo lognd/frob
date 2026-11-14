@@ -120,3 +120,18 @@ fn paths_outside_the_pack_globs_are_still_reported() {
     assert!(!has(&found, "Hero.speed"), "{found:?}");
     assert!(has(&found, "Foe.speed"), "{found:?}");
 }
+
+#[test]
+fn serializable_nested_class_public_fields_are_written() {
+    // frob:tests never_written_fields
+    let src = "public class Host : MonoBehaviour\n{\n    [System.Serializable] public class Stats { public int hp; [NonSerialized] public int tmp; private int hid; }\n    public class Plain { public int p; }\n    public Stats stats;\n}\npublic class Free { [Serializable] public class S { public int q; } }\n";
+    let found = never_written(Some(ENABLED), &[("Assets/Game/Host.cs", src)]);
+    assert!(!has(&found, "Stats.hp"), "{found:?}");
+    assert!(has(&found, "Stats.tmp"), "{found:?}");
+    assert!(has(&found, "Stats.hid"), "{found:?}");
+    assert!(has(&found, "Plain.p"), "{found:?}");
+    assert!(
+        has(&found, "S.q"),
+        "not nested in an engine type: {found:?}"
+    );
+}

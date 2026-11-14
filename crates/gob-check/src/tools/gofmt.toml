@@ -1,0 +1,18 @@
+# gofmt: Go formatter in list mode (FMT001, fix tier A).
+# gofmt has no --version flag, so the probe is a list run (exit 0, no version text); no version range is enforced.
+name = "gofmt"
+command = "gofmt"
+pinned_version = "1.22.0"
+parser = "formatter-list"
+version_args = ["-l", "."]
+args = ["-l", "."]
+inputs = ["**/*.go"]
+config_files = ["go.mod"]
+
+[fix]
+args = ["-w"]
+unattended = true
+
+[exit]
+success = [0]
+findings = [1]

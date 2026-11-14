@@ -7,14 +7,14 @@
 
 // frob:ticket 01M44YQY6KR3NCCNGKJ9QK3N9A
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 use std::path::Path;
 
 use frob_tests::reach::{Sources, engine_derived_types, leading_attribute_specs};
 use gob_ir::engine::FieldFacts;
 use gob_packs::unity::{self, UnityGate, UnityPack};
 use gob_rules::{Finding, RuleDecl, Severity};
-use gob_symbols::{SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{FieldWrites, SymbolGraph, SymbolKind, SymbolRecord, Symref};
 use gob_text::{FileInterner, Span};
 
 use crate::rules::{
@@ -55,63 +55,8 @@ fn is_cs(r: &SymbolRecord) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("cs"))
 }
 
-fn is_ident(b: u8) -> bool {
-    b.is_ascii_alphanumeric() || b == b'_'
-}
-
-/// Names that `text` writes: `x =`, `x += 1`, `x++`, `--x`, `ref x`, `out x`, object initializers.
-///
-/// The scan is lexical and name-based: a local or parameter of the same name counts as a writer, which
-/// only ever hides a report, never invents one. Line comments and string literals are skipped.
-fn written_names(text: &str) -> HashSet<&str> {
-    const COMPOUND: [&str; 11] = [
-        "+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", "??=",
-    ];
-    let b = text.as_bytes();
-    let mut out = HashSet::new();
-    let mut i = 0;
-    while i < b.len() {
-        match b[i] {
-            b'/' if b.get(i + 1) == Some(&b'/') => {
-                while i < b.len() && b[i] != b'\n' {
-                    i += 1;
-                }
-            }
-            b'"' => {
-                i += 1;
-                while i < b.len() && b[i] != b'"' && b[i] != b'\n' {
-                    i += usize::from(b[i] == b'\\') + 1;
-                }
-                i += 1;
-            }
-            c if is_ident(c) && !c.is_ascii_digit() => {
-                let start = i;
-                while i < b.len() && is_ident(b[i]) {
-                    i += 1;
-                }
-                let after = text[i..].trim_start_matches([' ', '\t']);
-                let before = text[..start].trim_end_matches([' ', '\t']);
-                let assigns = (after.starts_with('=')
-                    && !after.starts_with("==")
-                    && !after.starts_with("=>"))
-                    || COMPOUND.iter().any(|op| after.starts_with(op))
-                    || after.starts_with("++")
-                    || after.starts_with("--")
-                    || before.ends_with("++")
-                    || before.ends_with("--")
-                    || before.ends_with(" ref")
-                    || before.ends_with(" out")
-                    || before.ends_with("(ref")
-                    || before.ends_with("(out");
-                if assigns {
-                    out.insert(&text[start..i]);
-                }
-            }
-            _ => i += 1,
-        }
-    }
-    out
-}
+/// The C# attribute that makes a nested type's public fields serialized.
+const SERIALIZABLE: &str = "Serializable";
 
 /// One declaration the never-written scan looks at.
 struct Candidate {
@@ -132,9 +77,7 @@ fn candidate(rec: &SymbolRecord, sources: &mut Sources) -> Option<Candidate> {
         _ => return None,
     };
     let name = rec.symref.name()?.to_owned();
-    let start = usize::try_from(u32::from(rec.span.start())).ok()?;
-    let end = usize::try_from(u32::from(rec.span.end())).ok()?;
-    let span = sources.get(rec.symref.path())?.get(start..end)?;
+    let span = record_text(rec, sources)?;
     let (specs, after) = leading_attribute_specs(span, 0);
     let rest = span.get(after..)?;
     let attributes: Vec<String> = specs
@@ -207,32 +150,73 @@ fn cs_candidates<'g>(
     (paths, candidates)
 }
 
-/// Every name assigned in the `.cs` files at `paths`.
-fn written_in(paths: &BTreeSet<&str>, sources: &mut Sources) -> HashSet<String> {
-    let mut written: HashSet<String> = HashSet::new();
+/// The field-write graph of the `.cs` files at `paths`.
+fn written_in(paths: &BTreeSet<&str>, sources: &mut Sources) -> FieldWrites {
+    let mut writes = FieldWrites::default();
     for p in paths {
         if let Some(text) = sources.get(p) {
-            written.extend(written_names(text).into_iter().map(str::to_owned));
+            writes.scan_file(p, text);
         }
     }
-    written
+    writes
+}
+
+/// The source text `rec` spans, when it is readable.
+fn record_text<'s>(rec: &SymbolRecord, sources: &'s mut Sources) -> Option<&'s str> {
+    let start = usize::try_from(u32::from(rec.span.start())).ok()?;
+    let end = usize::try_from(u32::from(rec.span.end())).ok()?;
+    sources.get(rec.symref.path())?.get(start..end)
+}
+
+/// True when the type declared by `rec` carries a `[Serializable]` attribute.
+fn is_serializable_type(rec: &SymbolRecord, sources: &mut Sources) -> bool {
+    record_text(rec, sources).is_some_and(|text| {
+        leading_attribute_specs(text, 0)
+            .0
+            .iter()
+            .any(|(_, n)| n == SERIALIZABLE)
+    })
+}
+
+/// The `[Serializable]` types nested directly in an engine type: their public fields are serialized.
+fn serializable_nested(
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+    engine_types: &BTreeSet<Symref>,
+) -> BTreeSet<Symref> {
+    let nested: BTreeSet<Symref> = graph
+        .records()
+        .filter(|r| {
+            is_cs(r)
+                && matches!(r.kind, SymbolKind::Class | SymbolKind::Struct)
+                && r.parent.as_ref().is_some_and(|p| engine_types.contains(p))
+        })
+        .filter(|r| is_serializable_type(r, sources))
+        .map(|r| r.symref.clone())
+        .collect();
+    tracing::debug!(types = nested.len(), "serializable nested types found");
+    nested
 }
 
 /// C# fields no code assigns and the engine does not write either, sorted.
 ///
 /// A candidate is a field, or an auto-property with `[field: ...]` attributes. It counts as written
 /// when its name is assigned anywhere in the repository's `.cs` files (a lexical, name-based scan) or
-/// it has an initializer. With the root config's `unity` pack enabled for the file, a serialized field
-/// (`[SerializeField]`, or public on a `MonoBehaviour`/`ScriptableObject` type) has an external writer
+/// it has an initializer; the writes are a [`FieldWrites`] graph. With the root config's `unity` pack enabled for the file, a serialized field
+/// (`[SerializeField]`, or public on a `MonoBehaviour`/`ScriptableObject` type or on a `[Serializable]`
+/// class nested in one) has an external writer
 /// and is not reported; `[NonSerialized]`, static, const and readonly members still are. With the pack
 /// disabled every unassigned field is reported.
 pub fn never_written_fields(root: &Path, graph: &SymbolGraph) -> Vec<Symref> {
     let mut sources = Sources::new(root);
     let pack = enabled_pack(root);
-    let engine_types: BTreeSet<Symref> = match &pack {
+    let mut engine_types: BTreeSet<Symref> = match &pack {
         Some((_, p)) => engine_derived_types(graph, &mut sources, &p.vocab),
         None => BTreeSet::new(),
     };
+    // A `[Serializable]` class nested in an engine type serializes its public fields like the engine type.
+    let nested = serializable_nested(graph, &mut sources, &engine_types);
+    engine_types.extend(nested);
     let unwritten = unwritten_candidates(graph, &mut sources);
     without_external_writer(unwritten, pack.as_ref(), &engine_types)
 }
@@ -243,7 +227,7 @@ fn unwritten_candidates(graph: &SymbolGraph, sources: &mut Sources) -> Vec<Candi
     let written = written_in(&paths, sources);
     candidates
         .into_iter()
-        .filter(|c| !(c.initialized || written.contains(&c.name)))
+        .filter(|c| !(c.initialized || written.is_written(&c.name)))
         .collect()
 }
 
@@ -613,20 +597,6 @@ pub(crate) fn unity004(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // frob:tests never_written_fields
-    #[test]
-    fn written_names_sees_assignments_and_skips_comments_and_equality() {
-        let w = written_names(
-            "a = 1; b += 2; c++; --d; Foo(ref e); if (f == 1) {} g => 2; // h = 3\nvar s = \"i = 4\"; new X { j = 1 };",
-        );
-        for n in ["a", "b", "c", "d", "e", "j", "s"] {
-            assert!(w.contains(n), "{n} in {w:?}");
-        }
-        for n in ["f", "g", "h", "i"] {
-            assert!(!w.contains(n), "{n} in {w:?}");
-        }
-    }
 
     /// Findings UNITY004 reports for a `Hero.cs` with one unassigned field and `config` as frob.toml.
     fn unity004_found(config: &str) -> usize {
