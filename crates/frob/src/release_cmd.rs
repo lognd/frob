@@ -1452,6 +1452,11 @@ mod criteria_wiring_tests {
             (s.total, s.open.as_slice()),
             (2, ["~B".to_owned()].as_slice())
         );
+    }
+
+    // frob:tests crates/frob/src/release_cmd.rs::epic_state
+    #[test]
+    fn epic_state_of_a_childless_epic_has_no_total() {
         let empty = epic_state("~E2".to_owned(), std::iter::empty());
         assert_eq!(empty.total, 0);
     }
