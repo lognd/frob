@@ -2,12 +2,12 @@
 id = "01M7CMHQGHM5X32TWG3D5WB4PT"
 title = "gob-symbols field-write graph for UNITY004 and Serializable nested-class public fields"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-14T08:59:53Z"
-updated = "2026-11-14T09:51:39Z"
+updated = "2026-11-14T10:11:58Z"
 labels = ['["no-story"]']
 scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
 +++
