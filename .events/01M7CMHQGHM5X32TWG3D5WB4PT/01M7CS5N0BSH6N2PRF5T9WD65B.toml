@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T10:20:38Z"
+digest = "d8d801f77ade577fd9eec4acc4da500e8de6d40d48dfc23213a168874fc228a4"
+exit_code = 0
+head = "b0d688556a0f8d3c259eec38110a3e5f5fb5dfd2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4d708219-fad2-48fe-9d58-c4a346dbbaf9 with nextest profile: default
+    Starting 1 test across 2 binaries (140 tests skipped)
+        PASS [   0.150s] frob-obligations::it unity_fields::serializable_nested_class_public_fields_are_written
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.151s] 1 test run: 1 passed, 140 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E test(=unity_fields::serializable_nested_class_public_fields_are_written)"
+size = 579
+status = "measured"
+test_count = 1
+tests_digest = "49e27a90f647bc9b6d83400ca6c970d7f2f3d1c8ee402e298a477beb38a51e4b"
+at = "2026-11-14T10:20:38Z"
+actor = "lognd"
+rev = 1

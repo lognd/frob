@@ -13,7 +13,7 @@ scope = ["crates/gob-symbols/**", "crates/frob-obligations/**"]
 
 [[acceptance]]
 text = "Public fields of a [Serializable] class nested in an engine type are not reported by UNITY004, and writes are kept in a gob-symbols FieldWrites graph"
-bound = false
+bound = true
 +++
 
 Follow-up of ~47WNTP3: UNITY004 uses the lexical name-based never_written_fields scan. Build a real field-write graph in gob-symbols and handle public fields of [Serializable] nested classes. no-story: internal rule-engine refinement with no user-visible story.
