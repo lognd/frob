@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-11-14T22:02:40Z"
+updated = "2026-11-14T22:02:41Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-spec/src/validate.rs"]
+scope = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a duration token of 4000ms and a configured max of 1000ms, when checked, then a TOKEN finding names the token; given a cubic-bezier with x outside 0..1, then the schema rejects it with a located error; given a valid pair, then it exports to CSS (ms, cubic-bezier()), USS and C# unchanged"
