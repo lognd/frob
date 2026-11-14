@@ -7,10 +7,10 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T03:12:31Z"
-updated = "2026-11-14T03:18:44Z"
+updated = "2026-11-14T03:21:51Z"
 scope = ["crates/frob/tests/it/release_status.rs"]
 
 [[acceptance]]
 text = "Given a member epic left open, when release status runs, then the derived epic-closed criterion is listed as unbound-criterion before the open-ticket blocker"
-bound = false
+bound = true
 +++
