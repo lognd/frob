@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk: add the export figma-variables CLI verb"
+type = "task"
+category = "todo"
+priority = "medium"
+body = "found while working YC5VP5X: Target::FigmaVariables and its exporter exist; crates/crunk/src/export.rs needs an ExportFigmaVariables export_command!, plus the generated CLI docs"
+at = "2026-11-14T23:24:46Z"
+actor = "lognd"
+rev = 1
