@@ -21,6 +21,8 @@ pub mod res001;
 pub mod time001;
 /// Rule `TIME002`.
 pub mod time002;
+/// Rule `TYPING004`.
+pub mod typing004;
 /// Rule `UNITY201`.
 pub mod unity201;
 /// Rule `UNITY202`.
@@ -43,6 +45,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <res001::Res001 as gob_rules::RuleDecl>::DEF,
     <time001::Time001 as gob_rules::RuleDecl>::DEF,
     <time002::Time002 as gob_rules::RuleDecl>::DEF,
+    <typing004::Typing004 as gob_rules::RuleDecl>::DEF,
     <unity201::Unity201 as gob_rules::RuleDecl>::DEF,
     <unity202::Unity202 as gob_rules::RuleDecl>::DEF,
     <unity301::Unity301 as gob_rules::RuleDecl>::DEF,
@@ -74,6 +77,7 @@ where
     res001::Res001: gob_rules::Measured<P>,
     time001::Time001: gob_rules::Measured<P>,
     time002::Time002: gob_rules::Measured<P>,
+    typing004::Typing004: gob_rules::Measured<P>,
     unity201::Unity201: gob_rules::Measured<P>,
     unity202::Unity202: gob_rules::Measured<P>,
     unity301::Unity301: gob_rules::Measured<P>,
@@ -90,6 +94,7 @@ where
     rules.push(gob_rules::BoundRule::measured(res001::Res001));
     rules.push(gob_rules::BoundRule::measured(time001::Time001));
     rules.push(gob_rules::BoundRule::measured(time002::Time002));
+    rules.push(gob_rules::BoundRule::measured(typing004::Typing004));
     rules.push(gob_rules::BoundRule::measured(unity201::Unity201));
     rules.push(gob_rules::BoundRule::measured(unity202::Unity202));
     rules.push(gob_rules::BoundRule::measured(unity301::Unity301));

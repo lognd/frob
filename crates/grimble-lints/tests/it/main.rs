@@ -9,6 +9,7 @@ mod path;
 mod res_pass;
 mod rules;
 mod testq;
+mod typing_pass;
 mod unity;
 mod unity_hot;
 mod unity_input;
