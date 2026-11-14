@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
 reporter = "lognd"
 created = "2026-10-08T08:13:14Z"
-updated = "2026-11-14T23:06:08Z"
+updated = "2026-11-14T23:10:55Z"
 labels = ["no-story"]
-scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "crates/gob-rules/tests/it/family_owners.rs", "docs/**"]
+scope = ["changelog.d/**", "crates/grimble-lints/**", "crates/gob-ir/**", "crates/gob-rules/tests/it/family_owners.rs", "docs/**", "crates/grimble-check/**"]
 
 [[acceptance]]
 text = "Given await res.json() as User with no parse call on the value, when checked, then TYPING004 fires"
