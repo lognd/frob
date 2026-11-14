@@ -825,13 +825,13 @@ reason = "attest PATH001 fixture accepts"
 [[symbol]]
 identity = "crates/frob-obligations/src/rules/mod.rs::bind"
 symref = "crates/frob-obligations/src/rules/mod.rs::bind"
-sig = "41de2d7e2ce16502168c7c406534c426dcbd00bb4ecbabfc5440f5e0e71164f5"
-body = "3211528848aa4500ca73c259243f6b321bbb54364a4554e7e03ee768d8908014"
+sig = "654e959e4c12ca7cfc5416c4f6970ca7318c5a573b9bc91016397326772bbcaf"
+body = "0d7bdad09fa5e3f1d75c893c069f7c5b378644278eb11a85d5a09bd27cd6c432"
 doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
 attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
-contract = "61c1dcf02affe7c93fcaf8470ee73082f32686e1e18eeaa4699941a5db653e97"
+contract = "267c58f76ea4e8e13d8a2e3ff66a9c03570796a69a9edceedd0db580641b65d6"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-06T23:39:51.331549089Z"
+acked_at = "2026-11-14T08:50:09.791598243Z"
 
 [[symbol]]
 identity = "crates/frob-obligations/tests/it/small_api.rs::bind_yields_one_rule_per_declared_rule"
