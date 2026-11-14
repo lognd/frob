@@ -23,11 +23,12 @@ use crunk_rules::rules::{
     slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014, slop020::Slop020,
     slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027, slop028::Slop028,
     slop029::Slop029, slop040::Slop040, slop060::Slop060, space001::Space001, state001::State001,
-    state002::State002, state003::State003, state006::State006, state007::State007,
-    token002::Token002, token003::Token003, token004::Token004, token005::Token005,
-    token006::Token006, token007::Token007, token008::Token008, token009::Token009,
-    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
-    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
+    state002::State002, state003::State003, state004::State004, state005::State005,
+    state006::State006, state007::State007, token002::Token002, token003::Token003,
+    token004::Token004, token005::Token005, token006::Token006, token007::Token007,
+    token008::Token008, token009::Token009, tokens001::Tokens001, tw001::Tw001, tw002::Tw002,
+    tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
+    waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
