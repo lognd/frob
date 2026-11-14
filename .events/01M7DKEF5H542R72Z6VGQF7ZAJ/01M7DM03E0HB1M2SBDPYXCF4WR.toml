@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T18:09:29Z"
+digest = "ff5d25f914556f6e70a724b1e6e4eb138cabfdbca1ad48ddd15c94e2541fd73f"
+exit_code = 0
+head = "05ed706db0e4de01644cd6db26ca9a987a757462"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 72a4099a-ac96-4831-8db7-5147a182c9d7 with nextest profile: default
+    Starting 1 test across 3 binaries (6 tests skipped)
+        PASS [   0.004s] gob-macros tests::valid_id_accepts_digits_after_first_letter
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 6 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-macros -E test(=tests::valid_id_accepts_digits_after_first_letter)"
+size = 549
+status = "measured"
+test_count = 1
+tests_digest = "e9bce46e3e2fe48b9f72e9865f8e9bba90f2b9acb59b86aec4d39d0a3a634126"
+at = "2026-11-14T18:09:29Z"
+actor = "lognd"
+rev = 1
