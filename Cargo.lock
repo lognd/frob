@@ -635,6 +635,8 @@ dependencies = [
 name = "crunk-gallery"
 version = "0.532.0"
 dependencies = [
+ "crunk-layout",
+ "crunk-scene",
  "crunk-spec",
  "getrandom 0.3.4",
  "gob-exec",
@@ -648,6 +650,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
