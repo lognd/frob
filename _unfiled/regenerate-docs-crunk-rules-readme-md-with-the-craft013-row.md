@@ -2,7 +2,8 @@
 id = "01M5K81JP1BXP07WKTG0BPEKBE"
 title = "Regenerate docs/crunk/rules/README.md with the CRAFT013 row"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 2
 reporter = "lognd"
