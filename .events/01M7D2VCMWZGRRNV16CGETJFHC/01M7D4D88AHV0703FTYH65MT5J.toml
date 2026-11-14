@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The measured matrix snapshots and ui_rule_attr cases match the Effects capability, so CI is green"]
+moved = []
+at = "2026-11-14T13:37:04Z"
+actor = "lognd"
+rev = 1
