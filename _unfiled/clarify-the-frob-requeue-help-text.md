@@ -2,12 +2,12 @@
 id = "01M7A50Z29FRRD02PKZXBR5W5J"
 title = "Clarify the frob requeue help text"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-13T09:51:56Z"
+updated = "2026-11-14T04:33:05Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/reference/**"]
 
