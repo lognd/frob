@@ -1,0 +1,27 @@
+rule WEBPERF108 "font-face-without-font-display" {
+  lang [css]
+  severity error
+
+  find a: at_rule where a.name == "font-face" and not a has declaration(property = "font-display")
+  report a "@font-face declares no font-display: text stays invisible while the font loads"
+
+  example fire css {
+    file "a.css" """
+      @font-face { font-family: "Inter"; src: url("inter.woff2"); }
+    """
+    expect "line 1: error"
+  }
+  example clean css {
+    file "a.css" """
+      @font-face { font-family: "Inter"; src: url("inter.woff2"); font-display: swap; }
+    """
+  }
+  example notapplicable markdown """
+    A font face is declared with @font-face in prose.
+  """
+  explain """
+    Without `font-display` the browser hides text in the font until it loads, which delays the first meaningful paint and shifts the layout on arrival.
+    ## Remedy
+    Add `font-display: swap` (or `optional`) to the `@font-face` block.
+  """
+}

@@ -90,6 +90,9 @@ pub(crate) enum KindTest {
     Element,
     /// A markup attribute (a spread is a member at status May).
     Attribute,
+    /// A style at-rule such as `@font-face` or `@media`.
+    // frob:ticket 01M5F3BZ0WB8P8DKSRGNDAWKEE
+    AtRule,
     /// A style rule.
     StyleRule,
     /// A class selector in a style rule's selector list.
@@ -128,6 +131,7 @@ impl KindTest {
             "literal" => Self::Literal,
             "element" => Self::Element,
             "attribute" => Self::Attribute,
+            "at_rule" => Self::AtRule,
             "style_rule" => Self::StyleRule,
             "class_selector" => Self::ClassSelector,
             "declaration" => Self::Declaration,
@@ -214,6 +218,7 @@ impl KindTest {
                 }
                 _ => None,
             },
+            Self::AtRule => yes(unit_kind_is(model, node, style::AT_RULE)),
             Self::StyleRule => yes(unit_kind_is(model, node, style::STYLE_RULE)),
             Self::ClassSelector => yes(style::is_class_selector(model, node)),
             Self::CustomProperty => yes(unit_kind_is(model, node, style::CUSTOM_PROPERTY)),

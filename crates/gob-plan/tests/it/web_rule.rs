@@ -117,6 +117,7 @@ fn catalog_names_query_and_languages_for_each_web_kind() {
         ("element", "Q48 markup", "tsx"),
         ("attribute", "Q48 markup", "html"),
         ("style_rule", "Q49 style", "css"),
+        ("at_rule", "Q49 style", "css"),
         ("class_selector", "Q49 style", "css"),
         ("declaration", "Q49 style", "jsx"),
         ("custom_property", "Q49 style", "scss"),

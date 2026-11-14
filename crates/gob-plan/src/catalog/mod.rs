@@ -195,6 +195,16 @@ pub const KINDS: &[Kind] = &[
         &[],
     ),
     kind_of(
+        "at_rule",
+        "Q49 style",
+        STYLE,
+        "a style at-rule such as `@font-face` or `@media`; its declarations are its descendants",
+        &[
+            field("name", FieldType::Str, "\"font-face\"", false),
+            field("prelude", FieldType::Str, "\"(min-width: 40em)\"", false),
+        ],
+    ),
+    kind_of(
         "attribute",
         "Q48 markup",
         MARKUP,
@@ -522,6 +532,7 @@ mod tests {
             "element",
             "attribute",
             "style_rule",
+            "at_rule",
             "class_selector",
             "declaration",
             "custom_property",

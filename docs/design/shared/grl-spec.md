@@ -351,7 +351,7 @@ the compiler and the engine read one source. `grimble rule catalog
 | `heading`, `link`, `fence`, `table` | kind | Q11 | prose |
 | `key` | kind | Q19 | TOML, JSON, YAML keys; `key(path = "/jobs/*")` addresses by key path |
 | `element`, `attribute` | kind | Q48, Q51 | markup in tsx, jsx, html; `element(tag, kind)`, `attribute(name, value, spread, tokens)`; `.value` is a `const_value` answer and may be Unknown; `e has attribute(name = "alt")` is Unknown when a spread may supply it; `.tokens` is `class_tokens` |
-| `style_rule`, `declaration`, `custom_property` | kind | Q49 | css and scss; `declaration` also from tsx and jsx inline style objects; `style_rule(selector)`, `declaration(property, value, important)`, `custom_property(name, value)` |
+| `style_rule`, `at_rule`, `declaration`, `custom_property` | kind | Q49 | css and scss; `declaration` also from tsx and jsx inline style objects; `style_rule(selector)`, `at_rule(name, prelude)` (its declarations are descendants: `a has declaration(property = "font-display")`), `declaration(property, value, important)`, `custom_property(name, value)` |
 | `directive` | kind | (gob-directives) | `directive "todo"` |
 | `effect_use`, `node`, `grant`, `excuse`, `cell` | kind | Q34, Q36, grimble/binding.md 7 | grimble; `cell` is the capability matrix cell, computed by the engine |
 | `.name`, `.text`, `.line`, `.file`, `.path`, `.kind`, `.role` | field | Q03, Q05, Q06 | on every kind; `.file` is a file, `.file.path` its repository-relative path |

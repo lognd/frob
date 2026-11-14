@@ -45,7 +45,8 @@ fn catalog_lists_the_pack_rules_when_on() {
             ("WEBPERF", "WEBPERF104"),
             ("WEBPERF", "WEBPERF105"),
             ("WEBPERF", "WEBPERF106"),
-            ("WEBPERF", "WEBPERF107")
+            ("WEBPERF", "WEBPERF107"),
+            ("WEBPERF", "WEBPERF108")
         ]
     );
     assert!(rows.iter().all(|r| r.pack == "crunk-web"));
@@ -176,7 +177,7 @@ fn webperf_assets_clean_and_firing_examples_pass() {
         assert_eq!(t.examples.len(), 3, "{file}");
         ran += 1;
     }
-    assert_eq!(ran, 7);
+    assert_eq!(ran, 8);
 }
 
 // frob:ticket 01M43AVK7C2CY8SQA204JWTCCP
