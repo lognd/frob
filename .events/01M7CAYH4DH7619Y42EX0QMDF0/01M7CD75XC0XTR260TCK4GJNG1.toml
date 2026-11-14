@@ -1,0 +1,14 @@
+kind = "field"
+field = "body"
+old = """
+## Start here
+
+- Files to read first: <TODO: list the files>
+- Test command: <TODO: the command that runs the tests>
+- Who to ask: <TODO: a handle or channel>"""
+new = """
+## Start here
+Read docs/glossary/ (an existing entry for the page shape), docs/README.md (generated: run gob-dev gen all after adding the page) and the docs header-block rule DOC003 (Status, Owner, Decisions, Audience lines after the H1). Write docs/glossary/obligation.md explaining what the obligation graph is and where its rules live. Test: frob check --ticket passes. Ask the coordinator if unsure."""
+at = "2026-11-14T06:51:47Z"
+actor = "lognd"
+rev = 1
