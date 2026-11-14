@@ -255,7 +255,14 @@ fn do_let(st: &mut State<'_>, n: Node<'_>) {
                 Some(path) if st.group.any_atom(&path) => st.bind(&name, Binding::Alias(path)),
                 _ => {
                     let saved = st.in_chain;
-                    if only_queried(st, n, &name) {
+                    if let Some(atom) = locked_std_handle(st, v)
+                        && written_through(st, n, &name)
+                    {
+                        tracing::debug!(%name, atom, "log001: locked std handle is written through");
+                        let path = ["std", "io", atom.trim_start_matches("rust.io-")];
+                        st.hit_atom(v, atom, &path.map(str::to_owned));
+                        st.in_chain = true;
+                    } else if only_queried(st, n, &name) {
                         tracing::debug!(%name, "log001: stored std handle only queried; obtain not reported");
                         st.in_chain = true;
                     }
@@ -454,6 +461,36 @@ const QUERY_FNS: [&str; 3] = ["is_tty", "is_terminal", "isatty"];
 fn is_query_fn(callee: &str) -> bool {
     let last = callee.rsplit("::").next().unwrap_or(callee).trim();
     QUERY_FNS.contains(&last)
+}
+
+/// The atom id (`rust.io-stdout` or `rust.io-stderr`) when `v` is `std::io::stdout().lock()` or
+/// the stderr form: a lock handle that later writes go through.
+fn locked_std_handle(st: &mut State<'_>, v: Node<'_>) -> Option<&'static str> {
+    if v.kind() != "call_expression" {
+        return None;
+    }
+    let f = v.child_by_field_name("function")?;
+    if f.kind() != "field_expression" || st.txt(f.child_by_field_name("field")?) != "lock" {
+        return None;
+    }
+    let p = path_of(st, f.child_by_field_name("value")?, false, true)?;
+    match p.join("::").as_str() {
+        "std::io::stdout" => Some("rust.io-stdout"),
+        "std::io::stderr" => Some("rust.io-stderr"),
+        _ => None,
+    }
+}
+
+/// True when `name`, bound by `let_node`, has at least one use that is not a terminal query.
+fn written_through(st: &State<'_>, let_node: Node<'_>, name: &str) -> bool {
+    let mut uses = 0usize;
+    let mut all_queries = true;
+    let mut sib = let_node.next_named_sibling();
+    while let Some(s) = sib {
+        tally_uses(st, s, name, &mut uses, &mut all_queries);
+        sib = s.next_named_sibling();
+    }
+    uses > 0 && !all_queries
 }
 
 /// True when `name`, bound by `let_node`, is used afterwards and every use is a terminal query

@@ -175,7 +175,7 @@ fn bash_logger_is_sanctioned_and_functions_shadow_or_wrap() {
     assert!(wrapped.contains(&"sh.die".to_owned()), "{wrapped:?}");
 }
 
-// frob:ticket 01M63G1NFTCN016KS8PT3JQNPF
+// frob:ticket 01M6SGZYFK85YEPA1TVKGBAD9H
 // frob:tests crates/grimble-check/src/log/catalogue.rs::Atom
 #[test]
 fn python_stream_sinks_fire_only_for_a_std_stream_destination() {
@@ -329,4 +329,55 @@ fn cuda_host_printf_is_direct_output() {
 #[test]
 fn cuda_kernel_parses_and_scans_clean() {
     assert!(cuda("__global__ void k(int *p) { p[0] = 1; }\n").is_empty());
+}
+
+// frob:ticket 01M6SGZYFK85YEPA1TVKGBAD9H
+// frob:tests crates/grimble-check/src/log/lang_python.rs::receiver_ctor_hit
+#[test]
+fn python_chained_path_write_to_a_std_stream_path_is_reported() {
+    let py = |t: &str| atoms("a.py", Language::Python, t);
+    assert_eq!(
+        py("from pathlib import Path\nPath('/dev/stderr').write_text('x')\n"),
+        ["py.path-std"]
+    );
+    assert_eq!(
+        py("import pathlib\npathlib.Path('/dev/stdout').open('w').write('x')\n"),
+        ["py.path-std"]
+    );
+    assert!(py("from pathlib import Path\nPath('x.log').write_text('x')\n").is_empty());
+    assert!(py("import os\nos.open('x.log', os.O_WRONLY)\n").is_empty());
+}
+
+// frob:ticket 01M6SGZYFK85YEPA1TVKGBAD9H
+// frob:tests crates/grimble-check/src/log/lang_js.rs::local_pipe_to_std
+#[test]
+fn js_pipe_from_a_local_stream_into_a_std_stream_is_reported() {
+    let js = |t: &str| atoms("a.js", Language::JavaScript, t);
+    assert_eq!(js("src.pipe(process.stdout);"), ["js.pipe"]);
+    assert_eq!(
+        js("const out = process.stderr; a.pipe(b).pipe(out);"),
+        ["js.pipe"]
+    );
+    assert!(js("src.pipe(local);").is_empty());
+    assert!(js("src.pipe(fs.createWriteStream('a'));").is_empty());
+}
+
+// frob:ticket 01M6SGZYFK85YEPA1TVKGBAD9H
+// frob:tests crates/grimble-check/src/log/lang_rust.rs::locked_std_handle
+#[test]
+fn rust_written_lock_handle_is_reported_but_a_query_is_not() {
+    let rs = |t: &str| atoms("a.rs", Language::Rust, t);
+    assert_eq!(
+        rs(
+            "use std::io::Write; fn f() { let mut o = std::io::stdout().lock(); writeln!(o, \"x\").ok(); }"
+        ),
+        ["rust.io-stdout"]
+    );
+    assert_eq!(
+        rs(
+            "use std::io::Write; fn f() { let mut o = std::io::stderr().lock(); o.write_all(b\"x\").ok(); }"
+        ),
+        ["rust.io-stderr"]
+    );
+    assert!(rs("fn f() { let o = std::io::stdout().lock(); }").is_empty());
 }

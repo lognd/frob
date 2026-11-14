@@ -348,7 +348,7 @@ impl Atom {
 
 /// True when `path` is a std stream handle value (`sys.stdout`, `process.stderr`, `Console.Out`,
 /// `System.out`), possibly with a member such as `.buffer`; the sink of a flow-conditional atom.
-fn is_std_stream_path(p: &[String]) -> bool {
+pub fn is_std_stream_path(p: &[String]) -> bool {
     let starts = |pre: &[&str]| p.len() >= pre.len() && pre.iter().zip(p).all(|(a, b)| a == b);
     let hit = [
         &["sys", "stdout"][..],

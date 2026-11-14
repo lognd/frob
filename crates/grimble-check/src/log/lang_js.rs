@@ -5,7 +5,7 @@
 
 use tree_sitter::Node;
 
-use super::catalogue::{ArgInfo, Args};
+use super::catalogue::{ArgInfo, Args, is_std_stream_path};
 use super::engine::{Binding, FileScan, Lit, State, SymPath, kids};
 
 /// Global-object spellings stripped from the head of a path (`globalThis.console` is `console`).
@@ -679,7 +679,8 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         args = args_from(st, &list);
         cp = Some(target);
     }
-    let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
+    let hit =
+        cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args)) || local_pipe_to_std(st, n, f, &args);
     if !hit
         && !st.in_chain
         && cp
@@ -712,6 +713,23 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             visit(st, c, d);
         }
     });
+}
+
+/// Record `<local>.pipe(process.stdout)`: a pipe from a stream the scanner cannot resolve
+/// into a std stream. True when `js.pipe` was recorded at the call.
+fn local_pipe_to_std(st: &mut State<'_>, n: Node<'_>, f: Node<'_>, args: &Args) -> bool {
+    if f.kind() != "member_expression"
+        || f.child_by_field_name("property").map(|p| st.txt(p)) != Some("pipe")
+        || !args
+            .pos
+            .first()
+            .and_then(|a| a.path.as_deref())
+            .is_some_and(is_std_stream_path)
+    {
+        return false;
+    }
+    tracing::debug!("method .pipe on a local stream sinks into a std stream");
+    st.hit_atom(n, "js.pipe", &["stream".to_owned(), "pipe".to_owned()])
 }
 
 /// The symbol path of a callee; `import` (dynamic import) is the pseudo-path `["import"]`.

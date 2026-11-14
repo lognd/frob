@@ -298,7 +298,11 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         eval_source(st, n, a);
     }
     let args = arg_node.map_or_else(Args::default, |a| args_of(st, a));
-    let hit = cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
+    let outer_hits = cp
+        .as_ref()
+        .is_some_and(|p| st.group.first_match(p, &args).is_some());
+    let recv_hit = !outer_hits && receiver_ctor_hit(st, f);
+    let hit = recv_hit || cp.as_ref().is_some_and(|p| st.hit_call(n, p, &args));
     if !hit
         && !st.in_chain
         && cp
@@ -322,6 +326,40 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             }
         }
     });
+}
+
+/// Record the receiver constructor of a chained method call (`Path('/dev/stderr').write_text(..)`)
+/// when its own arguments name a std stream; true when a hit was recorded at the receiver.
+///
+/// The method's arguments never carry the path, so without this the chain would be cleared as an
+/// advisory file write and the std-stream destination would go unreported.
+fn receiver_ctor_hit(st: &mut State<'_>, f: Node<'_>) -> bool {
+    if st.in_chain {
+        return false;
+    }
+    let mut cur = f;
+    while cur.kind() == "attribute" {
+        let Some(recv) = cur
+            .child_by_field_name("object")
+            .filter(|o| o.kind() == "call")
+        else {
+            return false;
+        };
+        let Some(ctor) = recv.child_by_field_name("function") else {
+            return false;
+        };
+        if let Some((p, _)) = path_of(st, ctor, true) {
+            let args = recv
+                .child_by_field_name("arguments")
+                .map_or_else(Args::default, |a| args_of(st, a));
+            if st.group.first_match(&p, &args).is_some() {
+                tracing::debug!(path = %p.join("."), "chained receiver constructor names a std stream");
+                return st.hit_call(recv, &p, &args);
+            }
+        }
+        cur = ctor;
+    }
+    false
 }
 
 /// The constant text of a string expression: literals, implicit and `+` concatenation, and
