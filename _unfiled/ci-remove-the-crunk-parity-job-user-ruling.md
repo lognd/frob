@@ -7,8 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T16:34:56Z"
-updated = "2026-11-14T16:35:06Z"
+updated = "2026-11-14T16:35:25Z"
 labels = ["no-story", "chore"]
+scope = [".github/workflows/ci.yml"]
 
 [[acceptance]]
 text = "ci.yml has no crunk-parity job and docs/guides/crunk.md no longer says it runs in CI"
