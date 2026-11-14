@@ -265,7 +265,7 @@ fn content006_fires_on_a_banned_word_as_a_whole_word_only() {
     assert!(support::run::<Content006>(&host).is_empty());
 }
 
-// frob:ticket ~N6MVYC8
+// frob:ticket 01M5H5P5R4J2XAE0QABN6MVYC8
 // frob:tests crates/crunk-rules/src/rules/content007.rs::Content007
 // frob:tests crates/crunk-rules/src/content_files.rs::locale_gaps
 #[test]

@@ -570,7 +570,7 @@ fn write_content(root: &Path, config: Option<&str>) {
             "locale = \"fr\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Bon retour\"\n",
         );
     }
-    // frob:ticket ~N6MVYC8
+    // frob:ticket 01M5H5P5R4J2XAE0QABN6MVYC8
     if config == Some("content-locale-gap") {
         write(
             root,

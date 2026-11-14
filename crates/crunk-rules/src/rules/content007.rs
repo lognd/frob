@@ -1,6 +1,6 @@
 //! CONTENT007: a content key one locale defines is missing from another locale. Off when the project has no content files.
 
-// frob:ticket ~N6MVYC8
+// frob:ticket 01M5H5P5R4J2XAE0QABN6MVYC8
 
 use gob_rules::{Measured, Out, RepoRule, rule};
 
