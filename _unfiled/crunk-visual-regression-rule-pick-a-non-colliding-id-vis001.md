@@ -4,9 +4,10 @@ title = "crunk visual regression rule: pick a non-colliding id (VIS001 is grimbl
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-14T19:11:16Z"
-updated = "2026-11-14T19:11:16Z"
+updated = "2026-11-14T19:56:41Z"
 labels = ["no-story"]
 +++
 
