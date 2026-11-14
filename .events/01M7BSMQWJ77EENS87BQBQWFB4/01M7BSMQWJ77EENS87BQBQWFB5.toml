@@ -1,0 +1,12 @@
+kind = "create"
+title = "C and Java calls resolve through the Rust-only graph path (DEAD001 false positives likely)"
+type = "bug"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+scope = ["crates/gob-symbols/**"]
+acceptance = ["A called private C and Java function has no DEAD001."]
+body = "Found while fixing SY378XX: graph.rs falls through to Rust-only resolution for C and Java. Confirm with a fixture, then add resolvers like graph/go.rs."
+at = "2026-11-14T01:09:40Z"
+actor = "lognd"
+rev = 1
