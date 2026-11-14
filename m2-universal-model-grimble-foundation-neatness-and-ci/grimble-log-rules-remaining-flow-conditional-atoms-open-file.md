@@ -2,7 +2,8 @@
 id = "01M6SGZYFK85YEPA1TVKGBAD9H"
 title = "Grimble LOG rules: remaining flow-conditional atoms (open file handles, os.open flags, Path.write_text, js .pipe on local streams, cs TextWriter, rust write handle flow)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
