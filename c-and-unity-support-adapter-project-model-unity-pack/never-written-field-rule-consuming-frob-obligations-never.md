@@ -8,7 +8,7 @@ points = 5
 parent = "01M44YQS4CNZM54P067GJVPDC0"
 reporter = "lognd"
 created = "2026-10-21T17:43:39Z"
-updated = "2026-11-14T08:44:38Z"
+updated = "2026-11-14T08:50:14Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/**", "crates/gob-symbols/**", "crates/frob/src/explain_cmd.rs", "docs/README.md", "docs/reference/rules/**"]
 

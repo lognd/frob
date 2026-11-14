@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T08:50:14Z"
+digest = "0b63358b00a987c084957f6787cafec0b652f9928cae38a8f8a306ce1a4818b7"
+exit_code = 0
+head = "24ddd0c2cc430e92edd0ca09c506d031be02ca58"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c1ea21ba-3f86-427c-805b-f5065e090c45 with nextest profile: default
+    Starting 1 test across 2 binaries (140 tests skipped)
+        PASS [   0.053s] frob-obligations unity::tests::unity004_reports_unassigned_field_with_the_pack_enabled
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.054s] 1 test run: 1 passed, 140 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-obligations -E test(=unity::tests::unity004_reports_unassigned_field_with_the_pack_enabled)"
+size = 717
+status = "measured"
+test_count = 1
+tests_digest = "4f5128d25641ebcb256ae09ddf2f3a3b01fec17ee353359ae5b63c843b7c2622"
+at = "2026-11-14T08:50:14Z"
+actor = "lognd"
+rev = 1
