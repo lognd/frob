@@ -8,13 +8,13 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-11-14T23:23:50Z"
+updated = "2026-11-14T23:24:49Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-tokens/src/export/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/rules/export003.rs", "crates/crunk-rules/src/rules/export003.md", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/tests/it/parity.rs", "crates/crunk-spec/tests/it/spec.rs", "crates/crunk-spec/tests/it/snapshots/*.snap", "crates/crunk-rules/tests/it/support/mod.rs", "docs/schemas/crunk.json", "docs/reference/rules/EXPORT003.md"]
 
 [[acceptance]]
 text = "Given a token set with 5 modes and a configured plan allowing 4, when checked, then an EXPORT finding names the plan and the limit; given a set within limits, then the Figma variables JSON is deterministic and byte-identical on two runs; given an alias cycle or a token without a Figma type, then it is skipped with a named warning not a panic"
-bound = false
+bound = true
 +++
 
 Design crunk.md section 9 item 2 ("USS and C# exporters with the Figma plan-limit check"). Add Target::FigmaVariables (collections=tiers, modes=modes, variables=tokens) and the plan-limit rule (variables per collection and modes per collection by plan tier from crunk.toml). Register via the export verb ticket when it lands; do not edit export/mod.rs beyond the enum variant.

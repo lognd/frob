@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T23:24:49Z"
+digest = "c3c2f03f5d28aa48c330d35426f1e48edb20c5b07953d06ae7b2a2d9d2ba2822"
+exit_code = 0
+head = "fa7b14b3e52f2905af8c596c6b9c56824bf919ba"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.18s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 111c313d-77e9-4b5b-b7ae-723a89e80161 with nextest profile: default
+    Starting 1 test across 2 binaries (69 tests skipped)
+        PASS [   0.006s] crunk-tokens export::figma::tests::five_modes_on_a_four_mode_plan_names_plan_and_limit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 69 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tokens -E test(=export::figma::tests::five_modes_on_a_four_mode_plan_names_plan_and_limit)"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "22b84d491fabbfdb65e22fd460e75dd04c231a2467015c23740106145ba04487"
+at = "2026-11-14T23:24:49Z"
+actor = "lognd"
+rev = 1
