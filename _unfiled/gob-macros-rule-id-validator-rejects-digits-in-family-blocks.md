@@ -2,7 +2,8 @@
 id = "01M7DKEF5H542R72Z6VGQF7ZAJ"
 title = "gob-macros: rule id validator rejects digits in family (blocks I18N001/I18N002)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
