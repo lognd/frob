@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["ci.yml has no crunk-parity job and docs/guides/crunk.md no longer says it runs in CI"]
+moved = []
+at = "2026-11-14T16:34:59Z"
+actor = "lognd"
+rev = 1
