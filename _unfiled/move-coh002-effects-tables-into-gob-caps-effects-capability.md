@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T09:06:18Z"
-updated = "2026-11-14T10:12:41Z"
+updated = "2026-11-14T10:26:15Z"
 labels = ["no-story"]
 scope = ["crates/gob-caps/**", "crates/grimble-check/**", "crates/gob-ir/**"]
 
 [[acceptance]]
 text = "COH002 effects tables live in gob-caps (Capability::Effects provided per language adapter) and grimble-check reads them from there; effects.rs holds no per-language tables"
-bound = false
+bound = true
 +++
 
 Found while working ~T0TGDAS: the COH002 effects tables live in crates/grimble-check/src/effects.rs; the gob-caps Capability::Effects column is a gap for Rust, Python, C# and TypeScript. Move the tables into the language adapters.
