@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "VIS001 id collides with grimble-arch; png dep tree needs owner vet trust decision (VET001/3/4); PNG module commit 654c1ba595 kept on branch"
+at = "2026-11-14T19:11:13Z"
+actor = "lognd"
+rev = 1

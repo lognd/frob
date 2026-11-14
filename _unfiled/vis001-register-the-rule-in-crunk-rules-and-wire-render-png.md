@@ -2,12 +2,12 @@
 id = "01M5HBHRPS50C0M7RJRCFF3C0J"
 title = "VIS001: register the rule in crunk-rules and wire render/PNG decode and diff encode"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:27:26Z"
-updated = "2026-11-14T18:52:20Z"
+updated = "2026-11-14T19:11:13Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**", "crates/crunk-gallery/**", "docs/reference/rules/**", "docs/crunk/rules/**", "Cargo.lock"]
 
