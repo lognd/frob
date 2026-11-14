@@ -554,6 +554,14 @@ fn write_content(root: &Path, config: Option<&str>) {
             "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Lorem ipsum dolor\"\nmax_chars = 40\n",
         );
     }
+    // frob:ticket 01M5H5P5KF5WHTPQVJ4WM2DDBN
+    if config == Some("content-dup") {
+        write(
+            root,
+            "design/content/fr.toml",
+            "locale = \"fr\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Bon retour\"\n",
+        );
+    }
     if config == Some("content-en") {
         write(
             root,

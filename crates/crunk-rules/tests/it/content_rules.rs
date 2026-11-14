@@ -10,6 +10,7 @@ use crunk_rules::host::{content_subjects, missing_content_inputs};
 use crunk_rules::rules::content001::Content001;
 use crunk_rules::rules::content002::Content002;
 use crunk_rules::rules::content003::Content003;
+use crunk_rules::rules::content004::Content004;
 use gob_rules::Finding;
 
 const SCENE: &str = "design/scenes/home.scene.html";
@@ -198,4 +199,25 @@ fn duplicate_keys_lists_ids_defined_in_more_than_one_file() {
     );
     let facts = host.content.as_ref().unwrap();
     assert!(crunk_rules::content_files::duplicate_keys(facts).is_empty());
+}
+
+// frob:tests crates/crunk-rules/src/rules/content004.rs::Content004
+// frob:tests crates/crunk-rules/src/content_files.rs::duplicate_keys
+#[test]
+fn content004_fires_for_a_key_in_two_files_and_passes_a_single_definition() {
+    let toml = "locale = \"en\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Welcome back\"\n";
+    let host = support::project("design/content/en.toml", toml, Some("content-dup"));
+    let m: Vec<String> = support::run::<Content004>(&host)
+        .into_iter()
+        .map(|f| f.message)
+        .collect();
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("home.hero"), "{m:?}");
+    assert!(
+        m[0].contains("en.toml") && m[0].contains("fr.toml"),
+        "{m:?}"
+    );
+
+    let host = support::project("design/content/en.toml", toml, None);
+    assert!(support::run::<Content004>(&host).is_empty());
 }
