@@ -1,0 +1,5 @@
+error[E0080]: evaluation panicked: TODO001: language Rust has no `Expand` capability (declared not-applicable or a gap), so this rule could never fire there; matrix: crates/gob-caps/src/matrix.rs
+  --> tests/ui_rule/fail/no_expand_in_rust/todo001.rs:13:40
+   |
+13 |     applies = languages(Rust; needs = [Expand], min_fidelity = F1),
+   |                                        ^^^^^^ evaluation of `_` failed here

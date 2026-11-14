@@ -10,7 +10,7 @@ pub trait ObligationHost {}
     must_measure = false,
     scope = File,
     fix = Manual,
-    applies = languages(Rust; needs = [Effects], min_fidelity = F1),
+    applies = languages(Rust; needs = [Expand], min_fidelity = F1),
     host = ObligationHost,
     version = 1,
     since = "0.0.0",
