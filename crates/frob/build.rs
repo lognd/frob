@@ -15,9 +15,11 @@ use std::process::Command;
 /// Stdout of `git <args>` when it succeeds and is non-empty.
 fn git(args: &[&str]) -> Option<String> {
     let out = Command::new("git").args(args).output().ok()?;
-    let text = String::from_utf8(out.stdout).ok()?;
-    let text = text.trim();
-    (out.status.success() && !text.is_empty()).then(|| text.to_owned())
+    if !out.status.success() {
+        return None;
+    }
+    let text = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+    if text.is_empty() { None } else { Some(text) }
 }
 
 /// Ask cargo to rerun when HEAD or the branch it points at moves.
