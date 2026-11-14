@@ -6,7 +6,7 @@ use std::path::Path;
 
 use crunk_spec::{DesignSpec, parse_spec};
 use crunk_tokens::TokenSet;
-use crunk_tokens::export::{Target, render_managed};
+use crunk_tokens::export::{Target, render_managed, render_target};
 
 const SPEC: &str = r##"[project]
 css_root = "styles"
@@ -82,4 +82,12 @@ fn a_file_that_does_not_compile_is_skipped_not_fatal() {
     let (_dir, spec) = project("[brand]\nink = \"not a color\"\n");
     assert!(content(&spec, Target::Css).contains("--color-ink"));
     assert!(!content(&spec, Target::Css).contains("--brand-ink"));
+}
+
+// frob:tests crates/crunk-tokens/src/export/mod.rs::render_target
+#[test]
+fn render_target_includes_authored_tokens() {
+    let (_dir, spec) = project("[brand]\nink = \"#123456\"\n");
+    let css = render_target(&spec, Target::Css).expect("renders");
+    assert!(css.contains("--brand-ink: #123456;"), "{css}");
 }
