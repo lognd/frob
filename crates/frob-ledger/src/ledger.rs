@@ -421,6 +421,15 @@ impl Ledger {
         }
     }
 
+    /// The `origin` remote-tracking twin of the configured ticket ref, when that ref exists.
+    // frob:ticket 01M7AV6DFBVMPWMR9KED4YR4SJ
+    pub fn remote_ledger_ref(&self) -> Option<String> {
+        let name = full_ref(&self.cfg.ref_name);
+        let short = name.strip_prefix("refs/heads/").unwrap_or(&name);
+        let remote = format!("refs/remotes/origin/{short}");
+        self.repo.rev_parse(&remote).is_ok().then_some(remote)
+    }
+
     // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
     /// The configured ticket ref (or its `origin` remote-tracking twin) a detached HEAD reads from.
     fn detached_read_ref(&self) -> Result<String> {
