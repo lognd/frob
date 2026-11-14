@@ -2,12 +2,12 @@
 id = "01M5K81JP1BXP07WKTG0BPEKBE"
 title = "Regenerate docs/crunk/rules/README.md with the CRAFT013 row"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T02:04:38Z"
-updated = "2026-11-14T07:41:33Z"
+updated = "2026-11-14T07:49:00Z"
 scope = ["docs/crunk/rules/**"]
 +++
 

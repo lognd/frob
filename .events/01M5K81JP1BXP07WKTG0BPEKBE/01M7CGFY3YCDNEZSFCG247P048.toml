@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "obsolete: page moved to docs/reference/rules and is fresh"
+at = "2026-11-14T07:49:00Z"
+actor = "lognd"
+rev = 1
