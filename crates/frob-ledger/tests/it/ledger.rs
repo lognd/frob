@@ -1492,6 +1492,55 @@ fn orphan_mode_leaves_the_code_branch_without_ledger_commits() {
     );
 }
 
+// frob:tests crates/frob-ledger/src/ledger.rs::remote_ledger_ref
+// frob:ticket 01M7DBQQF1HYMN07N70M9PBT5A
+#[test]
+fn orphan_mode_compares_cited_tickets_against_the_remote_ledger_branch() {
+    let (dir, ledger) = fixture(Layout::Branch, RefMode::Orphan);
+    frob_ledger::branch::init_branch(ledger.repo(), "frob-tickets", 5).expect("init branch");
+    let id = ledger
+        .new_ticket(NewTicket::new("Pushed", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    let s = id.to_string();
+    let git = |args: &[&str]| {
+        let status = std::process::Command::new("git")
+            .current_dir(dir.path())
+            .args(args)
+            .status()
+            .expect("git");
+        assert!(status.success());
+    };
+    // The code branch has a remote twin that holds no tickets; the ledger branch's twin does.
+    let main_tip = ledger.repo().rev_parse(MAIN).expect("main").to_string();
+    git(&["update-ref", "refs/remotes/origin/main", &main_tip]);
+    let tip = ledger
+        .repo()
+        .rev_parse("frob-tickets")
+        .expect("ledger tip")
+        .to_string();
+    git(&["update-ref", "refs/remotes/origin/frob-tickets", &tip]);
+    let issues = ledger
+        .cited_ticket_issues(&[("a.rs:1", &s)])
+        .expect("cited");
+    assert!(issues.is_empty(), "{issues:?}");
+    // A ticket created after the ledger push is still reported unpushed.
+    let later = ledger
+        .new_ticket(NewTicket::new("Later", TicketType::Task))
+        .expect("new")
+        .ticket
+        .front
+        .id;
+    let l = later.to_string();
+    let issues = ledger
+        .cited_ticket_issues(&[("b.rs:2", &l)])
+        .expect("cited");
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0].code, "E-DOCTOR-CITED-UNPUSHED");
+}
+
 // frob:ticket 01M3ZX80ZX9YB96A4VRYSQ16NG
 fn brief_labels_ledger_text_and_never_suggests_body_commands(layout: Layout) {
     let (_dir, ledger) = fixture(layout, RefMode::Trunk);
