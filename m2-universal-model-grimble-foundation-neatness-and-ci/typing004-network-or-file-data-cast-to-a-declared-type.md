@@ -2,7 +2,8 @@
 id = "01M4D95Q9WWPDZH86CMBMAZEDQ"
 title = "TYPING004: network or file data cast to a declared type without validation (Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M4CXSN7VTEYX5AVSZVDX2WPZ"
