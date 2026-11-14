@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T21:30:55Z"
+digest = "3146c7aa4f28db6ef2cbe0e676900491629b39fb1c22c907c600b0c9479efaa0"
+exit_code = 0
+head = "acaff0ca290181d4ddca86f80099617b98f45184"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cd4402ba-bd12-4893-80c4-ecd09e73307c with nextest profile: default
+    Starting 1 test across 2 binaries (417 tests skipped)
+        PASS [   0.012s] grimble-check log::tests_lang::js_pipe_from_a_local_stream_into_a_std_stream_is_reported
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 417 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=log::tests_lang::js_pipe_from_a_local_stream_into_a_std_stream_is_reported)"
+size = 581
+status = "measured"
+test_count = 1
+tests_digest = "a4fe5fa62bb8f4f015910de1fd475cdb2ab699d0084f381a84f09addc231bcc7"
+at = "2026-11-14T21:30:55Z"
+actor = "lognd"
+rev = 1
