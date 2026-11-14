@@ -423,7 +423,7 @@ impl Ledger {
 
     /// The `origin` remote-tracking twin of the configured ticket ref, when that ref exists.
     // frob:ticket 01M7AV6DFBVMPWMR9KED4YR4SJ
-    pub fn remote_ledger_ref(&self) -> Option<String> {
+    pub(crate) fn remote_ledger_ref(&self) -> Option<String> {
         let name = full_ref(&self.cfg.ref_name);
         let short = name.strip_prefix("refs/heads/").unwrap_or(&name);
         let remote = format!("refs/remotes/origin/{short}");
