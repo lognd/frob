@@ -51,4 +51,10 @@ fn main() {
         _ => version,
     };
     println!("cargo:rustc-env=FROB_BUILD_VERSION={full}");
+    // Full HEAD and checkout root, for the runtime stale-binary check (~CAT8CDF); empty when unknown.
+    // frob:ticket 01M7AV6DHZ6KG77GJ74CAT8CDF
+    let head = git(&["rev-parse", "HEAD"]).unwrap_or_default();
+    let top = git(&["rev-parse", "--show-toplevel"]).unwrap_or_default();
+    println!("cargo:rustc-env=FROB_BUILD_HEAD={head}");
+    println!("cargo:rustc-env=FROB_BUILD_TOPLEVEL={top}");
 }
