@@ -2,7 +2,8 @@
 id = "01M7AV38DKR1SA56E17SY378XX"
 title = "DEAD001 errors on every unexported Go function (verify with a fixture first)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
