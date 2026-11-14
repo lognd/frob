@@ -14,7 +14,7 @@ use crunk_rules::rules::{
     craft002::Craft002, craft003::Craft003, craft004::Craft004, craft005::Craft005,
     craft006::Craft006, craft007::Craft007, craft008::Craft008, craft009::Craft009,
     craft010::Craft010, craft011::Craft011, craft012::Craft012, craft013::Craft013,
-    export001::Export001, export002::Export002, gx001::Gx001, gx002::Gx002, gx003::Gx003,
+    export001::Export001, export002::Export002, export003::Export003, gx001::Gx001, gx002::Gx002, gx003::Gx003,
     gx004::Gx004, gx005::Gx005, human001::Human001, human002::Human002, i18n001::I18n001,
     i18n002::I18n002, layer001::Layer001, layout001::Layout001, layout002::Layout002,
     layout003::Layout003, layout004::Layout004, layout005::Layout005, org001::Org001,
@@ -123,6 +123,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/token010.rs::Token010
     // frob:tests crates/crunk-rules/src/rules/export001.rs::Export001
     // frob:tests crates/crunk-rules/src/rules/export002.rs::Export002
+    // frob:tests crates/crunk-rules/src/rules/export003.rs::Export003
     // frob:tests crates/crunk-rules/src/rules/tokens001.rs::Tokens001
     // frob:tests crates/crunk-rules/src/rules/tw001.rs::Tw001
     // frob:tests crates/crunk-rules/src/rules/tw002.rs::Tw002
@@ -261,6 +262,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "TOKEN010" => support::run_case::<Token010>(&host, case),
         "EXPORT001" => support::run_case::<Export001>(&host, case),
         "EXPORT002" => support::run_case::<Export002>(&host, case),
+        "EXPORT003" => support::run_case::<Export003>(&host, case),
         "TOKENS001" => support::run_case::<Tokens001>(&host, case),
         "GX001" => support::run_case::<Gx001>(&host, case),
         "GX002" => support::run_case::<Gx002>(&host, case),
@@ -336,6 +338,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "CRAFT013",
             "EXPORT001",
             "EXPORT002",
+            "EXPORT003",
             "GX001",
             "GX002",
             "GX003",
@@ -545,7 +548,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 107);
+    assert_eq!(ids.len(), 108);
     assert!(ids.contains(&"SPACE001"));
 }
 

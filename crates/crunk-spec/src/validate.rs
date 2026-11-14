@@ -907,6 +907,29 @@ pub(crate) fn review(raw: &crate::table::ReviewConfig) -> Res<()> {
     Ok(())
 }
 
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+/// `[figma]`: the plan is a known tier and an override limit is at least 1.
+pub(crate) fn figma(raw: &crate::table::FigmaConfig) -> Res<()> {
+    if let Some(plan) = &raw.plan
+        && !crate::table::FIGMA_PLANS.iter().any(|(n, _)| n == plan)
+    {
+        let known: Vec<&str> = crate::table::FIGMA_PLANS.iter().map(|(n, _)| *n).collect();
+        return Err(fail(
+            vec![key("figma"), key("plan")],
+            format!("unknown Figma plan `{plan}` (expected one of {})", known.join(", ")),
+        ));
+    }
+    for (name, v) in [("max_modes", raw.max_modes), ("max_variables", raw.max_variables)] {
+        if v == Some(0) {
+            return Err(fail(
+                vec![key("figma"), key(name)],
+                format!("`{name}` must be at least 1"),
+            ));
+        }
+    }
+    Ok(())
+}
+
 // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
 /// `[game]`: every coverage key is a known key and none repeats.
 pub(crate) fn game(raw: &crate::table::GameConfig) -> Res<()> {

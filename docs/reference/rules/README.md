@@ -235,6 +235,7 @@
 |---|---|---|---|---|---|---|
 | [EXPORT001](EXPORT001.md) | export-drift | error | manual | P+ | true | The generated exports match the spec. Each block is one source file in a project whose `crunk.toml` |
 | [EXPORT002](EXPORT002.md) | export-parity | error | manual | P+ | true | The same token resolves to the same value in every export. Each block is one source file in a |
+| [EXPORT003](EXPORT003.md) | figma-plan-limit | error | manual | P+ | true | The Figma variables export fits the plan in `[figma]`. Each block is one source file in a project |
 
 ## FLOW
 

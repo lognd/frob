@@ -114,6 +114,7 @@ Ok(
         packs: PacksConfig {
             crunk_web: false,
         },
+        figma: None,
         game: None,
         decisions: {},
     },

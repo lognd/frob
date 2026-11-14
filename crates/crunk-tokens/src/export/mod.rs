@@ -30,6 +30,7 @@ mod csharp;
 mod css;
 mod drift;
 mod dtcg;
+mod figma;
 mod flat;
 mod json;
 mod parity;
@@ -50,6 +51,10 @@ pub use drift::{
     DriftReport, FileDrift, Rendered, Status, check, compare, render_managed, render_managed_with,
 };
 pub use dtcg::{DTCG_VERSION, DtcgExporter, document as dtcg_document};
+pub use figma::{
+    CollectionSize, FigmaExport, FigmaExporter, FigmaWarning, PlanOverrun, WarningKind,
+    collection_sizes, export as figma_export, plan_overruns,
+};
 pub use flat::FlatJsonExporter;
 pub use json::Json;
 pub use parity::{Divergence, check_parity, parity_of};
@@ -73,17 +78,20 @@ pub enum Target {
     Csharp,
     /// The DTCG 2025.10 resolver document (no configured file path yet).
     Dtcg,
+    /// Figma variables JSON (no configured file path yet).
+    FigmaVariables,
 }
 
 impl Target {
     /// Every target, in the order the managed files are written and reported.
-    pub const ALL: [Target; 6] = [
+    pub const ALL: [Target; 7] = [
         Target::Css,
         Target::Tailwind,
         Target::Json,
         Target::Uss,
         Target::Csharp,
         Target::Dtcg,
+        Target::FigmaVariables,
     ];
 
     /// The `--target` / `--format` spelling (`css`, `json`, `tailwind`).
@@ -95,6 +103,7 @@ impl Target {
             Self::Uss => "uss",
             Self::Csharp => "csharp",
             Self::Dtcg => "dtcg",
+            Self::FigmaVariables => "figma-variables",
         }
     }
 
@@ -112,6 +121,7 @@ impl Target {
             Self::Uss => &UssExporter,
             Self::Csharp => &CsharpExporter,
             Self::Dtcg => &DtcgExporter,
+            Self::FigmaVariables => &FigmaExporter,
         }
     }
 }

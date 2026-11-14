@@ -11,7 +11,7 @@ use serde::{Serialize, Serializer};
 
 use crate::catalog::{Severity, default_severity};
 use crate::table::{
-    Engine, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, PacksConfig,
+    Engine, FigmaConfig, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, PacksConfig,
     ProjectConfig, ReviewConfig, RosterEntry, ScalesConfig, ScreenConfig, TailwindConfig,
     TypographyConfig, Viewport,
 };
@@ -215,6 +215,10 @@ pub struct DesignSpec {
     /// `[packs]`: the std pack switches.
     #[serde(skip_serializing_if = "PacksConfig::is_default")]
     pub packs: PacksConfig,
+    // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+    /// `[figma]`: the Figma plan the variables export is checked against, when declared.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub figma: Option<FigmaConfig>,
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
     /// `[game]`: the game accessibility profile, when the project declares one.
     #[serde(skip_serializing_if = "Option::is_none")]

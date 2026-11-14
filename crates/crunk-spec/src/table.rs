@@ -583,6 +583,49 @@ impl PacksConfig {
     }
 }
 
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+/// The Figma plan tiers `[figma] plan` accepts, with the modes per collection each allows
+/// (`None` is unlimited, through extended collections on Enterprise).
+pub const FIGMA_PLANS: &[(&str, Option<u32>)] = &[
+    ("starter", Some(1)),
+    ("professional", Some(10)),
+    ("organization", Some(20)),
+    ("enterprise", None),
+];
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+/// Variables one Figma collection holds, on every plan.
+pub const FIGMA_MAX_VARIABLES: u32 = 5000;
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+/// The `[figma]` table: the Figma plan the variables export is checked against.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, ConfigTable)]
+#[config(table = "figma", product = "crunk")]
+pub struct FigmaConfig {
+    /// The Figma plan tier (`starter`, `professional`, `organization`, `enterprise`); sets the
+    /// modes allowed per collection.
+    pub plan: Option<String>,
+    /// Override of the modes allowed per collection, for a plan whose limit has changed.
+    pub max_modes: Option<u32>,
+    /// Override of the variables allowed per collection (default 5000).
+    pub max_variables: Option<u32>,
+}
+
+impl FigmaConfig {
+    /// The modes allowed per collection: the override, else the plan's limit; `None` is unlimited.
+    pub fn modes_limit(&self) -> Option<u32> {
+        self.max_modes.or_else(|| {
+            let plan = self.plan.as_deref()?;
+            FIGMA_PLANS.iter().find(|(n, _)| *n == plan).and_then(|(_, m)| *m)
+        })
+    }
+
+    /// The variables allowed per collection: the override, else [`FIGMA_MAX_VARIABLES`].
+    pub fn variables_limit(&self) -> u32 {
+        self.max_variables.unwrap_or(FIGMA_MAX_VARIABLES)
+    }
+}
+
 // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
 /// The game accessibility coverage keys a `[game]` profile declares, each with the guideline it
 /// answers (GAG = Game Accessibility Guidelines, XAG = Xbox Accessibility Guidelines, IGDA = IGDA
@@ -844,6 +887,9 @@ pub struct RawSpec {
     // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
     /// Std pack switches (`crunk_web`); optional, absent means every pack is off.
     pub packs: Option<PacksConfig>,
+    // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+    /// Figma plan the variables export is checked against; optional.
+    pub figma: Option<FigmaConfig>,
     // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
     /// Game accessibility profile (GX rules); optional, absent means the GX rules are off.
     pub game: Option<GameConfig>,

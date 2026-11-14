@@ -758,6 +758,29 @@
       },
       "type": "object"
     },
+    "figma": {
+      "additionalProperties": false,
+      "description": "The `[figma]` table: the Figma plan the variables export is checked against.",
+      "properties": {
+        "max_modes": {
+          "description": "Override of the modes allowed per collection, for a plan whose limit has changed.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_variables": {
+          "description": "Override of the variables allowed per collection (default 5000).",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "plan": {
+          "description": "The Figma plan tier (`starter`, `professional`, `organization`, `enterprise`); sets the\nmodes allowed per collection.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "game": {
       "additionalProperties": false,
       "description": "The `[game]` table: a game profile and the accessibility coverage keys it has declared.",

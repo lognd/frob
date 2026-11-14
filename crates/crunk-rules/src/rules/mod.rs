@@ -75,6 +75,8 @@ pub mod craft013;
 pub mod export001;
 /// Rule `EXPORT002`.
 pub mod export002;
+/// Rule `EXPORT003`.
+pub mod export003;
 /// Rule `GX001`.
 pub mod gx001;
 /// Rule `GX002`.
@@ -256,6 +258,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <craft013::Craft013 as gob_rules::RuleDecl>::DEF,
     <export001::Export001 as gob_rules::RuleDecl>::DEF,
     <export002::Export002 as gob_rules::RuleDecl>::DEF,
+    <export003::Export003 as gob_rules::RuleDecl>::DEF,
     <gx001::Gx001 as gob_rules::RuleDecl>::DEF,
     <gx002::Gx002 as gob_rules::RuleDecl>::DEF,
     <gx003::Gx003 as gob_rules::RuleDecl>::DEF,
@@ -386,9 +389,9 @@ where
     craft013::Craft013: gob_rules::RepoRule<P>,
     export001::Export001: gob_rules::Measured<P>,
     export002::Export002: gob_rules::Measured<P>,
+    export003::Export003: gob_rules::Measured<P>,
     gx001::Gx001: gob_rules::RepoRule<P>,
     gx002::Gx002: gob_rules::Measured<P>,
-    gx003::Gx003: gob_rules::Measured<P>,
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
@@ -429,9 +432,9 @@ where
         rules.push(gob_rules::BoundRule::repo(craft013::Craft013));
         rules.push(gob_rules::BoundRule::measured(export001::Export001));
         rules.push(gob_rules::BoundRule::measured(export002::Export002));
+        rules.push(gob_rules::BoundRule::measured(export003::Export003));
         rules.push(gob_rules::BoundRule::repo(gx001::Gx001));
         rules.push(gob_rules::BoundRule::measured(gx002::Gx002));
-        rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
     }
 }
 
@@ -440,6 +443,7 @@ pub struct Part1;
 
 impl<P: ?Sized + 'static> BindPart<P> for Part1
 where
+    gx003::Gx003: gob_rules::Measured<P>,
     gx004::Gx004: gob_rules::Measured<P>,
     gx005::Gx005: gob_rules::Measured<P>,
     human001::Human001: gob_rules::RepoRule<P>,
@@ -479,10 +483,10 @@ where
     slop028::Slop028: gob_rules::Measured<P>,
     slop029::Slop029: gob_rules::Measured<P>,
     slop040::Slop040: gob_rules::RepoRule<P>,
-    slop060::Slop060: gob_rules::RepoRule<P>,
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::measured(gx003::Gx003));
         rules.push(gob_rules::BoundRule::measured(gx004::Gx004));
         rules.push(gob_rules::BoundRule::measured(gx005::Gx005));
         rules.push(gob_rules::BoundRule::repo(human001::Human001));
@@ -522,7 +526,6 @@ where
         rules.push(gob_rules::BoundRule::measured(slop028::Slop028));
         rules.push(gob_rules::BoundRule::measured(slop029::Slop029));
         rules.push(gob_rules::BoundRule::repo(slop040::Slop040));
-        rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
     }
 }
 
@@ -531,6 +534,7 @@ pub struct Part2;
 
 impl<P: ?Sized + 'static> BindPart<P> for Part2
 where
+    slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
     state001::State001: gob_rules::Measured<P>,
     state002::State002: gob_rules::Measured<P>,
@@ -561,6 +565,7 @@ where
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
+        rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
         rules.push(gob_rules::BoundRule::measured(space001::Space001));
         rules.push(gob_rules::BoundRule::measured(state001::State001));
         rules.push(gob_rules::BoundRule::measured(state002::State002));

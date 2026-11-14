@@ -24,6 +24,16 @@ The `[decisions]` table: declared design decisions, `key = "reason"`.
 |---|---|---|---|---|
 | any other key | `IndexMap<String, String>` | no | - | The `[decisions]` table: declared design decisions, `key = "reason"`. |
 
+## `[figma]`
+
+The `[figma]` table: the Figma plan the variables export is checked against.
+
+| Key | Type | Required | Default | Doc |
+|---|---|---|---|---|
+| `max_modes` | `u32` | no | - | Override of the modes allowed per collection, for a plan whose limit has changed. |
+| `max_variables` | `u32` | no | - | Override of the variables allowed per collection (default 5000). |
+| `plan` | `String` | no | - | The Figma plan tier (`starter`, `professional`, `organization`, `enterprise`); sets the modes allowed per collection. |
+
 ## `[game]`
 
 The `[game]` table: a game profile and the accessibility coverage keys it has declared.

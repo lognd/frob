@@ -351,6 +351,12 @@ fn build(
     {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
+    // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+    match config {
+        Some("figma-tiny") => spec_text.push_str("\n[figma]\nmax_variables = 1\n"),
+        Some("figma-professional") => spec_text.push_str("\n[figma]\nplan = \"professional\"\n"),
+        _ => {}
+    }
     // frob:ticket 01M5XCVZBYWA5WCATMF9QYZAS8
     if config == Some("max-duration") {
         spec_text.push_str("\n[tokens]\nmax_duration_ms = 1000\n");

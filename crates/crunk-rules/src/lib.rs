@@ -42,6 +42,7 @@ pub mod content_files;
 pub mod contrast;
 pub mod craft;
 pub mod family;
+pub mod export_figma;
 pub mod file_attrs;
 pub mod fixes;
 pub mod grl_rules;

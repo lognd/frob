@@ -1007,6 +1007,22 @@ fn decisions_table_declares_known_decisions_with_reasons() {
     assert!(detail(&blank).contains("reason must not"));
 }
 
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-spec/src/table.rs::FigmaConfig
+#[test]
+fn figma_table_loads_resolves_plan_limits_and_rejects_bad_values() {
+    assert!(ok(full()).figma.is_none());
+    let spec = ok(&with("[figma]\nplan = \"professional\"\n"));
+    let figma = spec.figma.expect("figma");
+    assert_eq!(figma.modes_limit(), Some(10));
+    let custom = ok(&with("[figma]\nmax_modes = 4\n")).figma.expect("figma");
+    assert_eq!(custom.modes_limit(), Some(4));
+    let unknown = err(&with("[figma]\nplan = \"bogus\"\n"));
+    assert!(detail(&unknown).contains("bogus"));
+    let zero = err(&with("[figma]\nmax_modes = 0\n"));
+    assert!(detail(&zero).contains("max_modes"));
+}
+
 // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
 // frob:tests crates/crunk-spec/src/table.rs::GameConfig
 #[test]

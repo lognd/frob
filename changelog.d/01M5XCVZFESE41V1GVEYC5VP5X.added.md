@@ -1,0 +1,1 @@
+crunk: `crunk export figma-variables` renders the token set as Figma variables JSON (collections are tiers, modes are modes, variables are tokens), and the new `[figma]` table (`plan`, `max_modes`, `max_variables`) feeds EXPORT003, which fires when a collection exceeds the plan limits and names the plan and the limit.

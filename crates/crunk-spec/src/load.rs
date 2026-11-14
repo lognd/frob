@@ -30,6 +30,7 @@ pub const OWN_TABLES: &[&str] = &[
     "mock_set",
     "review",
     "packs",
+    "figma",
     "game",
     "decisions",
     "rules",
@@ -557,6 +558,11 @@ impl<'a> Ctx<'a> {
         // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
         let packs = raw.packs.unwrap_or_default();
         tracing::debug!(crunk_web = packs.crunk_web, "[packs] resolved");
+        // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+        let figma = raw.figma;
+        if let Some(f) = &figma {
+            validate::figma(f)?;
+        }
         // frob:ticket 01M4D95WWXAWJF1M9ST8RX5YZG
         let game = raw.game;
         if let Some(g) = &game {
@@ -586,6 +592,7 @@ impl<'a> Ctx<'a> {
             mock_sets,
             review,
             packs,
+            figma,
             game,
             decisions,
         })
