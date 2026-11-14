@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["ROUTE105 flags Flask and FastAPI verb-decorated admin or internal routes lacking a guard decorator or Depends, and ROUTE107 flags return str(e) handlers"]
+moved = []
+at = "2026-11-14T17:27:40Z"
+actor = "lognd"
+rev = 1
