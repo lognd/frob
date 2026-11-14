@@ -2,12 +2,12 @@
 id = "01M7A50YT0JRYCGEYE3QQTH47J"
 title = "Document the --good-first flag in docs/guide"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-13T09:51:55Z"
+updated = "2026-11-14T04:32:34Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/guide/**"]
 
