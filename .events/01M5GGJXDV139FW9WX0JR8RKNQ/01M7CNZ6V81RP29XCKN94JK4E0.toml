@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T09:24:02Z"
+digest = "5f5523d12efd5356d1cb3c955ce2160583cd0dc59da268029caaa8d4c566fbe9"
+exit_code = 0
+head = "4f59421dc31e6bce576d43e9d4e2f8b01c6b676d"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 8d887f66-467f-496f-83f8-8d616eb11815 with nextest profile: default
+    Starting 1 test across 2 binaries (568 tests skipped)
+        PASS [   0.008s] gob-symbols::it typescript_exports::exports_resolve_through_named_and_star_reexports
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 568 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E test(=typescript_exports::exports_resolve_through_named_and_star_reexports)"
+size = 698
+status = "measured"
+test_count = 1
+tests_digest = "8b048ae220b4eef503532c0d7401daf8234a46f3e2bf30fbda6aa337e84bc74d"
+at = "2026-11-14T09:24:02Z"
+actor = "lognd"
+rev = 1
