@@ -1,0 +1,6 @@
+kind = "comment"
+subtype = "note"
+body = "Commit f98df80f0a trims per-row allocation (non-allocating lineage, borrowed link_dest, cached equality conjuncts with shared probe operands, lazy report guards, iterative touches_unread). Full B1 bench: DOC002 per-file median 7.48x -> 7.09x (limit 1.30x); TODO001 2.91x, COV001 4.12x unchanged within noise. Target NOT reached: a probe put the fixed floor near 2x handwritten; the remainder is per-quantifier hash lookups and Val/Datum allocation, which needs an executor redesign (precompiled slots) beyond micro-optimisation. Acceptance left unmet, no accepting evidence bound."
+at = "2026-11-14T17:27:44Z"
+actor = "lognd"
+rev = 1
