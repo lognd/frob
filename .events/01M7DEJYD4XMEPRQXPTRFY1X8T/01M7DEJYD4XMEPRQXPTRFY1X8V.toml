@@ -1,0 +1,10 @@
+kind = "create"
+title = "ci: remove the crunk-parity job (user ruling)"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story", "chore"]
+body = "Owner ruled the Chromium parity check must not be a CI job. Remove the crunk-parity job from ci.yml and update docs/guides/crunk.md; the test stays runnable locally. No-story chore."
+at = "2026-11-14T16:34:56Z"
+actor = "lognd"
+rev = 1
