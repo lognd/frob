@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a C# field no code assigns and the unity pack enabled, when frob check runs, then UNITY004 reports it; an assigned field is clean"]
+moved = []
+at = "2026-11-14T08:37:25Z"
+actor = "lognd"
+rev = 1
