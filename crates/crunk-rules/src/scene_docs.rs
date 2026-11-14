@@ -80,6 +80,9 @@ impl SceneDocFile {
     /// The T1 layout solve at [`SOLVE_VIEWPORT`] with the spec's tokens; `Err` carries why the
     /// scene does not solve (a missing `data-id`, an undefined `var()`), which geometry rules
     /// must report as Unresolved rather than pass.
+    ///
+    /// # Errors
+    /// The reason the scene cannot be solved.
     pub fn solve(&self) -> Result<&LayoutSolve, &str> {
         self.solved
             .get_or_init(|| self.solve_at(SOLVE_VIEWPORT))
@@ -91,6 +94,9 @@ impl SceneDocFile {
     // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
     /// A fresh T1 layout solve at `viewport` (width, height) with the spec's tokens, uncached;
     /// `Err` carries why the scene does not solve. RESP001 solves each scene at every breakpoint.
+    ///
+    /// # Errors
+    /// The reason the scene cannot be solved.
     pub fn solve_at(&self, viewport: (f32, f32)) -> Result<LayoutSolve, String> {
         let mut fonts = TextMeasurer::new();
         match solve_scene_html(&self.doc, &self.tokens, viewport, &mut fonts) {
@@ -104,7 +110,7 @@ impl SceneDocFile {
 
     // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
     /// The Unresolved message for a geometry rule when `why` stopped this scene from solving.
-    pub fn unsolved_message(why: &str) -> String {
+    pub(crate) fn unsolved_message(why: &str) -> String {
         format!("scene does not solve at T1, so its layout cannot be judged: {why}")
     }
 }
