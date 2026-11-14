@@ -601,7 +601,7 @@ fn scene_doc_solve_at_follows_the_requested_viewport() {
     assert!(
         bad.scene_docs().expect("scene docs").files[0]
             .solve_at((375.0, 667.0))
-            .is_none()
+            .is_err()
     );
 }
 

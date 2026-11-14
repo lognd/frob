@@ -7,6 +7,7 @@ use gob_rules::{Measured, Out, RepoRule, rule};
 use crunk_layout::findings::{ChildOverflow, child_overflows, rect};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
+use crate::scene_docs::SceneDocFile;
 
 /// A scene node that overflows its parent's rectangle.
 #[derive(Debug, Clone, Copy, Default)]
@@ -31,8 +32,13 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Layout001 {
             return;
         };
         for file in &facts.files {
-            let Some(solve) = file.solve() else {
-                continue;
+            let solve = match file.solve() {
+                Ok(solve) => solve,
+                Err(why) => {
+                    tracing::warn!(path = %file.path, %why, "LAYOUT001: scene does not solve");
+                    out.unresolved_in(&file.path, 0, SceneDocFile::unsolved_message(why));
+                    continue;
+                }
             };
             for ChildOverflow { node, parent } in child_overflows(solve) {
                 let (l, t, r, b) = rect(node);

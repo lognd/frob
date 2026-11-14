@@ -12,11 +12,29 @@ use crunk_layout::style::TokenMap;
 use crunk_layout::text::TextMeasurer;
 use crunk_scene::SceneDoc;
 use crunk_spec::DesignSpec;
+use crunk_tokens::TokenSet;
 
 pub use crunk_ingest::scene::SCENE_DOC_SUFFIX;
 
 /// The project directory holding the authored scene files, relative to the root.
 pub const SCENES_DIR: &str = "design/scenes";
+
+// frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
+/// The spec's tokens as the solver's `var()` map (as `crunk render` builds it); empty, with a
+/// warning, when the token set cannot be built (TOKENS rules report that).
+fn token_map(spec: &DesignSpec) -> TokenMap {
+    match TokenSet::from_spec(spec) {
+        Ok(set) => TokenMap::from_pairs(
+            set.css_entries()
+                .into_iter()
+                .map(|(name, value)| (name.to_owned(), value)),
+        ),
+        Err(e) => {
+            tracing::warn!(error = %e, "token set cannot be built; scenes solve with no tokens");
+            TokenMap::new()
+        }
+    }
+}
 
 /// One scene document that parsed.
 #[derive(Debug, Clone)]
@@ -28,7 +46,9 @@ pub struct SceneDocFile {
     /// The parsed scene.
     pub doc: SceneDoc,
     /// The T1 layout solve, computed on first use.
-    solved: OnceLock<Option<LayoutSolve>>,
+    solved: OnceLock<Result<LayoutSolve, String>>,
+    /// The spec's design tokens, so `var(--token)` in scene styles resolves as `crunk render` does.
+    tokens: TokenMap,
 }
 
 /// The viewport the SLOP layout tells solve at: a desktop width, where card rows and section
@@ -43,30 +63,49 @@ impl SceneDocFile {
             text,
             doc,
             solved: OnceLock::new(),
+            tokens: TokenMap::new(),
         }
+    }
+
+    // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
+    /// This file with `tokens` as the map its solves resolve `var()` against.
+    #[must_use]
+    pub fn with_tokens(mut self, tokens: TokenMap) -> Self {
+        self.tokens = tokens;
+        self
     }
 
     // frob:ticket 01M4CXTCXCKKPRDHXEEZ2NK7PP
-    /// The T1 layout solve at [`SOLVE_VIEWPORT`] with no tokens; `None` when the scene does not
-    /// solve (a missing `data-id`, an unresolved `var()`), so geometry-backed tells stay silent.
-    pub fn solve(&self) -> Option<&LayoutSolve> {
+    // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
+    /// The T1 layout solve at [`SOLVE_VIEWPORT`] with the spec's tokens; `Err` carries why the
+    /// scene does not solve (a missing `data-id`, an undefined `var()`), which geometry rules
+    /// must report as Unresolved rather than pass.
+    pub fn solve(&self) -> Result<&LayoutSolve, &str> {
         self.solved
             .get_or_init(|| self.solve_at(SOLVE_VIEWPORT))
             .as_ref()
+            .map_err(String::as_str)
     }
 
     // frob:ticket 01M6Z2SXMWBKP1SS1NPE0MT1GQ
-    /// A fresh T1 layout solve at `viewport` (width, height) with no tokens, uncached; `None` when
-    /// the scene does not solve. RESP001 solves each scene at every declared breakpoint.
-    pub fn solve_at(&self, viewport: (f32, f32)) -> Option<LayoutSolve> {
+    // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
+    /// A fresh T1 layout solve at `viewport` (width, height) with the spec's tokens, uncached;
+    /// `Err` carries why the scene does not solve. RESP001 solves each scene at every breakpoint.
+    pub fn solve_at(&self, viewport: (f32, f32)) -> Result<LayoutSolve, String> {
         let mut fonts = TextMeasurer::new();
-        match solve_scene_html(&self.doc, &TokenMap::new(), viewport, &mut fonts) {
-            Ok(solved) => Some(solved.doc),
+        match solve_scene_html(&self.doc, &self.tokens, viewport, &mut fonts) {
+            Ok(solved) => Ok(solved.doc),
             Err(e) => {
                 tracing::debug!(path = %self.path, ?viewport, error = %e, "scene does not solve at T1");
-                None
+                Err(e.to_string())
             }
         }
+    }
+
+    // frob:ticket 01M7AV3827P32YDAGDXDVS8CWV
+    /// The Unresolved message for a geometry rule when `why` stopped this scene from solving.
+    pub fn unsolved_message(why: &str) -> String {
+        format!("scene does not solve at T1, so its layout cannot be judged: {why}")
     }
 }
 
@@ -118,10 +157,11 @@ impl SceneDocFacts {
     /// directory gives no files, and a file that does not load becomes a [`SceneDocProblem`].
     pub fn load(spec: &DesignSpec) -> Self {
         let loaded = load_scene_docs(&spec.root, SCENES_DIR);
+        let tokens = token_map(spec);
         let files = loaded
             .docs
             .into_iter()
-            .map(|d| SceneDocFile::new(d.path, d.text, d.doc))
+            .map(|d| SceneDocFile::new(d.path, d.text, d.doc).with_tokens(tokens.clone()))
             .collect();
         Self {
             files,
