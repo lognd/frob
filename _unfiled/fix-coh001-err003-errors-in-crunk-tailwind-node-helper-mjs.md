@@ -2,12 +2,12 @@
 id = "01M7BYRY2QA3VWYMCWRKM15MK2"
 title = "Fix COH001/ERR003 errors in crunk-tailwind node helper.mjs"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-14T02:39:21Z"
-updated = "2026-11-14T02:39:21Z"
+updated = "2026-11-14T02:39:28Z"
 idempotency_key = "helper-mjs-coh001-err003"
 labels = ["crunk"]
 scope = ["crates/crunk-tailwind/node/**"]
