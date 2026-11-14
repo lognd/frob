@@ -13,7 +13,7 @@ scope = ["crates/gob-text/**"]
 
 [[acceptance]]
 text = "Given a line saying 'section N of x.md', when the citation scanner runs, then it yields a section citation of x.md with a span covering the phrase"
-bound = false
+bound = true
 +++
 
 found while working ~Q1ZG43K
