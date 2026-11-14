@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-14T00:57:46Z"
+updated = "2026-11-14T01:03:44Z"
 labels = ["no-story"]
 scope = ["crates/crunk-*/**"]
 
 [[acceptance]]
 text = "A token-using scene yields a finding or Unresolved, never a silent pass."
-bound = false
+bound = true
 +++
 
 H2: LAYOUT001/002, RESP001, SLOP020-029 pass without evidence when tokens are used; report Unresolved instead. Source: frob-audit-grimble-crunk.md (Opus audit).
