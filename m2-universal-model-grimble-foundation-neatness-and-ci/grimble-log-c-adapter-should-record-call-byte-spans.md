@@ -8,13 +8,13 @@ points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-09T12:11:11Z"
-updated = "2026-11-14T21:13:37Z"
+updated = "2026-11-14T21:13:39Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/csharp.rs"]
 
 [[acceptance]]
 text = "C# call sites carry non-empty byte spans covering the call expression text"
-bound = false
+bound = true
 +++
 
 found while working ~MV8PWVD: C# calls have start=end=0, so the LOG cross-check falls back to line coverage
