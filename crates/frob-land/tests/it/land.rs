@@ -268,6 +268,31 @@ fn refusal(e: &LandError) -> &gob_diagnostics::Refusal {
     e.refusal().unwrap_or_else(|| panic!("not a refusal: {e}"))
 }
 
+// frob:tests crates/frob-land/src/cited_tickets.rs::gate
+#[test]
+fn dangling_ticket_citation_blocks_land_before_push() {
+    if !git_available() {
+        return;
+    }
+    let fx = Fixture::new();
+    let s = fx.start("Cite", &["src/**"]);
+    Fixture::commit_in(
+        &s.wt,
+        "src/c.rs",
+        "// frob:ticket 01M7ZZZZZZZZZZZZZZZZZZZZZZ\nfn c() {}\n",
+    );
+    Fixture::evidence(&s, "src/c.rs");
+    let err = land(
+        &fx.root,
+        &Fixture::opts(&s),
+        &(Arc::new(gob_time::SystemClock) as Arc<dyn gob_time::Clock>),
+    )
+    .expect_err("dangling citation must refuse");
+    let r = refusal(&err);
+    assert_eq!(r.code, "E-LAND-CITED-MISSING", "{r:?}");
+    assert!(r.message.contains("E-DOCTOR-CITED-MISSING"), "{r:?}");
+}
+
 #[test]
 fn happy_path_lands_closes_and_cleans_up() {
     if !git_available() {

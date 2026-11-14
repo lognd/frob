@@ -35,6 +35,7 @@ use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::base_ci;
+use crate::cited_tickets;
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
@@ -334,6 +335,9 @@ pub(crate) fn preconditions(
             "set [tickets] ref to an existing branch in frob.toml",
         )
     })?;
+    // frob:ticket 01M7BR4JX3EZVXK1A6JD49NB6Q
+    // A dangling `frob:ticket` citation is unwaivable and must block before any code is pushed.
+    cited_tickets::gate(&wt, &wt_path, &base_ref(base), &site.ledger)?;
     let ci_gate = base_ci::gate(
         &wt,
         &wt_path,
