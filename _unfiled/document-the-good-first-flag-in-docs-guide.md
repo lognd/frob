@@ -2,7 +2,8 @@
 id = "01M7A50YT0JRYCGEYE3QQTH47J"
 title = "Document the --good-first flag in docs/guide"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
