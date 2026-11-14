@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given the release status report, when epics exist, then epic_closed criteria are derived and bound and frob doctor surfaces attester problems"]
+moved = []
+at = "2026-11-14T02:05:12Z"
+actor = "lognd"
+rev = 1
