@@ -552,6 +552,18 @@ readonly = true
 exit = [0, 1, 3]
 budget_ms = 500
 
+[scenario."crunk outline"]
+args = ["outline"]
+readonly = true
+exit = [0, 1, 2, 3]
+budget_ms = 500
+
+[scenario."crunk guidelines"]
+args = ["guidelines"]
+readonly = true
+exit = [0, 1, 3]
+budget_ms = 500
+
 [scenario."crunk query"]
 args = ["query", "dupes"]
 readonly = true
