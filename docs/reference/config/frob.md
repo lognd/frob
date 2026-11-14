@@ -72,6 +72,7 @@ Materialized: yes.
 | `evict_agent` | `EvictKnob` | `"auto"` | no | `auto` lets `frob work --next` evict an idle agent claim when nothing else is claimable; `confirm` never does. |
 | `evict_human` | `EvictKnob` | `"auto"` | no | `auto` lets an idle human claim be evicted without a confirmation (design D-4); `confirm` makes `frob claim evict` need `--yes` for a human holder. |
 | `evict_rate` | `u32` | `5` | no | Most automatic evictions one clone performs per local calendar day. |
+| `flap_repeat_days` | `u64` | `14` | no | Days within which a second eviction of the same holder on the same ticket needs a human to confirm (the flap guard). |
 | `idle_days` | `u32` | `3` | no | Calendar days a human claim may sit idle before it is evictable; 0 means never evict. |
 | `max_hold_days` | `u32` | `30` | no | Longest hold, in days, `frob claim hold` accepts. |
 | `paused_max_days` | `u32` | `14` | no | Longest stretch, in days, a blocked, review, train or CI pause stops the idle clock. |
@@ -100,16 +101,22 @@ a name as an effect, `trivial` as never one, and a name in both is trivial. Both
 empty. A call the capability cannot place leaves the verdict Unresolved until it is listed.
 `max_level_spread` is the COH003 threshold: callees further apart than that many layers fire.
 `min_slice_statements` is the COH001 floor: a component of fewer top-level statements is not a
-job; `trivial` also adds to COH001's built-in logging vocabulary.
+job; `trivial` also adds to COH001's built-in logging vocabulary, so list only logging-like
+names there and put plain non-effect callees in `callee_trivial`, which only COH002 reads.
+`vocab_min_cluster_words` is the COH004 floor: a word cluster smaller than that is not a
+vocabulary; `vocab_stop_words` adds to COH004's built-in generic words, which are dropped.
 
 Materialized: no.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `callee_trivial` | `Vec<String>` | `[]` | no | Extra callee names COH002 treats as non-effects; unlike `trivial` they do not change COH001's job clustering. |
 | `effect_calls` | `Vec<String>` | `[]` | no | Extra callee names that perform an effect (IO, messaging, persistence) when called inside a decision. |
 | `max_level_spread` | `u64` | `1` | no | The largest layer distance between a unit's callees that COH003 still accepts as one level of abstraction. |
 | `min_slice_statements` | `u64` | `2` | no | The fewest top-level statements a component needs to count as a job for COH001. |
 | `trivial` | `Vec<String>` | `[]` | no | Extra callee names that are trivial (logging, metrics, asserts) and never count as an effect. |
+| `vocab_min_cluster_words` | `u64` | `2` | no | The fewest distinct words a cluster needs to count as a vocabulary for COH004. |
+| `vocab_stop_words` | `Vec<String>` | `[]` | no | Extra generic words COH004 drops before clustering (std method names, test scaffolding). |
 
 ## `[compute]`
 
@@ -242,6 +249,7 @@ Materialized: no.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `external_citations` | `Vec<String>` | `[]` | no | Globs over a cited markdown file as written; a matching citation names a file outside the repo and is not checked (DOC006). |
 | `forbid_imports` | `Vec<ForbidImport>` | `[]` | no | Imports no file matching `from` may contain; each entry needs a `reason`. |
 
 ## `[land]`
@@ -308,7 +316,7 @@ Materialized: yes.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
-| `enabled` | `Vec<String>` | `[]` | yes | Enabled pack ids in load order. |
+| `enabled` | `Vec<String>` | `[]` | yes | Enabled pack ids in load order. Built-in packs are opt-in: add `"unity"` (`enabled = ["unity"]`) to turn on the Unity engine vocabulary pack; only the root `grimble.toml` enables it, never an adapter. |
 | `external` | `Vec<ExternalPack>` | `[]` | no | External packs (`[[packs.external]]`). |
 | `lock` | `String` | `"grimble.packs.lock"` | yes | Path of the pack lock, relative to the repository root. |
 | `severity` | `std::collections::BTreeMap<String, std::collections::BTreeMap<
@@ -408,6 +416,7 @@ Materialized: yes.
 | `fetch_timeout_ms` | `u32` | `10000` | no | Milliseconds a `frob refresh` fetch or push may run before it is killed. |
 | `foreground_budget_ms` | `u32` | `3000` | no | Milliseconds a mutating verb may spend probing in the foreground before it falls back to the cache. |
 | `probe_timeout_ms` | `u32` | `2500` | no | Milliseconds before a hung `git ls-remote` is killed. |
+| `push_wip` | `bool` | `true` | no | Whether `frob refresh` pushes this clone's claimed `ticket/<handle>` branches as WIP (fast-forward only, never merged). |
 | `remote` | `String` | `"origin"` | no | The one authoritative remote; other remotes are never probed. |
 | `stale_error_secs` | `u32` | `86400` | no | Seconds of cache age past which mutating verbs refuse (`E-SYNC-STALE`) when the remote cannot be reached. |
 | `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |

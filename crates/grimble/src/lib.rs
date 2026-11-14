@@ -5,7 +5,7 @@
 //! [`init`], [`fmt_cmd`] and [`exceptions`] and holds its own [`doctor`] rows. The built-in
 //! `schema` verb comes from `gob-cli`. The `[compute]`, `[packs]`, `[check]` and `[perf]`
 //! config tables register through `grimble-check` and `gob-check`. No frob crate is linked (the
-//! boundary test in `tests/boundary.rs`).
+//! boundary test in `tests/it/boundary.rs`).
 
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
 pub mod ack;

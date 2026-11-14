@@ -1,0 +1,12 @@
+---
+source: crates/gob-diagnostics/tests/it/contract.rs
+assertion_line: 538
+expression: out
+---
+(no location)
+  unresolved[TOOL001]: no adapter
+  reason: the language support is too shallow for this rule (fidelity)
+  remedy: use a richer adapter or disable the rule here
+
+0 errors, 1 unresolved (0 required)
+  unresolved: 0 because a plugin did not finish, 1 because the code is undecidable

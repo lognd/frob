@@ -158,7 +158,7 @@ pub(crate) fn success(
             .iter()
             .map(|f| FindingRecord::from_finding_for(f, &sources, registry, audience))
             .collect();
-        let mut envelope = Envelope::success(erased.data, records);
+        let mut envelope = Envelope::success(erased.data, records).with_freshness(erased.freshness);
         envelope.warnings = erased.warnings;
         let wire = Wire {
             verb: Some(verb),
@@ -392,9 +392,9 @@ fn scalar(v: &Value) -> String {
 /// Broken pipes and other write failures are logged, never panics: the exit
 /// code is the contract, not the bytes.
 pub(crate) fn emit(exec: &Execution) {
-    // frob:accept LOG001 because="the one place the CLI writes its rendered result to stdout"
+    // frob:defer LOG001 because="the one place the CLI writes its rendered result to stdout" ticket=01M79PWQP03T5YH7QVM72KW077
     let mut stdout = std::io::stdout().lock();
-    // frob:accept LOG001 because="the one place the CLI writes its rendered diagnostics to stderr"
+    // frob:defer LOG001 because="the one place the CLI writes its rendered diagnostics to stderr" ticket=01M79PWQP03T5YH7QVM72KW077
     let mut stderr = std::io::stderr().lock();
     if let Err(e) = stdout
         .write_all(exec.stdout.as_bytes())
@@ -449,7 +449,7 @@ mod tests {
     // frob:ticket 01M62W1RDJQXY7GD8CW13J001Y
     #[test]
     fn value_lines_colours_keys_and_status_only_with_a_style() {
-        let v = serde_json::json!({"state": "closed", "n": 1});
+        let v = serde_json::json!({"n": 1, "state": "closed"});
         let mut plain = String::new();
         value_lines(&v, 1, &mut plain);
         assert_eq!(plain, "  n: 1\n  state: closed\n");
@@ -468,6 +468,7 @@ mod tests {
             warnings: Vec::new(),
             already: false,
             rendered: Some(vec!["a  b".to_owned(), "c".to_owned()]),
+            freshness: None,
         };
         let text = success(
             "v",
@@ -506,6 +507,7 @@ mod tests {
                 warnings: Vec::new(),
                 already: false,
                 rendered: None,
+                freshness: None,
             };
             let out = success("v", e, true, false, ColorChoice::Never, audience);
             let v: Value = serde_json::from_str(&out.stdout).unwrap();

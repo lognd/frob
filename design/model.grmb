@@ -72,9 +72,9 @@ node crunk : trusted {
   may process.env at "crates/crunk*/**" because="reads environment overrides";
   may exec at "crates/crunk*/tests/**" because="spawns subprocesses where this path needs them";
   may net.listen at "crates/crunk-gallery/src/triage/**" because="serves or calls a network endpoint at this path";
-  may net.listen at "crates/crunk/tests/gallery.rs" because="serves or calls a network endpoint at this path";
-  may net.connect at "crates/crunk/tests/gallery.rs" because="serves or calls a network endpoint at this path";
-  may net.connect at "crates/crunk-gallery/tests/triage.rs" because="serves or calls a network endpoint at this path";
+  may net.listen at "crates/crunk/tests/it/gallery.rs" because="serves or calls a network endpoint at this path";
+  may net.connect at "crates/crunk/tests/it/gallery.rs" because="serves or calls a network endpoint at this path";
+  may net.connect at "crates/crunk-gallery/tests/it/triage.rs" because="serves or calls a network endpoint at this path";
   may clock at "crates/crunk*/**" because="timing of checks and test waits";
   may exit at "crates/crunk/src/main.rs" because="binary entry point maps results to exit codes";
   may process.spawn at "crates/crunk*/**" because="runs git, tailwind and tools through the exec runner";
@@ -136,6 +136,7 @@ node std_rules : trusted {
   kind component;
   clearance Internal;
   owns "packs/std/generated/**";
+  owns "packs/crunk-core/generated/**";
 }
 
 /// Substrate data (check results, locks, walks) flows to crunk, which calls it (SYS013 allows an edge in either direction of a flow).

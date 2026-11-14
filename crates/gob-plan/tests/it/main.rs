@@ -1,0 +1,35 @@
+//! One integration-test binary per crate (audit M17): fewer links, one process pool.
+// frob:ticket 01M5AH5JFD9MVN1H1B6YHPX7GN
+mod catalog;
+mod check_names;
+mod codegen;
+mod count_ratio;
+mod example_run;
+mod example_runner;
+mod examples_model;
+mod exec_core;
+mod exec_outcome;
+mod exec_outcome_gaps;
+mod exec_prefilter;
+mod exec_relations;
+mod fix_render;
+mod fixes;
+mod fmt_source;
+mod grammar_ambiguity;
+mod inline;
+mod lex;
+mod lower;
+mod lower_roles;
+mod lower_snippets;
+mod needs_capabilities;
+mod print_stability;
+mod role_binding;
+mod rule_new;
+mod rule_row;
+mod snippets;
+mod stmt_kinds;
+mod structure;
+mod support;
+mod verbs;
+mod web_rule;
+mod why;

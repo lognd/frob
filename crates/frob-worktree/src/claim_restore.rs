@@ -87,7 +87,7 @@ fn offline(handle: &str, why: &str) -> WorktreeError {
 }
 
 /// The `lease` op `restore` event body: `parked` came back as the ticket branch at `tip`, for `reason`.
-fn restore_event(parked: &str, tip: &str, reason: &str) -> EventBody {
+pub(crate) fn restore_event(parked: &str, tip: &str, reason: &str) -> EventBody {
     EventBody::Lease(LeaseData {
         op: LeaseOp::Restore,
         holder: None,
@@ -97,6 +97,9 @@ fn restore_event(parked: &str, tip: &str, reason: &str) -> EventBody {
         idle_secs: None,
         window_secs: None,
         reason: Some(reason.to_owned()),
+        clone_id: None,
+        agent: None,
+        branch: None,
     })
 }
 

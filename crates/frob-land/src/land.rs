@@ -30,10 +30,12 @@ use frob_ledger::model::Category;
 use frob_ledger::model::CommentSubtype;
 use frob_ledger::ops::TicketView;
 use frob_ledger::{Ledger, RefMode, TicketId};
+use frob_metrics::activity::{ActivityTotal, DEFAULT_IDLE_GAP_SECS, Journal, Signal, summary_line};
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use gob_git::{MergeOutcome, Oid, Repo, StatusOptions, TreeRef};
 
 use crate::base_ci;
+use crate::cited_tickets;
 use crate::error::{LandError, needs_action};
 use crate::events::{LandEvent, append_land};
 use crate::git::git;
@@ -128,8 +130,27 @@ fn settled_by_a_racing_land(
             return None;
         }
     }
+    // frob:ticket 01M7ATYEXWQEBT3NPC65JBQCNJ
+    // In branch ref mode the close rides on the ticket branch, so a done ticket proves nothing
+    // until its code reached the base: a failed fast-forward must surface, not read as done.
+    let branch = format!("ticket/{}", view.summary.handle.trim_start_matches('~'));
+    if !code_reached_base(repo, base, &branch) {
+        tracing::warn!(ticket = %id, branch = %branch, base = %base, "ticket reads done but its branch is not on the base; surfacing the land failure");
+        return None;
+    }
     tracing::info!(ticket = %id, "land failed but the ticket is done: a racing land won; reporting a no-op");
     Some(already_done(&view, id, &view.summary.handle, base, opts))
+}
+
+/// True when `branch` is gone (a winner removed it) or its tip is contained in `base`.
+fn code_reached_base(repo: &Repo, base: &str, branch: &str) -> bool {
+    let Ok(tip) = repo.rev_parse(&format!("refs/heads/{branch}")) else {
+        return true;
+    };
+    repo.merge_base(&base_ref(base), &tip.to_string())
+        .ok()
+        .flatten()
+        == Some(tip)
 }
 
 /// Everything the preconditions established, ready to plan or publish.
@@ -219,21 +240,8 @@ fn merge_or_assume(
         }
         let pre = wt.head()?.oid;
         base_merge = Some(merge_base_in(wt, wt_path, base, handle)?);
+        verify_merge_kept_hunks(wt, wt_path, base, handle, pre)?;
         base_merged = true;
-        // frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
-        // A merge that resolved the ticket's own hunks away must refuse here, not as "evidence no longer resolves".
-        if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
-            && pre != post
-        {
-            hunk_presence::verify_after_merge(
-                wt,
-                wt_path,
-                &base_ref(base),
-                &pre.to_string(),
-                &post.to_string(),
-                handle,
-            )?;
-        }
     } else if base_merged {
         base_merge = Some("up-to-date".to_owned());
     } else if ledger_only_ahead(wt, fork, base_oid, &site.ledger.config().dir)? {
@@ -327,6 +335,9 @@ pub(crate) fn preconditions(
             "set [tickets] ref to an existing branch in frob.toml",
         )
     })?;
+    // frob:ticket 01M7BR4JX3EZVXK1A6JD49NB6Q
+    // A dangling `frob:ticket` citation is unwaivable and must block before any code is pushed.
+    cited_tickets::gate(&wt, &wt_path, &base_ref(base), &site.ledger)?;
     let ci_gate = base_ci::gate(
         &wt,
         &wt_path,
@@ -439,6 +450,7 @@ fn prepare(
         branch: Some(branch.clone()),
         worktree: Some(wt_path.clone()),
         base_merge,
+        activity: Vec::new(),
         warnings,
         pre_existing: ratchet.pre_existing,
         resolved: ratchet.resolved,
@@ -520,6 +532,11 @@ impl Ready {
         let fold_budget = budget.max(LEDGER_FOLD_BUDGET);
         let ledger_dir = site.ledger.config().dir.clone();
         let mut cone = self.cone.clone();
+        self.out.activity = summarize_activity(
+            &site.ledger,
+            (id, ctx.repo.common_dir()),
+            (&self.out.stages, on_branch),
+        );
         let mut attempt = 0_u32;
         let oid = loop {
             attempt += 1;
@@ -882,6 +899,7 @@ pub(crate) fn blank_outcome(
         digest: None,
         plan: Vec::new(),
         attempts: 0,
+        activity: Vec::new(),
         warnings: Vec::new(),
         pre_existing: Vec::new(),
         resolved: Vec::new(),
@@ -1118,6 +1136,64 @@ fn ensure_clean(wt: &Repo, wt_path: &Path) -> Result<(), LandError> {
             Shown::of(wt_path)
         ),
     ))
+}
+
+// frob:ticket 01M3AXSDBMG2ZAEHTQ6JHA8CYK
+// frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Refuse (`E-LAND-HUNKS-DROPPED`) when a base merge from the tip `pre` resolved the ticket's own hunks away, resetting the branch to `pre`.
+///
+/// Every land-time merge of the base (the pre-land merge and the stale-base re-merge) calls this
+/// after [`merge_base_in`], so a stacked successor cannot lose hunks to a base squash-land unnoticed.
+/// On refusal the bad merge commit is undone: left in place, a retry would see the base already
+/// merged and land the dropped hunks without re-running the check.
+pub(crate) fn verify_merge_kept_hunks(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    handle: &str,
+    pre: Option<Oid>,
+) -> Result<(), LandError> {
+    let checked = check_merge_kept_hunks(wt, wt_path, base, handle, pre);
+    if let (Err(e), Some(pre)) = (&checked, pre)
+        && e.refusal()
+            .is_some_and(|r| r.code == "E-LAND-HUNKS-DROPPED")
+    {
+        reset_branch_to(wt, wt_path, pre)?;
+    }
+    checked
+}
+
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Run the hunk-presence check for a merge from `pre` to the current head; a no-op when nothing was merged.
+fn check_merge_kept_hunks(
+    wt: &Repo,
+    wt_path: &Path,
+    base: &str,
+    handle: &str,
+    pre: Option<Oid>,
+) -> Result<(), LandError> {
+    if let (Some(pre), Some(post)) = (pre, wt.head()?.oid)
+        && pre != post
+    {
+        hunk_presence::verify_after_merge(
+            wt,
+            wt_path,
+            &base_ref(base),
+            &pre.to_string(),
+            &post.to_string(),
+            handle,
+        )?;
+    }
+    Ok(())
+}
+
+// frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+/// Hard-reset the ticket branch in its worktree to `pre`, undoing a refused base merge.
+fn reset_branch_to(wt: &Repo, wt_path: &Path, pre: Oid) -> Result<(), LandError> {
+    let reset = git(wt, wt_path, &["reset", "--hard", &pre.to_string()])?;
+    tracing::warn!(%pre, reset = reset.ok(), "hunk-presence refusal: ticket branch reset to its pre-merge head");
+    Ok(())
 }
 
 /// Merge `base` into the ticket branch inside its worktree; conflicts are listed (`E-LAND-CONFLICT`) and the merge aborted.
@@ -1567,7 +1643,9 @@ impl Publish<'_> {
             .work_dir()
             .map(Path::to_path_buf)
             .ok_or_else(|| LandError::Config("not inside a git work tree".to_owned()))?;
+        let pre = self.wt.head()?.oid;
         let how = merge_base_in(self.wt, &wt_path, self.base, self.handle)?;
+        verify_merge_kept_hunks(self.wt, &wt_path, self.base, self.handle, pre)?;
         let now = self.wt.rev_parse(&base_ref(self.base))?;
         let code_changed = match had {
             Some(old) if old != now => {
@@ -1702,6 +1780,47 @@ fn append_branch_land(
         },
     )?;
     Ok(())
+}
+
+/// Journal this land as an activity span, total the ticket's inferred activity, and note it on the ticket.
+///
+/// The land began as long ago as the sum of its top-level stages; the note goes to the ledger only
+/// in branch mode, so nothing about activity ever reaches the code branch (frob:ticket 01M48Q2BWRT117K8E163MWHDN2).
+/// Activity is observation: failures are logged and yield no totals, never a refused land.
+fn summarize_activity(
+    ledger: &Ledger,
+    (id, common_dir): (TicketId, &Path),
+    (stages, on_branch): (&[StageTiming], bool),
+) -> Vec<ActivityTotal> {
+    let journal = Journal::in_common_dir(common_dir);
+    let key = id.to_string();
+    let to = ledger.clock().now().unix();
+    let spent_ms: u64 = stages
+        .iter()
+        .filter(|s| !s.name.contains(':'))
+        .map(|s| s.ms)
+        .sum();
+    let from = to - i64::try_from(spent_ms / 1000).unwrap_or(0);
+    journal.record_quietly(&key, &Signal::Land { from, to });
+    let totals = match journal.summarize(&key, DEFAULT_IDLE_GAP_SECS) {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(ticket = %id, error = %e, "could not total activity for the land summary");
+            return Vec::new();
+        }
+    };
+    let line = summary_line(&totals);
+    tracing::info!(ticket = %id, on_branch, summary = %line, "land activity summary");
+    if on_branch {
+        let note = EventBody::Comment(CommentData {
+            subtype: CommentSubtype::Note,
+            body: format!("activity: {line}"),
+        });
+        if let Err(e) = ledger.append(id, note) {
+            tracing::warn!(ticket = %id, error = %e, "could not record the activity note");
+        }
+    }
+    totals
 }
 
 /// Record the base-CI override note, when one was given, as a decision comment.
@@ -1973,6 +2092,78 @@ mod tests {
         assert!(run.ok(), "git {args:?}: {}", run.text);
     }
 
+    /// Overwrite `m.txt` under `d` with `body`.
+    fn write_m(d: &Path, body: &str) {
+        std::fs::write(d.join("m.txt"), body).expect("write");
+    }
+
+    /// A stacked successor whose base squash-landed, in a fresh repo: `dev` carries A1 squashed, HEAD is A2.
+    fn stacked_fixture() -> (tempfile::TempDir, Repo) {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(tmp.path()).expect("init");
+        let d = tmp.path();
+        run_git(&repo, d, &["config", "user.name", "T"]);
+        run_git(&repo, d, &["config", "user.email", "t@example.com"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "dev"]);
+        write_m(d, "a\nb\nc\nd\ne\nf\n");
+        run_git(&repo, d, &["add", "m.txt"]);
+        run_git(&repo, d, &["commit", "-q", "-m", "base"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "a1"]);
+        write_m(d, "a\nB1\nc\nd\ne\nf\n");
+        run_git(&repo, d, &["commit", "-q", "-am", "a1"]);
+        run_git(&repo, d, &["checkout", "-q", "-b", "a2"]);
+        write_m(d, "a\nB1\nc\nd\ne2\nf\n");
+        run_git(&repo, d, &["commit", "-q", "-am", "a2 feature"]);
+        run_git(&repo, d, &["checkout", "-q", "dev"]);
+        run_git(&repo, d, &["merge", "-q", "--squash", "a1"]);
+        run_git(&repo, d, &["commit", "-q", "-m", "a1 squashed"]);
+        run_git(&repo, d, &["checkout", "-q", "a2"]);
+        (tmp, repo)
+    }
+
+    // frob:ticket 01M5EBD69XGVCXJST8HDSMXVR6
+    // frob:tests crates/frob-land/src/land.rs::verify_merge_kept_hunks
+    #[test]
+    fn the_stale_retry_merge_keeps_a_stacked_successors_hunks() {
+        let (tmp, repo) = stacked_fixture();
+        let d = tmp.path();
+        let pre = repo.head().expect("head").oid;
+        let how = merge_base_in(&repo, d, "dev", "~X").expect("merge");
+        assert_eq!(how, "merged");
+        verify_merge_kept_hunks(&repo, d, "dev", "~X", pre).expect("clean merge passes the check");
+        let text = std::fs::read_to_string(d.join("m.txt")).expect("read");
+        assert!(text.contains("e2"), "{text}");
+    }
+
+    /// Merge `dev` into the current branch but resolve m.txt to dev's copy, dropping the successor's hunks.
+    fn lossy_merge(repo: &Repo, d: &Path) {
+        run_git(repo, d, &["merge", "-q", "--no-edit", "-s", "ours", "dev"]);
+        run_git(repo, d, &["checkout", "dev", "--", "m.txt"]);
+        run_git(repo, d, &["commit", "-q", "--amend", "--no-edit"]);
+    }
+
+    // frob:ticket 01M7ATYETF63DD8V49QW6C7VZ0
+    // frob:tests crates/frob-land/src/land.rs::verify_merge_kept_hunks
+    #[test]
+    fn a_refused_merge_is_undone_so_the_retry_is_refused_again() {
+        let (tmp, repo) = stacked_fixture();
+        let d = tmp.path();
+        let pre = repo.head().expect("head").oid;
+        let dev = repo.merge_base("dev", "dev").expect("dev");
+        for attempt in 1..=2 {
+            lossy_merge(&repo, d);
+            let err = verify_merge_kept_hunks(&repo, d, "dev", "~X", pre).expect_err("drop");
+            let code = err.refusal().map(|r| r.code.clone());
+            assert_eq!(code.as_deref(), Some("E-LAND-HUNKS-DROPPED"), "{attempt}");
+            assert_eq!(repo.head().expect("head").oid, pre, "reset to pre");
+            assert_ne!(
+                repo.merge_base("dev", "HEAD").expect("mb"),
+                dev,
+                "the base must not read as already merged on retry"
+            );
+        }
+    }
+
     // frob:ticket 01M5CW03RV49WAJZQ1B76X0RQ0
     // frob:tests crates/frob-land/src/land.rs::push_ledger
     #[test]
@@ -2169,6 +2360,36 @@ mod tests {
             tip
         );
         assert!(lock.exists(), "the index lock was never touched");
+    }
+
+    // frob:ticket 01M7ATYEXWQEBT3NPC65JBQCNJ
+    // frob:tests crates/frob-land/src/land.rs::code_reached_base
+    #[test]
+    fn a_done_ticket_whose_branch_is_not_on_the_base_is_not_settled() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path().join("repo");
+        std::fs::create_dir(&dir).expect("mkdir");
+        let repo = Repo::init(&dir).expect("init");
+        run_git(&repo, &dir, &["symbolic-ref", "HEAD", "refs/heads/main"]);
+        run_git(&repo, &dir, &["config", "user.name", "T"]);
+        run_git(&repo, &dir, &["config", "user.email", "t@example.com"]);
+        run_git(
+            &repo,
+            &dir,
+            &["commit", "-q", "--allow-empty", "-m", "root"],
+        );
+        run_git(&repo, &dir, &["checkout", "-q", "-b", "ticket/x"]);
+        run_git(
+            &repo,
+            &dir,
+            &["commit", "-q", "--allow-empty", "-m", "work"],
+        );
+        run_git(&repo, &dir, &["checkout", "-q", "main"]);
+        assert!(!code_reached_base(&repo, "main", "ticket/x"), "failed FF");
+        run_git(&repo, &dir, &["merge", "-q", "--ff-only", "ticket/x"]);
+        assert!(code_reached_base(&repo, "main", "ticket/x"));
+        run_git(&repo, &dir, &["branch", "-q", "-D", "ticket/x"]);
+        assert!(code_reached_base(&repo, "main", "ticket/x"), "gone branch");
     }
 
     // frob:ticket 01M41RK1G648EJJNRK4G5RJY40

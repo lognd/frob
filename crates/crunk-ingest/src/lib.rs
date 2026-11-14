@@ -36,6 +36,7 @@
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
 )]
 
+pub mod attrs;
 mod error;
 mod facts;
 pub mod glob;
@@ -48,6 +49,10 @@ pub mod tailwind;
 pub mod waive;
 pub mod walk;
 
+pub use attrs::{
+    FILE_BUCKET_ATTR, FILE_COMPONENT_ATTR, FileAttrs, OUTSIDE_CSS_ROOT_ATTR, outside_attrs,
+    sheet_attrs,
+};
 pub use error::IngestError;
 pub use facts::{ValueFacts, channel_triplet, value_facts};
 pub use jsx::{ParsedJsx, parse_jsx_source};

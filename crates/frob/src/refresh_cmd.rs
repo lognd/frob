@@ -9,12 +9,10 @@
 // frob:ticket 01M5CW049SPSRGGP5ENQD7BPB3
 // frob:ticket 01M5CW04D5QJCJ5S72V8PE22M6
 
-mod freshness;
-
 use crate::pretty::PrettyExt;
 use std::time::Duration;
 
-use self::freshness::{FreshState, Notice, Signals, Thresholds, assess};
+use crate::freshness::{FreshState, Notice, Signals, Thresholds, assess};
 use frob_ledger::Ledger;
 use frob_ledger::objects::integrate::Integration;
 use gob_git::{MergeOutcome, RemoteRun, Repo};
@@ -25,7 +23,7 @@ use frob_ledger::refresh::{
 };
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload};
-use gob_diagnostics::{Refusal, RefusalClass};
+use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -85,7 +83,7 @@ pub struct RefreshReport {
     pub ledger: String,
     /// Whether the ledger branch was published to the remote.
     pub pushed: bool,
-    /// What happened to the local base: `none`, `up-to-date`, `fast-forwarded`, `ahead`, `diverged` or `skipped-<why>`.
+    /// What happened to the local base: `none`, `up-to-date`, `fast-forwarded`, `ahead`, `diverged` (exit 1), `unrelated` (no shared history, report only) or `skipped-<why>`.
     pub base_sync: String,
     /// Paths the ledger union could not resolve.
     pub conflicts: Vec<String>,
@@ -101,6 +99,8 @@ pub struct RefreshReport {
     pub freshness: FreshState,
     /// Ranked `W-SYNC-*` / `E-SYNC-*` notices, highest first; also in the envelope warnings.
     pub notices: Vec<Notice>,
+    /// `W-CLAIM-EVICTED` notices for claims of this clone that were evicted; also in the envelope warnings.
+    pub claim_returns: Vec<String>,
 }
 
 /// Re-integrate attempts after a lost compare-and-swap, local or remote.
@@ -156,7 +156,7 @@ impl Command for Refresh {
         } else {
             ProbeMode::Explicit
         };
-        let done = probe(&repo, &cfg.sync, &base, ledger_branch, now, mode).map_err(|e| {
+        let mut done = probe(&repo, &cfg.sync, &base, ledger_branch, now, mode).map_err(|e| {
             CliError::from(Refusal::new(
                 "E-SYNC-PROBE",
                 RefusalClass::DomainNegative,
@@ -174,13 +174,25 @@ impl Command for Refresh {
                 base: short(&base),
                 ledger_branch: ledger_branch.map(short),
                 fetch_timeout: Duration::from_millis(u64::from(cfg.sync.fetch_timeout_ms)),
+                push_wip: cfg.sync.push_wip,
             };
-            sync(&ledger, &plan, &mut out.data)?;
+            let synced = sync(&ledger, &plan, &mut out.data);
+            let signals = Signals {
+                diverged: out.data.base_sync == "diverged",
+                ledger_conflict: synced.is_err() && !out.data.conflicts.is_empty(),
+                base_blocked: out.data.base_sync == "skipped-local-changes",
+            };
+            // frob:ticket 01M713HQC2TF14B5F316HMYVT3
+            persist_signals(&repo, &mut done.state, signals);
+            synced?;
+            if signals.diverged {
+                return Err(diverged_refusal(&base, &cfg.sync.remote));
+            }
         }
         let signals = Signals {
-            diverged: out.data.base_sync == "diverged",
-            ledger_conflict: false,
-            base_blocked: out.data.base_sync == "skipped-local-changes",
+            diverged: done.state.diverged,
+            ledger_conflict: done.state.ledger_conflict,
+            base_blocked: done.state.base_blocked,
         };
         let has_remote = done.outcome != ProbeOutcome::LocalOnly;
         Ok(with_freshness(
@@ -192,6 +204,18 @@ impl Command for Refresh {
             &cfg.sync,
         ))
     }
+}
+
+/// Record the sync `signals` in the probe cache so claiming verbs see them; a failed write is logged only.
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+fn persist_signals(repo: &Repo, state: &mut RefreshState, signals: Signals) {
+    state.diverged = signals.diverged;
+    state.ledger_conflict = signals.ledger_conflict;
+    state.base_blocked = signals.base_blocked;
+    if let Err(e) = state.save(repo.common_dir()) {
+        tracing::warn!(error = %e, "could not persist sync signals");
+    }
+    tracing::debug!(?signals, "sync signals persisted");
 }
 
 /// `--background`: start a detached refresh and report it at once; never waits on the network.
@@ -233,6 +257,8 @@ struct SyncPlan<'a> {
     ledger_branch: Option<&'a str>,
     /// Longest a fetch or push may run before it is killed (`[sync] fetch_timeout_ms`).
     fetch_timeout: Duration,
+    /// Whether claimed ticket branches are pushed as WIP (`[sync] push_wip`).
+    push_wip: bool,
 }
 
 /// `main` for both `main` and `refs/heads/main`.
@@ -339,7 +365,7 @@ fn sync_locked(
         sync_ledger(ledger, plan, branch, rep, &mut conflicts)?;
     }
     finish_sync(ledger, plan, conflicts.len(), rep);
-    observe_claims(ledger, plan);
+    observe_claims(ledger, plan, rep);
     if conflicts.is_empty() {
         return Ok(());
     }
@@ -349,7 +375,7 @@ fn sync_locked(
 
 /// Feed claim activity observation from this sync; failures are logged, never refusals.
 // frob:ticket 01M5DDB4ZTR3ZWPJNCMJHN764G
-fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
+fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshReport) {
     let Some(root) = ledger.repo().work_dir() else {
         return;
     };
@@ -370,8 +396,38 @@ fn observe_claims(ledger: &Ledger, plan: &SyncPlan<'_>) {
             return;
         }
     };
+    match frob_worktree::claim::republish_unpublished(ledger, &store) {
+        Ok(n) if n > 0 => tracing::info!(published = n, "unpublished claims pushed during sync"),
+        Ok(_) => {}
+        Err(e) => tracing::warn!(error = %e, "claim republish failed"),
+    }
     if let Err(e) = frob_worktree::claim_observe::observe_live_claims(ledger, &store, now) {
         tracing::warn!(error = %e, "claim observation failed");
+    }
+    // frob:ticket 01M5DFKY6K8AH7K75XGTQMVAVA
+    match frob_worktree::claim_reclaim::holder_return_notices(ledger, &store) {
+        Ok(n) => rep.claim_returns = n,
+        Err(e) => tracing::warn!(error = %e, "holder return scan failed"),
+    }
+    if plan.push_wip {
+        push_claim_wip(ledger, &store);
+    } else {
+        tracing::debug!("[sync] push_wip is off; claim branches not pushed");
+    }
+}
+
+/// Push the claimed ticket branches as WIP; a failure is a logged warning, never a refusal.
+// frob:ticket 01M7179W20SP4SF3GP0G32HAM7
+fn push_claim_wip(ledger: &Ledger, store: &frob_lease::LeaseStore) {
+    match frob_worktree::claim_wip::push_wip(ledger, store) {
+        Ok(done) => {
+            let pushed = done
+                .iter()
+                .filter(|(_, o)| *o == frob_worktree::claim_wip::WipOutcome::Pushed)
+                .count();
+            tracing::info!(claims = done.len(), pushed, "claim WIP push done");
+        }
+        Err(e) => tracing::warn!(error = %e, "claim WIP push failed"),
     }
 }
 
@@ -400,6 +456,22 @@ fn record_host_lands(ledger: &Ledger, plan: &SyncPlan<'_>, rep: &mut RefreshRepo
         }
         Err(e) => tracing::warn!(error = %e, "host land detection failed"),
     }
+}
+
+/// The refusal for a local base that has diverged from the remote's (`distributed-tickets.md` section 5, exit 1).
+fn diverged_refusal(base: &str, remote: &str) -> CliError {
+    tracing::warn!(base, remote, "refresh refuses: base diverged");
+    Refusal::new(
+        "E-SYNC-DIVERGED",
+        RefusalClass::DomainNegative,
+        format!(
+            "local {} has diverged from {remote}/{}",
+            short(base),
+            short(base)
+        ),
+    )
+    .with_remedy("frob land --relaunch <ticket> merges the remote base into the kept land branch")
+    .into()
 }
 
 /// The refusal reporting ledger paths that could not be united automatically.
@@ -455,11 +527,18 @@ fn sync_ledger(
     "unchanged".clone_into(&mut rep.ledger);
     for attempt in 1..=SYNC_ATTEMPTS {
         if has_remote {
-            match ledger.integrate(&ours_ref, &theirs_ref) {
+            match ledger.integrate_with(
+                &ours_ref,
+                &theirs_ref,
+                Some(&frob_pm::merge::refold_at_commits),
+            ) {
                 Ok(Integration::Unchanged) => {}
                 Ok(Integration::Created(_)) => "created".clone_into(&mut rep.ledger),
                 Ok(Integration::FastForward(_)) => "fast-forward".clone_into(&mut rep.ledger),
-                Ok(Integration::Merged { .. }) => "merged".clone_into(&mut rep.ledger),
+                Ok(Integration::Merged { .. }) => {
+                    "merged".clone_into(&mut rep.ledger);
+                    regenerate_pages(ledger);
+                }
                 Ok(Integration::Conflicts(c)) => {
                     "conflict".clone_into(&mut rep.ledger);
                     conflicts.extend(c.into_iter().map(|c| (c.path, c.reason)));
@@ -504,6 +583,16 @@ fn sync_ledger(
     Ok(())
 }
 
+/// Regenerate the derived pages after a union merge so the pushed tip carries fresh pages.
+// frob:ticket 01M5D6XE4EXTZ0N4GFR7WV749G
+fn regenerate_pages(ledger: &Ledger) {
+    match ledger.reindex_commit(None) {
+        Ok(Some(oid)) => tracing::info!(commit = %oid, "derived pages regenerated after merge"),
+        Ok(None) => tracing::debug!("derived pages already current after merge"),
+        Err(e) => tracing::warn!(error = %e, "derived page regeneration failed"),
+    }
+}
+
 /// Fast-forward the local base to its fetched tracking ref when nothing could be lost.
 fn fast_forward_base(repo: &Repo, plan: &SyncPlan<'_>) -> String {
     use frob_land::LandLock;
@@ -515,13 +604,25 @@ fn fast_forward_base(repo: &Repo, plan: &SyncPlan<'_>) -> String {
     if local == theirs {
         return "up-to-date".to_owned();
     }
-    let Ok(Some(mb)) = repo.merge_base(&local.to_string(), &theirs.to_string()) else {
-        return "diverged".to_owned();
+    let mb = match repo.merge_base(&local.to_string(), &theirs.to_string()) {
+        Ok(Some(mb)) => mb,
+        Ok(None) => {
+            tracing::info!(
+                base = plan.base,
+                "local and remote base share no history; report only"
+            );
+            return "unrelated".to_owned();
+        }
+        Err(e) => {
+            tracing::warn!(base = plan.base, error = %e, "merge base lookup failed");
+            return "none".to_owned();
+        }
     };
     if mb == theirs {
         return "ahead".to_owned();
     }
     if mb != local {
+        tracing::warn!(base = plan.base, "local base has diverged from the remote");
         return "diverged".to_owned();
     }
     let _land = match LandLock::acquire(repo.common_dir(), Duration::ZERO, "refresh") {
@@ -582,12 +683,40 @@ fn report(state: &RefreshState, status: String, outcome: &str, changed: bool) ->
         age_secs: None,
         freshness: FreshState::Unknown,
         notices: Vec::new(),
+        claim_returns: Vec::new(),
     }
+}
+
+/// The warnings the sync itself produced: host lands, evicted-claim notices and diverged lands.
+fn sync_warnings(data: &RefreshReport) -> Vec<String> {
+    let mut lines: Vec<String> = data
+        .host_lands
+        .iter()
+        .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done."))
+        .collect();
+    lines.extend(data.claim_returns.iter().cloned());
+    if let Some(line) = &data.divergence {
+        lines.push(format!(
+            "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."
+        ));
+    }
+    lines
+}
+
+/// `out` with the freshness messages and then the sync-state lines appended to its warnings.
+fn with_warnings(
+    mut out: Payload<RefreshReport>,
+    freshness: Vec<String>,
+) -> Payload<RefreshReport> {
+    out.warnings.extend(freshness);
+    let sync_lines = sync_warnings(&out.data);
+    out.warnings.extend(sync_lines);
+    out
 }
 
 /// Fill the freshness fields of `out` from the cache at `now` and put the ranked notices in its warnings.
 fn with_freshness(
-    mut out: Payload<RefreshReport>,
+    out: Payload<RefreshReport>,
     state: &RefreshState,
     has_remote: bool,
     signals: Signals,
@@ -595,18 +724,7 @@ fn with_freshness(
     sync: &frob_ledger::config::SyncTable,
 ) -> Payload<RefreshReport> {
     let fresh = assess(state, has_remote, signals, now, Thresholds::from_sync(sync));
-    out.warnings.extend(fresh.messages());
-    out.warnings.extend(
-        out.data
-            .host_lands
-            .iter()
-            .map(|l| format!("I-SYNC-HOST-LAND: {l} was merged on the host and is now done.")),
-    );
-    if let Some(line) = &out.data.divergence {
-        out.warnings.push(format!(
-            "I-SYNC-DIVERGED: {line}; repair each land with `frob land --relaunch <ticket>`."
-        ));
-    }
+    let mut out = with_warnings(out, fresh.messages());
     out.data.age_secs = fresh.age_secs;
     out.data.freshness = fresh.state;
     out.data.notices = fresh.notices;
@@ -650,7 +768,7 @@ fn finish(done: &ProbeReport, now: i64, ttl: u32) -> CliOutcome<RefreshReport> {
     let message = format!("{}: {}", rep.status, rep.detail);
     let refusal = Refusal::new(code, class, message);
     let refusal = match done.state.class {
-        ProbeClass::Auth => refusal.with_remedy("run git fetch origin to re-authenticate"),
+        ProbeClass::Auth => refusal.with_command(RemedyCommand::new("git", "fetch").arg("origin")),
         ProbeClass::NoBase => {
             refusal.with_remedy("set [tickets] ref to a branch the remote has, or push it")
         }

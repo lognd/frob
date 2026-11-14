@@ -7,6 +7,8 @@ Every component binding names an anatomy node, a declared state and a defined to
 
 Fires for a binding whose node is neither the component nor listed in `[anatomy] nodes`, whose `state` the component does not declare, or whose `token` no token file or the spec defines. The finding names the node as `<component>/<node>`.
 
+A component whose name is also the id of a node in a solved `design/scenes/*.scene.json` file is checked against that subtree: each anatomy node (other than the component itself) must be the id of a node under it. An absent node fires, naming the node and the scene; a project with no scene rendering the component is not checked.
+
 ## Why it matters
 
 A binding to nothing styles nothing, and nothing says so.

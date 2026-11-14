@@ -30,7 +30,7 @@ fn is_model_literal(language: Language, op: &Operator, slice: &str) -> bool {
         }
         (Language::Python, Operator::Adapter(a)) => a.name == "string",
         (Language::Python, Operator::Universal(Universal::Lit { kind, .. })) => kind == "string",
-        (Language::TypeScript, Operator::Universal(Universal::Lit { kind, .. })) => {
+        (l, Operator::Universal(Universal::Lit { kind, .. })) if crate::lang::script_family(l) => {
             (kind == "str" && slice.starts_with(['"', '\'']))
                 || (kind == "op" && slice.starts_with('`'))
         }
@@ -91,7 +91,7 @@ fn literal_kinds(language: Language) -> &'static [&'static str] {
     match language {
         Language::Rust => &["string_literal", "raw_string_literal"],
         Language::Python => &["string"],
-        Language::TypeScript => &["string", "template_string"],
+        l if crate::lang::script_family(l) => &["string", "template_string"],
         Language::CSharp => &[
             "string_literal",
             "verbatim_string_literal",

@@ -110,7 +110,7 @@ that fails until it is fixed or re-adopted. `frob baseline prune` leaves
 the DUP005 table alone because frob never evaluates DUP005; delete a key by
 hand when its cluster is fixed. The unit test
 `dup005_baseline_mutes_existing_clusters_and_only_new_ones_fail`
-(crates/grimble-check/tests/dup_knobs.rs) pins the ratchet.
+(crates/grimble-check/tests/it/dup_knobs.rs) pins the ratchet.
 
 ### Runtime budget
 

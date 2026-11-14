@@ -57,6 +57,21 @@ pub trait ProtectionProbe {
     fn get(&self, path: &str) -> Result<Reply, String>;
 }
 
+/// A canned classic-protection reply with no ruleset covering any branch; for tests and fixtures.
+pub struct ClassicOnly(pub Result<Reply, String>);
+
+impl ProtectionProbe for ClassicOnly {
+    fn get(&self, path: &str) -> Result<Reply, String> {
+        if path.contains("/rules/branches/") {
+            return Ok(Reply {
+                status: 200,
+                body: "[]".to_owned(),
+            });
+        }
+        self.0.clone()
+    }
+}
+
 /// The gap text for a branch that allows force pushes.
 const FORCE_PUSH_OPEN: &str = "force pushes are allowed";
 

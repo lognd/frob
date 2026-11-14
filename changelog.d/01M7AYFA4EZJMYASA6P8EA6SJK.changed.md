@@ -1,0 +1,1 @@
+Tune the grimble COH rules for this repository: `[coh]` gains `vocab_min_cluster_words` and `vocab_stop_words` for COH004, the repo lists the reviewed non-effect callees for COH002, and DEAD001 counts a sole name-only call candidate as reached.

@@ -55,6 +55,7 @@
 //! consults (`frob-lease`). [`rules`] declares `TICK001` to `TICK005` (`TICK004` is [`privacy`], a byte scan of committed ledger files, repaired by [`scrub`]; `TICK005` is the same scan for the local private terms of [`redact`]); [`legacy`] holds `TICK007` to `TICK010`;
 //! `frob-check` supplies the ticket ids [`tick::tick002`] checks.
 
+pub mod activity;
 pub mod backlog;
 pub mod branch;
 mod brief;
@@ -69,6 +70,7 @@ pub mod doctor;
 pub mod error;
 pub mod event;
 pub mod fold;
+pub mod freshness; // frob:ticket 01M713HQC2TF14B5F316HMYVT3
 // frob:ticket 01M3ZX868H7TQ34ZDPXY13NRRG
 pub mod r#gen;
 pub mod github_tree; // frob:ticket 01M4052VK08NTRJS6HZZ9B82RZ
@@ -77,6 +79,7 @@ pub mod hand_written; // frob:ticket 01M4P8M16T2T3Y311ER1Z77KSE
 pub mod host;
 pub mod id;
 pub mod index;
+pub mod integrate; // frob:ticket 01M5D6XDY8HA8A88CR77N9VTV1
 pub mod layout;
 pub mod ledger;
 pub mod legacy;
@@ -106,6 +109,7 @@ pub mod slug; // frob:ticket 01M3ZX82FBZHFCX6P69NRTFCH7
 pub mod sync_policy; // frob:ticket 01M5CW04GHM970H5KR4EV5KK0X
 pub mod tick;
 pub mod triage;
+pub mod usage;
 
 pub use error::{Candidate, LedgerError, Result};
 pub use host::{LedgerHost, LedgerView, evaluation_failed};

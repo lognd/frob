@@ -136,7 +136,7 @@ pub fn widen_ticket(
     explicit: Option<&str>,
     clock: std::sync::Arc<dyn gob_time::Clock>,
 ) -> Result<Absorb, WidenError> {
-    let repo = gob_git::Repo::discover(root).map_err(|e| WidenError::Diff(e.to_string()))?;
+    let repo = gob_git::Repo::discover_shared(root).map_err(|e| WidenError::Diff(e.to_string()))?;
     let cfg = frob_ledger::config::load_ledger_config(root).map_err(WidenError::Ledger)?;
     let ledger = Ledger::open(repo, cfg, clock.clone());
     let id = ledger

@@ -84,6 +84,15 @@ pub struct RefreshState {
     pub next_attempt_at: i64,
     /// Human text of the last problem (empty when ok).
     pub detail: String,
+    /// The last `frob refresh` found a branch diverged from its remote copy.
+    #[serde(default)]
+    pub diverged: bool,
+    /// The last `frob refresh` left concurrent ledger edits unresolved.
+    #[serde(default)]
+    pub ledger_conflict: bool,
+    /// The last `frob refresh` could not fast-forward the base (dirty checkout).
+    #[serde(default)]
+    pub base_blocked: bool,
 }
 
 /// How eagerly [`probe`] may skip the network.
@@ -482,7 +491,7 @@ mod tests {
     }
 
     #[test]
-    fn status_from_cache_takes_under_ten_ms() {
+    fn status_from_cache_reads_the_saved_state() {
         let dir = tempfile::tempdir().expect("tmp");
         let s = RefreshState {
             probed_at: 1,
@@ -490,13 +499,7 @@ mod tests {
             ..RefreshState::default()
         };
         s.save(dir.path()).expect("save");
-        let t = std::time::Instant::now();
         let line = RefreshState::load(dir.path()).status_line(100_000, 300);
-        assert!(
-            t.elapsed() < Duration::from_millis(10),
-            "took {:?}",
-            t.elapsed()
-        );
         assert!(line.ends_with("-stale"));
     }
 

@@ -22,7 +22,7 @@ impl FileToolMemo {
 
     /// The shared store of the repository containing `root`; `None` outside a repository.
     pub fn for_repo(root: &Path) -> Option<Self> {
-        let repo = gob_git::Repo::discover(root).ok()?;
+        let repo = gob_git::Repo::discover_shared(root).ok()?;
         Some(Self::at(
             repo.common_dir().join("frob").join("check-results"),
         ))

@@ -3,7 +3,7 @@
 //!
 //! Every write that must leave the target wholly old or wholly new goes through
 //! [`write_atomic`] (or [`write_atomic_private`] for owner-only files); the
-//! inventory test in `tests/inventory.rs` fails on any hand-rolled temp-and-rename.
+//! inventory test in `tests/it/inventory.rs` fails on any hand-rolled temp-and-rename.
 
 // frob:ticket 01M43JETBHW7FYNMR6SGVWFAEV
 

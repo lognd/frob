@@ -12,6 +12,11 @@
 //!   `data-focus-wrap="wrap|clamp"`) makes an element a focus group; focusables nest into their
 //!   nearest group, the scene itself being a vertical clamped group. Inside a group, document order
 //!   gives the implicit neighbours along the axis and wrap joins the last to the first;
+//! - a group whose own inline `style` is `display: grid` with a countable `grid-template-columns`
+//!   (`repeat(3, 1fr)` or `1fr 1fr 1fr`) is a grid: its items fill rows in document order and every
+//!   direction moves along its axis (wrap stays within the row or column);
+//! - an element with `aria-modal="true"` (or `data-modal`) is a modal: it traps focus on purpose,
+//!   so [`FocusGraph::traps`] leaves its focusables out;
 //! - `data-nav-up|down|left|right="<data-id>"` overrides one direction; `none` blocks it.
 
 // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
@@ -155,12 +160,16 @@ pub struct FocusGraph {
     pub dead_defaults: Vec<usize>,
     /// Authored attributes that cannot be honoured.
     pub invalid: Vec<InvalidEdge>,
+    /// Nodes inside a modal element, which traps focus on purpose.
+    pub modal_nodes: Vec<usize>,
 }
 
 /// An in-progress focus group.
 struct Group {
     axis: GroupAxis,
     wrap: WrapMode,
+    /// Column count when the group is laid out on a grid.
+    columns: Option<usize>,
     members: Vec<usize>,
 }
 
@@ -182,6 +191,7 @@ impl FocusGraph {
             }
         }
         graph.collect_defaults(doc, &node_of);
+        graph.collect_modal_nodes(doc, &node_of);
         let by_id: HashMap<&str, usize> = doc
             .elements
             .iter()
@@ -250,17 +260,31 @@ impl FocusGraph {
         }
     }
 
+    /// Record the nodes that sit inside a modal element.
+    fn collect_modal_nodes(&mut self, doc: &SceneDoc, node_of: &HashMap<usize, usize>) {
+        let mut inside: Vec<usize> = node_of
+            .iter()
+            .filter(|(el, _)| in_modal(doc, **el))
+            .map(|(_, &n)| n)
+            .collect();
+        inside.sort_unstable();
+        tracing::debug!(modal_nodes = inside.len(), "focus modal nodes collected");
+        self.modal_nodes = inside;
+    }
+
     /// Read a group's axis and wrap attributes (recording bad values) into a [`Group`].
     fn read_group(&mut self, doc: &SceneDoc, key: Option<usize>, members: Vec<usize>) -> Group {
         let mut group = Group {
             axis: GroupAxis::Vertical,
             wrap: WrapMode::Clamp,
+            columns: None,
             members,
         };
         let Some(i) = key else {
             return group;
         };
         let el = &doc.elements[i];
+        group.columns = grid_columns(el);
         match attr(el, "data-focus-axis").map(str::trim) {
             None | Some("vertical") => {}
             Some("horizontal") => group.axis = GroupAxis::Horizontal,
@@ -302,12 +326,13 @@ impl FocusGraph {
     }
 
     /// Reachable nodes from which no sequence of moves returns to any entry: focus gets stuck.
+    /// Nodes inside a modal are exempt: the modal traps focus on purpose.
     pub fn traps(&self) -> Vec<usize> {
         let entries = self.entries();
         let forward = self.flood(&entries, false);
         let back = self.flood(&entries, true);
         (0..self.nodes.len())
-            .filter(|&n| forward[n] && !back[n])
+            .filter(|&n| forward[n] && !back[n] && !self.modal_nodes.contains(&n))
             .collect()
     }
 
@@ -344,6 +369,10 @@ fn implicit_edges(
     explicit: &BTreeSet<(usize, Direction)>,
     edges: &mut BTreeSet<FocusEdge>,
 ) {
+    if let Some(columns) = group.columns {
+        grid_edges(group, columns, explicit, edges);
+        return;
+    }
     let (prev, next) = match group.axis {
         GroupAxis::Vertical => (Direction::Up, Direction::Down),
         GroupAxis::Horizontal => (Direction::Left, Direction::Right),
@@ -371,6 +400,108 @@ fn implicit_edges(
             }
         }
     }
+}
+
+/// Add the four-way moves of a grid `group` of `columns` columns, except where authored.
+fn grid_edges(
+    group: &Group,
+    columns: usize,
+    explicit: &BTreeSet<(usize, Direction)>,
+    edges: &mut BTreeSet<FocusEdge>,
+) {
+    let n = group.members.len();
+    let wrap = group.wrap == WrapMode::Wrap;
+    for i in 0..n {
+        let (row, col) = (i / columns, i % columns);
+        let row_start = row * columns;
+        let row_end = (row_start + columns).min(n) - 1;
+        let last_in_col = (col..n).step_by(columns).next_back().unwrap_or(i);
+        let moves = [
+            (
+                Direction::Right,
+                if i < row_end {
+                    Some(i + 1)
+                } else {
+                    wrap.then_some(row_start)
+                },
+            ),
+            (
+                Direction::Left,
+                if i > row_start {
+                    Some(i - 1)
+                } else {
+                    wrap.then_some(row_end)
+                },
+            ),
+            (
+                Direction::Down,
+                if i + columns < n {
+                    Some(i + columns)
+                } else {
+                    wrap.then_some(col)
+                },
+            ),
+            (
+                Direction::Up,
+                if row > 0 {
+                    Some(i - columns)
+                } else {
+                    wrap.then_some(last_in_col)
+                },
+            ),
+        ];
+        let from = group.members[i];
+        for (direction, to) in moves {
+            let Some(to) = to.map(|t| group.members[t]) else {
+                continue;
+            };
+            if to != from && !explicit.contains(&(from, direction)) {
+                edges.insert(FocusEdge {
+                    from,
+                    to,
+                    direction,
+                });
+            }
+        }
+    }
+    tracing::debug!(columns, members = n, "grid focus group edges added");
+}
+
+/// The column count of a grid element read from its inline `style`, when it is a countable grid.
+fn grid_columns(el: &SceneElement) -> Option<usize> {
+    let decls = inline_decls(attr(el, "style")?);
+    let display = decls.get("display")?;
+    if display != "grid" && display != "inline-grid" {
+        return None;
+    }
+    let template = decls.get("grid-template-columns")?;
+    let count = match template.strip_prefix("repeat(") {
+        Some(rest) => rest.split(',').next()?.trim().parse::<usize>().ok()?,
+        None => template.split_whitespace().count(),
+    };
+    (count > 0).then_some(count)
+}
+
+/// The lowercase `property: value` pairs of an inline style, later ones winning.
+fn inline_decls(style: &str) -> HashMap<String, String> {
+    style
+        .split(';')
+        .filter_map(|d| d.split_once(':'))
+        .map(|(k, v)| (k.trim().to_ascii_lowercase(), v.trim().to_ascii_lowercase()))
+        .collect()
+}
+
+/// Whether `element` or one of its ancestors is a modal.
+fn in_modal(doc: &SceneDoc, element: usize) -> bool {
+    let mut cur = Some(element);
+    while let Some(i) = cur {
+        let el = &doc.elements[i];
+        if attr(el, "aria-modal") == Some("true") || is_on(attr(el, "data-modal")) {
+            return true;
+        }
+        cur = el.parent;
+    }
+    false
 }
 
 /// Group the focusable nodes by their nearest `data-focus-group` ancestor (`None` is the scene),

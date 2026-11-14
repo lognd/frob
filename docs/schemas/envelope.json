@@ -110,6 +110,27 @@
       ],
       "type": "object"
     },
+    "EnvelopeFreshness": {
+      "description": "How fresh the verb's view of the shared ticket state was when it ran (`distributed-tickets.md` section 5.3).",
+      "properties": {
+        "age_secs": {
+          "description": "Seconds since the last probe the remote answered; `None` when never probed or local-only.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "state": {
+          "description": "`fresh`, `stale`, `degraded`, `unknown` or `local-only`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "type": "object"
+    },
     "FindingRecord": {
       "description": "A finding flattened for JSON (gob-text types carry no serde).",
       "properties": {
@@ -585,6 +606,17 @@
         "$ref": "#/$defs/FindingRecord"
       },
       "type": "array"
+    },
+    "freshness": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EnvelopeFreshness"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Freshness of the shared ticket view; absent for verbs that do not read it."
     },
     "ok": {
       "description": "True when the verb did what was asked.",

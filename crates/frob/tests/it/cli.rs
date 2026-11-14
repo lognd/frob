@@ -46,16 +46,18 @@ fn doctor_piped_is_json_envelope_even_with_cfg001() {
     let findings = v["findings"].as_array().expect("findings");
     assert_eq!(findings.len(), 45, "one CFG001 per materialized knob");
     assert!(findings.iter().all(|f| f["rule"] == "CFG001"));
-    assert_json_snapshot!("doctor_fresh_repo", v, {
-        ".data.toolchain.rustc" => "[version]",
-        ".data.toolchain.cargo" => "[version]",
-        ".data.cache.dir" => "[path]",
-        ".data.config.path" => "[path]",
-        ".data.git.root" => "[path]",
-        ".data.git.branch" => "[branch]",
-        ".data.ledger.error" => "[error]",
-        ".data.siblings" => "[environment]",
-        ".data.gc.usage[].bytes" => "[bytes]",
+    insta::with_settings!({ sort_maps => true }, {
+        assert_json_snapshot!("doctor_fresh_repo", v, {
+            ".data.toolchain.rustc" => "[version]",
+            ".data.toolchain.cargo" => "[version]",
+            ".data.cache.dir" => "[path]",
+            ".data.config.path" => "[path]",
+            ".data.git.root" => "[path]",
+            ".data.git.branch" => "[branch]",
+            ".data.ledger.error" => "[error]",
+            ".data.siblings" => "[environment]",
+            ".data.gc.usage[].bytes" => "[bytes]",
+        });
     });
 }
 
@@ -230,7 +232,9 @@ fn schema_flag_prints_the_verb_schema() {
     assert_eq!(code(&out), 0);
     let v = json(&out);
     assert!(v["properties"]["toolchain"].is_object(), "{v}");
-    assert_json_snapshot!("doctor_schema", v);
+    insta::with_settings!({ sort_maps => true }, {
+        assert_json_snapshot!("doctor_schema", v);
+    });
 }
 
 #[test]

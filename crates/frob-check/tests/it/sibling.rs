@@ -11,7 +11,6 @@
 // frob:ticket 01M422D5YRH5TG4499Z24K7SMT
 
 use std::path::{Path, PathBuf};
-use std::time::Instant;
 
 use frob_check::{CheckOptions, CheckReport, run};
 use frob_ledger::model::TicketType;
@@ -158,9 +157,7 @@ const FAILURES: &[(&str, &str, &str)] = &[
 fn every_failure_is_one_required_sib001_with_its_reason_and_fails_the_gate() {
     for (mode, toml, code) in FAILURES {
         let dir = repo(mode, toml);
-        let started = Instant::now();
         let r = run(dir.path(), &opts()).expect("run");
-        eprintln!("{mode} returned in {:?}", started.elapsed());
         let sib = of_rule(&r, "SIB001");
         assert_eq!(sib.len(), 1, "{mode}: exactly one SIB001");
         assert_eq!(sib[0].severity, Severity::Unresolved);

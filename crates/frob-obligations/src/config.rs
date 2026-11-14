@@ -28,6 +28,10 @@ pub struct InvariantsConfig {
     /// Imports no file matching `from` may contain; each entry needs a `reason`.
     #[config(default = Vec::new())]
     pub forbid_imports: Vec<ForbidImport>,
+    /// Globs over a cited markdown file as written; a matching citation names a file outside the repo and is not checked (DOC006).
+    // frob:ticket 01M5NCNPMEMKNHGB2VRBSW1ZT6
+    #[config(default = Vec::new())]
+    pub external_citations: Vec<String>,
 }
 
 impl InvariantsConfig {

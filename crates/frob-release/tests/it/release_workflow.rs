@@ -1149,7 +1149,7 @@ fn every_job_that_compiles_rust_on_linux_installs_the_linker_first() {
     }
     // One definition: the install command lives only in the action.
     let action = fs::read_to_string(root.join("actions/install-linker/action.yml")).unwrap();
-    assert!(action.contains("apt-get install -y mold clang"));
+    assert!(action.contains("install -y mold clang"));
     for file in ["ci.yml", "release.yml", "build-smoke.yml"] {
         let text = fs::read_to_string(root.join("workflows").join(file)).unwrap();
         assert!(

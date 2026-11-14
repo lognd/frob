@@ -11,6 +11,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tracing::{debug, info, warn};
 
+use crate::normalize::ReadBack;
+
 /// A create whose outcome is unknown: blocks further creates until recovery matches the nonce.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CreateUncertain {
@@ -39,6 +41,12 @@ pub struct Shard {
     pub last_event: Option<String>,
     /// Create-uncertain flag with nonce and start time.
     pub create_uncertain: Option<CreateUncertain>,
+    /// Read-back record of what the tracker held after each write (normalized comparison).
+    #[serde(default, skip_serializing_if = "ReadBack::is_empty")]
+    pub read_back: ReadBack,
+    /// Full values of tracker events retained past the tracker's own history, by event id.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub event_values: BTreeMap<String, String>,
 }
 
 impl Shard {
@@ -53,6 +61,8 @@ impl Shard {
             history_cursor: None,
             last_event: None,
             create_uncertain: None,
+            read_back: ReadBack::new(),
+            event_values: BTreeMap::new(),
         }
     }
 }

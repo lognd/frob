@@ -17,6 +17,7 @@ mod ledger;
 mod read;
 mod relpath;
 mod remote;
+mod session;
 mod spawn;
 mod status;
 mod tag;
@@ -33,6 +34,7 @@ pub use remote::{
     RemoteProbe, RemoteRef, RemoteRun, batch_ssh_command, is_push_rejection, parse_head_symref,
     parse_ls_remote,
 };
+pub use session::DiscoverScope;
 pub use spawn::SpawnClass;
 pub use status::{ChangeKind, ChangedPath, StatusEntry, StatusKind, StatusOptions, TreeRef};
 pub use tag::{CommitInfo, TagInfo};

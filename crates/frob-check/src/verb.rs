@@ -463,7 +463,7 @@ impl Command for Check {
             // check --ticket proves agent activity: keep the worktree lease inside its TTL.
             frob_lease::heartbeat(&ctx.cwd, ctx.clock.clone());
         }
-        let root = gob_git::Repo::discover(&ctx.cwd)
+        let root = gob_git::Repo::discover_shared(&ctx.cwd)
             .ok()
             .and_then(|r| r.work_dir().map(std::path::Path::to_path_buf))
             .unwrap_or_else(|| ctx.cwd.clone());

@@ -175,6 +175,7 @@ mod tests {
                 class: crate::model::Class::Standard,
                 due: None,
                 points: None,
+                claim_idle_days: None,
                 parent: None,
                 reporter: "logan".into(),
                 assignee: None,

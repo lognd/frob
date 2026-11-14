@@ -60,7 +60,7 @@ pub fn pending_count(ledger: &Ledger) -> Result<usize> {
 ///
 /// A missing or unreadable ledger is the ledger rules' business, never this summary's.
 pub fn pending_count_at(root: &Path, clock: Arc<dyn gob_time::Clock>) -> Option<usize> {
-    let repo = gob_git::Repo::discover(root).ok()?;
+    let repo = gob_git::Repo::discover_shared(root).ok()?;
     repo.work_dir()?;
     let cfg = frob_evidence::workspace::ledger_config(root).unwrap_or_else(|err| {
         tracing::warn!(%err, "ledger config unreadable; using defaults");

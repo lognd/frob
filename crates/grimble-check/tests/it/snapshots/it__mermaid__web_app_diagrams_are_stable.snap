@@ -1,0 +1,121 @@
+---
+source: crates/grimble-check/tests/it/mermaid.rs
+expression: web_app()
+---
+### use-case: web_app
+
+```mermaid
+flowchart LR
+    a_admin["admin (human)"]
+    a_customer["customer (human)"]
+    a_payment_gateway["payment_gateway (external)"]
+    subgraph sys_web_app["web_app"]
+        g_admin_manage_catalogue(["admin.manage_catalogue"])
+        g_customer_browse_items(["customer.browse_items"])
+        g_customer_place_order(["customer.place_order"])
+        g_customer_place_order_account(["customer.place_order.account"])
+        g_customer_place_order_guest(["customer.place_order.guest"])
+        g_customer_track_order(["customer.track_order"])
+        s_browse["scenario browse"]
+        s_checkout["scenario checkout"]
+    end
+    a_admin --> g_admin_manage_catalogue
+    a_customer --> g_customer_browse_items
+    a_customer --> g_customer_place_order
+    a_customer --> g_customer_track_order
+    g_customer_place_order -.->|"requires"| g_customer_browse_items
+    g_customer_place_order --> g_customer_place_order_account
+    g_customer_place_order --> g_customer_place_order_guest
+    g_customer_track_order -.->|"requires"| g_customer_place_order
+    s_browse -.->|"realizes"| g_customer_browse_items
+    s_checkout -.->|"realizes"| g_customer_place_order_guest
+    s_checkout -.->|"realizes"| g_customer_place_order_account
+```
+
+### sequence: web_app.browse
+
+```mermaid
+sequenceDiagram
+    title browse
+    participant customer as customer
+    participant system as system
+    Note over customer: customer.lands
+    customer->>customer: customer.navigates_to_products
+    customer->>system: system.queries_products
+    system-->>customer: customer.adds_to_cart
+    customer->>system: system.reserves_stock
+    Note over system: end ok
+    alt no_item_found
+        Note over system: system.suggests_alternatives
+        Note over system: end ok
+    else out_of_stock
+        Note over system: end err(out_of_stock)
+    end
+```
+
+### activity: web_app.browse
+
+```mermaid
+flowchart TD
+    start(("browse"))
+    n0["customer.lands"]
+    start --> n0
+    n1["customer.navigates_to_products"]
+    n0 --> n1
+    n2["system.queries_products"]
+    n1 --> n2
+    n3["customer.adds_to_cart"]
+    n2 -->|"try"| n3
+    n4["system.reserves_stock"]
+    n3 --> n4
+    t0(["end ok"])
+    n4 --> t0
+    n5["system.suggests_alternatives"]
+    n2 -->|"no_item_found"| n5
+    t1(["end ok"])
+    n5 --> t1
+    t2(["end err(out_of_stock)"])
+    n4 -->|"out_of_stock"| t2
+```
+
+### sequence: web_app.checkout
+
+```mermaid
+sequenceDiagram
+    title checkout
+    participant customer as customer
+    participant system as system
+    Note over customer: customer.submits_cart
+    customer->>system: system.shows_total
+    system->>customer: customer.enters_payment
+    alt declined
+        loop retry max 3
+            customer-->>customer: customer.enters_payment
+        end
+    else ok
+        Note over system: system.confirms_order
+        Note over system: end ok
+    else timeout
+        Note over customer: end err(timeout)
+    end
+```
+
+### activity: web_app.checkout
+
+```mermaid
+flowchart TD
+    start(("checkout"))
+    n0["customer.submits_cart"]
+    start --> n0
+    n1["system.shows_total"]
+    n0 --> n1
+    n2["customer.enters_payment"]
+    n1 --> n2
+    n2 -->|"declined, retry max 3"| n2
+    n3["system.confirms_order"]
+    n2 -->|"ok"| n3
+    t0(["end ok"])
+    n3 --> t0
+    t1(["end err(timeout)"])
+    n2 -->|"timeout"| t1
+```

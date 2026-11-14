@@ -14,6 +14,7 @@ use std::path::Path;
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_git::Repo;
 use gob_trust::prompt::{Delta, EffectLine, Presence, ReviewFacts, presence};
 use gob_trust::{MachineKey, RepoIdentity, TrustStore, Verdict, default_store_path};
@@ -46,7 +47,7 @@ fn needs_human(why: Presence) -> Refusal {
         _ => "trust is a review a person performs at a terminal",
     };
     Refusal::new(CODE_NEEDS_HUMAN, RefusalClass::GuardNeedsAction, message)
-        .with_remedy("ask the user to run `frob trust` in their own terminal")
+        .with_command(RemedyCommand::new("frob", "trust"))
         .requiring_human()
 }
 
@@ -234,7 +235,7 @@ impl Command for Trust {
             let decision = gob_trust::prompt::review(
                 &facts,
                 &mut std::io::stdin().lock(),
-                // frob:accept LOG001 because="the interactive trust review is the command's primary output"
+                // frob:defer LOG001 because="the interactive trust review is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
                 &mut std::io::stdout().lock(),
             )
             .map_err(CliError::internal)?;

@@ -1,7 +1,7 @@
 # Oracle corpus: the true answer (oracle) beside the answer the analysis gave (observed).
 # docs/design/shared/rules.md section 12.8.
 # Each case carries a probe (file, query, source) the real adapter reads; `observed` is checked
-# against that live answer by tests/oracle_live.rs and regenerated with FROB_BLESS_ORACLE=1.
+# against that live answer by tests/it/oracle_live.rs and regenerated with FROB_BLESS_ORACLE=1.
 
 [[case]]
 id = "rust-resolve_ref-01"

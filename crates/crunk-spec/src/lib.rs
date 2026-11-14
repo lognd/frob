@@ -78,4 +78,6 @@ pub use flow_file::{FlowEdge, FlowFile, FlowFileError, parse_flow_file};
 pub use load::{OWN_TABLES, load_spec, load_spec_file, parse_spec};
 pub use model::{DesignSpec, normalize_join};
 pub use phase::{DEFAULT_PHASE, Phase, ResolvedPhase, read_phase};
-pub use screen_file::{ScreenFileError, parse_screen_file};
+pub use screen_file::{
+    SCREEN_SUFFIX, SCREENS_DIR, ScreenFileError, load_screen_files, parse_screen_file,
+};

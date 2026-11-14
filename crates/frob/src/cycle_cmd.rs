@@ -239,14 +239,19 @@ pub struct CycleListData {
 fn refusal(e: &CycleError) -> CliError {
     use RefusalClass::{GuardNeedsAction, UsageError};
     let r = match e {
-        CycleError::BadWindow { .. } => {
-            Refusal::new("E-CYCLE-WINDOW", UsageError, e.to_string())
-                .with_remedy("pass --start and an --end on or after it, for example `frob cycle new --start 2026-10-05 --end 2026-10-11 --goal <text>`")
-        }
-        CycleError::Overlap { with, next_free, .. } => {
-            Refusal::new("E-CYCLE-OVERLAP", GuardNeedsAction, e.to_string()).with_remedy(format!(
-                "start after it (`frob cycle new --start {next_free} --goal <text>`) or inspect it with `frob cycle show {with}`"
-            ))
+        CycleError::BadWindow { .. } => Refusal::new("E-CYCLE-WINDOW", UsageError, e.to_string())
+            .with_command(
+                RemedyCommand::new("frob", "cycle new")
+                    .flag("start", "2026-10-05")
+                    .flag("end", "2026-10-11")
+                    .flag("goal", "<text>"),
+            ),
+        CycleError::Overlap { next_free, .. } => {
+            Refusal::new("E-CYCLE-OVERLAP", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "cycle new")
+                    .flag("start", next_free.to_string())
+                    .flag("goal", "<text>"),
+            )
         }
         CycleError::Conflict { alias, .. } => {
             Refusal::new("E-CYCLE-EXISTS", GuardNeedsAction, e.to_string())
@@ -263,17 +268,20 @@ fn refusal(e: &CycleError) -> CliError {
             };
             Refusal::new("E-CYCLE-NOT-FOUND", GuardNeedsAction, msg).with_command(remedy)
         }
-        CycleError::LiveLease { handles, .. } => {
-            Refusal::new("E-CYCLE-LEASE", GuardNeedsAction, e.to_string()).with_remedy(format!(
+        CycleError::LiveLease { .. } => {
+            Refusal::new("E-CYCLE-LEASE", GuardNeedsAction, e.to_string()).with_command(
                 // frob:ticket 01M40YQZF4422S88TN6992AN0Q
-                "finish and land {}, or release it with `frob requeue <ticket> --reason <why>`, then close again",
-                handles.join(", ")
-            ))
+                RemedyCommand::new("frob", "requeue")
+                    .arg("<ticket>")
+                    .flag("reason", "<why>"),
+            )
         }
-        CycleError::NoNextCycle { suggest_start, .. } => {
-            Refusal::new("E-CYCLE-NO-NEXT", GuardNeedsAction, e.to_string()).with_remedy(format!(
-                "close and create the next cycle in one step with `--next-goal <text>` (optionally `--next-days N`), create it first (`frob cycle new --start {suggest_start} --goal <text>`), or pass `--carry-to CYCLE`"
-            ))
+        CycleError::NoNextCycle { .. } => {
+            Refusal::new("E-CYCLE-NO-NEXT", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "cycle close")
+                    .arg("<cycle>")
+                    .flag("next-goal", "<text>"),
+            )
         }
         CycleError::BadCarryTarget { .. } => {
             Refusal::new("E-CYCLE-CARRY-TARGET", GuardNeedsAction, e.to_string())
@@ -288,23 +296,36 @@ fn assign_refusal(e: &AssignError, cycle: &str) -> CliError {
     use RefusalClass::GuardNeedsAction;
     let r = match e {
         AssignError::NoDefaultCycle { .. } => {
-            Refusal::new("E-CYCLE-NONE", GuardNeedsAction, e.to_string())
-                .with_remedy("create one (`frob cycle new --start YYYY-MM-DD --goal <text>`) or name a cycle")
+            Refusal::new("E-CYCLE-NONE", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "cycle new")
+                    .flag("start", "YYYY-MM-DD")
+                    .flag("goal", "<text>"),
+            )
         }
-        AssignError::Closed { .. } => Refusal::new("E-CYCLE-CLOSED", GuardNeedsAction, e.to_string())
-            .with_command(RemedyCommand::new("frob", "cycle list")),
+        AssignError::Closed { .. } => {
+            Refusal::new("E-CYCLE-CLOSED", GuardNeedsAction, e.to_string())
+                .with_command(RemedyCommand::new("frob", "cycle list"))
+        }
         AssignError::NotAssignable { handle, .. } => {
-            Refusal::new("E-CYCLE-NOT-ASSIGNABLE", GuardNeedsAction, e.to_string())
-                .with_remedy(format!("assign one of its children (`frob ticket list --parent {handle}`)"))
+            Refusal::new("E-CYCLE-NOT-ASSIGNABLE", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "ticket list").flag("parent", handle.clone()),
+            )
         }
         AssignError::NoPoints { handle } => {
-            Refusal::new("E-CYCLE-NO-POINTS", GuardNeedsAction, e.to_string())
-                .with_command(RemedyCommand::new("frob", "ticket update").arg(handle.clone()).flag("points", "N"))
+            Refusal::new("E-CYCLE-NO-POINTS", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "ticket update")
+                    .arg(handle.clone())
+                    .flag("points", "N"),
+            )
         }
         AssignError::OverCapacity { handle, .. } => {
-            Refusal::new("E-CYCLE-OVER-CAPACITY", GuardNeedsAction, e.to_string()).with_remedy(format!(
-                "assign it to a later cycle (`frob cycle list`), or accept the over-commit: `frob cycle assign {handle} {cycle} --over-commit --reason <why>`"
-            ))
+            Refusal::new("E-CYCLE-OVER-CAPACITY", GuardNeedsAction, e.to_string()).with_command(
+                RemedyCommand::new("frob", "cycle assign")
+                    .arg(handle.clone())
+                    .arg(cycle)
+                    .switch("over-commit")
+                    .flag("reason", "<why>"),
+            )
         }
     };
     r.into()

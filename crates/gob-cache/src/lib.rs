@@ -236,7 +236,10 @@ fn migrate(conn: &mut Connection) -> rusqlite::Result<()> {
     for (i, sql) in MIGRATIONS.iter().enumerate().skip(current) {
         tx.execute_batch(sql)?;
         tx.execute("DELETE FROM schema_version", [])?;
-        tx.execute("INSERT INTO schema_version(version) VALUES (?1)", [i + 1])?;
+        tx.execute(
+            "INSERT INTO schema_version(version) VALUES (?1)",
+            [i64::try_from(i + 1).unwrap_or(i64::MAX)],
+        )?;
         tracing::info!(from = i, to = i + 1, "cache schema migrated");
     }
     tx.commit()
@@ -642,7 +645,9 @@ impl Cache {
     /// Row counts per table (zeros and `null = true` for the null cache).
     pub fn stats(&self) -> CacheStats {
         let count = |c: &Connection, t: &str| -> rusqlite::Result<u64> {
-            c.query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))
+            let n: i64 = c.query_row(&format!("SELECT COUNT(*) FROM {t}"), [], |r| r.get(0))?;
+            // COUNT(*) is never negative.
+            Ok(u64::try_from(n).unwrap_or(0))
         };
         self.with("stats", |c| {
             Ok(CacheStats {
@@ -701,8 +706,13 @@ mod tests {
         std::fs::write(&a, b"build one").unwrap();
         let first = exe_digest(&a).unwrap();
         // Same bytes at a new path written later (new mtime): same build identity.
-        std::thread::sleep(Duration::from_millis(20));
         std::fs::copy(&a, &b).unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(&b)
+            .unwrap()
+            .set_modified(std::time::UNIX_EPOCH + Duration::from_secs(1_000_000_000))
+            .unwrap();
         assert_eq!(exe_digest(&b).unwrap(), first);
         // Different bytes, even of the same length: a different build.
         std::fs::write(&b, b"build two").unwrap();
@@ -898,5 +908,13 @@ mod tests {
             })
             .unwrap();
         assert!(cache.get_repo_rule("g", "R").is_none());
+    }
+
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.engine
+    #[test]
+    fn engine_accessor_returns_the_fingerprint() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        assert!(cache.engine().starts_with("gob-cache/"));
     }
 }

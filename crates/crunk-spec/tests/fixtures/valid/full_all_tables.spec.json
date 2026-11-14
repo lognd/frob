@@ -149,7 +149,8 @@
     "tokens_file": "tailwind.tokens.json",
     "namespace_keys": true,
     "alpha_channels": true,
-    "version": "v3"
+    "version": "v3",
+    "engine": "node"
   },
   "breakpoints": {
     "points": {

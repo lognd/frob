@@ -1,6 +1,6 @@
 //! Verb outcomes: the payload on success and [`CliError`] on failure.
 
-use gob_diagnostics::{ExitCode, FindingRecord, Refusal};
+use gob_diagnostics::{EnvelopeFreshness, ExitCode, FindingRecord, Refusal};
 use gob_rules::Finding;
 
 /// Everything a successful verb returns besides process exit state.
@@ -16,6 +16,8 @@ pub struct Payload<T> {
     pub already: bool,
     /// Pre-rendered text rows: the text view prints them verbatim (JSON ignores them).
     pub rendered: Option<Vec<String>>,
+    /// Freshness of the shared ticket view, copied to the envelope `freshness` field.
+    pub freshness: Option<EnvelopeFreshness>,
 }
 
 impl<T> Payload<T> {
@@ -27,7 +29,16 @@ impl<T> Payload<T> {
             warnings: Vec::new(),
             already: false,
             rendered: None,
+            freshness: None,
         }
+    }
+
+    /// Record the freshness of the ticket view this verb read (envelope `freshness`).
+    // frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+    #[must_use]
+    pub fn with_freshness(mut self, freshness: Option<EnvelopeFreshness>) -> Self {
+        self.freshness = freshness;
+        self
     }
 
     /// Mark the text view as pre-rendered: rows print raw, with no envelope header, markers or indent.

@@ -133,7 +133,7 @@ pub struct WorktreeSource {
 impl WorktreeSource {
     /// The source for `root` when it lies inside a non-bare git checkout; `None` otherwise.
     pub fn locate(root: &Path) -> Option<Self> {
-        let repo = Repo::discover(root).ok()?;
+        let repo = Repo::discover_shared(root).ok()?;
         let workdir = gob_exec::canonical(repo.work_dir()?).ok()?;
         let canon = gob_exec::canonical(root).ok()?;
         let rel = canon.strip_prefix(&workdir).ok()?;

@@ -1,0 +1,1 @@
+`frob work ~X` now evicts an idle agent claim that blocks it (when `[claims] evict_agent = "auto"`), parking the holder's work, and then claims the ticket; `claim evict` and `work --next` eviction already existed.

@@ -1,0 +1,1 @@
+`grimble fmt` keeps a comment block followed by a blank line (a section banner) at its slot above the sorted group instead of detaching it from its section; comments directly above an entity or clause still follow it (grmb-spec 9.3).

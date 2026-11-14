@@ -131,14 +131,11 @@ pub(super) fn fold_source(text: &str, input: &FileInput<'_>) -> Result<Folded, F
 }
 
 /// Parses and folds `text`, returning the per-unit error facts: a unit that throws is Unknown (untyped throws).
+///
+/// # Errors
+///
+/// Returns a [`FoldError`] when the source cannot be parsed or folded.
 // frob:ticket 01M68WWDX3FNVTW9XRN2J7R2HK
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "re-exported from lib.rs by the follow-up ticket; lib.rs is outside this lease"
-    )
-)]
 pub fn typescript_error_facts(
     text: &str,
     input: &FileInput<'_>,
@@ -975,18 +972,62 @@ impl<'a> TsFold<'a> {
             {
                 continue;
             }
-            let Some(ty) = children(ann).into_iter().find(tree_sitter::Node::is_named) else {
-                continue;
-            };
-            let text: String = self.t(ty).split_whitespace().collect();
-            let simple = match ty.kind() {
-                "type_identifier" | "nested_type_identifier" => true,
-                "predefined_type" => text == "any",
-                _ => false,
-            };
-            if simple {
+            if let Some(text) = self.simple_annotation(ann) {
                 tracing::trace!(path = self.path, param = %name, ty = %text, "typescript annotated parameter");
                 out.insert(name, text);
+            }
+        }
+        out.extend(self.local_annotations(f.child_by_field_name("body"), &seen));
+        out
+    }
+
+    /// The class name (plain, dotted or `any`) a `type_annotation` declares, whitespace-free, if it is that simple.
+    // frob:ticket 01M5HMPQEYJ2FRW9YG7FMVKQY6
+    fn simple_annotation(&self, ann: Node<'_>) -> Option<String> {
+        let ty = children(ann)
+            .into_iter()
+            .find(tree_sitter::Node::is_named)?;
+        let text: String = self.t(ty).split_whitespace().collect();
+        let simple = match ty.kind() {
+            "type_identifier" | "nested_type_identifier" => true,
+            "predefined_type" => text == "any",
+            _ => false,
+        };
+        simple.then_some(text)
+    }
+
+    /// The annotated `const`/`let` locals declared directly in the block `body`; names in `taken` (parameters) are left out.
+    // frob:ticket 01M5HMPQEYJ2FRW9YG7FMVKQY6
+    fn local_annotations(
+        &self,
+        body: Option<Node<'_>>,
+        taken: &HashSet<String>,
+    ) -> HashMap<String, String> {
+        let mut out = HashMap::new();
+        let Some(body) = body.filter(|b| b.kind() == "statement_block") else {
+            return out;
+        };
+        for stmt in Self::block_stmts(body) {
+            if stmt.kind() != "lexical_declaration" {
+                continue;
+            }
+            for d in children(stmt) {
+                if d.kind() != "variable_declarator" {
+                    continue;
+                }
+                let (Some(pat), Some(ann)) =
+                    (d.child_by_field_name("name"), d.child_by_field_name("type"))
+                else {
+                    continue;
+                };
+                let name = self.t(pat);
+                if pat.kind() != "identifier" || taken.contains(name) {
+                    continue;
+                }
+                if let Some(text) = self.simple_annotation(ann) {
+                    tracing::trace!(path = self.path, local = %name, ty = %text, "typescript annotated local");
+                    out.insert(name.to_owned(), text);
+                }
             }
         }
         out
@@ -1228,7 +1269,8 @@ impl<'a> TsFold<'a> {
             ?names,
             "typescript block scope"
         );
-        self.push_scope(names.iter().cloned().collect(), HashMap::new());
+        let annotations = self.local_annotations(Some(n), &HashSet::new());
+        self.push_scope(names.iter().cloned().collect(), annotations);
         let kids = self.gen_children(n, depth);
         self.pop_scope();
         let refs: Vec<&str> = names.iter().map(String::as_str).collect();

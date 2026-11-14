@@ -598,7 +598,9 @@ GitHub Actions YAML: a workflow is a `unit(kind=workflow)` with
 `group(order=sequence)` of steps; `uses:` is `apply(kind=instantiate)`
 whose head resolves to an external identity (owner/repo@ref) with
 status Must when SHA-pinned, May when tag-pinned (the referent can
-move); `needs:` is `apply(kind=dependency)`; triggers are entrypoints
+move), and a trailing version comment (`# v4.1.0`) on a SHA-pinned
+`uses:` is bound to the reference as its human-readable version;
+`needs:` is `apply(kind=dependency)`; triggers are entrypoints
 (`attr(on)`); `permissions`, `concurrency`, `timeout-minutes` are
 `attr` nodes; `${{ }}` expressions are a `region(kind=embedded,
 lang=actions-expr)` with references into the event context (a scope

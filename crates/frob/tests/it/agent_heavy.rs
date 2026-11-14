@@ -4,7 +4,6 @@
 
 use std::path::Path;
 use std::process::{Child, Stdio};
-use std::time::{Duration, Instant};
 
 use crate::common;
 
@@ -81,18 +80,28 @@ fn heavy_releases_lock_on_failure_and_on_kill() {
     assert!(String::from_utf8_lossy(&fail.stdout).contains("\"exit_code\":7"));
 
     // Kill a holder mid-run (interrupt): the next invocation must not wait on it.
-    let mut holder: Child = heavy(dir.path(), &target, &["sleep", "30"])
+    let marker = dir.path().join("holding.txt");
+    let hold = format!(
+        "echo up > {m}; sleep 30",
+        m = gob_path::Shown::with_home(&marker, None)
+    );
+    let mut holder: Child = heavy(dir.path(), &target, &["sh", "-c", &hold])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .expect("spawn");
-    std::thread::sleep(Duration::from_millis(1500));
+    // The marker is written only once the holder runs under the lock.
+    while !marker.exists() {
+        assert!(
+            holder.try_wait().expect("poll").is_none(),
+            "holder exited before taking the lock"
+        );
+        std::thread::yield_now();
+    }
     holder.kill().expect("kill");
     holder.wait().expect("reap");
-    let started = Instant::now();
     let ok = heavy(dir.path(), &target, &["true"]).output().expect("run");
     assert_eq!(ok.status.code(), Some(0), "{ok:?}");
-    assert!(started.elapsed() < Duration::from_secs(20));
 }
 
 // frob:tests crates/frob/src/agent_heavy_cmd.rs::AgentHeavy

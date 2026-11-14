@@ -1,0 +1,1 @@
+crunk-tokens: loading a DTCG file now fails with `DtcgError::NameCollision` when two distinct token paths (for example `a.b-c` and `a-b.c`) map to the same CSS custom property, naming both paths and the property.

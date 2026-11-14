@@ -390,7 +390,7 @@ impl Cli {
         let json = match format {
             FormatChoice::Json => true,
             FormatChoice::Text | FormatChoice::Md => false,
-            // frob:accept LOG001 because="tty probe only; no bytes are written"
+            // frob:defer LOG001 because="tty probe only; no bytes are written" ticket=01M79PWQP03T5YH7QVM72KW077
             FormatChoice::Auto => !is_tty(&std::io::stdout()),
         };
         let color = match leaf
@@ -401,7 +401,7 @@ impl Cli {
             ColorMode::Always => ColorChoice::Always,
             ColorMode::Never => ColorChoice::Never,
             ColorMode::Auto => {
-                // frob:accept LOG001 because="tty probe only; no bytes are written"
+                // frob:defer LOG001 because="tty probe only; no bytes are written" ticket=01M79PWQP03T5YH7QVM72KW077
                 if is_tty(&std::io::stdout()) && std::env::var_os("NO_COLOR").is_none() {
                     ColorChoice::Always
                 } else {
@@ -730,7 +730,7 @@ fn sniff_json(argv: &[OsString]) -> bool {
             _ => {}
         }
     }
-    // frob:accept LOG001 because="tty probe only; no bytes are written"
+    // frob:defer LOG001 because="tty probe only; no bytes are written" ticket=01M79PWQP03T5YH7QVM72KW077
     json.unwrap_or_else(|| !is_tty(&std::io::stdout()))
 }
 

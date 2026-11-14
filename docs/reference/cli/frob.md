@@ -22,11 +22,13 @@
 | `check` | no | no | 0 ok, 1 negative, 2 usage, 3 refused, 4 internal | Run the rules over the repository and report findings; exit 1 at or above `fail_on`. |
 | `claim evict` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Evict an idle claim: park the holder's work, free the ticket and report the remaining daily rate. |
 | `claim hold` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Stop a claim's idle clock until a date, for a holder who is away. |
+| `claim notices` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the idle notices of live claims, or acknowledge the caller's own with `--ack`. |
 | `claim restore` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Put an evicted claim's parked work back as its `ticket/<handle>` branch; anyone may, until someone else claims. |
 | `claim resume` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | End a claim hold early; a ticket with no active hold is left alone. |
 | `claim touch` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Soft heartbeat for the caller's claim; an agent harness runs it from a hook while its session lives. |
 | `config show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print every config table merged (defaults, then frob.toml) with provenance. |
 | `config sync` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Add every knob a materialized table is missing to `frob.toml`; comments are kept. |
+| `coord status` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | List the live full `frob check` runs of every worktree of this repository. |
 | `cycle assign` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Assign a ticket to a cycle (default: the open one containing today, else the next planned); refused past capacity unless over-committed. |
 | `cycle close` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Close a cycle: carry incomplete work to the next, record the ratio and retro; refused while live work is in progress. |
 | `cycle list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every cycle, earliest start first. |
@@ -56,8 +58,10 @@
 | `milestone list` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List every milestone, oldest first. |
 | `milestone new` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Create a milestone; an identical repeat returns `already`, a different one is refused. |
 | `milestone show` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show one milestone with its member epics and exit criteria. |
+| `mirror alias` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Record a tracker key (such as PROJ-123) as an alias of a ticket, so `ticket show` finds it by that key. |
 | `mirror recreate` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Replace the issue the tracker deleted (a 410) with a new one; a person runs this at a terminal. |
 | `mirror render` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the tracker-independent projection of a ticket: identity, sections, classification, state, relations, people and provenance. |
+| `mirror run` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Run the ledger side of a mirror pass: list the tickets to mirror and check each renders (no tracker call). |
 | `plan` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Propose or create tickets for design entities no live ticket implements; goal to epic, scenario to story, impl to task. |
 | `profile` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Show the reader profile, or set it to `newcomer` or `experienced`. |
 | `refresh` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Probe the remote for freshness (bounded, never prompts) or, with `--status`, print the cached one-line freshness. |

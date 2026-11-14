@@ -13,7 +13,9 @@ use gob_ir::style;
 use gob_ir::{AttrValue, Model, NodeId, Operator, Truth, Universal};
 use gob_text::SourceText;
 
-use super::kind::{PATH_ATTR, directive_name, is_canonical_unit, is_key, key_path};
+use super::kind::{
+    BUCKET_ATTR, COMPONENT_ATTR, PATH_ATTR, directive_name, is_canonical_unit, is_key, key_path,
+};
 use crate::plan::CmpOp;
 
 /// A known scalar.
@@ -159,6 +161,14 @@ enum PathPart {
 }
 
 impl PathPart {
+    /// The attribute a host stamps to state this part itself.
+    fn attr(self) -> &'static str {
+        match self {
+            Self::Bucket => BUCKET_ATTR,
+            Self::Component => COMPONENT_ATTR,
+        }
+    }
+
     /// The part of the slash-separated `path`, `None` when the path has no such part.
     fn of(self, path: &str) -> Option<String> {
         let mut parts = path.rsplit('/');
@@ -212,7 +222,11 @@ impl<'a> Reader<'a> {
             "name" => self.name(node),
             "text" => self.text(node),
             "public" | "exported" => self.visibility(node),
-            "tag" | "spread" | "value" => self.markup(node, name),
+            "value" => match self.style(node, name) {
+                Datum::Absent => self.markup(node, name),
+                declared => declared,
+            },
+            "tag" | "spread" => self.markup(node, name),
             "selector" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
             "target" => self.target(node),
@@ -234,11 +248,29 @@ impl<'a> Reader<'a> {
 
     /// A path-derived name of the file `node` is in: its bucket or component (see [`PathPart`]).
     // frob:ticket 01M555G0ADS5XD148DWTK6F9FS
+    // frob:ticket 01M5ETSE6D7CPPAVBD4KEM6AX5
     fn path_part(&self, node: NodeId, part: PathPart) -> Datum {
+        if let Some(stamped) = self.stamped(node, part) {
+            tracing::trace!(?part, %stamped, "path part stamped by the host");
+            return if stamped.is_empty() {
+                Datum::Absent
+            } else {
+                Datum::text(stamped)
+            };
+        }
         let path = self.file_path(node);
         let found = part.of(&path);
         tracing::trace!(%path, ?part, ?found, "path part");
         found.map_or(Datum::Absent, Datum::text)
+    }
+
+    /// The value the host stamped for `part` on `node` or its nearest stamped ancestor.
+    fn stamped(&self, node: NodeId, part: PathPart) -> Option<String> {
+        let term = self.model.term();
+        std::iter::once(node)
+            .chain(term.ancestors(node))
+            .find_map(|n| term.node(n).attrs().get_str(part.attr()))
+            .map(str::to_owned)
     }
 
     /// The nearest enclosing canonical unit of `node` (itself when it is one), else absent.
@@ -482,6 +514,8 @@ impl<'a> Reader<'a> {
         }
     }
 
+    // frob:ticket 01M70SK0DAGN0D4YF323K1AD1Y
+    /// Style fields; a declaration's `value` is its raw value text (`z-index: 77` reads `77`).
     fn style(&self, node: NodeId, field: &str) -> Datum {
         let n = self.model.term().node(node);
         match (field, n.op()) {
@@ -498,6 +532,11 @@ impl<'a> Reader<'a> {
                     n.attrs().get(style::IMPORTANT),
                     Some(AttrValue::Bool(true))
                 )))
+            }
+            ("value", Operator::Adapter(a)) if a.lang == style::LANG && a.name == "declaration" => {
+                n.attrs()
+                    .get_str(style::RAW)
+                    .map_or(Datum::Absent, Datum::text)
             }
             ("raw", _) => n
                 .attrs()

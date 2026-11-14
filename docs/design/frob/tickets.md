@@ -164,7 +164,7 @@ Every kind that any file refers to is in this table. frob-ledger's
 (not of the ticket), and a kind a reader does not know folds to no
 change. Every producer writes through one API, `Ledger::append(ticket,
 EventBody)`, which writes the event file, re-folds the ticket file and
-commits on the ledger ref (CAS); no crate writes event files directly
+commits on the ledger ref (CAS) (`Ledger::append_many` commits a batch of events in one commit); no crate writes event files directly
 (~CFM8QB0).
 
 The fold binds an acceptance criterion (`bound = true`) only from
@@ -194,6 +194,7 @@ any (provider, reference) pair's latest record for it passes.
 | `cycle` | ticket | cycle id, op (assign, carried, over-commit), reason (required for over-commit) | cycle assign, cycle close | velocity, forecasts, cycle report |
 | `attempt` | ticket | outcome (failed, abandoned), reason | requeue --failed, a failed land | brief, doctor |
 | `triage` | ticket | action (accept, decline, snooze, duplicate), until (snooze only), reason (when given) | ticket triage | inbox; the fold ignores it (the `transition` and `link` events written beside it carry the state change) |
+| `add-alias` | ticket | alias (a tracker key such as `PROJ-123`) | `mirror alias` | the fold appends it to `aliases` once, so `ticket show PROJ-123` resolves |
 | `proposal` | ticket | tracker event id, item, field, actor id, time, value digest, excerpt (capped), origin (`tracker`) | mirror run | proposals list, `proposals accept`; the ticket fold ignores it (section 13.5) |
 | `proposal-superseded` | ticket | the `proposal` fields plus `supersedes` (the replaced tracker event id) | mirror run | proposals list; the latest pending proposal per (item, field) wins |
 | `proposal-accepted` | ticket | tracker event id, reason (when given) | `ticket proposals accept` | proposals list; closed for good, a re-recorded tracker event id stays closed |
@@ -748,8 +749,10 @@ passing record or an attestation, latest per provider, reference and
 criterion, through the moved maps); a story, bug or security ticket with no criteria at all is
 refused (`E-DONE-NO-CRITERIA`, ~H1NWDN9, D92: with nothing to bind the requirement would pass
 vacuously; always on, checked before `done_requires`, and not excused by the evidence bypass, so
-it is refused on its own close or land, never on a later one), while chore, docs, epic and every
-other type may close with none, since there is nothing to state as given/when/then and a forced
+it is refused on its own close or land, never on a later one; ~SEWGFDJ widened this from story, bug
+and security to every type that claims a change, task, invariant and incident included, and added the
+explicit waiver of a `no-criteria` ticket label, recorded in the ledger), while chore, docs, epic and
+custom types may close with none, since there is nothing to state as given/when/then and a forced
 criterion would be ceremonial (an exempt ticket without criteria closes with a warning);
 `--no-evidence --reason` bypasses this requirement only and records
 the `evidence-bypass` event. `no_open_children`: every child is done.
@@ -1746,6 +1749,12 @@ reader, plus the exact shard bytes in a `payload` string), `put_if` is a content
 compare-and-swap, and a lost ref race is re-read and re-checked rather than
 blindly retried.
 
+The shard JSON also carries the per-field `read_back` record and the
+tracker `event_values` the mirror retained (omitted while empty, so older
+shards decode unchanged). `LedgerTickets::state` reads both back through
+`Ledger::mirror_payload`; a missing or undecodable payload yields empty
+values and reconcile falls back to the current tracker value.
+
 ### 13.8 Stated properties and assumptions
 
 Properties (formal statements and TLC results in
@@ -1852,7 +1861,7 @@ Evidence and tests (T-0020, T-0031): task, bug, security, story, incident and in
 
 ### D92
 
-Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's "passes with a warning"): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
+Zero acceptance criteria (coordinator decision 2026-10-04, owner delegated, ~H1NWDN9, replaces tickets.md section 6's "passes with a warning"; widened to task, invariant and incident with a `no-criteria` label waiver by ~SEWGFDJ): closing done or fixed, or landing, a story, bug or security ticket with no acceptance criteria is refused (`E-DONE-NO-CRITERIA`, naming the type), the silent-zero principle of ~A6C2R1C; chore, docs, epic and the other types are exempt (an epic's criteria are its children); no bypass, so the refusal lands on the offending close
 
 ### D99
 

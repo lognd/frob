@@ -22,9 +22,11 @@
 //! - [`waiver`]: the `crunk:waive` comment: scan, bind to the covered region, turn into exceptions.
 //! - [`component_files`]: the authored `design/components/*.component.toml` files the COMP and STATE rules read.
 //! - [`screen_files`]: the authored `design/screens/*.screen.toml` files the STATE rules read.
+//! - [`render_ledger`]: which screen state and platform cells have a render, what STATE004 reads.
 //! - [`review`]: the pure human review judgment HUMAN001 and HUMAN002 read.
 //! - [`phase_profile`]: the lint profile `phase` in `crunk.toml` selects (structure, then A11Y and HUMAN001, then metrics).
 //! - [`scene_files`]: the solved `design/scenes/*.scene.json` files LAYOUT001-005 and RESP001 read.
+//! - [`grl_rules`]: runs the GRL-generated LAYER001 and ORG002 (`packs/crunk-core`) over the host's files.
 //! - [`host`]: [`host::CrunkHost`], the host trait crunk's rules evaluate against.
 
 // frob:ticket 01M43ATASM383KB9130JY79XVV
@@ -40,13 +42,16 @@ pub mod content_files;
 pub mod contrast;
 pub mod craft;
 pub mod family;
+pub mod file_attrs;
 pub mod fixes;
+pub mod grl_rules;
 pub mod host;
 pub mod lint;
 pub mod mode;
 pub mod org;
 pub mod phase_profile;
 pub mod registry;
+pub mod render_ledger;
 pub mod review;
 pub mod rules;
 pub mod scales;

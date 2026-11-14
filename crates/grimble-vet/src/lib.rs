@@ -23,7 +23,9 @@ pub use hook::{InstallRequest, parse_install, vet_command};
 pub use host::VetHost;
 pub use lockfile::{Package, examined, parse_lockfile};
 pub use meta::Meta;
-pub use pass::{VetInput, VetPassReport, analyze};
+pub use pass::{
+    ALLOWLIST_PATH, LEGACY_ALLOWLIST_PATH, VetInput, VetPassReport, analyze, read_allowlist,
+};
 pub use vet::{Allowlist, Finding, Rule, Severity, VetReport, vet, vet_with_meta};
 
 /// Failure reading vetting inputs.

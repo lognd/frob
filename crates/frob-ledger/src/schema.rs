@@ -25,6 +25,8 @@ pub enum FieldKind {
     Choice(&'static [&'static str]),
     /// Story points (a whole number; the scale is `[pm] point_scale`).
     Points,
+    /// A non-negative whole number of days.
+    Days,
     /// A list of strings.
     List,
     /// A ticket id.
@@ -255,6 +257,9 @@ pub struct FrontmatterSchema {
     /// Story points: a whole number; the allowed values follow `[pm] point_scale` (Fibonacci 1..13 by default)
     #[ticket(settable)]
     points: Option<Points>,
+    /// Idle window for this ticket's claim, in days; 0 means never evict
+    #[ticket(settable)]
+    claim_idle_days: Option<u32>,
     /// Parent ticket
     #[ticket(settable)]
     parent: Option<TicketId>,
@@ -333,6 +338,7 @@ fn field_kind(f: &TicketFieldDescription) -> FieldKind {
         }),
         TicketFieldKind::Scalar => match f.inner_type() {
             "Points" => FieldKind::Points,
+            "u32" => FieldKind::Days,
             "TicketId" => FieldKind::TicketRef,
             "Stamp" => FieldKind::Instant,
             _ => FieldKind::Text,
@@ -364,6 +370,7 @@ pub fn docs_table() -> String {
             FieldKind::Text => "text".to_owned(),
             FieldKind::Choice(names) => names.join(" \\| "),
             FieldKind::Points => "points".to_owned(),
+            FieldKind::Days => "days".to_owned(),
             FieldKind::List => "list".to_owned(),
             FieldKind::TicketRef => "ticket id".to_owned(),
             FieldKind::Instant => "RFC 3339".to_owned(),
@@ -402,6 +409,9 @@ pub fn get_field(t: &Ticket, name: &str) -> Option<toml::Value> {
         "class" => (!fm.class.is_standard()).then(|| toml::Value::String(fm.class.to_string())),
         "due" => fm.due.map(|d| toml::Value::String(d.to_string())),
         "points" => fm.points.map(|p| toml::Value::Integer(i64::from(p.get()))),
+        "claim_idle_days" => fm
+            .claim_idle_days
+            .map(|d| toml::Value::Integer(i64::from(d))),
         "parent" => fm.parent.map(|p| toml::Value::String(p.to_string())),
         "assignee" => opt_text(fm.assignee.as_ref()),
         "persona" => opt_text(fm.persona.as_ref()),
@@ -533,6 +543,14 @@ pub fn set_field(t: &mut Ticket, name: &str, value: Option<&toml::Value>) -> Res
                 .map_err(|_| format!("points must be a whole number from 1 to 255 (got {n})"))?;
             fm.points = Some(Points::new(n).map_err(|e| e.to_string())?);
         }
+        "claim_idle_days" => {
+            let n = v
+                .as_integer()
+                .ok_or_else(|| "field `claim_idle_days` expects an integer".to_owned())?;
+            fm.claim_idle_days = Some(u32::try_from(n).map_err(|_| {
+                format!("claim_idle_days must be a whole number of days (got {n})")
+            })?);
+        }
         "parent" => {
             fm.parent = Some(
                 want_text(name, v)?
@@ -561,6 +579,7 @@ fn unset(t: &mut Ticket, name: &str) {
         "class" => fm.class = Class::Standard,
         "due" => fm.due = None,
         "points" => fm.points = None,
+        "claim_idle_days" => fm.claim_idle_days = None,
         "parent" => fm.parent = None,
         "assignee" => fm.assignee = None,
         "persona" => fm.persona = None,
@@ -625,6 +644,11 @@ pub fn parse_text_value(name: &str, text: &str) -> Result<Option<toml::Value>, S
         FieldKind::Points => toml::Value::Integer(i64::from(
             text.parse::<Points>().map_err(|e| e.to_string())?.get(),
         )),
+        FieldKind::Days => {
+            toml::Value::Integer(i64::from(text.parse::<u32>().map_err(|_| {
+                format!("`{name}` must be a whole number of days (got `{text}`)")
+            })?))
+        }
         FieldKind::List => strings(
             &text
                 .split(',')
@@ -664,6 +688,7 @@ mod tests {
             class: crate::model::Class::Expedite,
             due: Some("2026-10-02T14:03:11Z".parse().expect("stamp")),
             points: Some(Points::new(1).expect("points")),
+            claim_idle_days: Some(7),
             parent: Some(id),
             reporter: "r".into(),
             assignee: s(),
@@ -706,7 +731,7 @@ mod tests {
         let d = FrontmatterSchema::describe();
         assert_eq!(d.name, "FrontmatterSchema");
         assert!(!d.doc.is_empty());
-        assert_eq!(d.fields.len(), 26);
+        assert_eq!(d.fields.len(), 27);
         assert!(d.fields.iter().all(|f| !f.doc.is_empty()));
         let labels = d.fields.iter().find(|f| f.key == "labels").expect("labels");
         assert_eq!(labels.default_toml, Some("[]"));
@@ -742,7 +767,7 @@ mod tests {
     #[test]
     fn docs_table_has_a_row_per_field() {
         let table = FrontmatterSchema::describe().docs_table();
-        assert_eq!(table.lines().count(), 2 + 26);
+        assert_eq!(table.lines().count(), 2 + 27);
     }
 
     #[test]
@@ -788,6 +813,26 @@ mod tests {
         for d in FIELDS.iter() {
             assert!(map.contains_key(d.name), "missing {}", d.name);
         }
+    }
+
+    // frob:tests crates/frob-ledger/src/schema.rs::set_field
+    #[test]
+    fn set_field_stores_and_clears_claim_idle_days() {
+        let mut t = Ticket {
+            front: full_frontmatter(),
+            body: String::new(),
+        };
+        set_field(&mut t, "claim_idle_days", Some(&toml::Value::Integer(14))).expect("set");
+        assert_eq!(t.front.claim_idle_days, Some(14));
+        assert!(set_field(&mut t, "claim_idle_days", Some(&toml::Value::Integer(-1))).is_err());
+        assert!(set_field(&mut t, "claim_idle_days", Some(&toml::Value::Boolean(true))).is_err());
+        set_field(&mut t, "claim_idle_days", None).expect("unset");
+        assert_eq!(t.front.claim_idle_days, None);
+        assert_eq!(
+            parse_text_value("claim_idle_days", "0").expect("days"),
+            Some(toml::Value::Integer(0))
+        );
+        assert!(parse_text_value("claim_idle_days", "x").is_err());
     }
 
     // frob:tests crates/frob-ledger/src/schema.rs::parse_text_value

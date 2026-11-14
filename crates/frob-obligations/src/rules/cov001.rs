@@ -27,7 +27,13 @@ pub struct Cov001;
 impl<P: ?Sized + ObligationHost> RepoRule<P> for Cov001 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         let inputs = host.obligations();
-        cov::cov001(inputs.root, inputs.graph, inputs.directives, out);
+        cov::cov001(
+            inputs.root,
+            inputs.graph,
+            inputs.directives,
+            inputs.unity,
+            out,
+        );
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {

@@ -32,6 +32,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/frob/migration.md](design/frob/migration.md) | Migration from v1 and rollout | draft | frob |
 | [design/frob/output.md](design/frob/output.md) | Output: pretty TTY presentation, stage events and logging | draft | frob |
 | [design/frob/pm-and-releases.md](design/frob/pm-and-releases.md) | Project management and releases: enforcement, cycles, flow and scrumban releases | current | frob |
+| [design/frob/remedy-prose.md](design/frob/remedy-prose.md) | Prose remedies in refusals | draft | frob |
 | [design/frob/tickets.md](design/frob/tickets.md) | Tickets: storage, model, evidence, landing, navigation and the tracker mirror | current | frob |
 | [design/grimble/binding.md](design/grimble/binding.md) | Binding semantics over U (G02) | draft | grimble |
 | [design/grimble/conformance.md](design/grimble/conformance.md) | The .grmb language: conformance, example and milestones | draft | grimble |
@@ -56,6 +57,12 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [design/shared/sibling-contract.md](design/shared/sibling-contract.md) | The sibling JSON contract (G03) | current | gob |
 | [design/shared/universal-model.md](design/shared/universal-model.md) | The universal structural model (gob-ir) | current | gob |
 
+## glossary
+
+| Document | Title | Status | Owner |
+|---|---|---|---|
+| [glossary/ticket-lease.md](glossary/ticket-lease.md) | Ticket lease | current | frob |
+
 ## grimble
 
 | Document | Title | Status | Owner |
@@ -72,6 +79,8 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [guides/crunk-from-python.md](guides/crunk-from-python.md) | Migrating from the Python crunk | current | crunk |
 | [guides/crunk-hullbreach.md](guides/crunk-hullbreach.md) | Switching hullbreach CI from the Python crunk to the Rust crunk | current | crunk |
 | [guides/crunk.md](guides/crunk.md) | crunk user guide | current | crunk |
+| [guides/good-first.md](guides/good-first.md) | The --good-first flag | current | frob |
+| [guides/grimble-manual-tests.md](guides/grimble-manual-tests.md) | grimble manual tests: what `grimble status` lists and how to run each | current | grimble |
 | [guides/grimble.md](guides/grimble.md) | grimble user guide: model files, check, fmt and the first rules | current | grimble |
 | [guides/hooks.md](guides/hooks.md) | Hooks | current | frob |
 | [guides/moving-docs.md](guides/moving-docs.md) | Moving docs without breaking references | current | frob |
@@ -116,7 +125,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |
 | [reference/languages.md](reference/languages.md) | Languages | generated | - |
-| [reference/rules/](reference/rules/) | One page per entry (343 pages) | generated | - |
+| [reference/rules/](reference/rules/) | One page per entry (346 pages) | generated | - |
 | [reference/tool-stages.md](reference/tool-stages.md) | Tool stages (`[[check.tool]]`) | current | frob |
 
 ## Supporting files

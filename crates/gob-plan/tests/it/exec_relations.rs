@@ -1,0 +1,775 @@
+//! The executor's relation layer: edge verbs, bounded reaches, side relations, count and knobs.
+#![allow(
+    clippy::many_single_char_names,
+    reason = "short names in table-style tests"
+)]
+
+use crate::support;
+
+use gob_ir::{Model, NodeId, NodeSpec, Operator, Relation, Truth};
+use gob_plan::catalog::{Column, FieldType};
+use gob_plan::exec::relations::{Count, Knobs, Relations, SideData, SideError, SideTable};
+use gob_plan::exec::{Doubt, ExecError, Input, Row, Run, Scalar, count, run, run_with};
+use gob_plan::plan::{
+    Certainty, CmpOp, Leaf, Limit, Op, Operand, Plan, Polarity, Quant, Read, ReadSet, VarId,
+};
+use support::{Doc, PlanBuilder};
+
+fn func(d: &mut Doc, name: &str, start: u32) -> NodeId {
+    d.at_range(
+        |loc| NodeSpec::new(Operator::unit("function", "impl"), loc).named(name),
+        start,
+        start + 5,
+        &[],
+    )
+}
+
+fn model(names: &[&str]) -> (Model, Vec<NodeId>) {
+    let mut d = Doc::new("a.rs", "rust");
+    let fs: Vec<NodeId> = names
+        .iter()
+        .enumerate()
+        .map(|(i, n)| func(&mut d, n, 100 + 10 * u32::try_from(i).unwrap()))
+        .collect();
+    let (m, _) = d.root(&fs);
+    (m, fs)
+}
+
+fn input(model: &Model) -> Input<'_> {
+    Input {
+        model,
+        source: None,
+    }
+}
+
+fn col(name: &str, ty: FieldType) -> Column {
+    Column {
+        name: name.to_owned(),
+        ty,
+    }
+}
+
+/// `find t: function`, `find f: function`, `t reaches f via calls within n`.
+fn reach_plan(n: u16) -> (gob_plan::plan::Plan, u16, u16) {
+    let mut b = PlanBuilder::new("REACH001", Polarity::Pplus);
+    let t = b.find("function");
+    let f = b.find("function");
+    let via = b.s("calls");
+    let op = b.op(Op::Reaches {
+        from: t,
+        to: f,
+        via,
+        within: n,
+        certainty: Certainty::Default,
+    });
+    b.clause(op);
+    b.report(None, f, "reaches");
+    (b.build(), t, f)
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::reaches
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::reaches_in
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::Closure.of
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn reaches_across_a_may_edge_is_unknown_with_the_edge_on_the_frontier() {
+    let (m, fs) = model(&["a", "b", "c"]);
+    let mut calls = Relation::new();
+    calls.insert(fs[0], fs[1], Truth::Yes);
+    calls.insert(fs[1], fs[2], Truth::Unknown);
+    let (plan, t, f) = reach_plan(2);
+    let rels = Relations::new().with_edges("calls", calls);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+
+    let find = |from: NodeId, to: NodeId| {
+        out.rows
+            .iter()
+            .find(|r| r.node(t) == Some(from) && r.node(f) == Some(to))
+    };
+    let ac = find(fs[0], fs[2]).expect("a reaches c only through a May edge");
+    assert_eq!(ac.verdict.truth, Truth::Unknown);
+    assert_eq!(
+        ac.verdict.doubts,
+        vec![Doubt::MayEdge {
+            from: fs[0],
+            to: fs[2]
+        }]
+    );
+    assert_eq!(find(fs[0], fs[1]).unwrap().verdict.truth, Truth::Yes);
+    assert!(
+        find(fs[2], fs[0]).is_none(),
+        "no path even through May edges"
+    );
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/edges.rs::verb
+#[test]
+fn a_verb_reads_its_relation_and_peer_of_reads_the_term() {
+    let (m, fs) = model(&["a", "b"]);
+    let mut calls = Relation::new();
+    calls.insert(fs[0], fs[1], Truth::Yes);
+    let mut b = PlanBuilder::new("VERB001", Polarity::Pplus);
+    let (x, y) = (b.find("function"), b.find("function"));
+    let c = b.verb(x, "calls", y, Certainty::Default);
+    let p = b.verb(x, "peer of", y, Certainty::Default);
+    b.clause(c);
+    b.clause(p);
+    b.report(None, x, "m");
+    let plan = b.build();
+    let out = run_with(
+        &plan,
+        &input(&m),
+        &Relations::new().with_edges("calls", calls),
+    )
+    .unwrap();
+    let pairs: Vec<_> = out.rows.iter().map(|r| (r.node(x), r.node(y))).collect();
+    assert_eq!(pairs, vec![(Some(fs[0]), Some(fs[1]))]);
+}
+
+#[test]
+fn a_relation_the_plan_names_but_the_caller_lacks_is_refused() {
+    let (m, _) = model(&["a"]);
+    let (plan, ..) = reach_plan(2);
+    let err = run(&plan, &input(&m)).unwrap_err();
+    assert!(
+        matches!(&err, ExecError::MissingRelation { name, .. } if name == "calls"),
+        "{err}"
+    );
+}
+
+fn side_plan() -> (gob_plan::plan::Plan, u16) {
+    let mut b = PlanBuilder::new("SIDE001", Polarity::Pplus);
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
+    let p = b.var();
+    let table = b.s("diff.changed");
+    let id = b.op(Op::FindSide {
+        var: p,
+        need: Read::Diff,
+        table,
+    });
+    b.clause(id);
+    let status = b.field(p, "status");
+    let want = b.str_lit("modified");
+    let c = b.cmp(status, CmpOp::Eq, want);
+    b.clause(c);
+    b.report(None, p, "changed");
+    (b.build(), p)
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/side.rs::SideData.insert
+#[test]
+fn find_over_a_side_relation_binds_the_typed_rows() {
+    let (m, _) = model(&["a"]);
+    let (plan, p) = side_plan();
+    let mut side = SideData::new();
+    let rows = [
+        ("src/a.rs", "modified"),
+        ("src/b.rs", "added"),
+        ("c.md", "modified"),
+    ]
+    .iter()
+    .map(|(path, st)| vec![Scalar::Str((*path).into()), Scalar::Str((*st).into())])
+    .collect();
+    let table = SideTable::new(
+        vec![col("path", FieldType::Str), col("status", FieldType::Str)],
+        rows,
+    );
+    side.insert("diff.changed", table).unwrap();
+    let rels = Relations::new().with_side(side);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let got: Vec<u32> = out
+        .rows
+        .iter()
+        .map(|r| match r.vars[usize::from(p)] {
+            Some(gob_plan::exec::Val::Row(row)) => row.index,
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(got, vec![0, 2]);
+    assert!(out.rows.iter().all(|r| r.verdict.truth == Truth::Yes));
+    // A plan that needs the table without it fails loudly.
+    assert!(matches!(
+        run(&plan, &input(&m)).unwrap_err(),
+        ExecError::MissingRelation {
+            what: "side table",
+            ..
+        }
+    ));
+}
+
+// frob:tests crates/gob-plan/src/exec/relations/side.rs::SideTable.columns
+// frob:tests crates/gob-plan/src/exec/relations/side.rs::SideTable.is_empty
+#[test]
+fn side_tables_report_their_shape() {
+    let t = SideTable::new(vec![col("glob", FieldType::Str)], vec![]);
+    assert!(t.is_empty());
+    assert_eq!(t.len(), 0);
+    assert_eq!(t.columns(), [col("glob", FieldType::Str)]);
+}
+
+#[test]
+fn side_tables_are_typed_against_the_catalog() {
+    let mut side = SideData::new();
+    let wrong_cols = SideTable::new(vec![col("path", FieldType::Str)], vec![]);
+    assert!(matches!(
+        side.insert("diff.changed", wrong_cols),
+        Err(SideError::WrongColumns { .. })
+    ));
+    let bad_row = SideTable::new(
+        vec![col("glob", FieldType::Str)],
+        vec![vec![Scalar::Int(3)]],
+    );
+    assert!(matches!(
+        side.insert("lease.globs", bad_row),
+        Err(SideError::BadRow { row: 0, .. })
+    ));
+    assert!(matches!(
+        side.insert("nope.table", SideTable::new(vec![], vec![])),
+        Err(SideError::UnknownRelation { .. })
+    ));
+    assert!(
+        side.insert("config.invariants", SideTable::new(vec![], vec![]))
+            .is_ok()
+    );
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::count
+// frob:tests crates/gob-plan/src/exec/relations/count.rs::Knobs.get
+#[test]
+fn a_knob_override_changes_a_count_threshold() {
+    let (m, fs) = model(&["target", "x", "y", "z"]);
+    let mut calls = Relation::new();
+    calls.insert(fs[1], fs[0], Truth::Yes);
+    calls.insert(fs[2], fs[0], Truth::Yes);
+    calls.insert(fs[3], fs[0], Truth::Unknown);
+
+    let mut b = PlanBuilder::new("FANIN001", Polarity::Pplus);
+    let f = b.find("function");
+    let q = b.quant(Quant::Some, "function", |b, c| {
+        b.verb(c, "calls", f, Certainty::Default)
+    });
+    b.clause(q);
+    b.report(None, f, "fan-in");
+    let plan = b.build();
+    let rels = Relations::new().with_edges("calls", calls);
+
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let row = out
+        .rows
+        .iter()
+        .find(|r| r.node(f) == Some(fs[0]))
+        .expect("target is called");
+    let n = count(&plan, &input(&m), &rels, q, row).unwrap();
+    assert_eq!(n, Count { lo: 2, hi: Some(3) });
+
+    let default = rels.knobs().limit("max_fan_in", 5);
+    assert_eq!(n.compare(CmpOp::Gt, &default), Truth::No);
+    let rels = rels.with_knobs(Knobs::new().with("max_fan_in", 1));
+    let tight = rels.knobs().limit("max_fan_in", 5);
+    assert_eq!(n.compare(CmpOp::Gt, &tight), Truth::Yes);
+    let edge = rels.knobs().limit("other", 2);
+    assert_eq!(n.compare(CmpOp::Gt, &edge), Truth::Unknown);
+
+    assert!(matches!(
+        count(&plan, &input(&m), &rels, 0, row),
+        Err(ExecError::NotCountable { .. })
+    ));
+}
+
+fn fan_in_edges(fs: &[NodeId]) -> Relation {
+    let mut calls = Relation::new();
+    calls.insert(fs[1], fs[0], Truth::Yes);
+    calls.insert(fs[2], fs[0], Truth::Yes);
+    calls.insert(fs[3], fs[0], Truth::Unknown);
+    calls
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn a_count_op_compares_against_a_knob_that_the_rules_table_overrides() {
+    let (m, fs) = model(&["target", "x", "y", "z"]);
+    let rels = Relations::new().with_edges("calls", fan_in_edges(&fs));
+
+    let mut b = PlanBuilder::new("FANIN002", Polarity::Pn);
+    let f = b.find("function");
+    let name = b.s("max_fan_in");
+    let c = b.count_cmp(
+        "function",
+        CmpOp::Gt,
+        Limit::Knob { name, default: 5 },
+        |b, c| b.verb(c, "calls", f, Certainty::Default),
+    );
+    b.clause(c);
+    b.report(None, f, "fan-in");
+    // The plan survives its own wire form before it runs.
+    let plan = Plan::load(&b.build().to_bytes()).unwrap();
+
+    let bound = |rels: &Relations| -> Vec<(Option<NodeId>, Truth)> {
+        run_with(&plan, &input(&m), rels)
+            .unwrap()
+            .rows
+            .iter()
+            .map(|r| (r.node(f), r.verdict.truth))
+            .collect()
+    };
+    assert!(
+        bound(&rels).is_empty(),
+        "[2,3] > 5 is No for every function"
+    );
+    let tight = rels.clone().with_knobs(Knobs::new().with("max_fan_in", 1));
+    assert_eq!(bound(&tight), vec![(Some(fs[0]), Truth::Yes)]);
+    let edge = rels.with_knobs(Knobs::new().with("max_fan_in", 2));
+    let rows = run_with(&plan, &input(&m), &edge).unwrap().rows;
+    assert_eq!(rows[0].verdict.truth, Truth::Unknown);
+    assert_eq!(
+        rows[0].verdict.doubts,
+        vec![Doubt::CountBounds { lo: 2, hi: Some(3) }]
+    );
+}
+
+/// The nodes bound to variable `f` when `plan` runs over `m` with `rels`.
+fn knob_hits(plan: &Plan, m: &Model, f: VarId, rels: &Relations) -> Vec<NodeId> {
+    run_with(plan, &input(m), rels)
+        .unwrap()
+        .rows
+        .iter()
+        .filter_map(|r| r.node(f))
+        .collect()
+}
+
+// frob:ticket 01M4XFTY5MGTJ6GMS4NEAKG01G
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+// frob:tests crates/gob-plan/src/exec/relations/count.rs::Knobs.get_int
+#[test]
+fn an_int_knob_operand_reads_the_rules_override_at_run_time() {
+    let (m, fs) = model(&["a", "b", "c", "d"]);
+    let mut b = PlanBuilder::new("KNOB001", Polarity::Pn);
+    let f = b.find("function");
+    let name = b.s("min_depth");
+    let c = b.cmp(
+        Operand::Int(3),
+        CmpOp::Ge,
+        Operand::KnobInt { name, default: 5 },
+    );
+    b.clause(c);
+    b.report(None, f, "late");
+    // The plan survives its own wire form before it runs.
+    let plan = Plan::load(&b.build().to_bytes()).unwrap();
+
+    let rels = Relations::new();
+    assert!(
+        knob_hits(&plan, &m, f, &rels).is_empty(),
+        "3 >= 5 is false at the default"
+    );
+    let low = rels.with_knobs(Knobs::new().with("min_depth", 2));
+    assert_eq!(
+        knob_hits(&plan, &m, f, &low),
+        fs,
+        "3 >= 2 holds under the override"
+    );
+}
+
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn a_def_is_a_view_computed_once_per_distinct_arguments() {
+    let (m, fs) = model(&["target", "x", "y", "z"]);
+    let rels = Relations::new().with_edges("calls", fan_in_edges(&fs));
+
+    let mut b = PlanBuilder::new("DEF001", Polarity::Pplus);
+    let d = b.def(1, |b, p| {
+        b.quant(Quant::Some, "function", |b, c| {
+            b.verb(c, "calls", p[0], Certainty::Default)
+        })
+    });
+    let f = b.find("function");
+    let (first, second) = (b.call(d, &[f]), b.call(d, &[f]));
+    b.clause(first);
+    b.clause(second);
+    b.report(None, f, "called");
+    let plan = b.build();
+
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    assert_eq!(out.rows.len(), 1);
+    assert_eq!(out.rows[0].node(f), Some(fs[0]));
+    assert_eq!(out.rows[0].verdict.truth, Truth::Yes);
+    // Four functions, two call sites each: four views, not eight evaluations.
+    assert_eq!(out.views, 4);
+}
+
+// frob:ticket 01M4MAPRB2H8WZKJZSH3A9N1B2
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn a_glob_set_op_matches_any_glob_in_a_side_column() {
+    let (m, _) = model(&["a"]);
+    let mut b = PlanBuilder::new("SIDE002", Polarity::Pplus);
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
+    let p = b.var();
+    let dt = b.s("diff.changed");
+    let id = b.op(Op::FindSide {
+        var: p,
+        need: Read::Diff,
+        table: dt,
+    });
+    b.clause(id);
+    let path = b.field(p, "path");
+    let lt = b.s("lease.globs");
+    let col = b.s("glob");
+    let g = b.op(Op::MatchGlobSet {
+        subject: path,
+        need: Read::Lease,
+        table: lt,
+        column: col,
+    });
+    b.clause(g);
+    b.report(None, p, "changed");
+    let plan = b.build();
+    let mut side = SideData::new();
+    let rows = [("src/a.rs", "modified"), ("docs/x.md", "added")]
+        .iter()
+        .map(|(a, s)| vec![Scalar::Str((*a).into()), Scalar::Str((*s).into())])
+        .collect();
+    side.insert(
+        "diff.changed",
+        SideTable::new(vec![col_("path"), col_("status")], rows),
+    )
+    .unwrap();
+    side.insert(
+        "lease.globs",
+        SideTable::new(vec![col_("glob")], vec![vec![Scalar::Str("src/**".into())]]),
+    )
+    .unwrap();
+    let rels = Relations::new().with_side(side);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let got: Vec<u32> = out
+        .rows
+        .iter()
+        .map(|r| match r.vars[usize::from(p)] {
+            Some(gob_plan::exec::Val::Row(row)) => row.index,
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(got, vec![0]);
+}
+
+/// The outcome row binding variable `vars.0` to side row `rows.0` and `vars.1` to side row `rows.1`.
+fn row_pair(out: &Run, vars: (VarId, VarId), rows: (u32, u32)) -> Option<&Row> {
+    out.rows.iter().find(|r| {
+        matches!(
+            (r.vars[usize::from(vars.0)], r.vars[usize::from(vars.1)]),
+            (Some(gob_plan::exec::Val::Row(a)), Some(gob_plan::exec::Val::Row(b)))
+                if a.index == rows.0 && b.index == rows.1
+        )
+    })
+}
+
+// frob:ticket 01M4XBAPBBMQ5TMT0EH30ZJZBC
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.glob_operand_op
+#[test]
+fn a_glob_operand_op_matches_a_path_against_a_row_glob_and_an_invalid_glob_is_unknown() {
+    let (m, _) = model(&["a"]);
+    let mut b = PlanBuilder::new("SIDE003", Polarity::Pplus);
+    b.reads(ReadSet::of(&[Read::Diff, Read::Lease]));
+    let (p, g) = (b.var(), b.var());
+    let dt = b.s("diff.changed");
+    let lt = b.s("lease.globs");
+    for (var, need, table) in [(p, Read::Diff, dt), (g, Read::Lease, lt)] {
+        let id = b.op(Op::FindSide { var, need, table });
+        b.clause(id);
+    }
+    let (path, glob) = (b.field(p, "path"), b.field(g, "glob"));
+    let id = b.op(Op::MatchGlobOperand {
+        subject: path,
+        pattern: glob,
+    });
+    b.clause(id);
+    b.report(None, p, "changed");
+    let plan = b.build();
+    let mut side = SideData::new();
+    let rows = ["src/a.rs", "docs/x.md"]
+        .iter()
+        .map(|a| vec![Scalar::Str((*a).into()), Scalar::Str("modified".into())])
+        .collect();
+    side.insert(
+        "diff.changed",
+        SideTable::new(vec![col_("path"), col_("status")], rows),
+    )
+    .unwrap();
+    let globs = ["src/**", "[bad"]
+        .iter()
+        .map(|a| vec![Scalar::Str((*a).into())])
+        .collect();
+    side.insert("lease.globs", SideTable::new(vec![col_("glob")], globs))
+        .unwrap();
+    let out = run_with(&plan, &input(&m), &Relations::new().with_side(side)).unwrap();
+    assert_eq!(
+        row_pair(&out, (p, g), (0, 0)).map(|r| r.verdict.truth),
+        Some(Truth::Yes)
+    );
+    assert!(
+        row_pair(&out, (p, g), (1, 0)).is_none(),
+        "docs/x.md is not under src/**"
+    );
+    assert_ne!(
+        row_pair(&out, (p, g), (0, 1)).map(|r| r.verdict.truth),
+        Some(Truth::Yes),
+        "an invalid glob never matches"
+    );
+}
+
+fn col_(name: &str) -> Column {
+    col(name, FieldType::Str)
+}
+
+fn rows_of(plan: &Plan, m: &Model, v: u16) -> Vec<usize> {
+    run(plan, &input(m))
+        .unwrap()
+        .rows
+        .iter()
+        .map(|r| match r.vars[usize::from(v)] {
+            Some(gob_plan::exec::Val::Row(row)) => row.index as usize,
+            Some(gob_plan::exec::Val::Node(n)) => n.index(),
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect()
+}
+
+// frob:ticket 01M4WGCDG1786P1D7BT26X4K6K
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::is_test_word
+#[test]
+fn is_exists_and_under_filter_function_names() {
+    let (m, fs) = model(&["a.b", "/abs", "ab"]);
+    let build = |mk: &dyn Fn(&mut PlanBuilder, u16) -> gob_plan::plan::OpId| {
+        let mut b = PlanBuilder::new("PRED001", Polarity::Pplus);
+        let f = b.find("function");
+        let op = mk(&mut b, f);
+        b.clause(op);
+        b.report(None, f, "x");
+        b.build()
+    };
+    let idx = |n: &[NodeId]| -> Vec<usize> { n.iter().map(|x| x.index()).collect() };
+    let rel = build(&|b, f| {
+        let s = b.field(f, "name");
+        let t = b.s("relative");
+        b.op(Op::Is {
+            subject: s,
+            test: t,
+        })
+    });
+    assert_eq!(rows_of(&rel, &m, 0), idx(&[fs[0], fs[2]]));
+    let ex = build(&|b, f| {
+        let s = b.field(f, "name");
+        b.op(Op::Exists { subject: s })
+    });
+    assert_eq!(rows_of(&ex, &m, 0).len(), 3);
+    let under = build(&|b, f| {
+        let s = b.field(f, "name");
+        let p = b.str_lit("a");
+        b.op(Op::Under {
+            subject: s,
+            prefix: p,
+        })
+    });
+    assert_eq!(rows_of(&under, &m, 0), idx(&[fs[0]]));
+}
+
+// frob:ticket 01M5364MWN27GJE158AKR11AZT
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.is_op
+#[test]
+fn is_integer_accepts_signed_whole_numbers_and_rejects_the_rest() {
+    let (m, fs) = model(&["10", "-3", "auto", "1.5", " 7 "]);
+    let mut b = PlanBuilder::new("PRED002", Polarity::Pplus);
+    let f = b.find("function");
+    let s = b.field(f, "name");
+    let t = b.s("integer");
+    let op = b.op(Op::Is {
+        subject: s,
+        test: t,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    let plan = b.build();
+    let want: Vec<usize> = [fs[0], fs[1], fs[4]].iter().map(|x| x.index()).collect();
+    assert_eq!(rows_of(&plan, &m, 0), want);
+}
+
+/// Rows of `m` whose function name satisfies the `is <word>` BEM test.
+fn bem_rows(m: &Model, word: &str) -> Vec<usize> {
+    let mut b = PlanBuilder::new("BEM001", Polarity::Pplus);
+    let f = b.find("function");
+    let s = b.field(f, "name");
+    let t = b.s(word);
+    let op = b.op(Op::Is {
+        subject: s,
+        test: t,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    rows_of(&b.build(), m, 0)
+}
+
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.is_op
+#[test]
+fn is_bem_words_judge_each_segment_in_its_own_case() {
+    let names = [
+        "card",
+        "card__item-title",
+        "card--is-active",
+        "card_item",
+        "cardItem__titleText",
+        "Card",
+        "card__Item",
+    ];
+    let (m, _) = model(&names);
+    assert_eq!(bem_rows(&m, "bem_kebab"), vec![0, 1, 2]);
+    assert_eq!(bem_rows(&m, "bem_snake"), vec![0, 3]);
+    assert_eq!(bem_rows(&m, "bem_camel"), vec![0, 4]);
+}
+
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run_with
+#[test]
+fn an_in_side_op_tests_membership_in_an_integer_column_and_auto_is_no_member() {
+    let (m, _) = model(&["10", " 20 ", "auto", "30", "x"]);
+    let mut b = PlanBuilder::new("LAYER001", Polarity::Pplus);
+    b.reads(ReadSet::of(&[Read::Config]));
+    let f = b.find("function");
+    let name = b.field(f, "name");
+    let table = b.s("config.layers");
+    let column = b.s("value");
+    let op = b.op(Op::InSide {
+        subject: name,
+        need: Read::Config,
+        table,
+        column,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    let plan = b.build();
+    let mut side = SideData::new();
+    side.insert(
+        "config.layers",
+        SideTable::new(
+            vec![col("name", FieldType::Str), col("value", FieldType::Int)],
+            vec![
+                vec![Scalar::Str("low".into()), Scalar::Int(10)],
+                vec![Scalar::Str("mid".into()), Scalar::Int(20)],
+            ],
+        ),
+    )
+    .unwrap();
+    let rels = Relations::new().with_side(side);
+    let out = run_with(&plan, &input(&m), &rels).unwrap();
+    let got: Vec<usize> = out
+        .rows
+        .iter()
+        .map(|r| match r.vars[0] {
+            Some(gob_plan::exec::Val::Node(n)) => n.index(),
+            other => panic!("unexpected {other:?}"),
+        })
+        .collect();
+    assert_eq!(
+        got,
+        vec![0, 1],
+        "only the integer members match; auto and x do not"
+    );
+}
+
+// frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+// frob:tests crates/gob-plan/src/lower/convert.rs::side_members
+#[test]
+fn a_lowered_in_over_a_config_column_becomes_an_in_side_op() {
+    use gob_plan::grl::parse;
+    use gob_plan::lower::lower_rule;
+    use gob_plan::plan::Provenance;
+    use gob_text::FileInterner;
+
+    let src = "rule LAYER001 \"t\" {\n  lang rust\n  reads config\n  find g: function\n  \
+               where g.name in config.layers.value\n  report g \"x\"\n  \
+               explain \"\"\"\n    Why.\n    ## Remedy\n    Fix.\n  \"\"\"\n}\n";
+    let parsed = parse(FileInterner::new().intern("rules/T.grl"), src);
+    assert!(parsed.is_ok(), "{:?}", parsed.errors);
+    let plan = lower_rule(&parsed.file.rules[0], Provenance::Std).expect("lowers");
+    let ops = &plan.parts().ops;
+    assert!(ops.iter().any(|o| matches!(o, Op::InSide { .. })));
+}
+
+// frob:ticket 01M4WGCDK2ND23SEPX38Q9444T
+// frob:tests crates/gob-plan/src/lower/mod.rs::lower_rule
+#[test]
+fn a_lowered_def_runs_as_a_view() {
+    use gob_plan::grl::parse;
+    use gob_plan::lower::lower_rule;
+    use gob_plan::plan::Provenance;
+    use gob_text::FileInterner;
+
+    let src = "rule DEF002 \"t\" {\n  lang rust\n  def is_x(f) = f.name == \"x\"\n  \
+               find g: function\n  where is_x(g)\n  report g \"x\"\n  \
+               explain \"\"\"\n    Why.\n    ## Remedy\n    Fix.\n  \"\"\"\n}\n";
+    let parsed = parse(FileInterner::new().intern("rules/T.grl"), src);
+    assert!(parsed.is_ok(), "{:?}", parsed.errors);
+    let plan = lower_rule(&parsed.file.rules[0], Provenance::Std).expect("lowers");
+    let (m, fs) = model(&["target", "x", "y"]);
+    // The def parameter takes slot 0, so the rule's `g` is slot 1.
+    assert_eq!(rows_of(&plan, &m, 1), vec![fs[1].index()]);
+}
+
+// frob:ticket 01M4X91TRR145XCPQ01R1CD7W9
+// frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::in_vocab_op
+#[test]
+fn an_in_vocab_op_tests_a_name_against_the_language_vocabulary_classes() {
+    let (m, fs) = model(&["TcpStream::connect", "helper"]);
+    let run_for = |classes: &[&str]| {
+        let mut b = PlanBuilder::new("VOC001", Polarity::Pplus);
+        let f = b.find("function");
+        let classes: Vec<_> = classes.iter().map(|c| b.s(c)).collect();
+        let op = b.op(Op::InVocab { var: f, classes });
+        b.clause(op);
+        b.report(None, f, "x");
+        rows_of(&b.build(), &m, 0)
+    };
+    assert_eq!(run_for(&["net.connect"]), vec![fs[0].index()]);
+    assert_eq!(run_for(&["clock", "net.connect"]), vec![fs[0].index()]);
+    // A class the language has no vocabulary for is the empty set: nothing matches.
+    assert!(run_for(&["no_such_class"]).is_empty());
+}
+
+// frob:ticket 01M4X91TW6Y91R51R9BETGCVS0
+// frob:tests crates/gob-plan/src/exec/core/call.rs::slug
+// frob:tests crates/gob-plan/src/exec/core/call.rs::resolve
+#[test]
+fn slug_and_resolve_operands_compute_their_text() {
+    let (m, fs) = model(&["Hello, World!", "other"]);
+    let run_for = |lhs: &dyn Fn(&mut PlanBuilder, u16) -> Operand, want: &str| {
+        let mut b = PlanBuilder::new("FNC001", Polarity::Pplus);
+        let f = b.find("function");
+        let l = lhs(&mut b, f);
+        let r = b.str_lit(want);
+        let op = b.cmp(l, CmpOp::Eq, r);
+        b.clause(op);
+        b.report(None, f, "x");
+        rows_of(&b.build(), &m, 0)
+    };
+    let name = |b: &mut PlanBuilder, f| match b.field(f, "name") {
+        Operand::Field(v, s) => Leaf::Field(v, s),
+        _ => unreachable!(),
+    };
+    assert_eq!(
+        run_for(&|b, f| Operand::Slug(name(b, f)), "hello-world"),
+        vec![fs[0].index()]
+    );
+    let resolved = |b: &mut PlanBuilder, _f| {
+        let (p, from) = (b.s("../x/y.md"), b.s("docs/a.md"));
+        Operand::Resolve(Leaf::Str(p), Leaf::Str(from))
+    };
+    assert_eq!(
+        run_for(&resolved, "x/y.md"),
+        vec![fs[0].index(), fs[1].index()]
+    );
+    // A path that climbs out of the repository root has no value, so nothing matches.
+    let escaping = |b: &mut PlanBuilder, _f| {
+        let (p, from) = (b.s("../../x.md"), b.s("a.md"));
+        Operand::Resolve(Leaf::Str(p), Leaf::Str(from))
+    };
+    assert!(run_for(&escaping, "x.md").is_empty());
+}

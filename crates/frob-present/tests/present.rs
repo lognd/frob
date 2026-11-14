@@ -28,6 +28,23 @@ impl Buf {
     }
 }
 
+/// A writer factory handing out clones of `buf`, so every log line lands in the same buffer.
+fn writer_to(buf: &Buf) -> impl Fn() -> Buf + 'static {
+    let sink = buf.clone();
+    move || sink.clone()
+}
+
+/// Everything `f` logs on this thread, formatted without colour.
+fn logged(f: impl FnOnce()) -> String {
+    let buf = Buf::default();
+    let sub = tracing_subscriber::fmt()
+        .with_writer(writer_to(&buf))
+        .with_ansi(false)
+        .finish();
+    tracing::subscriber::with_default(sub, f);
+    buf.text()
+}
+
 fn caps(env: &[(&str, &str)], out_tty: bool, err_tty: bool) -> Capabilities {
     Capabilities::detect(
         &EnvSnapshot::from_pairs(env.iter().copied()),
@@ -286,14 +303,7 @@ fn outcome_labels_are_the_lowercase_words() {
 // frob:tests crates/frob-present/src/events.rs::emit_progress
 #[test]
 fn emit_progress_logs_a_progress_phase_event() {
-    let buf = Buf::default();
-    let sink = buf.clone();
-    let sub = tracing_subscriber::fmt()
-        .with_writer(move || sink.clone())
-        .with_ansi(false)
-        .finish();
-    tracing::subscriber::with_default(sub, || frob_present::events::emit_progress("land.merge", 7));
-    let text = buf.text();
+    let text = logged(|| frob_present::events::emit_progress("land.merge", 7));
     assert!(text.contains("stage progress"), "{text}");
     assert!(text.contains("done=7"), "{text}");
 }

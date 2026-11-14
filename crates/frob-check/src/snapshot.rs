@@ -98,6 +98,8 @@ pub struct FrobInputs {
     pub(crate) changelog_exempt: bool,
     /// `--skip-tools`: rules that need a tool report unresolved instead of failing.
     pub(crate) skip_tools: bool,
+    /// The unity pack and its gate when the root config enables it, read once per pass.
+    pub(crate) unity: Option<frob_obligations::EnabledPack>,
     // frob:ticket 01M3Z713C4RW0T6XK1ZB7VH1B4
     /// Tool ids bound to frob rules by the `[[check.tool]]` `id_map`s (EXC017).
     pub(crate) tool_ids: std::collections::BTreeMap<String, gob_rules::RuleId>,
@@ -161,6 +163,7 @@ impl FrobInputs {
             config: &self.invariants,
             today: self.today,
             tool_ids: &self.tool_ids,
+            unity: self.unity.as_ref(),
             skip_tools: self.skip_tools,
         }
     }
@@ -179,7 +182,7 @@ fn open_ledger(
     clock: Arc<dyn gob_time::Clock>,
     configured: bool,
 ) -> LedgerOpen {
-    let repo = match gob_git::Repo::discover(root) {
+    let repo = match gob_git::Repo::discover_shared(root) {
         Ok(r) if r.work_dir().is_some() => r,
         Ok(_) | Err(_) => {
             tracing::info!(root = %root.display(), "no git work tree: ledger rules are skipped");
@@ -723,6 +726,7 @@ fn assemble(
             tickets_configured: configured,
             changelog_exempt: opts.changelog_exempt,
             skip_tools: opts.skip_tools,
+            unity: frob_obligations::enabled_pack(root),
             tool_ids: frob_obligations::tool_bound_ids(root),
             today: clock.today(),
             lease: opts.lease.clone(),

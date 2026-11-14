@@ -22,6 +22,7 @@ use gob_symbols::{
 use gob_text::TextRange;
 
 use crate::rules::cov001::Cov001;
+use crate::unity::EnabledPack;
 
 /// True for functions and methods.
 fn is_callable(rec: &SymbolRecord) -> bool {
@@ -313,8 +314,12 @@ fn declared(graph: &SymbolGraph, directives: &[DirectiveRecord]) -> HashSet<Symr
 
 // frob:ticket 01M44YQXS4BXE0X07FBYR0STJ5
 /// The engine entry points the root config's `unity` pack makes roots; empty when the pack is not enabled.
-fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTreeSet<Symref> {
-    let Some((gate, pack)) = crate::unity::enabled_pack(root) else {
+fn unity_roots(
+    pack: Option<&EnabledPack>,
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+) -> BTreeSet<Symref> {
+    let Some((gate, pack)) = pack else {
         return BTreeSet::new();
     };
     let mut roots = engine_roots(graph, sources, &pack.vocab);
@@ -331,8 +336,12 @@ fn unity_roots(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> BTree
 ///
 /// Only calls in files the pack gate is active for count, so a path outside the gate keeps its
 /// anonymous unresolved reason.
-fn unity_dynamic(root: &Path, graph: &SymbolGraph, sources: &mut Sources) -> DynamicReasons {
-    let Some((gate, pack)) = crate::unity::enabled_pack(root) else {
+fn unity_dynamic(
+    pack: Option<&EnabledPack>,
+    graph: &SymbolGraph,
+    sources: &mut Sources,
+) -> DynamicReasons {
+    let Some((gate, pack)) = pack else {
         return DynamicReasons::new();
     };
     let reasons: DynamicReasons = dynamic_calls(graph, sources, &pack.vocab)
@@ -402,6 +411,7 @@ pub(crate) fn cov001(
     root: &Path,
     graph: &SymbolGraph,
     directives: &[DirectiveRecord],
+    unity: Option<&EnabledPack>,
     out: &mut Out<'_, Cov001>,
 ) {
     let mut sources = Sources::new(root);
@@ -413,7 +423,7 @@ pub(crate) fn cov001(
         })
         .map(|r| r.symref.clone())
         .collect();
-    let engine = unity_roots(root, graph, &mut sources);
+    let engine = unity_roots(unity, graph, &mut sources);
     let seeds: BTreeSet<Symref> = tests.union(&engine).cloned().collect();
     let must = reach_of(&seeds, &adjacency(graph, &mut sources, false));
     let maybe = reach_of(&seeds, &adjacency(graph, &mut sources, true));
@@ -423,7 +433,7 @@ pub(crate) fn cov001(
             by_name.entry(n).or_default().push(r);
         }
     }
-    let dynamic = unity_dynamic(root, graph, &mut sources);
+    let dynamic = unity_dynamic(unity, graph, &mut sources);
     let poison = poison_map(graph, &tests, &by_name, &mut CrateDeps::new(root), &dynamic);
     let reached = must;
     let maybe_sites = may_sites(graph, &reached);

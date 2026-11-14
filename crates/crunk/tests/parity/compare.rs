@@ -6,6 +6,7 @@ use std::path::Path;
 use gob_cli::run_for_test;
 use serde_json::Value;
 
+use super::common::RUST_ONLY_RULES;
 use super::corpus::Case;
 use super::divergences::{Divergence, Field};
 
@@ -77,34 +78,6 @@ fn body_of(text: &str) -> Body {
 fn is_check(argv: &[String]) -> bool {
     argv.first().is_some_and(|a| a == "check")
 }
-
-/// Rules the Rust crunk added after the Python capture; absent from every golden by design.
-// frob:ticket 01M5JHRGF0BKG6ZGNXBZR3F5DB
-const RUST_ONLY_RULES: &[&str] = &[
-    "EXPORT001",
-    "EXPORT002",
-    "TOKEN002",
-    "TOKEN003",
-    "TOKEN004",
-    "TOKEN005",
-    "TOKEN006",
-    "TOKEN007",
-    "TOKEN008",
-    "TOKEN009",
-    "CRAFT001",
-    "CRAFT002",
-    "CRAFT003",
-    "CRAFT004",
-    "CRAFT005",
-    "CRAFT006",
-    "CRAFT007",
-    "CRAFT008",
-    "CRAFT009",
-    "CRAFT010",
-    "CRAFT011",
-    "CRAFT012",
-    "CRAFT013",
-];
 
 /// The comparable core of a check report: sorted `rule severity path` triples of the findings.
 ///

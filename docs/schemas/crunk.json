@@ -588,6 +588,21 @@
         }
       ]
     },
+    "TailwindEngine": {
+      "description": "Whether crunk may run the project's own Tailwind (repository JavaScript) to resolve facts.",
+      "oneOf": [
+        {
+          "const": "node",
+          "description": "Run the project's Tailwind through node (executes repository JavaScript).",
+          "type": "string"
+        },
+        {
+          "const": "static",
+          "description": "Never execute repository code; read the config statically only.",
+          "type": "string"
+        }
+      ]
+    },
     "TailwindVersion": {
       "description": "Which Tailwind generation the `[tailwind] config` file is written for.",
       "oneOf": [
@@ -1696,6 +1711,11 @@
           "default": "",
           "description": "Tailwind v4 CSS entry (the file carrying `@import \"tailwindcss\"`); empty means detect.",
           "type": "string"
+        },
+        "engine": {
+          "$ref": "#/$defs/TailwindEngine",
+          "default": "node",
+          "description": "`node` runs the project's Tailwind; `static` never executes repository JavaScript."
         },
         "namespace_keys": {
           "default": false,

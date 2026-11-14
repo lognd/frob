@@ -20,7 +20,6 @@ use crate::host::CohHost;
     host = CohHost,
     version = 1,
     since = "0.532.0",
-    corpus = pending(~M6ZVE60),
 )]
 pub struct Coh004;
 

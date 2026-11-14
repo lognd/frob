@@ -33,6 +33,7 @@ pub struct Land {
     enqueue_only: bool,
     relaunch: bool,
     timing: bool,
+    offline: Option<String>,
 }
 
 /// The flags of `land`, declared once; the help text is the operator-facing contract.
@@ -84,6 +85,11 @@ struct LandArgs {
         help = "Print every land stage with its seconds and, for check tool stages, whether the memo hit or missed"
     )]
     timing: bool,
+    #[arg(
+        long,
+        help = "Skip the foreground sync and the E-SYNC-STALE gate; needs --reason and warns W-SYNC-OFFLINE"
+    )]
+    offline: bool,
     #[arg(
         long,
         help = "Close without measured evidence; needs --reason and is audited"
@@ -151,15 +157,17 @@ impl Command for Land {
             .override_base_ci
             .then(|| given("--override-base-ci"))
             .transpose()?;
+        let offline = a.offline.then(|| given("--offline")).transpose()?;
         let claims = frob_evidence::done::guards_apply(Some(outcome));
         if claims
             && !no_evidence
             && !no_changelog
             && override_base_ci.is_none()
+            && offline.is_none()
             && a.reason.clone().is_some()
         {
             return Err(CliError::Usage(
-                "--reason is only used with --no-evidence, --no-changelog, --override-base-ci or an invalid, duplicate or wont-fix outcome".to_owned(),
+                "--reason is only used with --no-evidence, --no-changelog, --override-base-ci, --offline or an invalid, duplicate or wont-fix outcome".to_owned(),
             ));
         }
         let no_evidence_reason = no_evidence.then(|| given("--no-evidence")).transpose()?;
@@ -169,6 +177,7 @@ impl Command for Land {
             enqueue_only: a.enqueue_only,
             relaunch: a.relaunch,
             timing: a.timing,
+            offline,
             handles: a.ticket.clone(),
             opts: LandOptions {
                 handle: a.ticket.first().cloned(),
@@ -193,11 +202,20 @@ impl Command for Land {
     fn run(&self, ctx: &Context) -> Outcome<LandReport> {
         let mut opts = self.opts.clone();
         opts.dry_run = ctx.dry_run;
+        let mut warnings = Vec::new();
         if opts.status {
             return lock_status(ctx);
         }
+        // frob:ticket 01M713HQC2TF14B5F316HMYVT3
+        if !opts.dry_run {
+            let notices = gate_land(ctx, self.offline.as_deref())?;
+            warnings.extend(notices);
+        }
         if self.handles.len() > 1 {
-            return land_batch(&ctx.cwd, &self.handles, &opts, &ctx.clock);
+            return Ok(warnings.into_iter().fold(
+                land_batch(&ctx.cwd, &self.handles, &opts, &ctx.clock)?,
+                Payload::with_warning,
+            ));
         }
         let out = if self.relaunch {
             crate::relaunch::relaunch(&ctx.cwd, &opts, &ctx.clock)?
@@ -210,7 +228,7 @@ impl Command for Land {
         };
         let out = with_profile(out, self.opts.profile);
         let already = out.already;
-        let mut warnings = out.warnings.clone();
+        warnings.extend(out.warnings.iter().cloned());
         warnings.extend(out.pre_existing.iter().map(|n| {
             format!(
                 "pre-existing finding on the base, not blocking: {} {}: {}",
@@ -238,6 +256,39 @@ impl Command for Land {
         }
         Ok(p)
     }
+}
+
+/// Sync in the foreground, then refuse with `E-SYNC-STALE` when the ticket view is too old to land from (`CI` tolerates it; `--offline --reason` skips both and returns `W-SYNC-OFFLINE`).
+// frob:ticket 01M713HQC2TF14B5F316HMYVT3
+// frob:ticket 01M5DBVTN06Y1MBT6EDFKR7TYT
+fn gate_land(ctx: &Context, offline: Option<&str>) -> Result<Vec<String>, CliError> {
+    let Ok(repo) = gob_git::Repo::discover(&ctx.cwd) else {
+        tracing::debug!("freshness gate skipped: not a git repository");
+        return Ok(Vec::new());
+    };
+    let Some(root) = repo.work_dir().map(std::path::Path::to_path_buf) else {
+        return Ok(Vec::new());
+    };
+    let ledger = match frob_worktree::ledger_config(&root) {
+        Ok(l) => l,
+        Err(e) => {
+            tracing::debug!(error = %e, "freshness gate skipped: ledger config unreadable");
+            return Ok(Vec::new());
+        }
+    };
+    let stance = offline.map_or(
+        frob_ledger::freshness::SyncStance::Online,
+        frob_ledger::freshness::SyncStance::Offline,
+    );
+    let warnings = frob_ledger::freshness::sync_then_gate(
+        &repo,
+        &root,
+        &ledger,
+        stance,
+        ctx.clock.now().unix(),
+    )?;
+    tracing::debug!(?stance, warnings = warnings.len(), "land: sync gate passed");
+    Ok(warnings)
 }
 
 /// `out` with its `profile` filled from its stage timings when `on` (`--profile`).

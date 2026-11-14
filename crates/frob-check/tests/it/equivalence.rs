@@ -7,7 +7,7 @@
 //!
 //! The snapshots in `tests/snapshots/` were recorded from the pre-extraction pipeline
 //! before it was deleted. Re-record deliberately with `FROB_BLESS=1 cargo test -p
-//! frob-check --test equivalence`; a diff otherwise means behaviour changed.
+//! frob-check --test it equivalence`; a diff otherwise means behaviour changed.
 
 use std::fmt::Write as _;
 use std::path::Path;

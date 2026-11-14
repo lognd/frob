@@ -73,6 +73,8 @@ pub(crate) enum Matcher {
     Glob(globset::GlobMatcher),
     /// Any glob of a side-relation column.
     Set(globset::GlobSet),
+    /// The values of a side-relation column (`x in config.layers.value`).
+    Members(Vec<Scalar>),
     /// A grammar-level snippet pattern.
     Snippet(Box<gob_pattern::grammar::Pattern>),
 }
@@ -81,9 +83,9 @@ pub(crate) enum Matcher {
 #[derive(Default)]
 pub(crate) struct Wired<'a> {
     /// Edge relations by the string id of the verb word or `via` family.
-    pub(crate) edges: HashMap<StrId, &'a Relation>,
+    pub(crate) edges: FastMap<StrId, &'a Relation>,
     /// Side tables by the string id of the relation name.
-    pub(crate) side: HashMap<StrId, &'a SideTable>,
+    pub(crate) side: FastMap<StrId, &'a SideTable>,
     /// Kind words (by string id) that range over rows of the side table of the same id.
     pub(crate) row_kinds: HashSet<StrId>,
     /// The `owned by` globs per model node name, built from `model.selectors`.
@@ -101,8 +103,8 @@ pub(crate) struct Eval<'a> {
     pub(crate) hidden: bool,
     /// Whether `certainly`/`possibly` read as identity (grl-spec.md 7.0.4: the value `V0`).
     identity: bool,
-    kinds: HashMap<StrId, KindTest>,
-    matchers: HashMap<OpId, Matcher>,
+    kinds: FastMap<StrId, KindTest>,
+    matchers: FastMap<OpId, Matcher>,
     wired: Wired<'a>,
     /// Per-node (first line, last line) of its text span, filled on first use (`adjoins`).
     spans: RefCell<Vec<Option<LineSpan>>>,
@@ -138,7 +140,7 @@ fn order_members(model: &Model, members: &mut [(NodeId, Truth)]) {
 /// frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
 /// Fusing these passes reads each node once instead of once per kind plus once for `hidden`;
 /// on cheap rules the repeated cold traversals dominated the run.
-fn scan(model: &Model, kinds: &HashMap<StrId, KindTest>) -> (bool, FastMap<StrId, Domain>) {
+fn scan(model: &Model, kinds: &FastMap<StrId, KindTest>) -> (bool, FastMap<StrId, Domain>) {
     let term = model.term();
     let tests: Vec<(StrId, KindTest)> = kinds.iter().map(|(&k, &t)| (k, t)).collect();
     let mut found: Vec<Vec<(NodeId, Truth)>> = vec![Vec::new(); tests.len()];
@@ -166,8 +168,8 @@ impl<'a> Eval<'a> {
         plan: &'a PlanParts,
         model: &'a Model,
         source: Option<&'a SourceText>,
-        kinds: HashMap<StrId, KindTest>,
-        matchers: HashMap<OpId, Matcher>,
+        kinds: FastMap<StrId, KindTest>,
+        matchers: FastMap<OpId, Matcher>,
         wired: Wired<'a>,
     ) -> Self {
         let (hidden, domains) = scan(model, &kinds);
@@ -450,6 +452,7 @@ impl<'a> Eval<'a> {
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
+            Op::InSide { subject, .. } => self.in_side(id, subject, env),
             Op::MatchSnippet { var, within, .. } => self.snippet_op(id, *var, *within, env),
             op @ (Op::Is { .. }
             | Op::Exists { .. }
@@ -781,12 +784,51 @@ impl<'a> Eval<'a> {
         }
     }
 
+    /// `x in table.column`: whether the operand equals a value of a side-relation column; text
+    /// is compared with an integer cell by parsing it as a whole number.
+    // frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+    fn in_side(&self, id: OpId, subject: &Operand, env: &Env) -> Verdict {
+        let Matcher::Members(members) = &self.matchers[&id] else {
+            unreachable!("an in-side op holds a member list")
+        };
+        let hit = |v: &Scalar| {
+            members.iter().any(|m| match (v, m) {
+                (Scalar::Str(a), Scalar::Str(b)) => a == b,
+                (Scalar::Str(a), Scalar::Int(b)) => a.trim().parse::<i64>() == Ok(*b),
+                (Scalar::Int(a), Scalar::Int(b)) => a == b,
+                (Scalar::Int(a), Scalar::Str(b)) => b.trim().parse::<i64>() == Ok(*a),
+                (Scalar::Bool(a), Scalar::Bool(b)) => a == b,
+                _ => false,
+            })
+        };
+        let d = self.datum(subject, env);
+        let truth = match &d {
+            Datum::Known(v) => Truth::from_bool(hit(v)),
+            Datum::OneOf(vs) => {
+                let hits: Vec<bool> = vs.iter().map(hit).collect();
+                if hits.iter().all(|&h| h) && !hits.is_empty() {
+                    Truth::Yes
+                } else if hits.iter().all(|&h| !h) {
+                    Truth::No
+                } else {
+                    Truth::Unknown
+                }
+            }
+            Datum::Absent | Datum::Node(_) => Truth::No,
+            Datum::Unknown => Truth::Unknown,
+        };
+        tracing::trace!(members = members.len(), ?truth, "side membership");
+        Verdict::of(truth, || self.describe(subject, env))
+    }
+
     fn matches(&self, id: OpId, subject: &Operand, env: &Env) -> Verdict {
         let test = |s: &str| match &self.matchers[&id] {
             Matcher::Regex(r) => r.is_match(s),
             Matcher::Glob(g) => g.is_match(s),
             Matcher::Set(g) => g.is_match(s),
-            Matcher::Snippet(_) => unreachable!("a snippet op tests a node, not a string"),
+            Matcher::Snippet(_) | Matcher::Members(_) => {
+                unreachable!("a snippet or member op is not a string match")
+            }
         };
         // frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST
         // `x.text` of a comment, literal or reference is matched in place, not copied.

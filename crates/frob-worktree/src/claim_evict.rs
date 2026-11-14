@@ -11,7 +11,7 @@
 
 use frob_ledger::TicketId;
 use frob_ledger::claim_window::{EVICT_NOTE_MARKER, HolderKind};
-use frob_ledger::event::{Event, EventBody};
+use frob_ledger::event::{Event, EventBody, LeaseData, LeaseOp};
 use frob_ledger::model::Category;
 use gob_diagnostics::{Refusal, RefusalClass, RemedyCommand};
 
@@ -19,8 +19,8 @@ use crate::activity::{ObservedClaims, observed_path};
 use crate::claim::{remote_claim, sync_settings};
 use crate::error::WorktreeError;
 use crate::evict::{
-    EvictOutcome, EvictRefusal, EvictRequest, FlapReview, check_evictable, evict, flap_review,
-    rate_left,
+    EvictOutcome, EvictRefusal, EvictRequest, FlapReview, ParkRecord, check_evictable, evict,
+    flap_review, needs_completion, newest_parked, parked_refs, rate_left, read_park_record,
 };
 use crate::next::{Assessed, EvictPolicy, assess_claim, fetch_claim_tip};
 use crate::work::Workspace;
@@ -93,6 +93,23 @@ fn note_body(holder: &str, idle_secs: u64, parked: &str, handle: &str, reason: &
     )
 }
 
+/// The `lease` op `evict` event body recording `record`'s eviction into `parked`.
+fn evict_event(record: &ParkRecord, parked: &str) -> EventBody {
+    EventBody::Lease(LeaseData {
+        op: LeaseOp::Evict,
+        holder: Some(record.holder.clone()),
+        observed: Some(record.observed.clone()),
+        parked: Some(parked.to_owned()),
+        tip: None,
+        idle_secs: Some(record.idle_secs),
+        window_secs: Some(record.window_secs),
+        reason: Some(record.reason.clone()),
+        clone_id: None,
+        agent: None,
+        branch: None,
+    })
+}
+
 /// Ages in seconds at `now` of the earlier evictions of `holder` recorded in `events`.
 #[must_use]
 pub fn prior_eviction_ages(events: &[Event], holder: &str, now: i64) -> Vec<u64> {
@@ -111,6 +128,85 @@ pub fn prior_eviction_ages(events: &[Event], holder: &str, now: i64) -> Vec<u64>
 }
 
 impl Workspace<'_> {
+    /// Write the ledger side of an eviction: the `lease` op `evict` event, then in-progress to todo with a note naming the previous holder.
+    fn record_eviction(
+        &self,
+        id: TicketId,
+        handle: &str,
+        record: &ParkRecord,
+        parked: &str,
+        reason: &str,
+    ) -> Result<(), WorktreeError> {
+        self.ledger.append(id, evict_event(record, parked))?;
+        let note = note_body(&record.holder, record.idle_secs, parked, handle, reason);
+        self.ledger
+            .transition(id, Category::Todo, None, Some(note))?;
+        tracing::info!(ticket = %id, holder = %record.holder, %parked, "eviction recorded");
+        Ok(())
+    }
+
+    /// Finish an eviction that crashed between the claim delete and the ledger record.
+    ///
+    /// Recognises "in progress, branch absent, parked ref present" ([`needs_completion`]),
+    /// reads the park commit ([`read_park_record`]), releases any lease and records the
+    /// eviction. Returns the parked ref when it completed one, `None` when nothing was pending.
+    ///
+    /// # Errors
+    /// Ledger, lease and git failures,.
+    // frob:ticket 01M5DFKY3FZKR6EWYR83J8MJQ7
+    pub fn complete_crashed_eviction(&self, ticket: &str) -> Result<Option<String>, WorktreeError> {
+        let id = self.ledger.resolve(ticket)?;
+        let view = self.ledger.show(id)?;
+        let handle = view.summary.handle.clone();
+        let in_progress = view.summary.category == Category::InProgress;
+        let bare = handle.trim_start_matches('~');
+        let repo = self.ledger.repo();
+        let (remote, timeout) = sync_settings(repo);
+        let branch_present = match remote_claim(repo, &remote, &format!("ticket/{bare}"), timeout)?
+        {
+            Ok(tip) => tip.is_some(),
+            Err(why) => {
+                tracing::debug!(%handle, %why, "crash completion skipped: remote unreachable");
+                return Ok(None);
+            }
+        };
+        let parked = match parked_refs(repo, &remote, bare, timeout)? {
+            Ok(refs) => refs,
+            Err(why) => {
+                tracing::debug!(%handle, %why, "crash completion skipped: parked refs unknown");
+                return Ok(None);
+            }
+        };
+        if !needs_completion(in_progress, branch_present, &parked, bare) {
+            return Ok(None);
+        }
+        let Some(full) = newest_parked(&parked, bare) else {
+            return Ok(None);
+        };
+        let short = full.strip_prefix("refs/heads/").unwrap_or(full).to_owned();
+        let local = format!("refs/remotes/{remote}/{short}");
+        let refspec = format!("+refs/heads/{short}:{local}");
+        if !matches!(
+            repo.fetch_refs(&remote, &[refspec], timeout)?,
+            gob_git::RemoteRun::Done
+        ) {
+            tracing::warn!(%handle, parked = %short, "crash completion skipped: park fetch failed");
+            return Ok(None);
+        }
+        let Some(record) = read_park_record(repo, &local)? else {
+            tracing::warn!(%handle, parked = %short, "crash completion skipped: no park record");
+            return Ok(None);
+        };
+        self.leases.release(id, None)?;
+        let reason = format!(
+            "{} (completed after a crash; evicted by {})",
+            record.reason, record.evictor
+        );
+        self.record_eviction(id, &handle, &record, &short, &reason)?;
+        tracing::info!(ticket = %id, parked = %short, "crashed eviction completed");
+        Ok(Some(short))
+    }
+
     /// Evict the idle in-progress claim of `ticket` for `reason`, park its work and return the ticket to todo.
     ///
     /// A repeat eviction of the same holder inside the flap window needs `yes`.
@@ -197,6 +293,7 @@ impl Workspace<'_> {
                 tip: &tip,
                 lease: &lease,
                 class: view.summary.class,
+                ticket_days: view.ticket.front.claim_idle_days,
                 now,
                 policy,
                 record: &record,
@@ -213,7 +310,8 @@ impl Workspace<'_> {
         }
         checked.map_err(|why| precondition_refusal(why, &handle))?;
         let ages = prior_eviction_ages(&self.ledger.events(id)?, &holder, now);
-        let flapped = flap_review(&ages) == FlapReview::NeedsHuman;
+        let flap_days = policy.windows.flap_repeat_days();
+        let flapped = flap_review(&ages, flap_days) == FlapReview::NeedsHuman;
         let confirm_human =
             lease.holder_kind() == HolderKind::Human && !policy.windows.evict_human_auto();
         let needs_confirm = flapped || confirm_human;
@@ -226,8 +324,7 @@ impl Workspace<'_> {
         if needs_confirm && !confirmed {
             let why = if flapped {
                 format!(
-                    "was already evicted in the last {} days; a repeat needs a human to confirm",
-                    crate::evict::FLAP_REPEAT_DAYS
+                    "was already evicted in the last {flap_days} days; a repeat needs a human to confirm"
                 )
             } else {
                 "is held by a human and `[claims] evict_human = \"confirm\"`".to_owned()
@@ -264,9 +361,16 @@ impl Workspace<'_> {
                     tracing::warn!(error = %e, "could not save the observation file");
                 }
                 self.leases.release(id, None)?;
-                let note = note_body(&holder, ctx.idle_secs, &parked, &handle, reason);
-                self.ledger
-                    .transition(id, Category::Todo, None, Some(note))?;
+                let parked_record = ParkRecord {
+                    handle: bare.to_owned(),
+                    evictor: req.evictor.clone(),
+                    holder: holder.clone(),
+                    observed: req.observed.clone(),
+                    idle_secs: ctx.idle_secs,
+                    window_secs: req.window_secs,
+                    reason: reason.to_owned(),
+                };
+                self.record_eviction(id, &handle, &parked_record, &parked, reason)?;
                 let left = rate_left(ctx.evict_rate, today + 1);
                 tracing::info!(ticket = %id, %holder, %parked, left, flapped, "claim evicted");
                 Ok(EvictedClaim {
@@ -322,6 +426,27 @@ mod tests {
                 reason: reason.map(str::to_owned),
             }),
         }
+    }
+
+    // frob:tests crates/frob-worktree/src/claim_evict.rs::evict_event
+    #[test]
+    fn evict_event_names_holder_and_parked_ref() {
+        let rec = ParkRecord {
+            handle: "X".to_owned(),
+            evictor: "bob".to_owned(),
+            holder: "alice".to_owned(),
+            observed: "abc".to_owned(),
+            idle_secs: 7,
+            window_secs: 9,
+            reason: "away".to_owned(),
+        };
+        let EventBody::Lease(d) = evict_event(&rec, "parked/X-1") else {
+            panic!("not a lease event");
+        };
+        assert_eq!(d.op, LeaseOp::Evict);
+        assert_eq!(d.holder.as_deref(), Some("alice"));
+        assert_eq!(d.parked.as_deref(), Some("parked/X-1"));
+        assert_eq!(d.idle_secs, Some(7));
     }
 
     // frob:tests prior_eviction_ages

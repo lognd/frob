@@ -416,6 +416,21 @@ pub enum Op {
         /// The column holding the globs, in the string pool.
         column: StrId,
     },
+    /// Condition: the operand equals a value held in one column of a side relation
+    /// (`x in config.layers.value`). A text subject is compared with an integer cell by parsing
+    /// it as a whole number, so a non-numeric subject (`auto`) is never a member of an integer
+    /// column; an empty table holds nothing.
+    // frob:ticket 01M5ETSE956ZY0S15CMQGH367X
+    InSide {
+        /// Value tested.
+        subject: Operand,
+        /// The side relation family that must be declared in `reads`.
+        need: Read,
+        /// The relation's dotted name in the string pool.
+        table: StrId,
+        /// The column holding the members, in the string pool.
+        column: StrId,
+    },
     /// Condition: the subject matches a glob read at run time from another operand
     /// (`i.file.path matches row.from`); an unreadable or invalid glob is unknown.
     MatchGlobOperand {

@@ -118,7 +118,7 @@ Legend: [ty-only] ty has it, we lack it. [frob-only] we have it, ty lacks it. [d
    (parse.rs:111-134).
 4. Multi-file tests with explicit paths (README.md:207-232). Ours: Case carries a single `text`
    and `file_name` (run.rs:16-27). frob rules that need cross-file context (links, imports, ticket
-   ledger) work around it in the runner (crates/frob-obligations/tests/corpus.rs:12-30@FROB: `SIDE_FILES`,
+   ledger) work around it in the runner (crates/frob-obligations/tests/it/corpus.rs:12-30@FROB: `SIDE_FILES`,
    `{{OPEN}}` placeholders).
 5. Section-scoped TOML config blocks with parent-to-child inheritance (README.md:309-323). Ours:
    `config="..."` on each fence (parse.rs:234) and a suite-level default rule only
@@ -165,7 +165,7 @@ Legend: [ty-only] ty has it, we lack it. [frob-only] we have it, ty lacks it. [d
 18. Tooling: `mdtest.py` watcher, rebuilds and reruns affected markdown on change
     (crates/ty_python_semantic/mdtest.py:246-261@RUFF). Ours: none.
 19. Mdtest self-tests live in the parser (parser.rs `#[cfg(test)]` ~1100-2400) and matcher
-    (matcher.rs:646); ours: selftest.rs with three failure corpora (crates/gob-mdtest/tests/selftest.rs:43-68).
+    (matcher.rs:646); ours: selftest.rs with three failure corpora (crates/gob-mdtest/tests/it/selftest.rs:43-68).
     Comparable in spirit, thinner.
 20. Mocked environments (`python =`, `<path-to-site-packages>`), external dependencies via uv lockfile
     (README.md:329-445). Not applicable to frob; listed for completeness.
@@ -349,7 +349,7 @@ enforced (parser.rs:809@RUFF); blocks in a section without `file=` merge in orde
 `file=` become extra files of the same case; a `toml` fence sets config for the section and its
 descendants, child overriding parent (README.md:309-323). Case gets `files: Vec<(name,text)>`
 instead of one text; keep `expect=` and `rule=` attrs. Frees frob-obligations from its
-SIDE_FILES/placeholder workaround (crates/frob-obligations/tests/corpus.rs:12-30). Acceptance:
+SIDE_FILES/placeholder workaround (crates/frob-obligations/tests/it/corpus.rs:12-30). Acceptance:
 cross-file corpus for a link rule, inherited-config test, error for a section that is both.
 
 NEW-5 "gob-mdtest: inline snapshot blocks and in-place update". Add a `snapshot` fence directly

@@ -7,7 +7,7 @@
 use tree_sitter::Node;
 
 use super::catalogue::{ArgInfo, Args};
-use super::engine::{Binding, FileScan, State, SymPath, kids};
+use super::engine::{Binding, FileScan, State, SymPath, kids, visit_scoped};
 
 /// The canonical path an argument-less `printStackTrace()` resolves to (it writes to `System.err`).
 const STACK_TRACE: [&str; 4] = ["java", "lang", "Throwable", "printStackTrace"];
@@ -58,7 +58,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
         | "record_declaration" => {
             st.push();
             bind_members(st, n);
-            scoped(st, n);
+            visit_scoped(st, n, visit);
             st.pop();
         }
         "method_declaration"
@@ -70,7 +70,7 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
         | "block" => {
             st.push();
             bind_params(st, n);
-            scoped(st, n);
+            visit_scoped(st, n, visit);
             st.pop();
         }
         "variable_declarator" => {
@@ -100,16 +100,6 @@ fn visit(st: &mut State<'_>, n: Node<'_>) {
             for c in kids(n) {
                 visit(st, c);
             }
-        }
-    }
-}
-
-/// Visit the children of a scope node, skipping the declared name.
-fn scoped(st: &mut State<'_>, n: Node<'_>) {
-    let skip = n.child_by_field_name("name").map(|c| c.id());
-    for c in kids(n) {
-        if Some(c.id()) != skip {
-            visit(st, c);
         }
     }
 }

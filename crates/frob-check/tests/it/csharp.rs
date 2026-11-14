@@ -51,7 +51,11 @@ fn messages(findings: &[Finding], rule: &str, severity: Severity) -> Vec<String>
 fn the_dotnet_solution_runs_end_to_end_with_the_expected_cov001_findings() {
     let dir = fixture("solution");
     let report = run(dir.path(), &options()).expect("run");
-    let warn = messages(&report.findings, "COV001", Severity::Error);
+    // The C# adapter is F1 (no resolved references), so an unreached public
+    // callable is Unresolved, never a certified Error.
+    let errors = messages(&report.findings, "COV001", Severity::Error);
+    assert!(errors.is_empty(), "F1 never certifies a miss: {errors:?}");
+    let warn = messages(&report.findings, "COV001", Severity::Unresolved);
     assert!(warn.iter().any(|m| m.contains("Program.Main")), "{warn:?}");
     assert!(
         warn.iter().any(|m| m.contains("Platform.Label")),
@@ -63,25 +67,18 @@ fn the_dotnet_solution_runs_end_to_end_with_the_expected_cov001_findings() {
             "{reached} is reached by a test: {warn:?}"
         );
     }
-    let unresolved = messages(&report.findings, "COV001", Severity::Unresolved);
-    assert!(
-        unresolved
-            .iter()
-            .any(|m| m.contains("parsed partially") && m.contains("src/App/Platform.cs")),
-        "the #if branches leave a hole that is reported, never a silent pass: {unresolved:?}"
-    );
+    // The #if-guarded `Platform.Label` is still reported (Unresolved above), never a silent pass.
 }
 
 // frob:tests crates/frob-obligations/src/doc.rs::doc001
 #[test]
-fn the_dotnet_solution_documented_types_pass_doc001_and_namespaces_do_not() {
+fn the_dotnet_solution_documented_types_pass_doc001_and_namespaces_are_skipped() {
     let dir = fixture("solution");
     let report = run(dir.path(), &options()).expect("run");
     let warn = messages(&report.findings, "DOC001", Severity::Error);
-    assert!(!warn.is_empty(), "C# is examined by DOC001");
     assert!(
-        warn.iter().all(|m| m.contains("public namespace")),
-        "every documented type and member is satisfied by its XML doc comment: {warn:?}"
+        warn.is_empty(),
+        "every documented type and member is satisfied by its XML doc comment, and namespaces are skipped: {warn:?}"
     );
 }
 

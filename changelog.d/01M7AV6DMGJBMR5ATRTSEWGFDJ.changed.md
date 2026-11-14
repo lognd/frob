@@ -1,0 +1,1 @@
+Closing a task, invariant or incident as done with no acceptance criteria is now refused with `E-DONE-NO-CRITERIA`, as story, bug and security already were; add the `no-criteria` label to the ticket to waive it explicitly. Chore, docs and epic stay exempt.

@@ -133,7 +133,7 @@ a follow-up ticket. Rendering is separate work (render orchestration).
 
 ## Scene ingest and layout solve
 
-The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002 findings come from `crunk_layout::findings` (`child_overflows`, `sibling_overlaps`), the same functions the crunk-rules LAYOUT001/002 rules call on the solver output of each `design/scenes/*.scene.html`, so the rules and the corpus cannot disagree; they are compared, with the RESP root-width and GX002-005 findings, against `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'binary(corpus)'`.
+The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002 findings come from `crunk_layout::findings` (`child_overflows`, `sibling_overlaps`), the same functions the crunk-rules LAYOUT001/002 rules call on the solver output of each `design/scenes/*.scene.html`, so the rules and the corpus cannot disagree; they are compared, with the RESP root-width and GX002-005 findings, against `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'test(corpus::)'`.
 
 Solver-vs-browser parity is a separate gate: `crates/crunk-gallery/src/parity.rs` compares the solver's boxes with the browser's by node id within a 1.0 px tolerance and names every node that differs or is missing on one side. It runs as the `crunk-parity` CI job; locally it skips when Playwright is unavailable, and `CRUNK_REQUIRE_PLAYWRIGHT=1` turns that skip into a failure.
 
@@ -169,6 +169,14 @@ There is no font engine, so the solve is identical everywhere: a character is `0
 ### Not yet
 
 Grid layout, per-side padding and margin, CSS-derived styles and a CLI verb are follow-up work.
+
+## GRL file attributes
+
+`crunk_rules::file_attrs` is the host side of the GRL input bridge. `stamp_styles` (and
+`host_stamped_files` for a `CrunkHost`) yields one `StampedFile` per ingested sheet and per
+ungoverned `.css` file, carrying `file.bucket`, `file.component` and `file.outside_css_root`
+(from `crunk_ingest::attrs`). The ORG001/003/004/005 GRL ports read these; the config tables and
+the generated-module runner are follow-up work.
 
 ## The crunk-web pack
 
@@ -216,7 +224,7 @@ digest is the gob-packs tree digest of `packs/crunk-web`.
 ## crunk in CI
 
 `.github/workflows/ci.yml` starts with a `changes` job that maps the diff to job sets
-(`.github/scripts/plan-jobs.py`, tested by `crates/gob-dev/tests/ci_plan.rs`). The mapping is data in
+(`.github/scripts/plan-jobs.py`, tested by `crates/gob-dev/tests/it/ci_plan.rs`). The mapping is data in
 `crates/gob-dev/changes.toml`, read by both the script and `gob_dev::changes` (`cargo dev changes`,
 `cargo dev ci --since <base>`), with one unit test per class. It is a job-level
 filter, never a workflow `paths:` filter: a workflow that never starts leaves the commit with no

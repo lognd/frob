@@ -321,6 +321,12 @@ fn references(p: &PlanParts) -> Result<(), PlanError> {
                 table,
                 column,
                 ..
+            }
+            | Op::InSide {
+                subject,
+                table,
+                column,
+                ..
             } => {
                 operand_refs(subject, p)?;
                 str_in_range(*table, n)?;
@@ -601,7 +607,7 @@ impl<'a> Walk<'a> {
             Op::MatchRegex { subject, .. } | Op::MatchGlob { subject, .. } => {
                 self.use_operand(subject)?;
             }
-            Op::MatchGlobSet { subject, need, .. } => {
+            Op::MatchGlobSet { subject, need, .. } | Op::InSide { subject, need, .. } => {
                 if !p.reads.contains(*need) {
                     return Err(PlanError::UndeclaredNeed { need: need.name() });
                 }

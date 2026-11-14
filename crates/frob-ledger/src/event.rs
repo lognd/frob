@@ -24,13 +24,13 @@ pub(crate) mod rel_path {
 
     // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_path attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Write `p` as its slash-separated string.
-    pub fn serialize<S: Serializer>(p: &RelPath, s: S) -> Result<S::Ok, S::Error> {
+    pub(crate) fn serialize<S: Serializer>(p: &RelPath, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_str(p.as_str())
     }
 
     // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_path attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Read a string and validate it as a [`RelPath`], refusing absolute or dot-segment paths.
-    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<RelPath, D::Error> {
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<RelPath, D::Error> {
         RelPath::new(String::deserialize(d)?).map_err(serde::de::Error::custom)
     }
 }
@@ -42,7 +42,7 @@ pub(crate) mod rel_paths {
 
     // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_paths attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Write `ps` as a list of strings.
-    pub fn serialize<S: Serializer>(ps: &[RelPath], s: S) -> Result<S::Ok, S::Error> {
+    pub(crate) fn serialize<S: Serializer>(ps: &[RelPath], s: S) -> Result<S::Ok, S::Error> {
         ps.iter()
             .map(RelPath::as_str)
             .collect::<Vec<_>>()
@@ -51,7 +51,7 @@ pub(crate) mod rel_paths {
 
     // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_paths attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Read a list of strings, validating each as a [`RelPath`].
-    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<RelPath>, D::Error> {
+    pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<RelPath>, D::Error> {
         Vec::<String>::deserialize(d)?
             .into_iter()
             .map(|p| RelPath::new(p).map_err(serde::de::Error::custom))
@@ -349,6 +349,10 @@ pub enum LeaseOp {
     Reclaim,
     /// The holder's explicit soft heartbeat (`claim touch`); the note rides in `reason`.
     Renew,
+    /// The same actor resumed their claim from another clone; `holder` is the actor and `tip` the fetched branch tip.
+    Move,
+    /// A fresh claim: the create-only push of the ticket branch succeeded (or there is no remote to push to).
+    Take,
 }
 
 // frob:ticket 01M5DTGGCJ9BNXAD5TP1N3HRWA
@@ -379,6 +383,15 @@ pub struct LeaseData {
     /// Why, as given to the verb.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// The clone that made the claim (`take`, `move`, `renew`): a stable per-clone id, never a path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clone_id: Option<String>,
+    /// The `FROB_AGENT` label of the claimant, absent for a human (`take`, `move`, `renew`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent: Option<String>,
+    /// The claim branch, e.g. `ticket/<handle>` (`take`, `move`, `renew`); names the branch so handle lengthening never breaks the mapping.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
 }
 
 /// What a `proposal` or `proposal-superseded` event records: a tracker edit held for review (tickets.md 13.5).
@@ -419,6 +432,14 @@ pub struct ProposalCloseData {
     pub reason: Option<String>,
 }
 
+/// A tracker key (such as `PROJ-123`) recorded as an alias of the ticket, so a lookup by it resolves.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct AliasData {
+    /// The alias; non-empty and free of whitespace.
+    pub alias: String,
+}
+
 /// The kind-specific part of an event; the `kind` key selects the variant.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -454,6 +475,8 @@ pub enum EventBody {
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     /// A triage decision (accept, decline, snooze, duplicate); the inbox reads it, the fold ignores it.
     Triage(TriageData),
+    /// A tracker key was published as an alias of the ticket; the fold adds it once.
+    AddAlias(AliasData),
     /// A tracker edit held as a proposal; the proposal fold reads it, the ticket fold ignores it.
     Proposal(ProposalData),
     /// A proposal replaced by a later edit of the same actor and field.
@@ -640,6 +663,7 @@ pub const fn kind_name(body: &EventBody) -> &'static str {
         EventBody::Usage(_) => "usage",
         EventBody::Scrub(_) => "scrub",
         EventBody::Triage(_) => "triage",
+        EventBody::AddAlias(_) => "add-alias",
         EventBody::Proposal(_) => "proposal",
         EventBody::ProposalSuperseded(_) => "proposal-superseded",
         EventBody::ProposalAccepted(_) => "proposal-accepted",
@@ -814,6 +838,9 @@ mod tests {
                 idle_secs: Some(900),
                 window_secs: Some(600),
                 reason: Some("idle".into()),
+                clone_id: None,
+                agent: None,
+                branch: None,
             }),
             EventBody::Lease(LeaseData {
                 op: LeaseOp::Restore,
@@ -824,6 +851,9 @@ mod tests {
                 idle_secs: None,
                 window_secs: None,
                 reason: None,
+                clone_id: None,
+                agent: None,
+                branch: None,
             }),
         ];
         for body in bodies {

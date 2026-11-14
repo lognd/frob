@@ -63,6 +63,11 @@ impl Product for FrobProduct {
         tracing::debug!("frob check through the product verb");
         let payload = frob_check::Check::from_matches(matches)?.run(ctx)?;
         let rows = crate::check_view::check_rows(&payload.data, ctx.verbosity > 0);
+        // frob:ticket 01M7AV6DHZ6KG77GJ74CAT8CDF
+        let payload = match crate::stale::stale_warning(root) {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        };
         Ok(payload.with_pretty(rows))
     }
 
@@ -89,6 +94,7 @@ impl Product for FrobProduct {
                 .register::<lease_cmd::LeaseRelease>()
                 .register::<lease_cmd::LeaseRekind>()
                 .register::<lease_cmd::ClaimTouch>()
+                .register::<crate::claim_notices_cmd::ClaimNotices>()
                 .register::<crate::board_cmd::BoardVerb>(),
         );
         let cli = crate::milestone_cmd::register(cli);
@@ -102,6 +108,8 @@ impl Product for FrobProduct {
         let cli = crate::baseline_cmd::register(cli);
         // frob:ticket 01M68K5GXB2C7G082PGAA9C2BY
         let cli = cli.register::<crate::dismiss_cmd::Dismiss>();
+        // frob:ticket 01M5B6QR4JZ19YAGB7922H0R69
+        let cli = cli.register::<crate::coord_cmd::CoordStatus>();
         // frob:ticket 01M66G70F82EC8EERE0077QKVV
         let cli = crate::migrate_cmd::register(cli);
         let cli = crate::profile_cmd::register(cli);

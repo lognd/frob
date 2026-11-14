@@ -18,6 +18,7 @@ use super::engine::{FileCtx, FileScan, Project, State, SymPath, logging_roots};
 use super::universal::{UCall, mode_unresolved_calls, output_calls};
 use super::{
     LOG001, LOG002, lang_bash, lang_c, lang_csharp, lang_java, lang_js, lang_python, lang_rust,
+    lang_zig,
 };
 
 /// Most scan rounds: round 1 sees no exports, each further round sees the previous round's;
@@ -45,8 +46,9 @@ fn group_of(language: Language) -> Option<&'static str> {
         }
         Language::CSharp => Some("csharp"),
         Language::Java => Some("java"),
-        Language::C | Language::Cpp => Some("c"),
+        Language::C | Language::Cpp | Language::Cuda => Some("c"),
         Language::Shell => Some("bash"),
+        Language::Zig => Some("zig"),
         _ => None,
     }
 }
@@ -112,6 +114,7 @@ fn scan_one(p: &Prepared<'_>, ctx: &FileCtx<'_>, cat: &Catalogue) -> Option<File
         "java" => lang_java::scan(st, root),
         "c" => lang_c::scan(st, root),
         "bash" => lang_bash::scan(st, root),
+        "zig" => lang_zig::scan(st, root),
         _ => lang_csharp::scan(st, root),
     })
 }
@@ -150,6 +153,7 @@ fn cross_check(p: &Prepared<'_>, scan: &FileScan, group: &Group, report: &mut Pa
         .iter()
         .map(|h| (h.start, h.end))
         .chain(scan.unresolved.iter().map(|u| (u.start, u.end)))
+        .chain(scan.cleared.iter().copied())
         .collect();
     for (i, u) in output_calls(p.gid, p.file.path, text, group)
         .into_iter()
@@ -294,7 +298,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
     }
     if prepared.is_empty() {
         let why =
-            "no Rust, Python, JavaScript, TypeScript, C#, Java, C, C++ or shell file in the walk"
+            "no Rust, Python, JavaScript, TypeScript, C#, Java, C, C++, CUDA, Zig or shell file in the walk"
                 .to_owned();
         report.not_applicable.insert(LOG001, why.clone());
         report.not_applicable.insert(LOG002, why);
@@ -309,6 +313,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &LogOptions) -> PathReport {
         "java",
         "c",
         "bash",
+        "zig",
     ]
     .into_iter()
     .map(|g| (g, logging_roots(g, &opts.extra_crates)))

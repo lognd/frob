@@ -92,7 +92,7 @@ pub fn product_schema(tables: &[&TableDescription], options: &SchemaOptions) -> 
     if !defs.is_empty() {
         doc[DEFS] = Value::Object(defs);
     }
-    doc
+    crate::describe::sort_keys(doc)
 }
 
 /// Every `#/$defs/NAME` target referenced under `node` (and inside `defs`) that `defs` lacks.

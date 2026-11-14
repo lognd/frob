@@ -244,7 +244,7 @@ pub fn fold_claim_record(events: &[Event]) -> ClaimRecord {
                 }
             }
             LeaseOp::Reclaim => rec.reclaimed_at = Some(at),
-            LeaseOp::Evict | LeaseOp::Restore | LeaseOp::Renew => {}
+            LeaseOp::Evict | LeaseOp::Restore | LeaseOp::Renew | LeaseOp::Move | LeaseOp::Take => {}
         }
     }
     debug!(held = rec.hold.is_some(), reclaimed_at = ?rec.reclaimed_at, "claim record folded");
@@ -262,6 +262,9 @@ fn lease_body(op: LeaseOp) -> LeaseData {
         idle_secs: None,
         window_secs: None,
         reason: None,
+        clone_id: None,
+        agent: None,
+        branch: None,
     }
 }
 
@@ -297,6 +300,49 @@ pub fn renew_event(note: Option<&str>) -> EventBody {
     EventBody::Lease(LeaseData {
         reason: note.map(str::to_owned),
         ..lease_body(LeaseOp::Renew)
+    })
+}
+
+/// The `lease` op `move` event body: `actor` resumed their claim on another clone from the remote branch at `tip`.
+// frob:ticket 01M5DBVTCDGK4Z096B1ZXVW75J
+#[must_use]
+pub fn move_event(actor: &str, tip: &str) -> EventBody {
+    EventBody::Lease(LeaseData {
+        holder: Some(actor.to_owned()),
+        tip: Some(tip.to_owned()),
+        ..lease_body(LeaseOp::Move)
+    })
+}
+
+/// What a claim-publishing `lease` event (`take`, `move`, `renew`) records about the claim (`distributed-tickets.md` section 3.3).
+#[derive(Debug, Clone, Copy)]
+pub struct ClaimStamp<'a> {
+    /// The claimant.
+    pub actor: &'a str,
+    /// The claimant's clone id.
+    pub clone_id: &'a str,
+    /// The `FROB_AGENT` label, `None` for a human.
+    pub agent: Option<&'a str>,
+    /// The claim branch name.
+    pub branch: &'a str,
+    /// The oid the claim branch was observed at.
+    pub observed: &'a str,
+}
+
+/// The `lease` event body for a claim `op` (`take`, `move` or `renew`) carrying the full [`ClaimStamp`].
+///
+/// `move` also sets `tip` to the observed oid, as [`move_event`] does.
+// frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+#[must_use]
+pub fn claim_event(op: LeaseOp, rec: &ClaimStamp<'_>) -> EventBody {
+    EventBody::Lease(LeaseData {
+        holder: Some(rec.actor.to_owned()),
+        observed: Some(rec.observed.to_owned()),
+        tip: (op == LeaseOp::Move).then(|| rec.observed.to_owned()),
+        clone_id: Some(rec.clone_id.to_owned()),
+        agent: rec.agent.map(str::to_owned),
+        branch: Some(rec.branch.to_owned()),
+        ..lease_body(op)
     })
 }
 
@@ -609,6 +655,45 @@ mod tests {
         };
         let e = effective_observation(&obs(start), None, &[old], NOW, &w);
         assert_eq!(e.observed_at, NOW);
+    }
+
+    // frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+    // frob:tests claim_event
+    #[test]
+    fn claim_event_records_actor_clone_agent_branch_and_oid() {
+        let rec = ClaimStamp {
+            actor: "ann",
+            clone_id: "C1",
+            agent: Some("bot"),
+            branch: "ticket/abc",
+            observed: "deadbeef",
+        };
+        let EventBody::Lease(take) = claim_event(LeaseOp::Take, &rec) else {
+            panic!("not a lease");
+        };
+        assert_eq!(take.op, LeaseOp::Take);
+        assert_eq!(take.holder.as_deref(), Some("ann"));
+        assert_eq!(take.clone_id.as_deref(), Some("C1"));
+        assert_eq!(take.agent.as_deref(), Some("bot"));
+        assert_eq!(take.branch.as_deref(), Some("ticket/abc"));
+        assert_eq!(take.observed.as_deref(), Some("deadbeef"));
+        assert_eq!(take.tip, None);
+        let EventBody::Lease(mv) = claim_event(LeaseOp::Move, &rec) else {
+            panic!("not a lease");
+        };
+        assert_eq!(mv.tip.as_deref(), Some("deadbeef"));
+    }
+
+    // frob:ticket 01M5DBVSNP24G2WVGGSHP5YGDE
+    // frob:tests move_event
+    #[test]
+    fn move_event_names_the_holder_and_sets_the_tip() {
+        let EventBody::Lease(mv) = move_event("ann", "cafe") else {
+            panic!("not a lease");
+        };
+        assert_eq!(mv.op, LeaseOp::Move);
+        assert_eq!(mv.holder.as_deref(), Some("ann"));
+        assert_eq!(mv.tip.as_deref(), Some("cafe"));
     }
 
     // frob:ticket 01M5DDB53D00DCC2FVJWHZ3DX9

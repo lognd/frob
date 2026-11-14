@@ -83,6 +83,21 @@ pub const FLAGS: &[Flag] = &[
         may_be_unknown: false,
     },
     Flag {
+        word: "bem_camel",
+        query: "",
+        may_be_unknown: false,
+    },
+    Flag {
+        word: "bem_kebab",
+        query: "",
+        may_be_unknown: false,
+    },
+    Flag {
+        word: "bem_snake",
+        query: "",
+        may_be_unknown: false,
+    },
+    Flag {
         word: "exported",
         query: "Q33",
         may_be_unknown: true,

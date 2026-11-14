@@ -160,6 +160,14 @@ impl Precision {
         }
     }
 
+    /// The cell word, with the gap's ticket appended as `Gap (~ID)` when one is named.
+    pub fn cell_with_ticket(self, ticket: Option<&str>) -> String {
+        match (self, ticket) {
+            (Self::None, Some(t)) => format!("{} ({t})", self.cell()),
+            _ => self.cell().to_string(),
+        }
+    }
+
     /// True when the cell is provided: neither a gap nor declared not-applicable.
     pub const fn is_provided(self) -> bool {
         !matches!(self, Self::None | Self::NotApplicable)

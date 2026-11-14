@@ -61,14 +61,26 @@ pub fn missing_reason(outcome: Option<Outcome>, reason: Option<&str>) -> Option<
 }
 
 // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
+/// Ledger label that explicitly waives the zero-criteria refusal for one ticket (~SEWGFDJ).
+pub const NO_CRITERIA_LABEL: &str = "no-criteria";
+
+// frob:ticket 01M7AV6DMGJBMR5ATRTSEWGFDJ
 /// Whether tickets of `ty` must state at least one acceptance criterion to close as completed work.
 ///
-/// Story, bug and security claim a behaviour that can be given/when/then; chore, docs and epic (whose criteria are its children) have nothing to state, and a forced criterion there would be ceremonial text that looks like verification.
+/// Every type that claims a change (story, task, bug, security, invariant, incident) needs one; chore, docs and epic (whose criteria are its children) and repo-declared custom types have nothing to state, and a forced criterion there would be ceremonial text that looks like verification.
 pub fn criteria_required(ty: TicketType) -> bool {
-    matches!(
+    !matches!(
         ty,
-        TicketType::Story | TicketType::Bug | TicketType::Security
+        TicketType::Chore | TicketType::Docs | TicketType::Epic | TicketType::Custom
     )
+}
+
+// frob:ticket 01M7AV6DMGJBMR5ATRTSEWGFDJ
+/// Whether `labels` carry the explicit [`NO_CRITERIA_LABEL`] waiver, which the ledger records as a label event.
+pub fn criteria_waived(labels: &[String]) -> bool {
+    let waived = labels.iter().any(|l| l == NO_CRITERIA_LABEL);
+    tracing::debug!(waived, "zero-criteria waiver label");
+    waived
 }
 
 /// What the ticket's changelog fragment looks like on disk, judged by the compile's own validator.
@@ -208,7 +220,7 @@ impl DoneGuard {
         if self.requires.contains(&DoneRequirement::CriteriaEvidenced)
             && matches!(ticket.front.outcome, Some(Outcome::Done | Outcome::Fixed))
             && ticket.front.acceptance.is_empty()
-            && !criteria_required(ticket.front.ty)
+            && (!criteria_required(ticket.front.ty) || criteria_waived(&ticket.front.labels))
         {
             out.push(
                 "criteria_evidenced passed vacuously: the ticket has no acceptance criteria"
@@ -219,12 +231,17 @@ impl DoneGuard {
     }
 
     // frob:ticket 01M1T07NXZ5WQR200M5H1NWDN9
-    /// Refuse a story, bug or security ticket with zero criteria: with nothing to bind, `criteria_evidenced` would pass vacuously.
+    /// Refuse a ticket of a claiming type with zero criteria unless labelled `no-criteria`: with nothing to bind, `criteria_evidenced` would pass vacuously.
     fn has_criteria(cx: &CloseContext<'_>) -> Result<(), GuardFailure> {
         let ty = cx.ticket.front.ty;
         if !criteria_required(ty) || !cx.ticket.front.acceptance.is_empty() {
             return Ok(());
         }
+        if criteria_waived(&cx.ticket.front.labels) {
+            tracing::info!(handle = %cx.handle, "zero criteria waived by label");
+            return Ok(());
+        }
+        tracing::warn!(handle = %cx.handle, ty = ty.as_str(), "refusing close with no acceptance criteria");
         Err(GuardFailure {
             code: CODE_NO_CRITERIA.to_owned(),
             message: format!(
@@ -234,7 +251,7 @@ impl DoneGuard {
             ),
             remedy: Some(format!(
                 "frob ticket update {} --add-acceptance \"<given/when/then>\", bind it with frob ticket evidence add, then retry; \
-                 chore, docs and epic tickets are exempt (change the type if this is not a {})",
+                 chore, docs and epic tickets are exempt (change the type if this is not a {}), or waive explicitly with the `no-criteria` label",
                 cx.handle,
                 ty.as_str()
             )),

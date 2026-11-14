@@ -125,6 +125,7 @@ pub use crates::CrateDeps;
 pub use csharp::{
     CSharpAdapter, CsharpDynamicCall, CsharpTest, CsharpTestFramework, csharp_dynamic_calls,
     csharp_test, is_csharp_path, is_csharp_test_file, is_csharp_test_fn, is_csharp_test_text,
+    leading_attribute_specs, leading_attributes,
 };
 pub use css::{CssAdapter, is_css_path};
 pub use def_use::{PYTHON_SYNTAX, RUST_SYNTAX, TYPESCRIPT_SYNTAX, def_use_of, syntax_for};
@@ -164,7 +165,8 @@ pub use pipeline::{
 };
 pub use pyrecv::{PythonReceivers, ReceiverCall, python_receiver_calls};
 pub use python::{
-    PythonAdapter, is_python_path, is_python_test_file, is_python_test_fn, is_python_test_module,
+    PythonAdapter, UnitErrorFacts, is_python_path, is_python_test_file, is_python_test_fn,
+    is_python_test_module, python_error_facts,
 };
 pub use qualifier::{Admit, CallQualifier};
 pub use registry::{
@@ -181,7 +183,7 @@ pub use symref::{Symref, SymrefError, Target};
 pub use typescript::{
     ConstProject, Evaluated, JsxElement, JsxKind, Origin, TestItem, TestRole, TypeScriptAdapter,
     Unresolved, is_typescript_path, is_typescript_test_file, is_typescript_test_fn, is_unitless,
-    jsx_elements, numeric_raw, test_items, test_unit_name,
+    jsx_elements, numeric_raw, test_items, test_unit_name, typescript_error_facts,
 };
 pub use unity_project::{
     Assembly as UnityAssembly, TestMode as UnityTestMode, UnityAssignment, UnityProjects,

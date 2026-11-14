@@ -175,6 +175,6 @@ mod tests {
     // frob:tests crates/gob-dev/src/profile/scenarios.rs::ScenarioFile.builtin
     #[test]
     fn shipped_file_parses() {
-        ScenarioFile::builtin().unwrap();
+        assert!(ScenarioFile::builtin().is_ok());
     }
 }

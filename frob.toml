@@ -30,6 +30,7 @@ output_presenters = ["frob-present"]
 name = "cargo"
 command = "cargo"
 args = ["fmt", "{packages}", "--check"]
+parser = "formatter-list"
 unscoped_packages = ["--all"]
 inputs = ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain*", "clippy.toml", "rustfmt.toml", ".cargo/**"]
 # Cold land checkouts on a loaded host exceed the 300 s default (TOOL001 on ~ZZCCYHY, ~3AP1RKR).

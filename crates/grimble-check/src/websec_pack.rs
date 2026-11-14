@@ -1,8 +1,8 @@
 //! The `grimble-websec` pack: WEBSEC (registered inside SEC), SQL, COMPLY (with PII), ROUTE and
 //! WEBPERF (server side) rules in GRL. The sources live under `packs/grimble-websec`, embedded so
 //! the pack ships in the binary; every rule must compile with a firing and a clean example
-//! (GRL011). The `db.query` and `net` capability atoms come from core-effects and are not
-//! redefined here.
+//! (GRL011). The `net` capability atom comes from core-effects and is not redefined here;
+//! `db.query` is declared by no pack yet (planned with the STORE family, ~3VM7F8C).
 
 // frob:ticket 01M43AWPD2DYMS2CVTJRD56D5R
 
@@ -105,18 +105,7 @@ pub const RULES: [(&str, &str); 20] = [
     ),
 ];
 
-/// One `grimble rule catalog` row of the pack: a family, its namespace and its rule.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CatalogRow {
-    /// The pack name.
-    pub pack: String,
-    /// The family label (`WEBSEC`, `SQL`).
-    pub family: String,
-    /// The registry namespace the rule id lives in (`SEC` for WEBSEC).
-    pub namespace: String,
-    /// The rule id (`SEC101`).
-    pub rule: String,
-}
+pub use gob_packs::sysdesign::CatalogRow;
 
 /// Why the pack does not build.
 #[derive(Debug, thiserror::Error)]
@@ -205,15 +194,11 @@ fn family_of(rule: &str) -> &str {
 /// # Errors
 /// [`PackBuildError`] if the pack does not compile.
 pub fn catalog() -> Result<Vec<CatalogRow>, PackBuildError> {
-    Ok(plans()?
-        .iter()
-        .map(|p| CatalogRow {
-            pack: NAME.to_owned(),
-            family: family_of(p.rule()).to_owned(),
-            namespace: namespace_of(p.rule()).to_owned(),
-            rule: p.rule().to_owned(),
-        })
-        .collect())
+    Ok(gob_packs::sysdesign::catalog_rows(
+        NAME,
+        &plans()?,
+        family_of,
+    ))
 }
 
 /// Confirms the tree at `root` holds exactly the embedded sources and returns its digest.

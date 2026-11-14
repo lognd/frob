@@ -1,0 +1,1 @@
+`frob work <ticket> --reclaim` takes over your own evicted claim by restoring its newest parked work (`E-RECLAIM-TAKEN`, `E-RECLAIM-NOTHING` and `E-RECLAIM-OFFLINE` refuse), and `frob refresh` now warns a returning holder with `W-CLAIM-EVICTED` and the next parked ref to push to. `frob claim restore` is documented alongside.

@@ -134,7 +134,12 @@ fn arbitrary_token_streams_never_panic() {
             })
             .collect();
         let parsed = parse_tokens(file(), TEXT, &tokens);
-        let _ = (parsed.errors.len(), parsed.file.rules.len());
+        let again = parse_tokens(file(), TEXT, &tokens);
+        prop_assert_eq!(parsed.errors.len(), again.errors.len());
+        prop_assert_eq!(parsed.file.rules.len(), again.file.rules.len());
+        if tokens.is_empty() {
+            prop_assert!(parsed.file.rules.is_empty());
+        }
     });
 }
 
@@ -189,7 +194,12 @@ fn every_prefix_of_every_fixture_parses_without_panicking() {
     for name in FIXTURES {
         let src = fixture(name);
         for end in (0..src.len()).step_by(7) {
-            std::hint::black_box(parse(file(), &src[..end]));
+            let parsed = parse(file(), &src[..end]);
+            for e in &parsed.errors {
+                assert!(
+                    usize::try_from(u32::from(e.span.range.end())).unwrap_or(usize::MAX) <= end
+                );
+            }
         }
     }
 }

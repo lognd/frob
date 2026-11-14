@@ -115,6 +115,7 @@ struct Evidence {
     containment: bool,
     refs: bool,
     status_edge: bool,
+    applies: bool,
     attrs: bool,
     comments: bool,
     regions: bool,
@@ -156,6 +157,7 @@ fn measure(files: &[(String, String)]) -> Evidence {
         ev.comments |= has("comment");
         ev.regions |= has("region");
         ev.phases |= has("phase");
+        ev.applies |= has("apply");
         ev.containment |= folded.term.ids().any(|id| {
             folded.term.node(id).op().is_unit_like()
                 && std::iter::successors(folded.term.node(id).parent(), |&p| {
@@ -164,6 +166,7 @@ fn measure(files: &[(String, String)]) -> Evidence {
                 .any(|p| folded.term.node(p).op().is_unit_like())
         });
         ev.refs |= has("ref")
+            || !folded.file.refs.is_empty()
             || folded
                 .scopes
                 .refs()
@@ -173,14 +176,14 @@ fn measure(files: &[(String, String)]) -> Evidence {
         all.push(folded.file);
     }
     let g = SymbolGraph::from_files(all);
-    ev.status_edge = !g.edges_with_status().is_empty();
+    // F3 needs apply targets (universal-model.md 3.3); a bare reference edge only evidences F2.
+    ev.status_edge = ev.applies && !g.edges_with_status().is_empty();
     ev
 }
 
 /// Declared-vs-measured disagreements that predate this gate: (language, declared, measured, ticket).
 /// A pin holds only while both levels stay exactly as recorded; the list may only shrink.
-const PINNED: [(&str, Fidelity, Fidelity, &str); 1] =
-    [("dockerfile", Fidelity::F2, Fidelity::F1, "~DPWJ77V")];
+const PINNED: [(&str, Fidelity, Fidelity, &str); 0] = [];
 
 /// Errs when `declared` differs from `measured` in either direction, unless pinned exactly.
 fn check_declared(lang: &str, declared: Fidelity, measured: Fidelity) -> Result<(), String> {
@@ -445,6 +448,13 @@ fn every_adapters_measured_level_fits_under_its_cell_ceiling() {
         let mut cells = [gob_caps::Precision::None; 12];
         for cap in gob_caps::Capability::ALL {
             cells[cap as usize] = a.capabilities().precision(cap);
+        }
+        // A pinned overclaim is exempt: its declared level is already known to exceed its cells.
+        if gob_caps::UNJUSTIFIED
+            .iter()
+            .any(|l| l.name() == a.language())
+        {
+            continue;
         }
         let measured = measure(&corpus_of(a.language())).level();
         assert!(

@@ -365,6 +365,27 @@ output:
    fix = "_log.info($$$ARGS)"
    ```
 
+   A rule file may carry embedded `[[test]]` tables, run by
+   `RuleFile::run_tests` (`gob-pattern` `authoring`; unknown keys are
+   rejected). `source` is run through the rule; `matches` lists the exact
+   source text of each expected finding in order (empty or absent means the
+   rule must stay quiet); `fixed` is the expected output after applying
+   every fix, for rules that have a `fix`; `name` is an optional label shown
+   in failures:
+
+   ```toml
+   [[test]]
+   name = "flags a bare print"
+   source = "print('hi')"
+   matches = ["print('hi')"]
+   fixed = "_log.info('hi')"
+   ```
+
+   New ids come from `gob_pattern::authoring::next_id(dir)`: one past the
+   highest `GPOLnnn` declared by the `*.grl.toml` files in `dir`, zero
+   padded to at least three digits. Unreadable or malformed files are
+   skipped (logged), and a missing dir yields `GPOL001`.
+
 2. Universal rule files, same syntax, `language = "*"`, where
    `pattern` and `kind` address U operators and role attributes
    (universal-model.md 2.3 and 2.4) instead of a grammar:
@@ -1350,13 +1371,24 @@ attribute.
 
 ### 11.8 Std rule codegen
 
-`cargo dev gen std-rules` compiles each rule in `packs/std/rules/*.grl` to a Rust
-module `packs/std/generated/<rule>.rs` (packs-and-plugins.md 6). There is no build script:
+`cargo dev gen std-rules` compiles each rule in `packs/<pack>/rules/*.grl` to a Rust
+module `packs/<pack>/generated/<rule>.rs` (packs-and-plugins.md 6) for every target pack:
+`std` (the gob host) and `crunk-core` (the crunk host). The generated module takes the
+executor's `Input` and `Relations`, so it is host independent; a pack that names a config
+schema (`crunk-core`: `docs/schemas/crunk.json`) has each source type-checked against it first,
+and a column or key the schema lacks fails generation. There is no build script:
 the modules are checked in and `cargo dev gen all --check` reports a stale or
-missing one as GEN001.
+missing one as GEN001. `crunk-core` ships LAYER001 and ORG002 as GRL. `crunk_rules::grl_rules`
+runs them over a crunk host: the stamped files and sheet sources become one workspace model
+(`gob_plan::workspace::build`, per-file attributes included), the spec's `[layers]` and `[org]`
+become the `config.layers` and `config.org` side tables, and `gob_plan::exec::message::render_message`
+fills each report template. Parity with the Rust rules is tested in `crunk-rules/tests/grl_parity.rs`;
+the Rust rules stay until `is integer` reads `_` separators like Python (LAYER001) and the
+remaining ORG rules are ported.
 
 Each module carries `#![forbid(unsafe_code)]`, and `design/model.grmb` gives the
-`std_rules` node that owns `packs/std/generated/**` no grants, so any ambient effect
+`std_rules` node that owns `packs/std/generated/**` and `packs/crunk-core/generated/**` no
+grants, so any ambient effect
 in a generated module is CAP001.
 
 ## 12. Testing a rule
@@ -1481,7 +1513,7 @@ an opaque region, an Unknown visibility) is run against every shipped
 rule, so "the rule behaves as its declared polarity says" is a test, not a
 claim (universal-model.md 4.5, Theorem 3: never an Error or Warn whose
 premise is false). The frob corpus is
-`crates/frob-obligations/tests/polarity_conformance.rs`: it evaluates every
+`crates/frob-obligations/tests/it/polarity_conformance.rs`: it evaluates every
 shipped rule over the four repositories and fails when any P- rule emits a
 certain `Error` on a May-only, opaque or Unknown-visibility absence; a
 forged-finding control proves the oracle can fail. The ecosystem check (build-test-ci.md 6) reports files
@@ -1517,7 +1549,7 @@ language's adapter does not provide is Unknown. The test `oracle_live` fails
 when the committed `observed` column differs from these live answers (a source
 that no adapter parses is an error, not a verdict, so a flaky parse never
 flips the column). Regenerate the column deliberately with
-`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test oracle_live`, then review
+`FROB_BLESS_ORACLE=1 cargo test -p gob-check --test it oracle_live`, then review
 the diff and refresh `baseline.toml` by hand if a rate moved.
 
 ### 12.9 Native coverage providers
@@ -1685,7 +1717,7 @@ out-of-range edit, never reaches a fixpoint (oscillation), or leaves a
 fixable finding after the fixpoint. `Outcome::snapshot_text` is the round
 count plus the unified diff original to final, snapshotted with insta.
 `missing_fixtures` names fixable rules with no fixture; with no fixable rules
-it passes vacuously. Self-tests in `crates/gob-fix/tests/harness.rs` cover
+it passes vacuously. Self-tests in `crates/gob-fix/tests/it/harness.rs` cover
 the oscillating, parse-breaking, macro-wrapping, hole-growing, no-op and
 overlapping cases. Per-rule snapshots for the real fixable rules are wired in
 the rule crates (follow-up tickets under the parent epic).

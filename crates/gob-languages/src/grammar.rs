@@ -45,6 +45,10 @@ pub(crate) fn ts_language(language: Language) -> Option<tree_sitter::Language> {
         Language::Yaml => Some(tree_sitter_yaml::LANGUAGE.into()),
         #[cfg(feature = "shell")]
         Language::Shell => Some(tree_sitter_bash::LANGUAGE.into()),
+        #[cfg(feature = "zig")]
+        Language::Zig => Some(tree_sitter_zig::LANGUAGE.into()),
+        #[cfg(feature = "cuda")]
+        Language::Cuda => Some(tree_sitter_cuda::LANGUAGE.into()),
         #[allow(unreachable_patterns)]
         _ => None,
     }
@@ -61,6 +65,8 @@ pub(crate) const fn pin(language: Language) -> Option<(&'static str, &'static st
         Language::Yaml => Some(("tree-sitter-yaml", "0.7.2")),
         Language::Shell => Some(("tree-sitter-bash", "0.25.1")),
         Language::Grmb => None,
+        Language::Zig => Some(("tree-sitter-zig", "1.1.2")),
+        Language::Cuda => Some(("tree-sitter-cuda", "0.21.2")),
         Language::Python => Some(("tree-sitter-python", "0.25.0")),
         Language::CSharp => Some(("tree-sitter-c-sharp", "0.23.5")),
         Language::Go => Some(("tree-sitter-go", "0.25.0")),

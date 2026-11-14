@@ -35,6 +35,7 @@ fn synthetic(n: usize, ids: &[TicketId]) -> Ticket {
             class: frob_ledger::model::Class::Standard,
             due: None,
             points: None,
+            claim_idle_days: None,
             parent: (!n.is_multiple_of(50)).then(|| ids[n - n % 50]),
             reporter: "bench".into(),
             assignee: None,

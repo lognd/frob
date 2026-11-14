@@ -312,6 +312,7 @@ Every `*_file` key here resolves against the project root, not `css_root`.
 | `alpha_channels` | `bool` | no | `false` | Also emit `-rgb` channel triplets so Tailwind opacity modifiers work. |
 | `config` | `String` | no | `""` | Path of the Tailwind config to cross-check; empty means Tailwind support is off. |
 | `css_entry` | `String` | no | `""` | Tailwind v4 CSS entry (the file carrying `@import "tailwindcss"`); empty means detect. |
+| `engine` | `TailwindEngine` | no | `"node"` | `node` runs the project's Tailwind; `static` never executes repository JavaScript. |
 | `namespace_keys` | `bool` | no | `false` | Emit prefix-qualified `theme.extend` keys (`space-4`) instead of bare steps (`4`). |
 | `tokens_file` | `String` | no | `""` | Output path of the generated Tailwind theme mapping; empty means none. |
 | `version` | `TailwindVersion` | no | `"auto"` | Shape of the `config` file. |

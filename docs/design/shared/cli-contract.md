@@ -211,6 +211,10 @@ An interactive excuse prompt is not implemented yet.
   candidate (at most 8 attempts, never waiting). When nothing is
   claimable it refuses with `E-NO-DOABLE-TICKET` (remedy `frob ticket
   doable`). `--next` conflicts with a ticket argument and with `--here`.
+  `work` and `start` first probe the remote within `[sync] foreground_budget_ms`
+  and refuse `E-SYNC-STALE` (remedy `frob refresh`) when the cached view is
+  older than `[sync] stale_error`; `--offline --reason TEXT` claims without
+  syncing, logs the reason and returns it in a `W-SYNC-OFFLINE` warning.
   `frob work <ticket> --anyway --reason TEXT` is the escape valve over
   another clone's claim (`E-CLAIM-LOST`): nothing is pushed and no claim
   transfers; the work proceeds, optionally limited to `--anyway-scope
@@ -318,6 +322,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `ticket triage` list view is `ticket list --category triage` | frob | frob-ledger | yes, read-only | 0 2 4 | 1 | object: the triage category of the ticket noun |
 | `ticket evidence` | frob | frob-evidence | yes | 0 2 3 4 | 1 | effect: writes evidence and the done report |
 | `ticket done-report` | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: writes the done report |
+| `ticket usage` | frob | frob (bin) | no, each call appends an audit event | 0 2 3 4 | 1 | effect: appends a token-usage event to the ticket ledger for `stats` cost per token |
 | `ticket evidence fetch` (the action `fetch` is a positional of `ticket evidence`) | frob | frob-evidence | yes | 0 2 3 4 | 2 | effect: fetches evidence into the ledger |
 | `work [--here]`, `requeue` (top-level: lease and worktree lifecycle) | frob | frob-lease | `work --here` only for the same holder; others get 3 | 0 2 3 4 | 1 | effect: takes a lease and creates a worktree |
 | `ticket close\|drop\|reopen` | frob | frob-ledger | yes | 0 2 3 4 | 1 | effect: closes, drops or reopens a ticket |
@@ -370,12 +375,16 @@ described in their own files, and are Milestone 2 or later (D36).
 | `agent status\|sync\|uninstall\|brief\|digest` (install, inspect and undo the agent integration; the brief verb prints a byte-capped session summary; the digest verb runs a command, stores its full output as an artifact and prints a bounded summary) | frob | frob (bin) | yes; `status` and `brief` are read-only | 0 1 2 3 4 | 1 | effect: writes or removes the agent hook and skill files; `digest` writes the command output under `.frob/artifacts/` |
 | `agent install\|hook\|heavy\|profile` (install registers frob's hook handlers in each agent's settings; hook answers the agent's hook JSON; heavy runs one heavy command under a shared lock and records its cost; profile folds those cost rows into a per-command summary) | frob | frob (bin) | yes; hook and profile are read-only, install adds only frob-marked entries, heavy repeats its command | 0 1 2 3 4 | 1 | effect: install writes the agent settings and heavy records command cost rows; hook and profile are the object noun `agent` answering and summarising those rows |
 | `claim hold\|resume\|touch\|evict\|restore` (a remote collaborator's claim on a ticket, distributed lease) | frob | frob-worktree | no for `hold` and `evict`, yes for `resume` and `touch` | 0 2 3 4 | 1 | object: the claim noun, the distributed form of the lease |
+| `claim notices` | frob | frob-worktree | yes, read-only; `--ack` records only the caller's own acknowledgement and a repeat is a no-op | 0 2 3 4 | 1 | object: the idle-window notices of the claim noun |
 | `cycle list\|show\|unassign` | frob | frob-pm | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the cycle noun |
 | `explain <code>` (also `grimble explain`) | frob, grimble | frob (bin) | yes, read-only | 0 2 4 | 1 | object: the rule and error code catalog |
 | `lease release\|widen\|rekind` | frob | frob-lease | yes, same request | 0 2 3 4 | 1 | effect: rewrites a lease file |
 | `milestone new\|add\|list\|show` | frob | frob (bin) | yes; `list` and `show` are read-only | 0 2 3 4 | 1 | object: the milestone noun |
+| `coord status` | frob | frob (bin) | yes, read-only | 0 2 3 4 | 1 | object: the live full `frob check` runs across worktrees, the coordination noun |
 | `milestone criterion add\|remove`, `milestone evidence add\|list` | frob | frob (bin) | `criterion add` yes, the others no; `evidence list` is read-only | 0 2 3 4 | 1 | effect: writes milestone criteria and their evidence |
 | `mirror render\|recreate` | frob | frob (bin) | `render` yes, read-only; `recreate` no | 0 2 3 4 | 1 | effect: `recreate` rewrites the tickets mirror |
+| `mirror run` | frob | frob (bin) | yes, read-only (ledger-side report; no tracker calls) | 0 2 3 4 | 1 | object: the ledger-side mirror reconcile report |
+| `mirror alias` | frob | frob (bin) | yes, a repeat reports `added: false` | 0 2 3 4 | 1 | effect: records a tracker key as an alias of a ticket in the ledger |
 | `profile` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: writes the measured verb timings |
 | `refresh` | frob | frob (bin) | yes | 0 2 3 4 | 1 | effect: rebuilds the derived caches |
 | `release adopt\|bump\|cut\|notes` | frob | frob (bin) | `cut` no, the others yes | 0 2 3 4 | 1 | object: the release noun |
@@ -456,7 +465,7 @@ doc comments, copied verbatim so the generated CLI reference does not change;
 the verb's about text stays owned by its `CommandMeta` (`augment` restores it).
 Shared argument groups are `#[command(flatten)]` structs. No verb reads a flag
 by string name (`.get_one`, `.get_flag`, `Arg::new` ...); the lint test
-`crates/gob-cli/tests/flags_declared_once.rs` enforces it for frob, grimble,
+`crates/gob-cli/tests/it/flags_declared_once.rs` enforces it for frob, grimble,
 crunk and the `frob-*` crates.
 
 ## 2. Diagnostics that teach, and fixes that are safe to apply

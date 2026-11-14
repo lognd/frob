@@ -168,15 +168,26 @@ fn namespace_of(rule: &str) -> &str {
 /// # Errors
 /// [`PackBuildError`] if the pack does not compile.
 pub fn catalog() -> Result<Vec<CatalogRow>, PackBuildError> {
-    Ok(plans()?
+    Ok(catalog_rows(NAME, &plans()?, namespace_of))
+}
+
+/// Builds the catalog rows of a pack: one per plan, its family chosen by `family_of`.
+///
+/// Shared by every embedded pack so each one states the row shape once.
+pub fn catalog_rows<'a>(
+    pack: &str,
+    plans: &'a [Plan],
+    family_of: impl Fn(&'a str) -> &'a str,
+) -> Vec<CatalogRow> {
+    plans
         .iter()
         .map(|p| CatalogRow {
-            pack: NAME.to_owned(),
-            family: namespace_of(p.rule()).to_owned(),
+            pack: pack.to_owned(),
+            family: family_of(p.rule()).to_owned(),
             namespace: namespace_of(p.rule()).to_owned(),
             rule: p.rule().to_owned(),
         })
-        .collect())
+        .collect()
 }
 
 /// Confirms the tree at `root` holds exactly the embedded sources and returns its digest.

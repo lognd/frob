@@ -17,12 +17,17 @@ use gob_rules::{Finding, RuleDecl, Severity};
 use gob_symbols::{SymbolGraph, SymbolKind, SymbolRecord, Symref};
 use gob_text::{FileInterner, Span};
 
-use crate::rules::{unity001::Unity001, unity002::Unity002, unity003::Unity003};
+use crate::rules::{
+    unity001::Unity001, unity002::Unity002, unity003::Unity003, unity004::Unity004,
+};
 use crate::todo::range;
 use crate::util::{def_id, finding_def};
 
+/// The gate that says where the unity pack is on, with the pack itself.
+pub type EnabledPack = (UnityGate, UnityPack);
+
 /// The pack and the gate that says where it is on, when the root config enables it.
-pub(crate) fn enabled_pack(root: &Path) -> Option<(UnityGate, UnityPack)> {
+pub fn enabled_pack(root: &Path) -> Option<EnabledPack> {
     let Ok(config) = std::fs::read_to_string(root.join("frob.toml")) else {
         return None;
     };
@@ -472,8 +477,8 @@ fn tracked_from_git(root: &Path) -> Result<Vec<String>, String> {
 }
 
 /// The `.meta` report for `root` when the unity pack is enabled; `None` when it is off.
-pub(crate) fn meta_report(root: &Path) -> Option<MetaReport> {
-    enabled_pack(root)?;
+pub(crate) fn meta_report(root: &Path, pack: Option<&EnabledPack>) -> Option<MetaReport> {
+    pack?;
     let tracked = tracked_paths(root);
     tracing::debug!(tracked = tracked.len(), "unity .meta scan");
     Some(scan_meta(&tracked, |m| {
@@ -493,38 +498,63 @@ fn at_file(
     finding_def(def, Some(span), message, anchor)
 }
 
-/// UNITY001: one finding per tracked asset or folder with no tracked `.meta`.
-pub(crate) fn unity001(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
+/// One finding of `def` per path `pick` takes from the `.meta` report; none when the pack is off.
+fn per_path(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+    def: &gob_rules::RuleDef,
+    select: fn(&MetaReport) -> &[String],
+    message: fn(&str) -> String,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
         return Vec::new();
     };
-    r.missing
+    select(&r)
         .iter()
-        .map(|a| {
-            let msg =
-                format!("`{a}` is tracked but `{a}.meta` is not; Unity would assign a fresh guid");
-            at_file(Unity001::DEF, files, a, msg, a)
-        })
+        .map(|p| at_file(def, files, p, message(p), p))
         .collect()
+}
+
+/// UNITY001: one finding per tracked asset or folder with no tracked `.meta`.
+pub(crate) fn unity001(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    per_path(
+        root,
+        pack,
+        files,
+        Unity001::DEF,
+        |r| &r.missing,
+        |a| format!("`{a}` is tracked but `{a}.meta` is not; Unity would assign a fresh guid"),
+    )
 }
 
 /// UNITY002: one finding per tracked `.meta` whose asset is not tracked.
-pub(crate) fn unity002(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
-        return Vec::new();
-    };
-    r.orphans
-        .iter()
-        .map(|m| {
-            let msg = format!("`{m}` is tracked but its asset is not");
-            at_file(Unity002::DEF, files, m, msg, m)
-        })
-        .collect()
+pub(crate) fn unity002(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    per_path(
+        root,
+        pack,
+        files,
+        Unity002::DEF,
+        |r| &r.orphans,
+        |m| format!("`{m}` is tracked but its asset is not"),
+    )
 }
 
 /// UNITY003: one Error per duplicated guid naming every file, plus Unresolved for unreadable guids.
-pub(crate) fn unity003(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
-    let Some(r) = meta_report(root) else {
+pub(crate) fn unity003(
+    root: &Path,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    let Some(r) = meta_report(root, pack) else {
         return Vec::new();
     };
     let mut out: Vec<Finding> = r
@@ -553,6 +583,33 @@ pub(crate) fn unity003(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
     out
 }
 
+// frob:ticket 01M5FRZGDQ88QYMF8R547WNTP3
+/// UNITY004: one finding per never-written C# field, anchored at the field; none when the pack is off.
+pub(crate) fn unity004(
+    root: &Path,
+    graph: &SymbolGraph,
+    pack: Option<&EnabledPack>,
+    files: &mut FileInterner,
+) -> Vec<Finding> {
+    if pack.is_none() {
+        return Vec::new();
+    }
+    never_written_fields(root, graph)
+        .into_iter()
+        .filter_map(|sym| {
+            let rec = graph.get(&sym)?;
+            let span = Span::new(files.intern(sym.path()), rec.span);
+            let msg = format!("field `{sym}` is never assigned and the engine does not write it");
+            Some(finding_def(
+                Unity004::DEF,
+                Some(span),
+                msg,
+                &sym.to_string(),
+            ))
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,5 +626,30 @@ mod tests {
         for n in ["f", "g", "h", "i"] {
             assert!(!w.contains(n), "{n} in {w:?}");
         }
+    }
+
+    /// Findings UNITY004 reports for a `Hero.cs` with one unassigned field and `config` as frob.toml.
+    fn unity004_found(config: &str) -> usize {
+        let src = "public class Hero\n{\n    private int plain;\n}\n";
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::create_dir_all(dir.path().join("Assets")).expect("mkdir");
+        std::fs::write(dir.path().join("Assets/Hero.cs"), src).expect("write");
+        std::fs::write(dir.path().join("frob.toml"), config).expect("write");
+        let collected = crate::collect(dir.path()).expect("collect");
+        let pack = enabled_pack(dir.path());
+        let mut files = FileInterner::default();
+        unity004(dir.path(), &collected.graph, pack.as_ref(), &mut files).len()
+    }
+
+    // frob:tests unity004
+    #[test]
+    fn unity004_reports_unassigned_field_with_the_pack_enabled() {
+        assert_eq!(unity004_found("[[packs.enable]]\nname = \"unity\"\n"), 1);
+    }
+
+    // frob:tests unity004
+    #[test]
+    fn unity004_is_silent_with_the_pack_disabled() {
+        assert_eq!(unity004_found(""), 0);
     }
 }

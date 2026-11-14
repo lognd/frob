@@ -3,9 +3,12 @@
 
 // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K
 // frob:ticket 01M5NFNV4SC3DTH5PMHP4DMPY9
+// frob:ticket 01M5NCNPMEMKNHGB2VRBSW1ZT6
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+
+use globset::{Glob, GlobSet, GlobSetBuilder};
 
 use frob_doc::{MOVED_PATH, MovedMap, Resolved};
 use gob_languages::Language;
@@ -228,8 +231,28 @@ fn is_markdown(path: &str) -> bool {
     Path::new(path).extension().is_some_and(|e| e == "md")
 }
 
-/// DOC006 over every tracked prose document and Rust comment.
-pub(crate) fn doc006(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
+/// The `external_citations` globs compiled; an invalid glob is skipped with a warning.
+fn external_set(globs: &[String]) -> GlobSet {
+    let mut b = GlobSetBuilder::new();
+    for g in globs {
+        match Glob::new(g) {
+            Ok(glob) => {
+                b.add(glob);
+            }
+            Err(e) => {
+                tracing::warn!(glob = %g, error = %e, "invalid external_citations glob skipped");
+            }
+        }
+    }
+    b.build().unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "external_citations set did not build");
+        GlobSet::empty()
+    })
+}
+
+/// DOC006 over every tracked prose document and Rust comment; `external` globs exempt cited files outside the repo.
+pub(crate) fn doc006(root: &Path, external: &[String], files: &mut FileInterner) -> Vec<Finding> {
+    let external = external_set(external);
     let tracked = tracked_paths(root);
     let mut index = Index {
         root,
@@ -247,6 +270,10 @@ pub(crate) fn doc006(root: &Path, files: &mut FileInterner) -> Vec<Finding> {
         }
         let dir = path.rsplit_once('/').map_or("", |(d, _)| d);
         for c in &cites {
+            if external.is_match(c.file.trim_start_matches("./")) {
+                tracing::debug!(%path, citation = %c.quoted(), "citation names an external file; allowed");
+                continue;
+            }
             let why = match index.check(dir, &c.file, &c.locator) {
                 Check::Ok => continue,
                 Check::NoFile => format!("no file `{}` exists", c.file),

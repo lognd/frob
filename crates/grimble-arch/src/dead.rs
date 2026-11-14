@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_rules::{Severity, UnresolvedReason};
-use gob_symbols::{EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref};
+use gob_symbols::{EdgeBasis, EdgeKind, Status, SymbolGraph, SymbolKind, SymbolRecord, Symref};
 
 use crate::{DEAD, Verdict};
 
@@ -65,8 +65,24 @@ fn test_scaffolding(graph: &SymbolGraph) -> (BTreeSet<String>, BTreeMap<String, 
     (tests, parents)
 }
 
+/// True for a C# method the engine calls by name (`Awake`, `Update`): an entry point, never dead.
+fn is_engine_entry(rec: &SymbolRecord, is_entry: &dyn Fn(&str) -> bool) -> bool {
+    let named = rec.symref.name().is_some_and(|n| is_entry(undup(n)));
+    let root = named
+        && std::path::Path::new(rec.symref.path())
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("cs"));
+    if root {
+        tracing::debug!(unit = %rec.symref, "DEAD001 skips an engine entry point");
+    }
+    root
+}
+
 /// The private functions and methods that `DEAD001` examines.
-fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
+fn candidates_of<'g>(
+    graph: &'g SymbolGraph,
+    is_entry: &dyn Fn(&str) -> bool,
+) -> Vec<&'g SymbolRecord> {
     let public: BTreeSet<String> = graph
         .public_api()
         .iter()
@@ -89,14 +105,29 @@ fn candidates_of(graph: &SymbolGraph) -> Vec<&SymbolRecord> {
         })
         .filter(|r| !grimble_bind::eval::is_test_unit(&r.symref.to_string()))
         .filter(|r| !is_bench_file(r.symref.path()))
+        .filter(|r| !is_engine_entry(r, is_entry))
         .filter(|r| !in_test(&r.symref.to_string(), &tests, &parents))
         .collect()
+}
+
+/// Per name-only call site (caller, line, callee text), how many workspace methods it may call.
+fn name_only_fanout(graph: &SymbolGraph) -> BTreeMap<(String, Option<u32>, Option<String>), usize> {
+    let mut fanout: BTreeMap<(String, Option<u32>, Option<String>), usize> = BTreeMap::new();
+    for e in graph.edges_with_status() {
+        if e.basis == EdgeBasis::NameOnly && e.status == Status::May && e.to.is_some() {
+            *fanout
+                .entry((e.from.to_string(), e.line, e.text.clone()))
+                .or_default() += 1;
+        }
+    }
+    fanout
 }
 
 /// How each unit is reached, and the names spelled by unresolved calls.
 fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
     let mut spelled: BTreeSet<&str> = BTreeSet::new();
+    let fanout = name_only_fanout(graph);
     for e in graph.edges_with_status() {
         if !matches!(
             e.kind,
@@ -112,6 +143,15 @@ fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
                 let r = reach.entry(undup(&to.to_string()).to_owned()).or_default();
                 match e.status {
                     Status::Must => r.must = true,
+                    // A name-only call site with exactly one candidate can only mean that unit.
+                    Status::May
+                        if e.basis == EdgeBasis::NameOnly
+                            && fanout.get(&(e.from.to_string(), e.line, e.text.clone()))
+                                == Some(&1) =>
+                    {
+                        tracing::debug!(unit = %to, "DEAD001 sole name-only candidate counts as reached");
+                        r.must = true;
+                    }
                     Status::May => r.may = true,
                     Status::Unknown => {}
                 }
@@ -126,9 +166,9 @@ fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     (reach, spelled)
 }
 
-/// Findings for dead private functions and methods, and the candidates examined.
-pub(crate) fn check(graph: &SymbolGraph) -> (Vec<Verdict>, usize) {
-    let candidates = candidates_of(graph);
+/// Findings for dead private functions and methods, and the candidates examined; `is_entry` names engine entry points.
+pub(crate) fn check(graph: &SymbolGraph, is_entry: &dyn Fn(&str) -> bool) -> (Vec<Verdict>, usize) {
+    let candidates = candidates_of(graph, is_entry);
     let (reach, spelled) = reach_of(graph);
     judge(&candidates, &reach, &spelled)
 }

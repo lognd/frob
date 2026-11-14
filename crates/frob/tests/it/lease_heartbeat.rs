@@ -57,7 +57,9 @@ fn leased() -> (tempfile::TempDir, String, frob_ledger::TicketId, LeaseStore) {
     let store = LeaseStore::open(
         &repo,
         LeaseConfig::default(),
-        std::sync::Arc::new(gob_time::SystemClock),
+        std::sync::Arc::new(gob_time::FixedClock::new(gob_time::Stamp::from_unix(
+            gob_time::Clock::now(&gob_time::SystemClock).unix() - 5,
+        ))),
     )
     .expect("store");
     let holder = Holder {
@@ -70,7 +72,7 @@ fn leased() -> (tempfile::TempDir, String, frob_ledger::TicketId, LeaseStore) {
     (dir, id, tid, store)
 }
 
-/// Run `args` after a pause and assert the lease's `renewed_at` moved forward.
+/// Run `args` and assert the lease's `renewed_at` moved forward.
 fn assert_renews(args: &[&str], with_id: bool) {
     let (dir, id, tid, store) = leased();
     let before = store
@@ -78,7 +80,6 @@ fn assert_renews(args: &[&str], with_id: bool) {
         .expect("read")
         .expect("lease")
         .renewed_at;
-    std::thread::sleep(Duration::from_millis(2100));
     let mut full: Vec<&str> = args.to_vec();
     if with_id {
         full.push(&id);
@@ -105,7 +106,6 @@ fn ticket_update_renews_the_worktree_lease() {
         .expect("read")
         .expect("lease")
         .renewed_at;
-    std::thread::sleep(Duration::from_millis(2100));
     let _ = frob(dir.path(), &["ticket", "update", &id, "--add-label", "x"]);
     let after = store
         .live_lease(tid)

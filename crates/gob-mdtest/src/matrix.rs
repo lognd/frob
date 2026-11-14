@@ -5,7 +5,7 @@
 //! class of each cell is not hand-written truth: a pluggable [`Deriver`] computes it from the rule's
 //! declared needs and the capability matrix, and a block whose `expect=` contradicts it fails.
 //! `gob-mdtest` cannot depend on `gob-check` (which owns the resolver), so the caller injects the
-//! deriver; `crates/frob-check/tests/rule_matrix.rs` wires the real one.
+//! deriver; `crates/frob-check/tests/it/rule_matrix.rs` wires the real one.
 //!
 //! Completeness mirrors [`crate::coverage`]: every Universal rule has a block in every cell, or an
 //! allowlisted `[[matrix_gap]]` with a ticket. The allowlist may only shrink.

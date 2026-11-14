@@ -241,7 +241,7 @@ Examine cell must agree on fire versus clean.
 Every Universal rule needs a block in every cell, or a `[[matrix_gap]]` entry in
 `coverage-allowlist.toml` with `product`, `rule`, `cell` (a name or `*`) and a `~XXXXXXX`
 `ticket`. The list may only shrink: an entry whose cell is now filled fails the test.
-`crates/frob-check/tests/rule_matrix.rs` wires the real deriver.
+`crates/frob-check/tests/it/rule_matrix.rs` wires the real deriver.
 
 ## Opaque regions
 
@@ -252,7 +252,7 @@ holding a lexical `expect=fire` case, at least one structural rule's `expect=unr
 rejects a structural rule that fires or is clean over the region. A lexical `expect=fire cell=island`
 block without `region=` fails. `opaque::assert_opaque(manifest, &lexical_rules)` runs the check over
 every suite in the workspace. `opaque::assert_product_opaque(manifest, product)` derives the lexical
-rules from the registry and judges only that product's blocks; each product's `tests/opaque.rs`
+rules from the registry and judges only that product's blocks; each product's `tests/it/opaque.rs`
 calls it. The fire and its structural `expect=unresolved` block must sit in the same section. The
 per-rule `cell=island` fire itself is required by `coverage`.
 

@@ -28,6 +28,8 @@ use crate::symref::{Symref, Target, split_qual};
 
 // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
 mod csharp;
+mod flat;
+mod go;
 mod linkcache;
 mod python;
 // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
@@ -37,6 +39,8 @@ use csharp::CsIndex;
 pub use linkcache::{InputsHasher, LinkCache};
 
 use crate::types::TypeFacts;
+use flat::{FlatIndex, is_c_family, is_java};
+use go::{GoIndex, is_go};
 use python::{PyIndex, is_python};
 use typescript::{TsIndex, is_ts};
 
@@ -280,6 +284,14 @@ struct Index {
     aliases: HashSet<(String, String)>,
     /// Lookup tables of the Python files (their calls resolve by name and import, not by crate).
     py: PyIndex,
+    /// Lookup tables of the Go files (a package is a directory).
+    go: GoIndex,
+    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+    /// Lookup tables of the C and C++ files (a bare call names a function of its own file first).
+    c: FlatIndex,
+    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+    /// Lookup tables of the Java files (a bare call names a method of its own file first).
+    java: FlatIndex,
     // frob:ticket 01M44YQTCDPH87ASRMSJEN2C8Q
     /// Lookup tables of the C# files (their calls resolve by namespace, `using` and type, not by crate).
     cs: CsIndex,
@@ -961,6 +973,9 @@ impl SymbolGraph {
             file_types: HashMap::new(),
             enums: HashSet::new(),
             py: PyIndex::build(self, files),
+            go: GoIndex::build(self, files),
+            c: FlatIndex::build(self, files, is_c_family),
+            java: FlatIndex::build(self, files, is_java),
             cs: CsIndex::build(self, files, deps.as_deref_mut()),
             ts: TsIndex::build(self, files, deps.as_deref_mut()),
         };
@@ -2154,6 +2169,25 @@ impl SymbolGraph {
                         self.record_call(&mut sink, call, outcome, None, false);
                         continue;
                     }
+                    // frob:ticket 01M7AV38DKR1SA56E17SY378XX
+                    if is_go(call.caller.path()) {
+                        let outcome = Self::resolve_go(&idx.go, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
+                    // frob:ticket 01M7BSMQWJ77EENS87BQBQWFB4
+                    let flat = if is_c_family(call.caller.path()) {
+                        Some(&idx.c)
+                    } else if is_java(call.caller.path()) {
+                        Some(&idx.java)
+                    } else {
+                        None
+                    };
+                    if let Some(ix) = flat {
+                        let outcome = Self::resolve_flat(ix, call);
+                        self.record_call(&mut sink, call, outcome, None, false);
+                        continue;
+                    }
                     // frob:ticket 01M43ARXMH7RJ63G8096KKJF80
                     if is_ts(call.caller.path()) {
                         let outcome = self.resolve_typescript(&idx.ts, call);
@@ -2574,7 +2608,7 @@ impl SymbolGraph {
             reason,
             qualifier: None,
             line: None,
-            text: None,
+            text: r.qualifier.clone(),
         });
     }
 
@@ -2683,6 +2717,59 @@ impl SymbolGraph {
             .edges_directed(n, Direction::Incoming)
             .find(|e| e.weight().kind == EdgeKind::Contains)
             .map(|e| e.source())
+    }
+
+    /// The innermost enclosing class of `n` (itself excluded), through nested functions; shared by the language adapters.
+    fn class_of(&self, n: NodeIndex) -> Option<NodeIndex> {
+        let mut cur = self.parent_of(n);
+        while let Some(p) = cur {
+            if self.graph[p].kind == SymbolKind::Class {
+                return Some(p);
+            }
+            cur = self.parent_of(p);
+        }
+        None
+    }
+
+    /// The units named `name` visible lexically from `caller` per the adapter's `kids` lookup (class scopes are skipped).
+    fn lexical_units<'a>(
+        &self,
+        kids: impl Fn(NodeIndex, &str) -> &'a [NodeIndex],
+        caller: NodeIndex,
+        name: &str,
+    ) -> Vec<NodeIndex> {
+        let mut cur = Some(caller);
+        while let Some(n) = cur {
+            if self.graph[n].kind != SymbolKind::Class {
+                let found = kids(n, name);
+                if !found.is_empty() {
+                    return found.to_vec();
+                }
+            }
+            cur = self.parent_of(n);
+        }
+        Vec::new()
+    }
+
+    /// A class result becomes its `ctor`-named member (per the adapter's `kids` lookup) when it has one.
+    fn construct_units<'a>(
+        &self,
+        kids: impl Fn(NodeIndex, &str) -> &'a [NodeIndex],
+        ctor: &str,
+        nodes: Vec<NodeIndex>,
+    ) -> Vec<NodeIndex> {
+        nodes
+            .into_iter()
+            .map(|n| {
+                if self.graph[n].kind == SymbolKind::Class
+                    && let Some(&c) = kids(n, ctor).first()
+                {
+                    c
+                } else {
+                    n
+                }
+            })
+            .collect()
     }
 
     /// Everything that may be affected by a change to `symref`: callers and

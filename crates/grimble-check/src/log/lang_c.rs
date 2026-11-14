@@ -8,31 +8,25 @@ use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use tree_sitter::Node;
 
 use super::catalogue::{ArgInfo, Args};
-use super::engine::{Binding, FileScan, State, SymPath, kids};
+use super::engine::{Binding, FileScan, State, SymPath, bind_named, kids, scan_file};
 
 /// The atom id for stream-taking stdio functions (`fprintf`, `fputs`, ...).
 const STDIO_STREAM: &str = "c.stdio-stream";
 
 /// Scan one parsed C or C++ translation unit.
-pub fn scan(mut st: State<'_>, root: Node<'_>) -> FileScan {
-    bind_functions(&mut st, root);
-    visit(&mut st, root);
-    tracing::debug!(file = %st.ctx.path, hits = st.hits.len(), "c scan done");
-    st.finish()
-}
-
-/// Bind every function the file defines so a local `error` or `warn` shadows the libc one.
-fn bind_functions(st: &mut State<'_>, n: Node<'_>) {
-    if n.kind() == "function_definition"
-        && let Some(name) = n
-            .child_by_field_name("declarator")
-            .and_then(|d| decl_name(st, d))
-    {
-        st.bind(&name, Binding::Opaque);
-    }
-    for c in kids(n) {
-        bind_functions(st, c);
-    }
+pub fn scan(st: State<'_>, root: Node<'_>) -> FileScan {
+    scan_file(
+        st,
+        root,
+        "c",
+        |st, n| {
+            bind_named(st, n, "function_definition", &|st, f| {
+                f.child_by_field_name("declarator")
+                    .and_then(|d| decl_name(st, d))
+            });
+        },
+        visit,
+    )
 }
 
 /// The name a declarator declares, looking through pointers, arrays and function declarators.

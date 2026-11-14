@@ -8,7 +8,7 @@ use serde::Serialize;
 
 use crate::error::{LedgerError, Result};
 use crate::event::{
-    CommentData, CreateData, Event, EventBody, FieldChange, LinkData, TransitionData,
+    AliasData, CommentData, CreateData, Event, EventBody, FieldChange, LinkData, TransitionData,
 };
 use crate::guards::{CloseContext, CloseGuard, LeaseCheck};
 use crate::id::{EventId, TicketId};
@@ -840,6 +840,34 @@ impl Ledger {
         self.commit_events("comment", id, &[event])
     }
 
+    /// Record `alias` (a tracker key such as `PROJ-123`) as an alias of ticket `id`; a present alias is `already`.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for an empty alias or one with whitespace,
+    /// [`LedgerError::NotFound`] for a missing ticket, plus store failures.
+    pub fn add_alias(&self, id: TicketId, alias: &str) -> Result<Applied> {
+        if alias.is_empty() || alias.chars().any(char::is_whitespace) {
+            return Err(LedgerError::invalid(format!(
+                "alias `{alias}` must be non-empty and free of whitespace"
+            )));
+        }
+        let s = self.synced()?;
+        let (_, ticket) = Self::load(&s, id)?;
+        if ticket.front.aliases.iter().any(|a| a == alias) {
+            tracing::debug!(ticket = %id, alias, "alias already present");
+            return Self::already(&s, id);
+        }
+        drop(s);
+        tracing::info!(ticket = %id, alias, "adding ticket alias");
+        self.append(
+            id,
+            EventBody::AddAlias(AliasData {
+                alias: alias.to_owned(),
+            }),
+        )
+    }
+
     /// Append one event of an already-validated `body` to ticket `id` and commit it on the ledger ref.
     ///
     /// The event file is written, the ticket file re-folded from every event
@@ -853,18 +881,45 @@ impl Ledger {
     /// [`LedgerError::Invalid`] for a `create` or uninterpreted body,
     /// [`LedgerError::NotFound`], or store failures.
     pub fn append(&self, id: TicketId, body: EventBody) -> Result<Applied> {
-        if matches!(body, EventBody::Create(_) | EventBody::Other) {
+        self.append_many(id, vec![body])
+    }
+
+    /// Append several already-validated event `bodies` to ticket `id` in ONE ledger commit.
+    ///
+    /// Each body is checked exactly as [`Ledger::append`] checks one; the
+    /// events are written together, the ticket file re-folded once and a single
+    /// commit made, so a reader never sees a prefix of the batch. The commit
+    /// verb is the first event's kind.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::Invalid`] for an empty batch or any `create` or
+    /// uninterpreted body, [`LedgerError::NotFound`], or store failures.
+    pub fn append_many(&self, id: TicketId, bodies: Vec<EventBody>) -> Result<Applied> {
+        if bodies.is_empty() {
+            return Err(LedgerError::invalid(
+                "append_many needs at least one event body",
+            ));
+        }
+        if bodies
+            .iter()
+            .any(|b| matches!(b, EventBody::Create(_) | EventBody::Other))
+        {
             return Err(LedgerError::invalid(
                 "append takes an interpreted, non-create event body",
             ));
         }
         let s = self.synced()?;
         Self::require_exists(&s, id)?;
-        let event = Event::new(self.now(), &self.actor()?, body);
+        let actor = self.actor()?;
+        let events: Vec<Event> = bodies
+            .into_iter()
+            .map(|body| Event::new(self.now(), &actor, body))
+            .collect();
         drop(s);
-        let verb = event.kind.clone();
-        tracing::debug!(ticket = %id, event = %event.id, kind = %verb, "appending event");
-        self.commit_events(&verb, id, &[event])
+        let verb = events[0].kind.clone();
+        tracing::debug!(ticket = %id, events = events.len(), kind = %verb, "appending events");
+        self.commit_events(&verb, id, &events)
     }
 
     /// Move `id` to `to` (a general transition for lease and workflow crates).

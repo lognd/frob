@@ -137,6 +137,9 @@ pub struct FileScan {
     pub hits: Vec<Hit>,
     /// Dynamic forms that could not be resolved.
     pub unresolved: Vec<Unres>,
+    /// Byte ranges of output calls the scanner deliberately did not report (terminal queries and
+    /// calls inside a reported chain), so the model cross-check does not call them a disagreement.
+    pub cleared: Vec<(usize, usize)>,
     /// True when the file resolves a path rooted at a logging crate.
     pub logging_seen: bool,
     /// Module-level alias bindings, for re-export linking.
@@ -160,6 +163,8 @@ pub struct State<'a> {
     pub hits: Vec<Hit>,
     /// Recorded unresolved dynamic forms.
     pub unresolved: Vec<Unres>,
+    /// Byte ranges of calls deliberately left unreported (see [`FileScan::cleared`]).
+    pub cleared: Vec<(usize, usize)>,
     /// Whether a logging-crate path was seen.
     pub logging_seen: bool,
     /// True while visiting the arguments of a hit call: bare path references there are not hits.
@@ -186,6 +191,7 @@ impl<'a> State<'a> {
             globs: Vec::new(),
             hits: Vec::new(),
             unresolved: Vec::new(),
+            cleared: Vec::new(),
             logging_seen: false,
             suppress: false,
             in_chain: false,
@@ -288,10 +294,17 @@ impl<'a> State<'a> {
     pub fn hit_call(&mut self, node: Node<'_>, path: &[String], args: &Args) -> bool {
         self.note(path);
         if self.in_chain {
+            if self.group.first_match(path, args).is_some() {
+                self.clear(node);
+            }
             return false;
         }
         let Some(atom) = self.group.first_match(path, args) else {
-            return self.group.shadowed_by_advisory(path);
+            let shadowed = self.group.shadowed_by_advisory(path);
+            if shadowed {
+                self.clear(node);
+            }
+            return shadowed;
         };
         self.record(node, atom, path);
         true
@@ -301,10 +314,17 @@ impl<'a> State<'a> {
     pub fn hit_ref(&mut self, node: Node<'_>, path: &[String]) -> bool {
         self.note(path);
         if self.suppress || self.in_chain {
+            if self.group.first_ref(path).is_some() {
+                self.clear(node);
+            }
             return false;
         }
         let Some(atom) = self.group.first_ref(path) else {
-            return self.group.shadowed_by_advisory(path);
+            let shadowed = self.group.shadowed_by_advisory(path);
+            if shadowed {
+                self.clear(node);
+            }
+            return shadowed;
         };
         self.record(node, atom, path);
         true
@@ -328,6 +348,16 @@ impl<'a> State<'a> {
         };
         self.record(node, atom, path);
         true
+    }
+
+    /// Remember that the scanner deliberately left the output call at `node` unreported.
+    fn clear(&mut self, node: Node<'_>) {
+        tracing::debug!(
+            start = node.start_byte(),
+            end = node.end_byte(),
+            "output call cleared as advisory"
+        );
+        self.cleared.push((node.start_byte(), node.end_byte()));
     }
 
     fn record(&mut self, node: Node<'_>, atom: usize, path: &[String]) {
@@ -355,6 +385,7 @@ impl<'a> State<'a> {
         FileScan {
             hits: self.hits,
             unresolved: self.unresolved,
+            cleared: self.cleared,
             logging_seen: self.logging_seen,
             exports: BTreeMap::new(),
         }
@@ -378,6 +409,7 @@ impl<'a> State<'a> {
         FileScan {
             hits: self.hits,
             unresolved: self.unresolved,
+            cleared: self.cleared,
             logging_seen: self.logging_seen,
             exports,
         }
@@ -389,6 +421,53 @@ impl<'a> State<'a> {
 pub fn kids(n: Node<'_>) -> Vec<Node<'_>> {
     let mut c = n.walk();
     n.named_children(&mut c).collect()
+}
+
+/// Scan a file: bind its own functions, run the visitor, log, and finish.
+pub fn scan_file(
+    mut st: State<'_>,
+    root: Node<'_>,
+    lang: &str,
+    bind: impl FnOnce(&mut State<'_>, Node<'_>),
+    visit: impl FnOnce(&mut State<'_>, Node<'_>),
+) -> FileScan {
+    bind(&mut st, root);
+    visit(&mut st, root);
+    tracing::debug!(file = %st.ctx.path, hits = st.hits.len(), "{lang} scan done");
+    st.finish()
+}
+
+/// Bind the opaque name of every `kind` node under `n`, as extracted by `name_of`.
+pub fn bind_named(
+    st: &mut State<'_>,
+    n: Node<'_>,
+    kind: &str,
+    name_of: &dyn Fn(&State<'_>, Node<'_>) -> Option<String>,
+) {
+    if n.kind() == kind
+        && let Some(name) = name_of(st, n)
+    {
+        st.bind(&name, Binding::Opaque);
+    }
+    for c in kids(n) {
+        bind_named(st, c, kind, name_of);
+    }
+}
+
+/// The text of the node's `name` field, if present.
+#[must_use]
+pub fn name_field(st: &State<'_>, n: Node<'_>) -> Option<String> {
+    n.child_by_field_name("name").map(|c| st.txt(c).to_owned())
+}
+
+/// Visit the children of a scope node with `visit`, skipping the declared name.
+pub fn visit_scoped(st: &mut State<'_>, n: Node<'_>, visit: fn(&mut State<'_>, Node<'_>)) {
+    let skip = n.child_by_field_name("name").map(|c| c.id());
+    for c in kids(n) {
+        if Some(c.id()) != skip {
+            visit(st, c);
+        }
+    }
 }
 
 /// All children of `n` including anonymous tokens.
@@ -421,6 +500,7 @@ pub fn logging_roots(group: &str, extra: &[String]) -> Vec<SymPath> {
         ],
         "c" => &["spdlog", "glog", "zlog", "syslog", "log4cxx", "g3log"],
         "bash" => &["logger"],
+        "zig" => &["std.log"],
         _ => &[],
     };
     base.iter()

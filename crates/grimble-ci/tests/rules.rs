@@ -231,7 +231,8 @@ fn unterminated_expression_does_not_panic_ci007() {
     // frob:tests crates/grimble-ci/src/supply.rs::check
     let body =
         "on: push\njobs:\n  a:\n    steps:\n      - run: echo ${{ github.event.issue.title\n";
-    let _ = ids(body, &CiConfig::default());
+    let found = ids(body, &CiConfig::default());
+    assert!(found.iter().all(|r| !r.is_empty()));
 }
 
 /// A host with fixed subject counts.

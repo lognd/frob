@@ -1,6 +1,6 @@
 //! `vet [--base REF]`: dependency vetting over `Cargo.lock` (cli.md, boundaries.md 2.3).
 //!
-//! Inputs: `Cargo.lock` at the root, the allowlist `.grimble/vet.toml` (`allow = ["serde"]`) and an
+//! Inputs: `Cargo.lock` at the root, the allowlist `grimble-vet.toml` (legacy `.grimble/vet.toml`) (`allow = ["serde"]`) and an
 //! registry metadata `.grimble/vet-meta.toml` (VET005-VET007) and an offline `RustSec` snapshot directory (`--advisory-db`, default `.grimble/advisory-db`). With
 //! `--base` only packages new relative to the lockfile at that ref are vetted. `grimble check
 //! --base` also reports the same findings as warnings.
@@ -19,7 +19,6 @@ use serde::Serialize;
 use crate::workspace::locate_root;
 
 const LOCKFILE: &str = "Cargo.lock";
-const ALLOWLIST: &str = ".grimble/vet.toml";
 const META: &str = ".grimble/vet-meta.toml";
 const DEFAULT_DB: &str = ".grimble/advisory-db";
 
@@ -92,9 +91,9 @@ pub fn run_vet(
             Some(parse_lockfile(&text).map_err(bad)?)
         }
     };
-    let allow = match std::fs::read_to_string(root.join(ALLOWLIST)) {
-        Ok(t) => Allowlist::parse(&t).map_err(bad)?,
-        Err(_) => Allowlist::default(),
+    let allow = match grimble_vet::read_allowlist(&|p| std::fs::read_to_string(root.join(p)).ok()) {
+        Some(t) => Allowlist::parse(&t).map_err(bad)?,
+        None => Allowlist::default(),
     };
     let meta = if let Ok(t) = std::fs::read_to_string(root.join(META)) {
         Some(Meta::parse(&t).map_err(bad)?)

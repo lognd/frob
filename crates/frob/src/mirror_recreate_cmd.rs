@@ -28,6 +28,7 @@ use frob_mirror::projection;
 use frob_mirror::shardstore::BranchShardStore;
 use gob_cli::clap::{self, ArgMatches};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
+use gob_diagnostics::RemedyCommand;
 use gob_trust::prompt::{Presence, presence};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -312,7 +313,7 @@ fn gate(
                 RefusalClass::GuardNeedsAction,
                 "mirror recreate is a decision a person makes at a terminal",
             )
-            .with_remedy("ask the user to run `frob mirror recreate` in their own terminal")
+            .with_command(RemedyCommand::new("frob", "mirror recreate"))
             .requiring_human())
         }
     }

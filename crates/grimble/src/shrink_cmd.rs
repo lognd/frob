@@ -130,7 +130,7 @@ impl Command for Shrink {
         tracing::info!(interactive, "shrink excuse prompt mode");
         let mut decide = |r: &Removal| {
             if interactive {
-                // frob:accept LOG001 because="the excuse prompt is user-facing TTY output, not a log line"
+                // frob:defer LOG001 because="the excuse prompt is user-facing TTY output, not a log line" ticket=01M79PWQP03T5YH7QVM72KW077
                 shrink::prompt_excuse(r, &mut stdin().lock(), &mut stderr())
             } else {
                 None

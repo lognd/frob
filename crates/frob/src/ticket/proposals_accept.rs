@@ -25,7 +25,7 @@ use frob_mirror::identity::IdentityConfig;
 use frob_mirror::journal::value_digest;
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome as CliOutcome, Payload, Refusal, RefusalClass};
-use gob_diagnostics::{TextOrigin, escape_for_origin, escape_non_ascii};
+use gob_diagnostics::{RemedyCommand, TextOrigin, escape_for_origin, escape_non_ascii};
 use gob_trust::prompt::{Presence, presence};
 use schemars::JsonSchema;
 use serde::Serialize;
@@ -118,7 +118,7 @@ fn gate(
                 RefusalClass::GuardNeedsAction,
                 "accepting a tracker edit is a decision a person makes at a terminal",
             )
-            .with_remedy("ask the user to run `frob ticket proposals accept` in their own terminal")
+            .with_command(RemedyCommand::new("frob", "ticket proposals accept"))
             .requiring_human()
             .into())
         }
@@ -391,7 +391,7 @@ impl Command for Accept {
         };
         let identities = read_identities(&root)?;
         let mut confirm = |diff: &Diff| {
-            // frob:accept LOG001 because="the interactive confirm prompt is the command's primary output"
+            // frob:defer LOG001 because="the interactive confirm prompt is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
             let mut out = std::io::stdout().lock();
             write!(out, "{}Apply this change? [y/N] ", diff.render()).ok();
             out.flush().ok();

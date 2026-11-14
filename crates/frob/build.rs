@@ -15,9 +15,11 @@ use std::process::Command;
 /// Stdout of `git <args>` when it succeeds and is non-empty.
 fn git(args: &[&str]) -> Option<String> {
     let out = Command::new("git").args(args).output().ok()?;
-    let text = String::from_utf8(out.stdout).ok()?;
-    let text = text.trim();
-    (out.status.success() && !text.is_empty()).then(|| text.to_owned())
+    if !out.status.success() {
+        return None;
+    }
+    let text = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+    if text.is_empty() { None } else { Some(text) }
 }
 
 /// Ask cargo to rerun when HEAD or the branch it points at moves.
@@ -51,4 +53,10 @@ fn main() {
         _ => version,
     };
     println!("cargo:rustc-env=FROB_BUILD_VERSION={full}");
+    // Full HEAD and checkout root, for the runtime stale-binary check (~CAT8CDF); empty when unknown.
+    // frob:ticket 01M7AV6DHZ6KG77GJ74CAT8CDF
+    let head = git(&["rev-parse", "HEAD"]).unwrap_or_default();
+    let top = git(&["rev-parse", "--show-toplevel"]).unwrap_or_default();
+    println!("cargo:rustc-env=FROB_BUILD_HEAD={head}");
+    println!("cargo:rustc-env=FROB_BUILD_TOPLEVEL={top}");
 }

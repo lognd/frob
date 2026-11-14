@@ -279,7 +279,7 @@ const OPAQUE_MARK: &str = " opaque text file(s) (no adapter, first `";
 pub(crate) fn merge_opaque_notices(raw: Vec<Finding>) -> Vec<Finding> {
     let is_notice = |f: &Finding| {
         f.severity == Severity::Unresolved
-            && f.reason == Some(UnresolvedReason::Fidelity)
+            && matches!(f.reason, None | Some(UnresolvedReason::Fidelity))
             && f.span.is_none()
             && f.message.contains(OPAQUE_MARK)
     };

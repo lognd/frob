@@ -260,7 +260,7 @@ Rev 2 audit (~4APZQA2). Every contextual word the rev 2 productions of
 11.1 and 15 introduce (`chain sorry unknown open closed one_of exclusive
 non_goal ambient idempotent`) is a row of the planning-word class above
 and of `PLANNING_BODY_WORDS` in grimble-model, and the test
-`crates/grimble-model/tests/keywords.rs` parses this table against the
+`crates/grimble-model/tests/it/keywords.rs` parses this table against the
 code. `outcome` and the waypoint `via` are not keywords (they left the
 language with no bridge, D152); `via` stays reserved only for capability
 grants. Each invented spelling of the former corpus GAPS.md is either

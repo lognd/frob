@@ -41,6 +41,26 @@ pub fn parse_shard(path: &str, text: &str) -> Result<Option<u64>> {
         .ok_or_else(|| LedgerError::malformed(path, "`issue` must be a positive integer"))
 }
 
+/// The `payload` string of a map shard (the mirror's JSON record), `None` while the shard has none.
+///
+/// # Errors
+///
+/// [`LedgerError`] (malformed) when `text` is not TOML, or `payload` is present but not a string.
+// frob:ticket 01M5EKM08ZM45RZ1JBHC68F156
+pub fn parse_payload(path: &str, text: &str) -> Result<Option<String>> {
+    let table: toml::Table = text
+        .parse()
+        .map_err(|e: toml::de::Error| LedgerError::malformed(path, e.message()))?;
+    let Some(value) = table.get("payload") else {
+        tracing::debug!(path, "map shard has no payload yet");
+        return Ok(None);
+    };
+    value
+        .as_str()
+        .map(|s| Some(s.to_owned()))
+        .ok_or_else(|| LedgerError::malformed(path, "`payload` must be a string"))
+}
+
 impl Ledger {
     /// The current repository path of the file of ticket `id` at the ledger tip, `None` on an empty ledger.
     ///
@@ -91,6 +111,26 @@ impl Ledger {
     /// [`LedgerError::NotFound`] when the ticket is absent, [`LedgerError`] (malformed) for a
     /// shard whose `issue` is not a positive integer, or store failures.
     pub fn mirror_issue(&self, id: TicketId) -> Result<Option<u64>> {
+        self.read_shard(id, parse_shard)
+    }
+
+    /// The mirror's JSON record stored in the map shard of `id`, `None` when it has no shard or payload.
+    ///
+    /// # Errors
+    ///
+    /// [`LedgerError::NotFound`] when the ticket is absent, [`LedgerError`] (malformed) for a
+    /// shard that is not TOML or whose `payload` is not a string, or store failures.
+    // frob:ticket 01M5EKM08ZM45RZ1JBHC68F156
+    pub fn mirror_payload(&self, id: TicketId) -> Result<Option<String>> {
+        self.read_shard(id, parse_payload)
+    }
+
+    /// Reads the map shard of `id` at the ledger tip and decodes it with `parse`; `None` when absent.
+    fn read_shard<T>(
+        &self,
+        id: TicketId,
+        parse: impl FnOnce(&str, &str) -> Result<Option<T>>,
+    ) -> Result<Option<T>> {
         let s = self.synced()?;
         Self::load(&s, id)?;
         let Some(tip) = s.tip else {
@@ -98,7 +138,7 @@ impl Ledger {
         };
         let path = shard_path(id);
         self.text(&tip.to_string(), &path)?
-            .map(|t| parse_shard(&path, &t))
+            .map(|t| parse(&path, &t))
             .transpose()
             .map(Option::flatten)
     }
@@ -122,5 +162,16 @@ mod tests {
         // frob:tests crates/frob-ledger/src/mirror_map.rs::parse_shard
         assert_eq!(parse_shard("p", "other = 1\n").ok(), Some(None));
         assert_eq!(parse_shard("p", "").ok(), Some(None));
+    }
+
+    #[test]
+    fn payload_is_read_when_present() {
+        // frob:tests crates/frob-ledger/src/mirror_map.rs::parse_payload
+        assert_eq!(
+            parse_payload("p", "issue = 1\npayload = \"{}\"\n").ok(),
+            Some(Some("{}".to_owned()))
+        );
+        assert_eq!(parse_payload("p", "issue = 1\n").ok(), Some(None));
+        assert!(parse_payload("p", "payload = 3\n").is_err());
     }
 }

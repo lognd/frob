@@ -398,6 +398,10 @@ fn pending_codes_are_reported_by_code() {
         pending.len(),
         pending.join(" ")
     );
+    assert!(
+        pending.iter().all(|c| CODES.contains(c)),
+        "pending code not in CODES"
+    );
 }
 
 #[test]

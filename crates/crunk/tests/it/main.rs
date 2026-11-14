@@ -1,0 +1,31 @@
+//! One integration-test binary per crate (audit M17): fewer links, one process pool.
+// frob:ticket 01M5AH5JFD9MVN1H1B6YHPX7GN
+mod boundary;
+mod check_exit;
+mod common;
+mod docs;
+mod doctor_report;
+mod dtcg;
+mod e2e_tokens_hullbreach;
+mod edit;
+mod export_verb;
+mod extract;
+mod fix_verb;
+mod gallery;
+mod hullbreach_exit;
+mod init;
+mod init_diff;
+mod init_preview;
+mod new;
+mod parity;
+mod query;
+mod query_parity;
+mod rename;
+mod render_solve;
+mod report_contrast;
+mod review;
+mod rule_catalog;
+mod serve_patch;
+mod slop_report;
+mod tokens;
+mod verbs;

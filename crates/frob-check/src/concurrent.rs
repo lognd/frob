@@ -131,6 +131,17 @@ fn read_holder(path: &Path) -> Option<LockHolder> {
     serde_json::from_str(&text).ok()
 }
 
+/// The live full-check holder in the worktree at `root`, or `None` when no lock exists or its holder is dead.
+///
+/// Read-only: unlike `acquire` it never reclaims a stale lock.
+#[must_use]
+pub fn live_holder(root: &Path) -> Option<LockHolder> {
+    let holder = read_holder(&root.join(".frob").join(LOCK_FILE))?;
+    let alive = pid_alive(holder.pid);
+    tracing::debug!(pid = holder.pid, alive, root = ?root, "check lock inspected");
+    alive.then_some(holder)
+}
+
 /// Take the full-check lock for `root` as process `pid`; refuses within one read when a live holder exists.
 ///
 /// With `allow_concurrent` no lock is taken and the override is appended to the run log. An
@@ -342,7 +353,9 @@ mod tests {
             &clock(),
         )
         .unwrap();
+        assert!(dir.path().join(".frob").join(LOCK_FILE).exists());
         drop(lock);
+        assert!(!dir.path().join(".frob").join(LOCK_FILE).exists());
     }
 
     // frob:tests crates/frob-check/src/concurrent.rs::acquire

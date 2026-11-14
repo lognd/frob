@@ -529,7 +529,7 @@ Related grimble specs: [grmb-spec](../grimble/grmb-spec.md), [GRL](grl-spec.md),
 
 Design context: cli-contract.md (`grimble vet`).
 
-Inputs: `Cargo.lock`, the allowlist `.grimble/vet.toml` (`allow = ["serde",
+Inputs: `Cargo.lock`, the allowlist `grimble-vet.toml` (legacy `.grimble/vet.toml`) (`allow = ["serde",
 "tokio@1.40.0"]`) and an offline RustSec snapshot directory (the
 advisory-db layout; `--advisory-db`, default `.grimble/advisory-db`; absent
 means advisories are not checked, with a warning in the log). With
@@ -818,7 +818,7 @@ Three binaries, 24 substrate crates (gob-dev included), 17 frob crates (frob-doc
 
 #### 4.6.1 Layer table
 
-`crates/gob-dev/tests/layering.rs` reads this table and walks the
+`crates/gob-dev/tests/it/layering.rs` reads this table and walks the
 normal and build dependencies from `cargo metadata`. A crate may depend
 only on crates in a strictly lower layer, and on its own product or
 `gob-*` (a `gob-*` crate on `gob-*` only). A new edge that breaks either

@@ -44,6 +44,49 @@ pub(crate) fn open(ctx: &Context) -> Result<Ledger, CliError> {
     Ok(ledger)
 }
 
+/// Assess the cached ticket view of `ctx.cwd` against `[sync]`; `None` when the repository or its config cannot be read.
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+pub(crate) fn view_freshness(ctx: &Context) -> Option<crate::freshness::Freshness> {
+    let (repo, root) = Located::discover(&ctx.cwd).into_repo().ok()?;
+    let cfg = FrobConfig::load(&root).ok()?;
+    Some(crate::freshness::assess_repo(
+        &repo,
+        &cfg.sync,
+        ctx.clock.now().unix(),
+    ))
+}
+
+/// The envelope `freshness` field for an assessed view.
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+pub(crate) fn envelope_freshness(
+    fresh: Option<&crate::freshness::Freshness>,
+) -> Option<gob_diagnostics::EnvelopeFreshness> {
+    fresh.map(crate::freshness::Freshness::to_envelope)
+}
+
+/// The one-line freshness footer for read verbs; `None` when the view is fresh or local-only.
+// frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+pub(crate) fn freshness_footer(fresh: Option<&crate::freshness::Freshness>) -> Option<String> {
+    use crate::freshness::FreshState;
+    let fresh = fresh?;
+    let line = match (fresh.state, fresh.age_secs) {
+        (FreshState::Fresh | FreshState::LocalOnly, _) => return None,
+        (state, Some(age)) => format!(
+            "view {state:?} (as of {} ago)",
+            frob_ledger::refresh::human_age(age)
+        ),
+        (state, None) => format!("view {state:?} (never refreshed)"),
+    };
+    tracing::debug!(%line, "ticket read freshness footer");
+    Some(line.to_lowercase())
+}
+
+/// Refuse with `E-SYNC-STALE` when `fresh` is too old to claim from, unless automatic sync is disabled (`CI`).
+// frob:ticket 01M5D9NM6D3DSGD980M52CRMYV
+pub(crate) fn refuse_if_stale(fresh: &crate::freshness::Freshness) -> Result<(), CliError> {
+    Ok(crate::freshness::refuse_if_blocked(fresh)?)
+}
+
 /// Open the lease store of `ctx.cwd` with the materialized `[lease]` table of `frob.toml`.
 pub(crate) fn open_lease_store(
     ctx: &Context,
@@ -229,4 +272,33 @@ pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
         .register::<usage_cmd::Usage>()
         .register::<doctor_cmd::TicketDoctor>()
         .register::<merge_cmd::MergeDriver>()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::freshness_footer;
+    use crate::freshness::{FreshState, Freshness};
+
+    fn view(state: FreshState, age_secs: Option<i64>) -> Freshness {
+        Freshness {
+            state,
+            age_secs,
+            notices: Vec::new(),
+        }
+    }
+
+    // frob:ticket 01M5D5PZVVDVE6ZJ2Z9CERYYYA
+    // frob:tests crates/frob/src/ticket/mod.rs::freshness_footer
+    #[test]
+    fn footer_names_stale_views_and_skips_fresh_ones() {
+        assert_eq!(freshness_footer(None), None);
+        assert_eq!(
+            freshness_footer(Some(&view(FreshState::Fresh, Some(5)))),
+            None
+        );
+        let line = freshness_footer(Some(&view(FreshState::Stale, Some(7200)))).expect("footer");
+        assert!(line.starts_with("view stale (as of "), "{line}");
+        let line = freshness_footer(Some(&view(FreshState::Unknown, None))).expect("footer");
+        assert_eq!(line, "view unknown (never refreshed)");
+    }
 }

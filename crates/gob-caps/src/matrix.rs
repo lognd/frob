@@ -56,7 +56,7 @@ pub const MATRIX: [Row; 19] = [
     r(Lang::Yaml,       F1, [G,    G,   NA,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Toml,       F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::GithubActions, F3, [Syn, Syn, NA, G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::Dockerfile, F2, [G,  G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::Dockerfile, F2, [Syn,G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Dotenv,     F1, [G,    G,   NA,  NA, NA,  NA,   NA, G,   NA,  Syn, NA,  NA ]),
     r(Lang::Grmb,       F4, [Lex,  Dec, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
     r(Lang::OpaqueText, F0, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, G,   G  ]),
@@ -75,8 +75,45 @@ const _: () = {
 // frob:ticket 01M4CXV46WX4E0WSVYJPYM7TRG
 /// Languages whose declared fidelity the cells do not justify yet; the list may only shrink.
 ///
-/// It measures F1 from its corpus, so the pin is a known overclaim, not a licence for new ones.
-pub const UNJUSTIFIED: [Lang; 1] = [Lang::Dockerfile];
+/// Empty: Dockerfile stage references (`FROM ... AS`, `COPY --from`) are measured as F2 refs and
+/// its `resolve_ref` cell now says so.
+pub const UNJUSTIFIED: [Lang; 0] = [];
+
+// frob:ticket 01M5GM4B049PYVSS1CVA1XEKJS
+/// A gap cell that names the ticket which will fill it (docs/design/shared/code-model.md section 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GapTicket {
+    /// The language whose cell is a gap.
+    pub lang: Lang,
+    /// The capability whose cell is a gap.
+    pub cap: Capability,
+    /// The ticket reference, e.g. `~A1XEKJS`.
+    pub ticket: &'static str,
+}
+
+/// Gap cells with a named ticket; cells absent here are bare gaps. Every entry must sit on a `Gap` cell.
+pub const GAP_TICKETS: [GapTicket; 0] = [];
+
+/// The ticket named for the gap at (`lang`, `cap`), if any; `None` for bare gaps and non-gap cells.
+pub fn gap_ticket(lang: Lang, cap: Capability) -> Option<&'static str> {
+    GAP_TICKETS
+        .iter()
+        .find(|g| g.lang == lang && g.cap == cap)
+        .map(|g| g.ticket)
+}
+
+// A gap ticket on a provided or not-applicable cell fails the build.
+const _: () = {
+    let mut i = 0;
+    while i < GAP_TICKETS.len() {
+        let g = &GAP_TICKETS[i];
+        assert!(
+            matches!(precision(g.lang, g.cap), Precision::None),
+            "GAP_TICKETS entry is not on a Gap cell"
+        );
+        i += 1;
+    }
+};
 
 const fn has(cells: &[Precision; 12], cap: Capability) -> bool {
     cells[cap as usize].is_provided()

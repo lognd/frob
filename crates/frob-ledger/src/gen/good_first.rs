@@ -117,6 +117,7 @@ mod tests {
             class: Class::Standard,
             due: None,
             points: Some(Points::new(points).expect("points")),
+            claim_idle_days: None,
             parent: None,
             reporter: "t".into(),
             assignee: None,

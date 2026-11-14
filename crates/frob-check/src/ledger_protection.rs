@@ -96,13 +96,7 @@ pub(crate) fn ledger_finding(
 mod tests {
     use super::*;
 
-    struct Fixed(Result<Reply, String>);
-
-    impl ProtectionProbe for Fixed {
-        fn get(&self, _path: &str) -> Result<Reply, String> {
-            self.0.clone()
-        }
-    }
+    use frob_obligations::tick_protect::ClassicOnly as Fixed;
 
     fn open_reply() -> Fixed {
         Fixed(Ok(Reply {
