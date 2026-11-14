@@ -2,12 +2,12 @@
 id = "01M7AV6DHZ6KG77GJ74CAT8CDF"
 title = "stale-binary detection: frob must check its own binary against the source"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T17:11:58Z"
+updated = "2026-11-14T00:57:35Z"
 labels = ["no-story"]
 scope = ["crates/frob/**"]
 
