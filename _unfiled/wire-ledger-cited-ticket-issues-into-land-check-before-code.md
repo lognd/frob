@@ -2,7 +2,8 @@
 id = "01M7BR4JX3EZVXK1A6JD49NB6Q"
 title = "Wire Ledger::cited_ticket_issues into land/check before code push"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
