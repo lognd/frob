@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-tokens/src/export/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/rules/export003.rs", "crates/crunk-rules/src/rules/export003.md", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/tests/it/parity.rs", "crates/crunk-spec/tests/it/spec.rs", "crates/crunk-spec/tests/it/snapshots/*.snap", "crates/crunk-rules/tests/it/support/mod.rs"]
+new = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-tokens/src/export/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/rules/export003.rs", "crates/crunk-rules/src/rules/export003.md", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/tests/it/parity.rs", "crates/crunk-spec/tests/it/spec.rs", "crates/crunk-spec/tests/it/snapshots/*.snap", "crates/crunk-rules/tests/it/support/mod.rs", "docs/schemas/crunk.json"]
+at = "2026-11-14T23:23:49Z"
+actor = "lognd"
+rev = 1
