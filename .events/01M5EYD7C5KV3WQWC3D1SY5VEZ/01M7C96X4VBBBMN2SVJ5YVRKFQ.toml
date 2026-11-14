@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "no comment-posting code in the mirror yet"
+at = "2026-11-14T05:41:44Z"
+actor = "lognd"
+rev = 1
