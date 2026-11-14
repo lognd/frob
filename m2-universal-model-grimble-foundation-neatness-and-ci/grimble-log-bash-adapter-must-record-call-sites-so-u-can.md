@@ -2,7 +2,8 @@
 id = "01M703GDFMCNA4M7VW8F4JHJHX"
 title = "Grimble LOG: Bash adapter must record call sites so U can witness LOG001"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
