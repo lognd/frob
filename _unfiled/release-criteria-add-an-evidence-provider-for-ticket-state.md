@@ -2,7 +2,8 @@
 id = "01M7AV6DCR4Z15F1G4NSKSTFYN"
 title = "release criteria: add an evidence provider for ticket state and CI so exit criteria bind"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
