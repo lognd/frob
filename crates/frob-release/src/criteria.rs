@@ -142,7 +142,7 @@ pub fn bind_builtin(
         match result {
             Ok(ev) => {
                 tracing::info!(position = c.position, provider = %ev.provider, "criterion bound");
-                c.state = "bound".to_owned();
+                "bound".clone_into(&mut c.state);
                 c.evidence.push(ev);
             }
             Err(why) => {

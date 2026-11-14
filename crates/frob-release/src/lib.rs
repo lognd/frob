@@ -77,15 +77,13 @@ fn valid_version(v: &str) -> bool {
 }
 
 fn valid_date(d: &str) -> bool {
-    let b = d.as_bytes();
-    b.len() == 10
-        && b.iter().enumerate().all(|(i, c)| {
-            if i == 4 || i == 7 {
-                *c == b'-'
-            } else {
-                c.is_ascii_digit()
-            }
-        })
+    let mut parts = d.split('-');
+    let widths = [4usize, 2, 2];
+    widths.iter().all(|w| {
+        parts
+            .next()
+            .is_some_and(|p| p.len() == *w && p.bytes().all(|c| c.is_ascii_digit()))
+    }) && parts.next().is_none()
 }
 
 fn io(op: &'static str, path: &Path, e: &std::io::Error) -> ReleaseError {
