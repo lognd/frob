@@ -2,7 +2,8 @@
 id = "01M5H5P5E98XTANP62H5TVTSC4"
 title = "crunk: glossary and tone rules over content keys"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
