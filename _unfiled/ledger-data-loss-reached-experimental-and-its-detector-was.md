@@ -2,7 +2,8 @@
 id = "01M7AV6DFBVMPWMR9KED4YR4SJ"
 title = "ledger data loss reached experimental and its detector was silenced by deleting refs"
 type = "incident"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
