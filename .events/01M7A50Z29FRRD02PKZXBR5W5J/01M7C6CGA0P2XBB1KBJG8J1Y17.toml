@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "wont-fix"
+reason = "Already satisfied: docs/reference/cli/frob.md is generated from the clap doc comment and matches --help; nothing to clarify."
+at = "2026-11-14T04:52:22Z"
+actor = "lognd"
+rev = 1

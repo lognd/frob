@@ -2,7 +2,8 @@
 id = "01M7A50Z29FRRD02PKZXBR5W5J"
 title = "Clarify the frob requeue help text"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 1
 reporter = "lognd"
