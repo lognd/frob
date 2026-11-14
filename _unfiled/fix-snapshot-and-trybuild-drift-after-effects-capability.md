@@ -13,7 +13,7 @@ scope = ["crates/gob-symbols/tests/**", "crates/gob-macros/tests/**", "changelog
 
 [[acceptance]]
 text = "The measured matrix snapshots and ui_rule_attr cases match the Effects capability, so CI is green"
-bound = false
+bound = true
 +++
 
 CI on experimental fails measured matrix snapshots, web_corpus capability matrix snapshot, and ui_rule_attr after T28A73Q flipped effects cells to Implemented syntactic.
