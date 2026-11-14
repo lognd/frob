@@ -42,14 +42,14 @@ use Fidelity::{F0, F1, F2, F3, F4};
 /// construction.
 #[rustfmt::skip]
 pub const MATRIX: [Row; 19] = [
-    r(Lang::Rust,       F4, [LexI, By,  Kw,  G,  Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
-    r(Lang::Python,     F3, [Lex,  By,  Syn, G,  Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
+    r(Lang::Rust,       F4, [LexI, By,  Kw,  Syn, Syn, Syn,  G,  Dec, Man, Syn, NA,  NA ]),
+    r(Lang::Python,     F3, [Lex,  By,  Syn, Syn, Syn, Syn,  G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::CSharp,     F1, [By,   G,   Kw,  G,  Syn, G,    G,  G,   Man, Syn, NA,  NA ]),
     r(Lang::Go,         F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Java,       F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::C,          F1, [G,    G,   G,   G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
     r(Lang::Shell,      F1, [G,    G,   NA,  G,  G,   G,    G,  G,   G,   Syn, NA,  NA ]),
-    r(Lang::TypeScript, F3, [Lex,  By,  Kw,  G,  Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
+    r(Lang::TypeScript, F3, [Lex,  By,  Kw,  Syn, Syn, LexI, G,  G,   Man, Syn, Syn, Syn]),
     r(Lang::Css,        F2, [By,   G,   NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, NA ]),
     r(Lang::Html,       F1, [NA,   NA,  NA,  NA, NA,  G,    NA, G,   G,   Syn, Syn, Syn]),
     r(Lang::Markdown,   F3, [Lnk,  Lnk, NA,  NA, NA,  Syn,  NA, Dec, G,   Syn, NA,  NA ]),
@@ -259,7 +259,8 @@ mod tests {
 
     #[test]
     fn spike_expectations_hold() {
-        assert!(!provides(Lang::Rust, Capability::Effects));
+        assert!(provides(Lang::Rust, Capability::Effects));
+        assert!(!provides(Lang::Go, Capability::Effects));
         assert!(!provides(Lang::Css, Capability::TestItems));
         assert_eq!(
             precision(Lang::Yaml, Capability::Visibility),
@@ -271,8 +272,8 @@ mod tests {
         );
         assert!(universal_satisfiable(&[Capability::Comments], Fidelity::F1));
         assert!(!universal_satisfiable(
-            &[Capability::Comments, Capability::Effects],
-            Fidelity::F1
+            &[Capability::Comments, Capability::Effects, Capability::Style],
+            Fidelity::F4
         ));
     }
 

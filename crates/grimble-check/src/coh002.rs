@@ -7,7 +7,7 @@
 //! call, or reads a variable the body itself defined (a def-use edge whose definition is not the
 //! unit's parameter list). A guard on a bare parameter is a dispatch guard (NEAT031), not a
 //! decision. An effect is a call in a branch body that the language's effects capability
-//! ([`crate::effects`]) classifies as an effect from its qualified path; trivial calls (logging)
+//! ([`gob_caps::EffectsCapability`]) classifies as an effect from its qualified path; trivial calls (logging)
 //! are not effects. The `[coh]` lists only add project overrides on top of the capability.
 //! P+: the rule fires only on a proven effect. A branch whose bodies call something the capability
 //! cannot place leaves the verdict Unresolved with those callees named, never a silent pass; a
@@ -26,7 +26,8 @@ use tracing::{debug, trace};
 
 use crate::coh001::{is_within, statements};
 use crate::config::CohTable;
-use crate::effects::{EffectClass, EffectsCapability, effects_for};
+use gob_caps::{EffectClass, EffectsCapability};
+use gob_ir::effects_for;
 
 /// The built-in `[coh] effect_calls` default: empty, the adapter capability supplies the effects.
 pub fn default_effect_calls() -> Vec<String> {

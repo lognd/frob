@@ -469,12 +469,13 @@ mod tests {
             resolve(&needs(&[Capability::TestItems]), &css),
             SubjectStatus::NotApplicable(w) if w.contains("css has no test_items")
         ));
-        // Rust has a gap for effects: unresolved with the capability named, not examined.
-        let rust = parsed(Lang::Rust, Fidelity::F3, &parse);
+        // Go has a gap for effects: unresolved with the capability named, not examined.
+        let go = parsed(Lang::Go, Fidelity::F1, &parse);
         assert_eq!(
-            resolve(&needs(&[Capability::Effects]), &rust),
+            resolve(&needs(&[Capability::Effects]), &go),
             SubjectStatus::Unresolved("capability gap: effects".to_owned())
         );
+        let rust = parsed(Lang::Rust, Fidelity::F3, &parse);
         // A provided cell still examines; a not-applicable cell wins over a gap.
         assert_eq!(
             resolve(&needs(&[Capability::Visibility]), &rust),

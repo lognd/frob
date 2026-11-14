@@ -57,7 +57,7 @@ Fidelity F4; extensions `.rs`.
 | resolve_ref | Implemented | lexical+imports |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | keyword |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | syntactic |
 | expand | Gap | none |
@@ -105,7 +105,7 @@ Fidelity F3; extensions `.py`, `.pyi`.
 | resolve_ref | Implemented | lexical |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | syntactic |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | syntactic |
 | expand | Gap | none |
@@ -217,7 +217,7 @@ Fidelity F3; extensions `.ts`, `.tsx`, `.mts`, `.cts`, `.js`, `.jsx`, `.mjs`, `.
 | resolve_ref | Implemented | lexical |
 | apply_targets | Implemented | by-name-in-crate (May) |
 | visibility | Implemented | keyword |
-| effects | Gap | none |
+| effects | Implemented | syntactic |
 | test_items | Implemented | syntactic |
 | imports | Implemented | lexical+imports |
 | expand | Gap | none |

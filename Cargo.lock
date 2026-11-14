@@ -2671,6 +2671,7 @@ name = "gob-caps"
 version = "0.532.0"
 dependencies = [
  "serde",
+ "tracing",
 ]
 
 [[package]]
@@ -3344,6 +3345,7 @@ name = "grimble-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "gob-caps",
  "gob-check",
  "gob-config",
  "gob-diagnostics",
