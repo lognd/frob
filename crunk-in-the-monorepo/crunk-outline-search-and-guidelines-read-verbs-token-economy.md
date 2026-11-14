@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
 updated = "2026-11-14T22:02:47Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/outline.rs, crates/crunk/src/guidelines.rs, crates/crunk/tests/outline.rs", "crates/crunk/src/lib.rs", "crates/crunk/src/query.rs"]
+scope = ["crates/crunk/src/outline.rs, crates/crunk/src/guidelines.rs, crates/crunk/tests/outline.rs", "crates/crunk/src/lib.rs", "crates/crunk/src/query.rs", "crates/crunk/src/map.rs"]
 
 [[acceptance]]
 text = "Given a project, when crunk outline runs, then a sparse tree of tokens, components, screens and flows (ids and one-line summaries only) is returned; given an id, then outline --node drills into only that node; given crunk guidelines, then the agent-guidelines file is returned; given crunk serve, then all three appear as read-only MCP tools"
