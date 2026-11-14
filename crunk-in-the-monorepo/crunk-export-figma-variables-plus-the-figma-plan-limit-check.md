@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-11-14T23:02:48Z"
+updated = "2026-11-14T23:03:06Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs"]
+scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs"]
 
 [[acceptance]]
 text = "Given a token set with 5 modes and a configured plan allowing 4, when checked, then an EXPORT finding names the plan and the limit; given a set within limits, then the Figma variables JSON is deterministic and byte-identical on two runs; given an alias cycle or a token without a Figma type, then it is skipped with a named warning not a panic"
