@@ -2,12 +2,12 @@
 id = "01M7AV6DFBVMPWMR9KED4YR4SJ"
 title = "ledger data loss reached experimental and its detector was silenced by deleting refs"
 type = "incident"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:17:34Z"
-updated = "2026-11-13T17:11:58Z"
+updated = "2026-11-14T00:01:35Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**"]
 
