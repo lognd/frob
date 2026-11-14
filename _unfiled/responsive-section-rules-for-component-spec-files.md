@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T05:26:00Z"
-updated = "2026-11-14T16:53:14Z"
+updated = "2026-11-14T16:54:43Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
+
+[[acceptance]]
+text = "A responsive section is parsed by crunk-spec and judged by crunk-rules (blocked on spec model design: ComponentConfig has no responsive field)"
+bound = false
 +++
 
 Cut from ~D6TTN3F: component responsive sections are not parsed or judged.
