@@ -2,12 +2,12 @@
 id = "01M7D2VCMWZGRRNV16CGETJFHC"
 title = "Fix snapshot and trybuild drift after Effects capability landed"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-14T13:09:50Z"
-updated = "2026-11-14T13:09:50Z"
+updated = "2026-11-14T13:10:02Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/tests/**", "crates/gob-macros/tests/**", "changelog/**"]
 +++
