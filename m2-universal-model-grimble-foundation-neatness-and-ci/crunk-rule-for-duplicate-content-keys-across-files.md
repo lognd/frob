@@ -2,7 +2,8 @@
 id = "01M5H5P5KF5WHTPQVJ4WM2DDBN"
 title = "crunk: rule for duplicate content keys across files"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
