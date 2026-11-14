@@ -4,10 +4,10 @@ title = "Expand {file} token for per-file tool stages so clang-format def runs"
 type = "task"
 category = "todo"
 priority = "medium"
-points = 2
+points = 3
 reporter = "lognd"
 created = "2026-11-14T10:53:05Z"
-updated = "2026-11-14T11:03:12Z"
+updated = "2026-11-14T16:52:57Z"
 labels = ["no-story"]
 scope = ["crates/gob-check/**"]
 +++
