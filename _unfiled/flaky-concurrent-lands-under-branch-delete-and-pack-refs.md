@@ -2,12 +2,12 @@
 id = "01M7C1S13G3QCMFRW8V7HZCE06"
 title = "Flaky: concurrent_lands_under_branch_delete_and_pack_refs_churn fails E-LEDGER-REF-MISSING for refs/heads/main"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-14T03:31:49Z"
-updated = "2026-11-14T03:31:49Z"
+updated = "2026-11-14T03:36:40Z"
 scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
