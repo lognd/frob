@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T16:34:56Z"
-updated = "2026-11-14T16:41:59Z"
+updated = "2026-11-14T16:42:03Z"
 labels = ["no-story", "chore"]
 scope = [".github/workflows/ci.yml", "docs/guides/crunk.md"]
 
