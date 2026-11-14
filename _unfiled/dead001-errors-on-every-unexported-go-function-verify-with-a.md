@@ -7,7 +7,7 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-14T01:08:25Z"
+updated = "2026-11-14T01:31:05Z"
 labels = ["no-story"]
 scope = ["crates/grimble-*/**", "crates/gob-symbols/src/go.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/go.rs"]
 
