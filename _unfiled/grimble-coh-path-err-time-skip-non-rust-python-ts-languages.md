@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-14T00:16:59Z"
+updated = "2026-11-14T00:29:22Z"
 labels = ["no-story"]
 scope = ["crates/grimble-*/**"]
 
 [[acceptance]]
 text = "Unsupported languages yield an Unresolved finding, not silence."
-bound = false
+bound = true
 +++
 
 H5: TSX/JS/JSX/Go/Java/C/C#/C++ are silently skipped; emit Unresolved. Source: frob-audit-grimble-crunk.md (Opus audit).
