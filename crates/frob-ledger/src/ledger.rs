@@ -261,6 +261,9 @@ fn is_rev_error(e: &gob_git::GitError) -> bool {
     matches!(e, gob_git::GitError::Rev { .. })
 }
 
+/// How many times a missing ref is re-read before it is believed absent.
+const REF_READ_ATTEMPTS: u32 = 6;
+
 impl Ledger {
     /// The local ticket index path; sibling local-only records live beside it.
     pub(crate) fn index_path(&self) -> &std::path::Path {
@@ -430,6 +433,24 @@ impl Ledger {
         self.repo.rev_parse(&remote).is_ok().then_some(remote)
     }
 
+    /// Whether `name` resolves, re-reading a few times so a concurrent `git pack-refs` cannot fake a miss.
+    ///
+    /// `pack-refs` writes `packed-refs` then deletes the loose ref; a reader that saw the loose ref
+    /// gone but a stale packed snapshot sees the ref absent for an instant.
+    // frob:ticket 01M7C1S13G3QCMFRW8V7HZCE06
+    fn ref_resolves(&self, name: &str) -> bool {
+        for attempt in 0..REF_READ_ATTEMPTS {
+            if self.repo.rev_parse(name).is_ok() {
+                return true;
+            }
+            if attempt + 1 < REF_READ_ATTEMPTS {
+                tracing::debug!(ref_name = %name, attempt, "ref unreadable; re-reading in case pack-refs raced");
+                std::thread::sleep(std::time::Duration::from_millis(10 << attempt));
+            }
+        }
+        false
+    }
+
     // frob:ticket 01M4GSTXC34Q811RXW8SH36RMT
     /// The configured ticket ref (or its `origin` remote-tracking twin) a detached HEAD reads from.
     fn detached_read_ref(&self) -> Result<String> {
@@ -437,7 +458,7 @@ impl Ledger {
         let short = name.strip_prefix("refs/heads/").unwrap_or(&name);
         let remote = format!("refs/remotes/origin/{short}");
         for candidate in [name.clone(), remote] {
-            if self.repo.rev_parse(&candidate).is_ok() {
+            if self.ref_resolves(&candidate) {
                 tracing::info!(ledger_ref = %candidate, "detached HEAD: reading the ledger from the configured ref");
                 return Ok(candidate);
             }
@@ -459,14 +480,14 @@ impl Ledger {
             }
             RefMode::Orphan => {
                 let name = full_ref(&self.cfg.branch);
-                if self.repo.rev_parse(&name).is_ok() {
+                if self.ref_resolves(&name) {
                     return Ok(name);
                 }
                 Err(LedgerError::RefMissing { ref_name: name })
             }
             RefMode::Trunk => {
                 let name = full_ref(&self.cfg.ref_name);
-                if self.repo.rev_parse(&name).is_ok() {
+                if self.ref_resolves(&name) {
                     return Ok(name);
                 }
                 let head = self.repo.head()?;
