@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["The page exists with the header block and is indexed in docs/README.md; frob check is clean for it"]
+new = ["Given docs/glossary/cycle.md, when read, then it has the header block, explains what a cycle is and how to create and close one, and is indexed in docs/README.md"]
+moved = [0]
+at = "2026-11-14T06:51:47Z"
+actor = "lognd"
+rev = 1
