@@ -1,0 +1,13 @@
+kind = "create"
+title = "Wire Ledger::cited_ticket_issues into land/check before code push"
+type = "task"
+category = "todo"
+priority = "high"
+points = 3
+labels = ["no-story"]
+scope = ["crates/frob-land/**"]
+acceptance = ["A frob:ticket citation absent from every ledger blocks land and doctor, and cannot be waived."]
+body = "Follow-up of ~D4YR4SJ: the detector exists in frob-ledger doctor.rs but no caller extracts cited ids from the diff."
+at = "2026-11-14T00:43:22Z"
+actor = "lognd"
+rev = 1
