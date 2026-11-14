@@ -15,6 +15,10 @@ scope = ["crates/grimble-check/src/**", "crates/grimble-bind/src/lib.rs", "crate
 [[acceptance]]
 text = "Binding carries Output.matrix and bind_cache encodes it (schema bumped to 7)"
 bound = false
+
+[[acceptance]]
+text = "check --summary shows the full capability matrix (incl. denied) as capabilities.matrix"
+bound = false
 +++
 
 Found while working ~Z7G326G. grimble-bind now records Output.matrix (per-node cell counts, incl. Denied). summary.rs derives cells from CAP findings only and bind_cache.rs does not encode Output.matrix; consume and serialize it so --summary shows the full matrix.

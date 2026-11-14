@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Binding carries Output.matrix and bind_cache encodes it (schema bumped to 7)"]
+new = ["Binding carries Output.matrix and bind_cache encodes it (schema bumped to 7)", "check --summary shows the full capability matrix (incl. denied) as capabilities.matrix"]
+moved = [1]
+at = "2026-11-14T21:45:17Z"
+actor = "lognd"
+rev = 1
