@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The shell adapter records one call site per uncaptured plain-word command, so the U witness reports Bash calls"]
+moved = []
+at = "2026-11-14T20:55:31Z"
+actor = "lognd"
+rev = 1
