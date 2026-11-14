@@ -1,0 +1,6 @@
+kind = "field"
+field = "labels"
+new = ['["no-story"]']
+at = "2026-11-14T09:51:36Z"
+actor = "lognd"
+rev = 1
