@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "docs already match --help"
+at = "2026-11-14T04:52:22Z"
+actor = "lognd"
+rev = 1
