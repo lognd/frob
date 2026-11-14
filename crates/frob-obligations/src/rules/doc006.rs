@@ -28,7 +28,8 @@ pub struct Doc006;
 
 impl<P: ?Sized + ObligationHost> RelayRule<P> for Doc006 {
     fn relay(&self, host: &P, files: &mut FileInterner) -> Vec<Finding> {
-        let found = doc_citation::doc006(host.obligations().root, files);
+        let inputs = host.obligations();
+        let found = doc_citation::doc006(inputs.root, &inputs.config.external_citations, files);
         tracing::debug!(found = found.len(), "DOC006 evaluated");
         found
     }

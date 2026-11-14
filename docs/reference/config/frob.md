@@ -249,6 +249,7 @@ Materialized: no.
 
 | Key | Type | Default | Enforcement | Doc |
 |---|---|---|---|---|
+| `external_citations` | `Vec<String>` | `[]` | no | Globs over a cited markdown file as written; a matching citation names a file outside the repo and is not checked (DOC006). |
 | `forbid_imports` | `Vec<ForbidImport>` | `[]` | no | Imports no file matching `from` may contain; each entry needs a `reason`. |
 
 ## `[land]`

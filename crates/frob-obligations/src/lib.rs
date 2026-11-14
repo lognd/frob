@@ -347,7 +347,11 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
     out.extend(docstatus::doc003(inputs.root, files));
     // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K
-    out.extend(doc_citation::doc006(inputs.root, files));
+    out.extend(doc_citation::doc006(
+        inputs.root,
+        &inputs.config.external_citations,
+        files,
+    ));
     // frob:ticket 01M67VEKBESFK2C23JMXV82RW9
     out.extend(doc_orphan::doc007(inputs.root, files));
     // frob:ticket 01M44YQZ1A507E2J3JETAWMMAV
