@@ -2,7 +2,8 @@
 id = "01M6RSBRV13JSNWD55VA3YCEZ9"
 title = "grimble-check: carry Output.matrix through bind_cache and show full capability matrix in check --summary"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
