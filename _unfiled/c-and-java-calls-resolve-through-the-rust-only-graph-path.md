@@ -4,9 +4,10 @@ title = "C and Java calls resolve through the Rust-only graph path (DEAD001 fals
 type = "bug"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-14T01:09:40Z"
-updated = "2026-11-14T01:09:40Z"
+updated = "2026-11-14T01:52:32Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
