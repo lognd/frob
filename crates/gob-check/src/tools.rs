@@ -1170,7 +1170,6 @@ pub(crate) fn expand_file(
 /// The candidates are the `scope` files, else every `tracked` file; a stage with `inputs` keeps
 /// only the files they match. A stage left with no file is dropped. Stages without the token pass
 /// through unchanged (frob:ticket 01M7CV0ZXC6PES5GJ3PAB09FA1).
-// frob:tests crates/gob-check/src/tools.rs::expand_files
 pub(crate) fn expand_files(
     planned: Vec<Planned>,
     scope: Option<&std::collections::BTreeSet<String>>,
