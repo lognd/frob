@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T06:44:59Z"
-updated = "2026-11-14T17:53:16Z"
-scope = ["crates/crunk-rules/src/rules/i18n001.rs", "crates/crunk-rules/src/rules/i18n001.md", "crates/crunk-rules/src/rules/i18n002.rs", "crates/crunk-rules/src/rules/i18n002.md", "crates/crunk-rules/src/i18n.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-rules/tests/it/i18n_rules.rs", "crates/crunk-rules/tests/it/main.rs", "docs/reference/rules/**"]
+updated = "2026-11-14T17:53:17Z"
+scope = ["crates/crunk-rules/src/rules/i18n001.rs", "crates/crunk-rules/src/rules/i18n001.md", "crates/crunk-rules/src/rules/i18n002.rs", "crates/crunk-rules/src/rules/i18n002.md", "crates/crunk-rules/src/i18n.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-rules/tests/it/i18n_rules.rs", "crates/crunk-rules/tests/it/main.rs", "docs/reference/rules/**", "changelog.d/01M7N6MVYC8I18NRTLPSEUDO01.added.md"]
 +++
 
 found while working ~VAAWD0R: I18N T0/T1 rules were cut.
