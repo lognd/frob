@@ -290,7 +290,8 @@ fn open_tickets_of_member_epics_are_listed_by_category_and_block() {
     let listed = groups.to_string();
     assert!(listed.contains("Child work"), "{listed}");
     assert!(!listed.contains("Finished work") && !listed.contains("The epic"));
-    assert_eq!(kinds(&v), ["open-ticket"]);
+    // The open member epic also derives an unbound epic-closed criterion.
+    assert_eq!(kinds(&v), ["unbound-criterion", "open-ticket"]);
 }
 
 #[test]
