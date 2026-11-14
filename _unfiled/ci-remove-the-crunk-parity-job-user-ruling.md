@@ -2,7 +2,8 @@
 id = "01M7DEJYD4XMEPRQXPTRFY1X8T"
 title = "ci: remove the crunk-parity job (user ruling)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
