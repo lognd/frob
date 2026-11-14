@@ -299,7 +299,7 @@ mod tests {
         assert!(key("d", "e").producer_identity.contains("rules-"));
     }
 
-    // frob:tests crates/grimble-check/src/bind_cache.rs::BindSummary::decode
+    // frob:tests crates/grimble-check/src/bind_cache.rs::BindSummary.decode
     /// The matrix counts, `denied` included, survive an encode/decode round trip.
     #[test]
     fn matrix_counts_round_trip_through_the_payload() {
