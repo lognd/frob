@@ -2,7 +2,8 @@
 id = "01M7DBQQF1HYMN07N70M9PBT5A"
 title = "remote_ledger_ref ignores orphan-mode ledger branch (false CITED-UNPUSHED)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
