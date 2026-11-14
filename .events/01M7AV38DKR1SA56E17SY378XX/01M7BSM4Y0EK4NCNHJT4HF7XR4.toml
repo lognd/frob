@@ -1,0 +1,59 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T01:08:25Z"
+digest = "e9ba14fe96f69a6148a7ca241e1dbb254af00cc6a92009bfbb1b18b132fe1564"
+exit_code = 0
+head = "5681d03057418683c5a65169b9702d2495f85dce"
+inline = """
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 208 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 361 filtered out; finished in 0.00s
+
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling hashbrown v0.17.1
+   Compiling tracing-subscriber v0.3.23
+   Compiling zerocopy-derive v0.8.59
+   Compiling gob-time v0.532.0 (<worktree>/crates/gob-time)
+   Compiling tinytemplate v1.2.1
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling indexmap v2.14.2
+   Compiling hashlink v0.12.2
+   Compiling rusqlite v0.41.1
+   Compiling zerocopy v0.8.59
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling petgraph v0.8.3
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling half v2.7.1
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.5.1
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-cli v0.532.0 (<worktree>/crates/gob-cli)
+   Compiling gob-trust v0.532.0 (<worktree>/crates/gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>/crates/gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.48s
+     Running unittests src/lib.rs (target/debug/deps/gob_symbols-250cbc11ffbe82dd)
+     Running tests/it/main.rs (target/debug/deps/it-985c117e6188890c)
+"""
+passed = true
+provider = "command"
+ref = "cargo test -p gob-symbols go::tests::records_calls_in_function_bodies"
+size = 1898
+status = "measured"
+at = "2026-11-14T01:08:25Z"
+actor = "lognd"
+rev = 1
