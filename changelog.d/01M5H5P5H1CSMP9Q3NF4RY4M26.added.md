@@ -1,0 +1,1 @@
+The I18N001 rule (pseudo-locale-expansion) fires for a copy key that fits its max_chars budget but not once a 40 percent pseudo-locale expansion is applied, and I18N002 (rtl-physical-direction) fires for physical left/right styles in a project that ships a right-to-left locale.

@@ -13,6 +13,7 @@ mod file_attrs_host;
 mod fix_rules;
 mod grl_parity;
 mod gx_rules;
+mod i18n_rules;
 mod org_rules;
 mod phase_profile;
 mod review;

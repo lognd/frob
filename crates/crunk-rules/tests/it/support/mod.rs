@@ -578,6 +578,14 @@ fn write_content(root: &Path, config: Option<&str>) {
             "locale = \"fr\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Bon retour\"\n",
         );
     }
+    // frob:ticket 01M5H5P5H1CSMP9Q3NF4RY4M26
+    if config == Some("i18n-rtl") {
+        write(
+            root,
+            "design/content/he.toml",
+            "locale = \"he-IL\"\n\n[[key]]\nid = \"home.hero\"\ntext = \"Shalom\"\n",
+        );
+    }
     if config == Some("content-en") {
         write(
             root,

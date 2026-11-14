@@ -275,6 +275,13 @@
 | [HUMAN001](HUMAN001.md) | human-review-stale | error | manual | P+ | false | A screen that needs a human review has a current, trusted ack in `crunk.lock`. Each block is one |
 | [HUMAN002](HUMAN002.md) | human-review-rejected | error | manual | P+ | false | A reviewed screen is not under a standing rejection. Each block is one source file in a project |
 
+## I18N
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [I18N001](I18N001.md) | pseudo-locale-expansion | error | manual | P+ | true | A copy key with a length budget still fits once its text grows by the pseudo-locale expansion. |
+| [I18N002](I18N002.md) | rtl-physical-direction | error | manual | P+ | true | A project that ships a right-to-left locale styles with logical start/end, not physical left/right. |
+
 ## INV
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
