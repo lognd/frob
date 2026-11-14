@@ -8,8 +8,8 @@ points = 3
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-21T11:25:58Z"
-updated = "2026-11-14T15:21:29Z"
-scope = ["packs/crunk-web/**"]
+updated = "2026-11-14T15:21:36Z"
+scope = ["packs/crunk-web/**", "crates/crunk-check/**"]
 
 [[acceptance]]
 text = "WEBPERF108 flags an @font-face without font-display; the at_rule GRL kind is cataloged and its examples pass"
