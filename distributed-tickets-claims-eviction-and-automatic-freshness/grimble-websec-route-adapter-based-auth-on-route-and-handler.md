@@ -2,7 +2,8 @@
 id = "01M5F5530R2BGA5ZNKXDHW6K49"
 title = "grimble-websec ROUTE: adapter-based auth-on-route and handler-exposure rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
