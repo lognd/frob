@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T18:31:22Z"
+digest = "4f6f9127bb47c6dca30aa57ecc665c07e69cd2aba1c404db67574c71a648ca77"
+exit_code = 0
+head = "f10c26f2616a07d5e1474cc7f3ba705b2799adfb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.17s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 297a264c-f547-4966-a514-6d9b724175f1 with nextest profile: default
+    Starting 1 test across 2 binaries (306 tests skipped)
+        PASS [   0.041s] crunk-rules::it i18n_rules::i18n002_fires_on_physical_sides_only_beside_a_right_to_left_locale
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 1 test run: 1 passed, 306 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=i18n_rules::i18n002_fires_on_physical_sides_only_beside_a_right_to_left_locale)"
+size = 587
+status = "measured"
+test_count = 1
+tests_digest = "1a660c014d39a5fb20fcf9ebd6a55e8770d58857bf35d7bf1dbecc7b10a13419"
+at = "2026-11-14T18:31:22Z"
+actor = "lognd"
+rev = 1
