@@ -13,7 +13,7 @@ scope = ["crates/crunk-rules/**", "crates/crunk-gallery/**", "docs/reference/rul
 
 [[acceptance]]
 text = "crunk_gallery::png_io decodes PNG renders to RGBA8 and encodes the VIS001 diff image as PNG, round-tripping pixels exactly."
-bound = false
+bound = true
 
 [[acceptance]]
 text = "GAP: the VIS001 #[rule] in crunk-rules, its md page, and the [vis] crunk.toml thresholds are NOT done: id VIS001 is already grimble-arch's arch-wide-visibility rule (family VIS owned by grimble-arch), so a crunk rule needs a new id first."

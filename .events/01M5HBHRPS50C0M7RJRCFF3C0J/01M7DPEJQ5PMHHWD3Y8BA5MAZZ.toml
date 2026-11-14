@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T18:52:20Z"
+digest = "4b6d1353a93ae3bd3a9dc9094705a4b2a9fd486b5c417bc008bec5dc2a34f8cc"
+exit_code = 0
+head = "bea520ddfcb58a0fd2adbc849b26106e6f7cf334"
+inline = '''
+   Compiling crunk-gallery v0.532.0 (<worktree>/crates/crunk-gallery)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9f8e02f2-a2b4-4964-bf12-cb7ad3e8fdeb with nextest profile: default
+    Starting 1 test across 3 binaries (70 tests skipped)
+        PASS [   0.005s] crunk-gallery::it visual::png_round_trip_preserves_pixels_and_feeds_the_comparison
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 70 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E test(=visual::png_round_trip_preserves_pixels_and_feeds_the_comparison)"
+size = 643
+status = "measured"
+test_count = 1
+tests_digest = "657702ec41b67ba5e069064d4bea7c597192fada910553fe542e4cbc1486883a"
+at = "2026-11-14T18:52:20Z"
+actor = "lognd"
+rev = 1
