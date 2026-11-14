@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["WEBPERF108 flags an @font-face without font-display; the at_rule GRL kind is cataloged and its examples pass"]
+moved = []
+at = "2026-11-14T15:19:48Z"
+actor = "lognd"
+rev = 1
