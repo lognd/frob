@@ -2,7 +2,8 @@
 id = "01M7DA6EKC0R7A2F5CCAG2MXS9"
 title = "grimble-websec ROUTE: adapter-based route tables, guards and Unresolved reporting (follow-up of DHW6K49)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
