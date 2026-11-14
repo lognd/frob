@@ -1,5 +1,10 @@
 # The --good-first flag
 
+Status: current
+Owner: frob
+Decisions: none
+Audience: user
+
 `frob ticket new --good-first` files a ticket meant for newcomers. It labels
 the ticket `good-first` and appends a `## Start here` scaffold to the body, so
 a first-time contributor knows where to begin.
