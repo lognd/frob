@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["ROUTE105 and ROUTE106 compile, fire on their example and pass their clean and notapplicable examples in the grimble-websec pack"]
+moved = []
+at = "2026-11-14T15:05:34Z"
+actor = "lognd"
+rev = 1

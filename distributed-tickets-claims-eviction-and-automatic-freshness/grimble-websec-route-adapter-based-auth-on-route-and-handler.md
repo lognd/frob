@@ -8,7 +8,11 @@ points = 5
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T11:57:10Z"
-updated = "2026-11-14T15:01:45Z"
+updated = "2026-11-14T15:05:34Z"
+
+[[acceptance]]
+text = "ROUTE105 and ROUTE106 compile, fire on their example and pass their clean and notapplicable examples in the grimble-websec pack"
+bound = false
 +++
 
 Deferred from ~BQGCFRG: needs framework adapters; report Unresolved where absent.
