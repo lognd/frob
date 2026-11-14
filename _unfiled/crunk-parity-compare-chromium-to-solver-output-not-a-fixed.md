@@ -2,7 +2,7 @@
 id = "01M7AV384XMSFRSFYHH7YKMM10"
 title = "crunk parity: compare Chromium to solver output, not a fixed JSON"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
