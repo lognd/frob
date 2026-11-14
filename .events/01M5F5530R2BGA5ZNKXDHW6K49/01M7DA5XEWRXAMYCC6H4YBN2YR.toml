@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T15:17:01Z"
+digest = "925a7a4c4271031103bb318ea83b3bfa0b80ffac643ba84a6645260a986c330d"
+exit_code = 0
+head = "0a22b6617e9639ee51bcf0e9881a94f2dd292cf3"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.75s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 65241b29-e27d-4364-a693-e01acb835204 with nextest profile: default
+    Starting 1 test across 2 binaries (413 tests skipped)
+        PASS [   0.026s] grimble-check::it websec_pack::route_slice_rules_fire_on_their_example_and_teach_a_remedy
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 1 test run: 1 passed, 413 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=websec_pack::route_slice_rules_fire_on_their_example_and_teach_a_remedy)"
+size = 637
+status = "measured"
+test_count = 1
+tests_digest = "ec1d5e6906fb1f4721c8e5da84dc110c9ac16a3bd6e0de8a683bd9334715add6"
+at = "2026-11-14T15:17:01Z"
+actor = "lognd"
+rev = 1
