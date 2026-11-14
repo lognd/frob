@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/rules/token010.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-rules/tests/it/support/mod.rs"]
+new = ["crates/crunk-tokens/src/dialect/timing.rs, crates/crunk-spec/src/timing.rs, crates/crunk-rules/src/token_timing.rs", "crates/crunk-tokens/src/dialect.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/rules/token010.*", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-rules/tests/it/support/mod.rs", "crates/crunk/tests/it/common/mod.rs"]
+at = "2026-11-14T22:02:43Z"
+actor = "lognd"
+rev = 1
