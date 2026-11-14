@@ -2,7 +2,8 @@
 id = "01M7D2VCMWZGRRNV16CGETJFHC"
 title = "Fix snapshot and trybuild drift after Effects capability landed"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
