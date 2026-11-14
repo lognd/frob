@@ -70,7 +70,7 @@ impl GoIndex {
 
 impl SymbolGraph {
     /// Resolves a Go call by package directory (bare) or by name alone (selector).
-    pub(super) fn resolve_go(&self, ix: &GoIndex, call: &CallSite) -> Outcome {
+    pub(super) fn resolve_go(ix: &GoIndex, call: &CallSite) -> Outcome {
         if call.callee.is_empty() {
             return Outcome::Gap(GapReason::Dynamic);
         }

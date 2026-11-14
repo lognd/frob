@@ -2161,7 +2161,7 @@ impl SymbolGraph {
                     }
                     // frob:ticket 01M7AV38DKR1SA56E17SY378XX
                     if is_go(call.caller.path()) {
-                        let outcome = self.resolve_go(&idx.go, call);
+                        let outcome = Self::resolve_go(&idx.go, call);
                         self.record_call(&mut sink, call, outcome, None, false);
                         continue;
                     }
