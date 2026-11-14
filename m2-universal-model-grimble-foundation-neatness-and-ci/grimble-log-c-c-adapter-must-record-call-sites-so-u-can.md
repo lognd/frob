@@ -14,7 +14,7 @@ scope = ["crates/gob-symbols/src/c*.rs"]
 
 [[acceptance]]
 text = "extract_file on a C source records call sites with the enclosing function as caller"
-bound = false
+bound = true
 +++
 
 found while working ~MV8PWVD: extract_file yields no calls or uses for C

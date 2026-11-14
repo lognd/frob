@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T20:55:42Z"
+digest = "4b58e1a5df0b555335ecf81d0252f726bb41cc82cf366882ad3137ce4e2dc160"
+exit_code = 0
+head = "516aca497e640e525942ffbaf72c3b75f38a759a"
+inline = '''
+   Compiling gob-symbols v0.532.0 (<worktree>/crates/gob-symbols)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.83s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7cb5d810-715a-4fe5-b94f-c91d9c3966fe with nextest profile: default
+    Starting 1 test across 2 binaries (575 tests skipped)
+        PASS [   0.005s] gob-symbols c::tests::c_file_records_call_sites_through_extract_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 575 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E test(=c::tests::c_file_records_call_sites_through_extract_file)"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "602c294cce0fd8185ca365f376b089cd1232574fe25a3066d454cf6409ff7981"
+at = "2026-11-14T20:55:42Z"
+actor = "lognd"
+rev = 1
