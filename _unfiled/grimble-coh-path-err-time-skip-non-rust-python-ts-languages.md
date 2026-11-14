@@ -2,12 +2,12 @@
 id = "01M7AV38AAVKP80JZ6XEW8J39T"
 title = "grimble COH/PATH/ERR/TIME skip non-Rust/Python/TS languages without reporting"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-13T17:11:58Z"
+updated = "2026-11-14T00:01:57Z"
 labels = ["no-story"]
 scope = ["crates/grimble-*/**"]
 
