@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["tokens --target and export css|tailwind|uss|csharp render the authored design/tokens tokens"]
+moved = []
+at = "2026-11-14T12:25:51Z"
+actor = "lognd"
+rev = 1
