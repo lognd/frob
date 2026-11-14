@@ -2,7 +2,8 @@
 id = "01M7CMHQGHM5X32TWG3D5WB4PT"
 title = "gob-symbols field-write graph for UNITY004 and Serializable nested-class public fields"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
