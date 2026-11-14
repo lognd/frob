@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T13:13:54Z"
-updated = "2026-11-14T09:21:34Z"
+updated = "2026-11-14T09:23:56Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json", "Cargo.lock"]
+
+[[acceptance]]
+text = "Findings JSON file fields are RelPath and the persisted_paths allowlist is empty"
+bound = false
 +++
 
 Follow-up of ~YGK8FGN: gob-diagnostics record.rs holds file as Option<String> (display path from SourceProvider); give RelPath serde in gob-path then convert and drop the persisted_paths allowlist entries.

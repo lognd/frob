@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Findings JSON file fields are RelPath and the persisted_paths allowlist is empty"]
+moved = []
+at = "2026-11-14T09:23:56Z"
+actor = "lognd"
+rev = 1
