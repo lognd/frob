@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T03:12:31Z"
-updated = "2026-11-14T03:21:51Z"
+updated = "2026-11-14T03:27:37Z"
 scope = ["crates/frob/tests/it/release_status.rs"]
 
 [[acceptance]]
