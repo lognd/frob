@@ -2,7 +2,8 @@
 id = "01M5M05N51MZ3RYXFYJT28A73Q"
 title = "Move COH002 effects tables into gob-caps Effects capability"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
