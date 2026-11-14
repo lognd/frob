@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob.toml release attesters lists logan@logand.app but commits use another email"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+idempotency_key = "skstfyn-attester"
+scope = ["frob.toml"]
+body = "Follow-up of ~SKSTFYN: attesters at frob.toml:136 does not match the committer email seen in history; fix so attestation can bind."
+at = "2026-11-14T00:07:36Z"
+actor = "lognd"
+rev = 1
