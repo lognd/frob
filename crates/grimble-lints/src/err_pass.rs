@@ -26,10 +26,8 @@ pub type ErrReport = PathReport;
 
 /// True when `rule` judges files in `language`.
 fn judges(rule: &str, language: Language) -> bool {
-    let handler_langs = matches!(
-        language,
-        Language::Python | Language::TypeScript | Language::CSharp
-    );
+    let handler_langs = matches!(language, Language::Python | Language::CSharp)
+        || crate::lang::script_family(language);
     match rule {
         ERR001 => handler_langs || language == Language::Rust,
         ERR002 => language == Language::Rust,
@@ -78,6 +76,7 @@ pub fn analyze(files: &[PathFile<'_>]) -> ErrReport {
     let mut report = ErrReport::default();
     let mut examined = [0usize; 3];
     let rules = [ERR001, ERR002, ERR003];
+    let mut undecided: std::collections::BTreeSet<(&str, &str)> = std::collections::BTreeSet::new();
     // Parsing and scanning is the whole cost and is independent per file, so it runs on the rayon
     // pool; the fold stays sequential so the report is deterministic.
     let scans: Vec<Result<Vec<Site>, ScanError>> = files
@@ -92,6 +91,15 @@ pub fn analyze(files: &[PathFile<'_>]) -> ErrReport {
                 continue;
             }
         };
+        if !rules.iter().any(|r| judges(r, f.language)) && crate::lang::is_code(f.language) {
+            for rule in rules {
+                if undecided.insert((rule, f.language.name())) {
+                    report
+                        .findings
+                        .push(crate::pass::unsupported_language(rule, f.path, f.language));
+                }
+            }
+        }
         for (slot, rule) in examined.iter_mut().zip(rules) {
             if judges(rule, f.language) {
                 *slot += 1;
@@ -110,7 +118,7 @@ pub fn analyze(files: &[PathFile<'_>]) -> ErrReport {
         if count == 0 {
             report.not_applicable.insert(
                 rule,
-                "no Rust, Python, TypeScript or C# files in the walk".to_owned(),
+                "no Rust, Python, TypeScript, JavaScript or C# files in the walk".to_owned(),
             );
         } else {
             report.subjects.insert(rule, count);
@@ -125,4 +133,48 @@ pub fn analyze(files: &[PathFile<'_>]) -> ErrReport {
         "err pass done"
     );
     report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// One file of `language`.
+    fn run(path: &'static str, language: Language, text: &'static str) -> ErrReport {
+        analyze(&[PathFile {
+            path,
+            language,
+            text,
+        }])
+    }
+
+    /// A Go file is Unresolved for all three ERR rules, never silent.
+    // frob:tests crates/grimble-lints/src/err_pass.rs::analyze
+    #[test]
+    fn go_file_is_unresolved_for_every_rule() {
+        let r = run("a.go", Language::Go, "package a\n");
+        let n = r
+            .findings
+            .iter()
+            .filter(|f| f.severity == Severity::Unresolved)
+            .count();
+        assert_eq!(n, 3);
+    }
+
+    /// A JSX file with an empty catch is judged like TypeScript.
+    // frob:tests crates/grimble-lints/src/err_pass.rs::judges
+    #[test]
+    fn jsx_empty_catch_is_flagged() {
+        let r = run(
+            "a.jsx",
+            Language::Jsx,
+            "function f() { try { g(); } catch (e) { } }\n",
+        );
+        assert!(
+            r.findings.iter().any(|f| f.rule == ERR001),
+            "{:?}",
+            r.findings
+        );
+        assert_eq!(r.subjects.get(ERR001), Some(&1));
+    }
 }

@@ -117,8 +117,8 @@ fn lang_of(language: Language) -> Option<Lang> {
 fn has_literals(language: Language) -> bool {
     matches!(
         language,
-        Language::Rust | Language::Python | Language::TypeScript | Language::CSharp
-    )
+        Language::Rust | Language::Python | Language::CSharp
+    ) || crate::lang::script_family(language)
 }
 
 /// The severity a kind ships with; `test_context` is a test file or a site with `in_test`.
