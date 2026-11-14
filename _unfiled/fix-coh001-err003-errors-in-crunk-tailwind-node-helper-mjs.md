@@ -2,7 +2,8 @@
 id = "01M7BYRY2QA3VWYMCWRKM15MK2"
 title = "Fix COH001/ERR003 errors in crunk-tailwind node helper.mjs"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
