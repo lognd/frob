@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-20T13:13:54Z"
-updated = "2026-11-14T09:54:47Z"
+updated = "2026-11-14T09:59:56Z"
 labels = ["no-story"]
 scope = ["crates/gob-diagnostics/**", "crates/gob-path/**", "crates/frob-ledger/tests/persisted_paths.rs", "docs/design/shared/architecture.md", "crates/frob-check/src/verb.rs", "docs/schemas/envelope.json", "docs/schemas/sibling.json", "Cargo.lock", "crates/frob-ledger/tests/it/persisted_paths.rs"]
 
