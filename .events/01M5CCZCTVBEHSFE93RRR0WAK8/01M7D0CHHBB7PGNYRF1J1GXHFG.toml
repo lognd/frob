@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Bounded reaches closures keep the budget, may-edge and frontier verdicts after the hashed breadth-first search"]
+moved = []
+at = "2026-11-14T12:26:46Z"
+actor = "lognd"
+rev = 1
