@@ -14,6 +14,7 @@ use crate::query::load;
     verb = "map",
     product = "crunk",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct Map;

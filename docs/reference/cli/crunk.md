@@ -25,10 +25,12 @@
 | `gallery enumerate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the cells the spec enumerates. |
 | `gallery render` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Render the selected cells to PNGs and record them in the manifest. |
 | `gallery triage` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Serve a local contact sheet and save keyboard verdicts to the manifest. |
+| `guidelines` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Return the agent-guidelines file: the project's own, else the built-in default. |
 | `import dtcg` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Validate a DTCG file and store it as the project's token interchange document. |
 | `init` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold a crunk project in the working directory. |
 | `map` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Inventory every stylesheet and JSX style module by org bucket. |
 | `new` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Scaffold a component, screen, flow or token file under `design`. |
+| `outline` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Return a sparse outline of the design system, or with `--node ID` only that node in full. |
 | `preview` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print the design spec as a terminal sheet. |
 | `query` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Ask a question of the project: find, component, dupes, unused, uses, color or violations. |
 | `rename` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Rename a token (`--color-ink`) and rewrite every reference in CSS, TSX and spec files. |

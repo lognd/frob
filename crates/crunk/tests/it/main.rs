@@ -17,6 +17,7 @@ mod init;
 mod init_diff;
 mod init_preview;
 mod new;
+mod outline;
 mod parity;
 mod query;
 mod query_parity;

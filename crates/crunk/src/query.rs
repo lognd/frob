@@ -38,6 +38,7 @@ pub const KINDS: [&str; 7] = [
     verb = "query",
     product = "crunk",
     idempotent = true,
+    read_only,
     exits(ok, refused, usage, internal)
 )]
 pub struct Query {

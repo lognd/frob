@@ -28,9 +28,11 @@ pub mod export;
 pub mod extract;
 pub mod fix;
 pub mod gallery;
+pub mod guidelines;
 pub mod init;
 pub mod map;
 pub mod new;
+pub mod outline;
 pub mod patch;
 pub mod preview;
 pub mod query;
@@ -218,6 +220,8 @@ impl Product for CrunkProduct {
             .register::<review::Ack>()
             .register::<query::Query>()
             .register::<map::Map>()
+            .register::<outline::Outline>()
+            .register::<guidelines::Guidelines>()
             .register::<explain::Explain>()
             .register::<rule::RuleCatalog>()
             .register::<preview::Preview>()
