@@ -2,7 +2,8 @@
 id = "01M7C1S13G3QCMFRW8V7HZCE06"
 title = "Flaky: concurrent_lands_under_branch_delete_and_pack_refs_churn fails E-LEDGER-REF-MISSING for refs/heads/main"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 3
 reporter = "lognd"
