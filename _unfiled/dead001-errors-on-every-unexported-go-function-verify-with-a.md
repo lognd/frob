@@ -7,13 +7,13 @@ priority = "high"
 points = 3
 reporter = "lognd"
 created = "2026-11-13T16:15:50Z"
-updated = "2026-11-14T01:05:33Z"
+updated = "2026-11-14T01:07:14Z"
 labels = ["no-story"]
 scope = ["crates/grimble-*/**", "crates/gob-symbols/src/go.rs", "crates/gob-symbols/src/graph.rs", "crates/gob-symbols/src/graph/go.rs"]
 
 [[acceptance]]
 text = "Go fixture with a called unexported function has no DEAD001."
-bound = false
+bound = true
 +++
 
 H6: inferred from code: the Go adapter emits no call sites. Confirm with a two-function Go fixture before fixing. Source: frob-audit-grimble-crunk.md (Opus audit).
