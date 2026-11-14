@@ -17,6 +17,7 @@ use gob_languages::Language;
 use gob_rules::{Severity, UnresolvedReason};
 use gob_symbols::{Folded, fold_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
+use grimble_lints::lang::{is_code, script_family, tag};
 use grimble_lints::pass::{PathFile, PathFinding, PathReport};
 use rayon::prelude::*;
 
@@ -41,10 +42,7 @@ pub const COH004: &str = "COH004";
 
 /// True when COH002 can judge `language`.
 fn judged(language: Language) -> bool {
-    matches!(
-        language,
-        Language::Rust | Language::Python | Language::TypeScript
-    )
+    matches!(language, Language::Rust | Language::Python) || script_family(language)
 }
 
 /// The file-level Unresolved finding for a unit whose language has no effects capability.
@@ -141,6 +139,34 @@ fn fold_one<'a>(f: &'a PathFile<'a>) -> Option<Parsed<'a>> {
     }
 }
 
+/// Push one Unresolved finding per COH rule and unjudged code language, at the first such file.
+///
+/// A language COH cannot judge is reported rather than dropped, so a repository in Go or Java
+/// never passes COH as if it had been examined.
+fn report_unjudged(files: &[PathFile<'_>], report: &mut PathReport) {
+    let mut seen: std::collections::BTreeSet<&'static str> = std::collections::BTreeSet::new();
+    for f in files
+        .iter()
+        .filter(|f| !judged(f.language) && is_code(f.language))
+    {
+        if !seen.insert(f.language.name()) {
+            continue;
+        }
+        tracing::debug!(
+            file = f.path,
+            language = f.language.name(),
+            "coh: language unjudged"
+        );
+        for rule in [COH001, COH002, COH003, COH004] {
+            report
+                .findings
+                .push(grimble_lints::pass::unsupported_language(
+                    rule, f.path, f.language,
+                ));
+        }
+    }
+}
+
 /// Fold every file COH can judge across the rayon pool, keeping the walk order.
 ///
 /// Folding is the bulk of the pass (a parse and a scope graph per file) and files are independent,
@@ -165,7 +191,7 @@ fn judge_coh001(f: &PathFile<'_>, folded: &Folded, opts: &CohOptions, report: &m
     for unit in function_units(folded) {
         let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
         // A language without def-use support yields no verdict: the unit is simply not judged.
-        let Some(verdict) = coh001(folded, f.language.name(), unit, opts) else {
+        let Some(verdict) = coh001(folded, tag(f.language), unit, opts) else {
             continue;
         };
         match verdict {
@@ -217,7 +243,7 @@ fn judge_coh002(f: &PathFile<'_>, folded: &Folded, opts: &Coh002Options, report:
     for unit in function_units(folded) {
         let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
         let role = resolve_role(roles.get(&unit).copied(), UnitRole::None);
-        let Some(verdict) = coh002(folded, f.language.name(), unit, role, opts) else {
+        let Some(verdict) = coh002(folded, tag(f.language), unit, role, opts) else {
             continue;
         };
         match verdict {
@@ -349,7 +375,7 @@ fn judge_coh003(
     }
     for unit in function_units(folded) {
         let name = folded.term.node(unit).name().unwrap_or("<anonymous>");
-        match coh003(&folded.term, f.language.name(), unit, opts) {
+        match coh003(&folded.term, tag(f.language), unit, opts) {
             Coh003::Fire { spread, high, low } => {
                 let names = |calls: &[crate::coh003::LayeredCall]| -> String {
                     let mut v: Vec<String> = calls
@@ -401,6 +427,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
     let mut report = PathReport::default();
     let parsed = fold_judged(files);
     let examined = parsed.len();
+    report_unjudged(files, &mut report);
     let defs: Vec<_> = parsed
         .iter()
         .map(|p| definitions(p.file.path, &p.folded))
@@ -433,7 +460,7 @@ pub fn analyze(files: &[PathFile<'_>], opts: &CohPassOptions) -> PathReport {
         for id in [COH001, COH002, COH003, COH004] {
             report.not_applicable.insert(
                 id,
-                "no Rust, Python or TypeScript files in the walk".to_owned(),
+                "no Rust, Python, TypeScript or JavaScript files in the walk".to_owned(),
             );
         }
     } else {
@@ -521,5 +548,51 @@ mod tests {
             text: "# x",
         }];
         assert!(fold_judged_with(&files, |_| panic!("must not fold")).is_empty());
+    }
+
+    /// A Go file is reported Unresolved for every COH rule, once per language, never silent.
+    // frob:tests crates/grimble-check/src/coh_pass.rs::report_unjudged
+    #[test]
+    fn unjudged_code_language_is_unresolved_once() {
+        let files = [
+            PathFile {
+                path: "a.go",
+                language: Language::Go,
+                text: "package a\n",
+            },
+            PathFile {
+                path: "b.go",
+                language: Language::Go,
+                text: "package b\n",
+            },
+            PathFile {
+                path: "c.md",
+                language: Language::Markdown,
+                text: "# x",
+            },
+        ];
+        let report = analyze(&files, &CohPassOptions::default());
+        let unresolved: Vec<_> = report
+            .findings
+            .iter()
+            .filter(|f| f.severity == Severity::Unresolved)
+            .collect();
+        assert_eq!(unresolved.len(), 4, "{unresolved:?}");
+        assert!(unresolved.iter().all(|f| f.file == "a.go"));
+    }
+
+    /// TSX, JS and JSX files are judged like TypeScript, so COH sees them as subjects.
+    // frob:tests crates/grimble-check/src/coh_pass.rs::judged
+    #[test]
+    fn script_family_is_judged() {
+        for l in [
+            Language::Tsx,
+            Language::JavaScript,
+            Language::Jsx,
+            Language::TypeScript,
+        ] {
+            assert!(judged(l), "{l:?}");
+        }
+        assert!(!judged(Language::Go));
     }
 }

@@ -74,6 +74,9 @@ fn model_path(language: Language) -> Option<&'static str> {
         Language::Rust => Some("err.rs"),
         Language::Python => Some("err.py"),
         Language::TypeScript => Some("err.ts"),
+        Language::Tsx => Some("err.tsx"),
+        Language::JavaScript => Some("err.js"),
+        Language::Jsx => Some("err.jsx"),
         Language::CSharp => Some("err.cs"),
         _ => None,
     }
@@ -222,7 +225,7 @@ fn catch_all(language: Language, header: &str) -> bool {
             let first = rest.split_whitespace().next().unwrap_or("");
             first.is_empty() || matches!(first, "Exception" | "BaseException")
         }
-        Language::TypeScript => true,
+        l if crate::lang::script_family(l) => true,
         Language::CSharp => {
             let rest = h.strip_prefix("catch").unwrap_or(h).trim();
             if rest.contains(" when ") || rest.starts_with("when") {

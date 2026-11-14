@@ -128,6 +128,28 @@ pub fn analyze(files: &[PathFile<'_>]) -> TimeReport {
 
 /// True when a language without clock roles still reads time, so silence would hide a gap.
 fn unresolvable(language: gob_languages::Language) -> bool {
-    use gob_languages::Language;
-    matches!(language, Language::TypeScript | Language::CSharp)
+    crate::lang::is_code(language)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A Go file is Unresolved for both TIME rules, never silent.
+    // frob:tests crates/grimble-lints/src/time_pass.rs::unresolvable
+    #[test]
+    fn go_file_is_unresolved() {
+        let files = [PathFile {
+            path: "a.go",
+            language: gob_languages::Language::Go,
+            text: "package a\n",
+        }];
+        let r = analyze(&files);
+        let n = r
+            .findings
+            .iter()
+            .filter(|f| f.severity == Severity::Unresolved)
+            .count();
+        assert_eq!(n, 2, "{:?}", r.findings);
+    }
 }
