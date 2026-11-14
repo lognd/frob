@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T22:18:50Z"
+digest = "068be03d5ae37813d5956422b8b7fe96c1941d2539aaa42798addd528200ae2b"
+exit_code = 0
+head = "1e846ae61c92735d3a3ac16ec323741c3f3417c6"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 214273bf-f7a4-49bb-93d7-8c0d11e2442a with nextest profile: default
+    Starting 1 test across 2 binaries (307 tests skipped)
+        PASS [   0.006s] crunk-rules token_timing::tests::flags_only_durations_past_the_bound
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=token_timing::tests::flags_only_durations_past_the_bound)"
+size = 561
+status = "measured"
+test_count = 1
+tests_digest = "7bba2b40395b6041b342bc34cf3968153c253e206d4224e0b9a0e4f76ef28680"
+at = "2026-11-14T22:18:50Z"
+actor = "lognd"
+rev = 1
