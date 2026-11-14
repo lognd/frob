@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T15:50:47Z"
+digest = "6eecc6101203a6a0e25707d3562a23bd425d5f86f766180501ba4ded1ded5bdd"
+exit_code = 0
+head = "d5f44cb05ad72759e7fc2a2ce9b8d24d32601253"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>/crates/frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.80s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 712fc555-4d15-4b3e-9003-a0872f418cf8 with nextest profile: default
+    Starting 1 test across 2 binaries (355 tests skipped)
+        PASS [   0.020s] frob-ledger::it ledger::orphan_mode_compares_cited_tickets_against_the_remote_ledger_branch
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 355 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E test(=ledger::orphan_mode_compares_cited_tickets_against_the_remote_ledger_branch)"
+size = 651
+status = "measured"
+test_count = 1
+tests_digest = "e74772312c92c8f3ce94e94bd44468da5bf3c80c62e72d078e25e3b5a44fc1da"
+at = "2026-11-14T15:50:47Z"
+actor = "lognd"
+rev = 1

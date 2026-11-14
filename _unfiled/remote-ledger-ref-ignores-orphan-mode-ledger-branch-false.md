@@ -7,12 +7,12 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T15:45:07Z"
-updated = "2026-11-14T15:50:11Z"
+updated = "2026-11-14T15:50:47Z"
 labels = ["no-story", "bug"]
 
 [[acceptance]]
 text = "Orphan-mode cited-ticket check compares against origin/<tickets.branch>, not origin/<tickets.ref>"
-bound = false
+bound = true
 +++
 
 In orphan ref_mode the ledger lives on tickets.branch (frob-tickets) but Ledger::remote_ledger_ref derives origin/<tickets.ref> (origin/experimental), so land gate E-LAND-CITED-MISSING reports E-DOCTOR-CITED-UNPUSHED for every ticket cited in the diff even after the ledger is pushed. Derive the remote twin from the ledger write ref.
