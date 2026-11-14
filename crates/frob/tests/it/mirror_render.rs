@@ -47,3 +47,24 @@ fn render_output_validates_against_the_committed_schema() {
     assert!(errors.is_empty(), "{errors:?}\n{}", out["data"]);
     assert_eq!(out["data"]["title"], "Mirror me");
 }
+
+#[test]
+fn run_reports_unmirrored_tickets_as_creatable() {
+    // frob:tests crates/frob/src/mirror_cmd.rs::MirrorRun
+    // frob:tests crates/frob/src/mirror_cmd.rs::report_of
+    // frob:tests crates/frob/src/mirror_cmd.rs::ledger_tickets
+    let dir = common::git_repo();
+    let p = dir.path();
+    std::fs::write(p.join("frob.toml"), "[tickets]\nref_mode = \"orphan\"\n").expect("config");
+    frob(p, &["ticket", "branch", "init"]);
+    frob(p, &["ticket", "new", "--title", "Mirror me"]);
+    let out = frob(p, &["mirror", "run", "--json"]);
+    assert_eq!(out["ok"], true, "{out}");
+    assert_eq!(out["data"]["mirrored"], 0, "{out}");
+    assert_eq!(out["data"]["creatable"], 1, "{out}");
+    assert_eq!(out["data"]["renderable"], 1, "{out}");
+    assert_eq!(
+        out["data"]["unrenderable"].as_array().map(Vec::len),
+        Some(0)
+    );
+}

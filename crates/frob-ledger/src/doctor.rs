@@ -39,7 +39,7 @@ pub fn order_skew(at_secs: i64, ulid_secs: i64) -> Option<i64> {
 /// A problem that is not one of the TICK rules.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Issue {
-    /// Stable code: `E-DOCTOR-UNREADABLE`, `E-DOCTOR-ORDER`, `E-DOCTOR-CONFLICT`, `E-DOCTOR-ID`, `E-DOCTOR-POINTS-ROLLUP`.
+    /// Stable code: `E-DOCTOR-UNREADABLE`, `E-DOCTOR-ORDER`, `E-DOCTOR-CONFLICT`, `E-DOCTOR-ID`, `E-DOCTOR-POINTS-ROLLUP`, `E-DOCTOR-CITED-MISSING`, `E-DOCTOR-CITED-UNPUSHED`.
     pub code: String,
     /// The ticket concerned.
     pub ticket: TicketId,
@@ -159,6 +159,54 @@ impl Ledger {
             "doctor finished"
         );
         Ok(report)
+    }
+
+    /// Issues for ticket ids cited in code (`frob:ticket`) that the ledger cannot vouch for.
+    ///
+    /// `cited` pairs a location (for the message) with an id string found in tracked text. An id
+    /// absent from the local ledger is `E-DOCTOR-CITED-MISSING`; an id present locally but absent
+    /// from the `origin` remote-tracking ledger (when one exists) is `E-DOCTOR-CITED-UNPUSHED`.
+    /// These are issues, not rule findings, so no `frob:waive` can silence them, and the only
+    /// remedy is to recover or push the ticket, never to delete the citation. Ids that do not
+    /// parse are skipped here: `TICK002` already reports them.
+    ///
+    /// # Errors
+    ///
+    /// Git read failures.
+    // frob:ticket 01M7AV6DFBVMPWMR9KED4YR4SJ
+    pub fn cited_ticket_issues(&self, cited: &[(&str, &str)]) -> Result<Vec<Issue>> {
+        let local = self.ledger_ref()?;
+        let remote = self.remote_ledger_ref();
+        let mut out = Vec::new();
+        for (at, raw) in cited {
+            let Ok(id) = raw.parse::<TicketId>() else {
+                tracing::debug!(raw, at, "cited id is not a full ULID; left to TICK002");
+                continue;
+            };
+            let sid = id.to_string();
+            if !self.ticket_exists_at(&local, &sid)? {
+                tracing::error!(%id, at, "cited ticket exists in no ledger");
+                out.push(Issue {
+                    code: "E-DOCTOR-CITED-MISSING".to_owned(),
+                    ticket: id,
+                    message: format!(
+                        "{at} cites ticket {id}, which exists in no ledger; recover the ticket, do not delete the citation"
+                    ),
+                });
+            } else if let Some(r) = &remote
+                && !self.ticket_exists_at(r, &sid)?
+            {
+                tracing::error!(%id, at, "cited ticket exists only in the unpushed ledger");
+                out.push(Issue {
+                    code: "E-DOCTOR-CITED-UNPUSHED".to_owned(),
+                    ticket: id,
+                    message: format!(
+                        "{at} cites ticket {id}, which exists only in the local ledger; push the ledger before the code"
+                    ),
+                });
+            }
+        }
+        Ok(out)
     }
 
     /// Check one ticket against its events; true when its frontmatter needs re-folding.

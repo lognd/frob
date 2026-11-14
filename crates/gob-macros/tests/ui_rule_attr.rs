@@ -5,7 +5,10 @@
 // frob:tests crates/gob-macros/src/lib.rs::rule
 #[test]
 fn ui_rule_attr() {
-    let t = trybuild::TestCases::new();
-    t.pass("tests/ui_rule/pass/*/*.rs");
-    t.compile_fail("tests/ui_rule/fail/*/todo001.rs");
+    let run = std::panic::catch_unwind(|| {
+        let t = trybuild::TestCases::new();
+        t.pass("tests/ui_rule/pass/*/*.rs");
+        t.compile_fail("tests/ui_rule/fail/*/todo001.rs");
+    });
+    assert!(run.is_ok(), "a #[rule] ui case did not behave as expected");
 }

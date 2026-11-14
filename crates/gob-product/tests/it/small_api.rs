@@ -136,3 +136,11 @@ fn a_product_doctor_is_called_with_its_matches() {
     assert_eq!(code, 0, "{err}");
     assert!(out.contains("\"ok\""), "{out}");
 }
+
+/// The registered config tables come back sorted by table path.
+// frob:tests crates/gob-product/src/workspace.rs::registered_tables
+#[test]
+fn registered_tables_are_sorted() {
+    let tables = gob_product::workspace::registered_tables();
+    assert!(tables.windows(2).all(|w| w[0].table <= w[1].table));
+}

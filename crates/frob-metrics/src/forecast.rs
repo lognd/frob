@@ -476,4 +476,12 @@ mod tests {
         assert_eq!(ymd(0), "1970-01-01");
         assert_eq!(ymd(951_782_400), "2000-02-29");
     }
+
+    #[test]
+    fn risk_words_are_stable() {
+        // frob:tests crates/frob-metrics/src/forecast.rs::Risk.describe
+        assert_eq!(Risk::DependencyChain.describe(), "dependency chain");
+        assert_eq!(Risk::Capacity.describe(), "capacity");
+        assert_eq!(Risk::UnsizedWork.describe(), "unsized work");
+    }
 }

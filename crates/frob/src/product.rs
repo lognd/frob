@@ -63,6 +63,11 @@ impl Product for FrobProduct {
         tracing::debug!("frob check through the product verb");
         let payload = frob_check::Check::from_matches(matches)?.run(ctx)?;
         let rows = crate::check_view::check_rows(&payload.data, ctx.verbosity > 0);
+        // frob:ticket 01M7AV6DHZ6KG77GJ74CAT8CDF
+        let payload = match crate::stale::stale_warning(root) {
+            Some(w) => payload.with_warning(w),
+            None => payload,
+        };
         Ok(payload.with_pretty(rows))
     }
 

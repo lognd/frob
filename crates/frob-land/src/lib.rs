@@ -12,6 +12,7 @@ pub mod baseline_prune;
 pub mod batch_size;
 pub mod bisect;
 pub mod candidate;
+mod cited_tickets;
 pub mod divergence;
 pub mod error;
 pub mod events;

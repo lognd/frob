@@ -10,7 +10,9 @@ use std::collections::BTreeSet;
 use frob_ledger::Ledger;
 use frob_ledger::model::{Category, LinkKind, Outcome};
 use frob_ledger::ops::TicketView;
+use frob_mirror::host::TicketSource;
 use frob_mirror::identity;
+use frob_mirror::ledger_source::{FactsFn, LedgerTickets};
 use frob_mirror::projection::{
     self, Classification, Criterion, EvidenceItem, Identity, IssueProjection, People, Relation,
     RelationKind, State, TicketFacts,
@@ -56,6 +58,104 @@ impl Command for MirrorRender {
         let projection = projection::project(&facts, &BTreeSet::new(), env!("CARGO_PKG_VERSION"));
         tracing::info!(ticket = %id, digest = %projection.provenance.render_digest, "mirror render");
         Ok(Payload::new(projection))
+    }
+}
+
+/// The mirror host's ticket source over `ledger`: facts come from [`facts_of`], `exclude` is withheld.
+// frob:ticket 01M5EKM0HMCYE834CN3J9NEK8B
+// frob:ticket 01M7A32314FMETC15Y3P16PG85
+pub(crate) fn ledger_tickets<'a>(
+    ledger: &'a Ledger,
+    repository: String,
+    exclude: BTreeSet<String>,
+) -> LedgerTickets<'a> {
+    let facts: FactsFn<'a> = Box::new(move |l, id| {
+        let folded = l
+            .show(id)
+            .map_err(cli_err)
+            .and_then(|view| facts_of(l, &view, repository.clone()));
+        match folded {
+            Ok(f) => Some(f),
+            Err(e) => {
+                tracing::warn!(ticket = %id, error = %e, "ticket facts unfoldable");
+                None
+            }
+        }
+    });
+    tracing::debug!(excluded = exclude.len(), "ledger ticket source built");
+    LedgerTickets::new(ledger, facts, exclude, env!("CARGO_PKG_VERSION"))
+}
+
+/// What `mirror run` found on the ledger side: tickets with and without an issue, and how many render.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, schemars::JsonSchema)]
+pub struct RunReport {
+    /// Tickets that already map to a tracker issue.
+    pub mirrored: usize,
+    /// Tickets that have no issue yet.
+    pub creatable: usize,
+    /// Mirrored or creatable tickets whose projection renders.
+    pub renderable: usize,
+    /// ULIDs whose facts cannot be folded; the tracker pass skips them.
+    pub unrenderable: Vec<String>,
+}
+
+/// Run the ledger side of a mirror pass: list the tickets to mirror and check each renders (no tracker call).
+#[derive(Debug, Clone, gob_cli::Command)]
+#[command(
+    verb = "mirror run",
+    read_only,
+    product = "frob",
+    idempotent = true,
+    exits(ok, refused, usage, internal)
+)]
+pub struct MirrorRun;
+
+impl Command for MirrorRun {
+    type Data = RunReport;
+
+    fn configure(cmd: gob_cli::clap::Command) -> gob_cli::clap::Command {
+        cmd
+    }
+
+    fn from_matches(_: &ArgMatches) -> Result<Self, CliError> {
+        Ok(Self)
+    }
+
+    fn run(&self, ctx: &Context) -> CliOutcome<RunReport> {
+        let ledger = open(ctx)?;
+        let (repo, _) = Located::discover(&ctx.cwd).into_repo()?;
+        let repository = repo.remote_url("origin").unwrap_or_default();
+        let source = ledger_tickets(&ledger, repository, BTreeSet::new());
+        let report = report_of(&source);
+        tracing::info!(
+            mirrored = report.mirrored,
+            creatable = report.creatable,
+            unrenderable = report.unrenderable.len(),
+            "mirror run"
+        );
+        Ok(Payload::new(report))
+    }
+}
+
+/// Fold a ticket source into the ledger-side run report.
+pub(crate) fn report_of(source: &impl TicketSource) -> RunReport {
+    let mirrored = source.mirrored();
+    let creatable: Vec<String> = source.creatable().into_iter().map(|(u, _)| u).collect();
+    let mut unrenderable = Vec::new();
+    let mut renderable = 0;
+    for ulid in mirrored.iter().chain(&creatable) {
+        if source.projection(ulid).is_some() {
+            renderable += 1;
+        } else {
+            tracing::warn!(ticket = %ulid, "ticket does not render; the tracker pass skips it");
+            unrenderable.push(ulid.clone());
+        }
+    }
+    RunReport {
+        mirrored: mirrored.len(),
+        creatable: creatable.len(),
+        renderable,
+        unrenderable,
     }
 }
 
@@ -266,6 +366,7 @@ impl Command for MirrorAlias {
 /// Verbs of this module, registered on the root in one place.
 pub(crate) fn register(cli: gob_cli::Cli) -> gob_cli::Cli {
     cli.register::<MirrorRender>()
+        .register::<MirrorRun>()
         .register::<MirrorAlias>()
         .register::<crate::mirror_recreate_cmd::MirrorRecreate>()
 }

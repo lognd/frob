@@ -80,7 +80,9 @@ fn not_run_is_stable_ordered_and_family_filtered() {
 // frob:tests crates/crunk-check/src/tier.rs::rule_tier
 #[test]
 fn must_measure_above_tier_is_unresolved_and_unknown_family_is_t0() {
-    let defs: Vec<_> = gob_check::Product::rule_set(&Crunk).defs().collect();
+    let defs: Vec<_> = gob_check::Product::rule_set(&Crunk::default())
+        .defs()
+        .collect();
     assert!(defs.iter().all(|d| rule_tier(d) >= Tier::T0));
     let r = run_to(Tier::T0, &[]);
     for n in &r.not_run {
@@ -97,7 +99,9 @@ fn must_measure_above_tier_is_unresolved_and_unknown_family_is_t0() {
 // frob:tests crates/crunk-check/src/tier.rs::rule_tier
 #[test]
 fn slop_layout_tells_are_t1_and_the_static_slop_rules_stay_t0() {
-    let defs: Vec<_> = gob_check::Product::rule_set(&Crunk).defs().collect();
+    let defs: Vec<_> = gob_check::Product::rule_set(&Crunk::default())
+        .defs()
+        .collect();
     let tier_of = |id: &str| rule_tier(defs.iter().find(|d| d.id == id).expect("def"));
     for id in [
         "SLOP020", "SLOP021", "SLOP026", "SLOP027", "SLOP028", "SLOP029",

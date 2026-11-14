@@ -235,7 +235,7 @@ impl Command for Trust {
             let decision = gob_trust::prompt::review(
                 &facts,
                 &mut std::io::stdin().lock(),
-                // frob:accept LOG001 because="the interactive trust review is the command's primary output"
+                // frob:defer LOG001 because="the interactive trust review is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
                 &mut std::io::stdout().lock(),
             )
             .map_err(CliError::internal)?;

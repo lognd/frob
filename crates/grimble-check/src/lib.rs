@@ -62,6 +62,7 @@ pub mod rules;
 pub mod sibling;
 pub mod summary;
 pub mod testq_pass;
+mod union_find;
 pub mod unit_role;
 pub mod websec_pack;
 

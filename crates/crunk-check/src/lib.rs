@@ -22,6 +22,7 @@ pub mod gx_pack;
 pub mod packs;
 mod product;
 pub mod product_rules;
+pub mod render_ledger;
 pub mod report;
 pub mod review;
 pub mod sibling;
@@ -56,6 +57,9 @@ pub struct CheckOptions {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The gate the run is for; a rule runs only at the gates it declares (rules.md 6.1.5).
     pub gate: gob_rules::Gate,
+    // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+    /// `--static`: never execute repository JavaScript (Tailwind stays unresolved).
+    pub static_tailwind: bool,
 }
 
 /// Everything one run produced, enough to build the document and the verbs' views.
@@ -126,6 +130,9 @@ fn not_in_gate<'a>(
 /// As [`run`].
 pub fn run_to_tier(root: &Path, opts: &CheckOptions, tier: Tier) -> Result<CrunkRun, CheckError> {
     let started = Instant::now();
+    let crunk = Crunk {
+        static_tailwind: opts.static_tailwind,
+    };
     let (compute, source) = ComputeTable::load_for_product(root, PRODUCT)?;
     tracing::debug!(source, "crunk compute knobs resolved");
     let run_opts = gob_check::RunOptions {
@@ -133,16 +140,16 @@ pub fn run_to_tier(root: &Path, opts: &CheckOptions, tier: Tier) -> Result<Crunk
         fail_on: opts.fail_on,
         ..gob_check::RunOptions::default()
     };
-    let mut report = gob_check::run(&Crunk, root, &run_opts)?;
+    let mut report = gob_check::run(&crunk, root, &run_opts)?;
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     let not_in_gate = not_in_gate(
-        gob_check::Product::rule_set(&Crunk).defs(),
+        gob_check::Product::rule_set(&crunk).defs(),
         opts.gate,
         &mut report.findings,
     );
     // frob:ticket 01M5XCXV02ZVYV71DFY08R5Y3H
     let not_run = tier::not_run(
-        gob_check::Product::rule_set(&Crunk).defs(),
+        gob_check::Product::rule_set(&crunk).defs(),
         tier,
         &opts.only,
     );

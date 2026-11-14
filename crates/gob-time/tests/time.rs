@@ -92,7 +92,9 @@ fn today_is_derived_from_the_same_snapshot_as_now() {
 fn a_pinned_clock_gives_every_date_of_a_command_one_snapshot() {
     let pinned = SystemClock::pin();
     let (first_now, first_day) = (pinned.now(), pinned.today());
-    std::thread::sleep(std::time::Duration::from_millis(1_100));
+    while SystemClock.now() == first_now {
+        std::hint::spin_loop();
+    }
     assert_eq!(pinned.now(), first_now, "a pinned clock never advances");
     assert_eq!(pinned.today(), first_day);
     assert_eq!(first_day, Day::of(first_now));

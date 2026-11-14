@@ -4,7 +4,7 @@
 
 > Generated: do not edit this page. Regenerate with `cargo dev gen languages`.
 
-Cells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown).
+Cells: `Implemented` (with its precision), `NotApplicable` (the language has no such concept) or `Gap` (not provided yet; the answer is Unknown; `Gap (~ID)` names the ticket that fills it).
 
 ## Extensions
 

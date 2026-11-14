@@ -358,3 +358,21 @@ fn confirm_mode_and_a_fresh_claim_never_evict() {
             .is_none()
     );
 }
+
+// frob:tests crates/frob-worktree/src/next.rs::Workspace.work_over_idle_claim
+#[test]
+fn without_a_policy_an_idle_claim_check_is_a_plain_work() {
+    let Some(fx) = Fixture::new(None) else { return };
+    let (ledger, leases) = (fx.ledger(), fx.leases());
+    let (id, _) = new_ticket(&ledger);
+    let cfg = WorktreeConfig::load(&fx.root).expect("config");
+    let ws = Workspace {
+        ledger: &ledger,
+        leases: &leases,
+        config: &cfg,
+    };
+    let started = ws
+        .work_over_idle_claim(&id, &WorkOptions::default(), None)
+        .expect("plain work");
+    assert!(started.handle.starts_with('~'));
+}

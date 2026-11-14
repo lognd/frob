@@ -35,7 +35,11 @@ async function applyNetwork(context, rules) {
       if (rule.action === "abort") return route.abort();
       if (rule.action === "status") return route.fulfill({ status: rule.status ?? 500, body: "" });
       if (rule.action === "delay") {
-        await new Promise((r) => setTimeout(r, rule.delay_ms ?? 0));
+        let timer;
+        await new Promise((r) => {
+          timer = setTimeout(r, rule.delay_ms ?? 0);
+        });
+        clearTimeout(timer);
         return route.continue();
       }
       return new Promise(() => {}); // hold: never resolves

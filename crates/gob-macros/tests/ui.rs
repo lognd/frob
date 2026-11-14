@@ -7,6 +7,9 @@
 // frob:tests crates/gob-macros/src/lib.rs::derive_directive
 #[test]
 fn ui() {
-    let t = trybuild::TestCases::new();
-    t.compile_fail("tests/ui/*.rs");
+    let run = std::panic::catch_unwind(|| {
+        let t = trybuild::TestCases::new();
+        t.compile_fail("tests/ui/*.rs");
+    });
+    assert!(run.is_ok(), "a ui case did not fail to compile as expected");
 }

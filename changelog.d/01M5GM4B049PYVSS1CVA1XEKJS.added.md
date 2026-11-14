@@ -1,0 +1,1 @@
+gob-caps: a gap cell in the capability matrix can now name the ticket that will fill it (`GAP_TICKETS`, `gap_ticket`), and the generated languages page renders it as `Gap (~ID)`; cells without a ticket still render as a bare `Gap`.

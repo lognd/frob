@@ -337,7 +337,7 @@ has none. Per-worktree code config stays per worktree.
 ### Activity inference
 
 The time of an in-progress ticket is classified from signals frob already
-sees, never from a state an agent sets (`frob_metrics::activity`). Signals:
+sees, never from a state an agent sets (`frob_ledger::activity`). Signals:
 lease acquire and renew, worktree commit times, file mtimes when frob looks,
 test and evidence runs, goway job reports, lease refusals (`E-LEASE-HELD`,
 recorded as a local event against the refused ticket) and the land start and
@@ -360,7 +360,7 @@ Cost per point can use tokens as well as wall-clock. frob never reads a
 harness transcript; instead a Claude Code `Stop` (or `PostToolUse`) hook totals
 its own session's token counts and appends one counts-only line to
 `<git common dir>/frob/activity/<ticket suffix>.usage.jsonl` (the suffix is the last 7 characters of the ticket ulid, as in the `ticket/<suffix>` branch; `frob stats` also accepts a file named by the full ulid)
-(`frob_metrics::usage`). A line holds `session`, `at` (unix seconds), `input`,
+(`frob_ledger::usage`). A line holds `session`, `at` (unix seconds), `input`,
 `output` and optionally `cache_read` and `cache_create`; any other field makes
 the line unreadable, so no content can be stored. Counts are cumulative per
 session: the total for a ticket is the latest line of each session, summed

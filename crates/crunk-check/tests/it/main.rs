@@ -12,6 +12,7 @@ mod review;
 mod rule_coverage;
 mod scene_docs;
 mod spec_errors;
+mod static_tailwind;
 mod stylelint;
 mod telemetry;
 mod tier;

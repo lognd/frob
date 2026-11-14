@@ -428,7 +428,7 @@ mod tests {
     }
 
     // frob:tests classify
-    // frob:tests crates/frob-metrics/src/activity.rs::Segment.secs
+    // frob:tests crates/frob-ledger/src/activity.rs::Segment.secs
     #[test]
     fn fixture_timeline_classifies_into_expected_segments() {
         let got = classify(&fixture(), 600);
@@ -469,7 +469,7 @@ mod tests {
         assert_eq!(summary_line(&totals(&[])), "no activity recorded");
     }
 
-    // frob:tests crates/frob-metrics/src/activity.rs::Journal.record
+    // frob:tests crates/frob-ledger/src/activity.rs::Journal.record
     #[test]
     fn journal_round_trips_and_summarizes() {
         let tmp = tempfile::tempdir().expect("tempdir");

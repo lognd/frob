@@ -1,0 +1,7 @@
+grimble = "2";
+module m;
+
+system s {
+}
+
+use "a.grmb";

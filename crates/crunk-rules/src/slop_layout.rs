@@ -4,7 +4,7 @@
 //! A [`SceneView`] indexes one scene file (children, inline styles, solved nodes); each tell is a
 //! function from a view to [`Tell`]s the rule anchors with `fire_in`. Styles are the elements'
 //! inline `style` attributes, the only styling the T1 solver reads. When the scene does not solve
-//! (a missing `data-id`, a `var()` the empty token map cannot resolve) the geometry-backed checks
+//! (a missing `data-id`, a `var()` the token map cannot resolve) the geometry-backed checks
 //! fall back to what the text alone shows; they never invent geometry.
 
 // frob:ticket 01M4CXTCXCKKPRDHXEEZ2NK7PP
@@ -98,6 +98,7 @@ impl<'a> SceneView<'a> {
         }
         let nodes = file
             .solve()
+            .ok()
             .map(|s| s.nodes.iter().map(|n| (n.id.as_str(), n)).collect())
             .unwrap_or_default();
         Self {

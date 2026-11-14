@@ -19,6 +19,7 @@ pub mod claim_hold;
 pub mod claim_notice;
 pub mod claim_observe;
 pub mod claim_park;
+pub mod claim_reclaim;
 pub mod claim_record;
 pub mod claim_restore;
 pub mod claim_wip;

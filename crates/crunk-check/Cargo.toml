@@ -10,6 +10,7 @@ authors.workspace = true
 
 [dependencies]
 blake3 = "1"
+crunk-gallery = { version = "0.532.0", path = "../crunk-gallery" }
 crunk-ingest = { version = "0.532.0", path = "../crunk-ingest" }
 crunk-rules = { version = "0.532.0", path = "../crunk-rules" }
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
@@ -20,6 +21,7 @@ gob-path = { version = "0.532.0", path = "../gob-path" }
 gob-check = { version = "0.532.0", path = "../gob-check" }
 gob-config = { version = "0.532.0", path = "../gob-config" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
+gob-fs = { version = "0.532.0", path = "../gob-fs" }
 gob-diagnostics = { version = "0.532.0", path = "../gob-diagnostics" }
 gob-packs = { version = "0.532.0", path = "../gob-packs" }
 gob-plan = { version = "0.532.0", path = "../gob-plan" }

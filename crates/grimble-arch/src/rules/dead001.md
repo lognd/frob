@@ -5,7 +5,7 @@ A private function or method that nothing references.
 
 ## What it does
 
-Fires for a function or method that is not public API, is not `main`, a test or a trait implementation, and has no call, reference or import edge from outside itself. May edges are respected: a unit reached only through a May edge, or whose name an unresolved call spells, is Unresolved, never dead. Types are not judged, since the graph has no edge for a use in a type position.
+Fires for a function or method that is not public API, is not `main`, a test or a trait implementation, and has no call, reference or import edge from outside itself. May edges are respected: a unit reached only through a May edge, or whose name an unresolved call spells, is Unresolved, never dead. A name-only call site (receiver type unproven) whose name matches exactly one method in the workspace can only mean that method, so it counts as a reaching edge. Types are not judged, since the graph has no edge for a use in a type position.
 
 ## Why it matters
 

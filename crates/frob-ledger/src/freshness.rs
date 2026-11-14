@@ -721,4 +721,17 @@ mod tests {
         );
         assert!(refuse_if_blocked(&young).is_ok());
     }
+
+    // frob:tests crates/frob-ledger/src/freshness.rs::assess_repo
+    // frob:tests crates/frob-ledger/src/freshness.rs::gate_claim
+    #[test]
+    fn a_repo_without_a_remote_or_config_is_assessed_and_not_gated() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        let sync = crate::config::SyncTable::default();
+        let fresh = assess_repo(&repo, &sync, 1_800_000_000);
+        assert_eq!(fresh.state, FreshState::LocalOnly, "{fresh:?}");
+        // No frob config in the root: the gate does not apply.
+        assert!(gate_claim(&repo, dir.path(), 1_800_000_000).is_ok());
+    }
 }

@@ -289,7 +289,7 @@ impl Command for TourVerb {
             session(
                 &stops,
                 &mut std::io::stdin().lock(),
-                // frob:accept LOG001 because="the interactive tour session is the command's primary output"
+                // frob:defer LOG001 because="the interactive tour session is the command's primary output" ticket=01M79PWQP03T5YH7QVM72KW077
                 &mut std::io::stdout().lock(),
                 &mut opener,
             )

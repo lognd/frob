@@ -99,6 +99,8 @@ pub struct ArchInput<'a> {
     pub changed: &'a BTreeSet<String>,
     /// Run the whole-repo structural clone scan (`DUP005`); off, the rule is not applicable.
     pub dup_scan: bool,
+    /// True for a method name the active engine pack calls itself (`Update`); `DEAD001` treats such C# methods as live roots.
+    pub is_engine_entry: &'a dyn Fn(&str) -> bool,
 }
 
 /// The shared clone index directory for the checkout at `root` (under the git common dir), `None` outside git.
@@ -115,6 +117,25 @@ pub struct ArchReport {
     pub subjects: BTreeMap<&'static str, usize>,
     /// Rules whose whole scope is absent here (rule id to the reason), so zero subjects is not a gap.
     pub not_applicable: BTreeMap<&'static str, String>,
+}
+
+/// Run `VIS001`, recording its subject count and, when there is nothing to judge, why it does not apply.
+fn check_vis(input: &ArchInput<'_>, report: &mut ArchReport) -> Vec<Verdict> {
+    let (findings, candidates) = vis::check(input.graph, input.crates);
+    report.subjects.insert(VIS, candidates);
+    if !vis::has_rust(input.graph) {
+        tracing::debug!("no Rust units in the walk; VIS001 does not apply");
+        report
+            .not_applicable
+            .insert(VIS, "no Rust source files in the walk".to_owned());
+    } else if candidates == 0 {
+        tracing::debug!("no pub Rust free function outside the public API; VIS001 does not apply");
+        report.not_applicable.insert(
+            VIS,
+            "no pub Rust free function outside the public API to judge".to_owned(),
+        );
+    }
+    findings
 }
 
 /// Run `CYCLE001`, `LARGE001`, `DEAD001`, `VIS001` and `DUP001` over `input`.
@@ -148,17 +169,10 @@ pub fn analyze(input: &ArchInput<'_>) -> ArchReport {
     } else {
         tracing::debug!("LARGE001 is off (large_lines = 0)");
     }
-    let (findings, candidates) = dead::check(input.graph);
+    let (findings, candidates) = dead::check(input.graph, input.is_engine_entry);
     report.subjects.insert(DEAD, candidates);
     report.findings.extend(findings);
-    let (findings, candidates) = vis::check(input.graph, input.crates);
-    report.subjects.insert(VIS, candidates);
-    if !vis::has_rust(input.graph) {
-        tracing::debug!("no Rust units in the walk; VIS001 does not apply");
-        report
-            .not_applicable
-            .insert(VIS, "no Rust source files in the walk".to_owned());
-    }
+    let findings = check_vis(input, &mut report);
     report.findings.extend(findings);
     let (findings, lexed) = dup::check(
         input.graph,

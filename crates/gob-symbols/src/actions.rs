@@ -310,6 +310,22 @@ mod tests {
         assert_eq!(q, vec![Some("v4.1.0".to_owned()), None]);
     }
 
+    /// The `(name, args)` attributes of the extra whose symref ends with `job`.
+    fn job_attrs(f: &Folded, job: &str) -> Vec<(String, String)> {
+        f.file
+            .extras
+            .iter()
+            .find(|e| e.symref.to_string().ends_with(job))
+            .map(|e| {
+                e.facts
+                    .attributes
+                    .iter()
+                    .map(|a| (a.name.clone(), a.args.clone()))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     // frob:tests inherit_attributes
     #[test]
     fn jobs_record_inherited_keys_and_link_to_workflow_level() {
@@ -321,25 +337,11 @@ mod tests {
         };
         let tree = ActionsAdapter.parse(wf, &ParseLimits::default());
         let f = ActionsAdapter.fold(&tree, &input).unwrap();
-        let attrs = |job: &str| -> Vec<(String, String)> {
-            f.file
-                .extras
-                .iter()
-                .find(|e| e.symref.to_string().ends_with(job))
-                .map(|e| {
-                    e.facts
-                        .attributes
-                        .iter()
-                        .map(|a| (a.name.clone(), a.args.clone()))
-                        .collect()
-                })
-                .unwrap_or_default()
-        };
         assert_eq!(
-            attrs("jobs.a")[1],
+            job_attrs(&f, "jobs.a")[1],
             ("secrets".to_owned(), "inherit".to_owned())
         );
-        assert!(attrs("jobs.b").is_empty());
+        assert!(job_attrs(&f, "jobs.b").is_empty());
         let deps: Vec<_> = f
             .file
             .refs

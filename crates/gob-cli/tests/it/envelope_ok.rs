@@ -75,3 +75,11 @@ fn data_ok_true_stays_ok_and_notices_are_deduplicated() {
     assert_eq!(v["ok"], true);
     assert_eq!(v["warnings"], serde_json::json!(["twice"]));
 }
+
+/// `with_freshness` stores the supplied freshness on the payload.
+// frob:tests crates/gob-cli/src/error.rs::Payload.with_freshness
+#[test]
+fn payload_with_freshness_replaces_the_field() {
+    let p = gob_cli::Payload::new(1_u8).with_freshness(None);
+    assert!(p.freshness.is_none());
+}

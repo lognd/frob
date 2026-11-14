@@ -40,24 +40,17 @@ pub struct PathFinding {
 impl PathFinding {
     /// Intern the span and build the pipeline [`Finding`]; `None` when the rule id is invalid.
     pub fn into_finding(self, files: &mut FileInterner) -> Option<Finding> {
-        let id: RuleId = match self.rule.parse() {
-            Ok(id) => id,
-            Err(err) => {
-                tracing::error!(rule = self.rule, %err, "path finding names an invalid rule id");
-                return None;
-            }
-        };
-        let size = |n: usize| TextSize::new(u32::try_from(n).unwrap_or(u32::MAX));
-        let (start, end) = self.range;
-        let span = Span::new(
-            files.intern(&self.file),
-            TextRange::new(size(start), size(end.max(start))),
-        );
-        let finding = Finding::new(id, self.severity, Some(span), self.message, &self.anchor);
-        Some(match self.reason {
-            Some(r) => finding.with_reason(r),
-            None => finding,
-        })
+        let parsed = self.rule.parse::<RuleId>();
+        if let Err(err) = &parsed {
+            tracing::error!(rule = self.rule, %err, "path finding names an invalid rule id");
+        }
+        let id = parsed.ok()?;
+        let lo = TextSize::new(u32::try_from(self.range.0).unwrap_or(u32::MAX));
+        let hi = TextSize::new(u32::try_from(self.range.1).unwrap_or(u32::MAX)).max(lo);
+        let file = files.intern(&self.file);
+        let span = Span::new(file, TextRange::new(lo, hi));
+        let built = Finding::new(id, self.severity, Some(span), self.message, &self.anchor);
+        Some(self.reason.map_or(built.clone(), |r| built.with_reason(r)))
     }
 }
 
@@ -105,6 +98,7 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
     let mut report = PathReport::default();
     let mut examined = [0usize; 3];
     let mut undecided: BTreeSet<(Kind, &'static str)> = BTreeSet::new();
+    let mut undecided_unsupported: BTreeSet<(&str, &str)> = BTreeSet::new();
     // The parse-and-scan of each file is independent and is the whole cost of the pass, so it
     // runs on the rayon pool; the fold below stays sequential so the report is deterministic.
     let scans: Vec<Result<path::Report, path::ScanError>> = files
@@ -124,6 +118,15 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
         } else {
             f.text.lines().collect()
         };
+        if !scanned_any(f.language) && crate::lang::is_code(f.language) {
+            for rule in [PATH001, PATH002, PATH003] {
+                if undecided_unsupported.insert((rule, f.language.name())) {
+                    report
+                        .findings
+                        .push(unsupported_language(rule, f.path, f.language));
+                }
+            }
+        }
         if scanned_any(f.language) {
             examined[0] += 1;
             if path::has_conversion_roles(f.language) {
@@ -177,7 +180,7 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
         if n == 0 {
             report.not_applicable.insert(
                 id,
-                "no Rust, Python, TypeScript or C# files in the walk".to_owned(),
+                "no Rust, Python, TypeScript, JavaScript or C# files in the walk".to_owned(),
             );
         } else {
             report.subjects.insert(id, n);
@@ -194,10 +197,83 @@ pub fn analyze(files: &[PathFile<'_>], options: &Options) -> PathReport {
     report
 }
 
+/// The Unresolved finding for a rule that has no detector for the code language of `path`.
+///
+/// Callers emit it once per rule and language, at the first file, so a language a pass cannot
+/// judge is reported instead of silently skipped.
+pub fn unsupported_language(rule: &'static str, path: &str, language: Language) -> PathFinding {
+    tracing::debug!(
+        rule,
+        path,
+        language = language.name(),
+        "no detector: unresolved"
+    );
+    PathFinding {
+        rule,
+        severity: Severity::Unresolved,
+        file: path.to_owned(),
+        range: (0, 0),
+        message: format!(
+            "{rule} has no {} detector, so {path} cannot be judged",
+            language.name()
+        ),
+        reason: Some(UnresolvedReason::Fidelity),
+        anchor: format!("{path}:unresolved:{rule}"),
+    }
+}
+
 /// True when `language` has string literals the scanner reads.
 fn scanned_any(language: Language) -> bool {
     matches!(
         language,
-        Language::Rust | Language::Python | Language::TypeScript | Language::CSharp
-    )
+        Language::Rust | Language::Python | Language::CSharp
+    ) || crate::lang::script_family(language)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A Java file gets one Unresolved finding per PATH rule, once per language.
+    // frob:tests crates/grimble-lints/src/pass.rs::unsupported_language
+    #[test]
+    fn java_files_are_unresolved_once() {
+        let files = [
+            PathFile {
+                path: "A.java",
+                language: Language::Java,
+                text: "class A {}\n",
+            },
+            PathFile {
+                path: "B.java",
+                language: Language::Java,
+                text: "class B {}\n",
+            },
+        ];
+        let r = analyze(&files, &Options::default());
+        let n = r
+            .findings
+            .iter()
+            .filter(|f| f.severity == Severity::Unresolved && f.file == "A.java")
+            .count();
+        assert_eq!(n, 3, "{:?}", r.findings);
+        assert_eq!(r.findings.len(), 3);
+    }
+
+    /// A TSX file with an absolute host path literal is judged.
+    // frob:tests crates/grimble-lints/src/pass.rs::scanned_any
+    #[test]
+    fn tsx_host_path_is_flagged() {
+        let files = [PathFile {
+            path: "a.tsx",
+            language: Language::Tsx,
+            text: "const a = '/home/u/a';\n",
+        }];
+        let r = analyze(&files, &Options::default());
+        assert!(
+            r.findings.iter().any(|f| f.rule == PATH001),
+            "{:?}",
+            r.findings
+        );
+    }
 }

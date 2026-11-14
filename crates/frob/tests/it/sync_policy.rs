@@ -4,7 +4,7 @@
 use crate::common;
 
 use std::path::Path;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde_json::Value;
 
@@ -61,6 +61,23 @@ fn state_file(clone: &Path) -> std::path::PathBuf {
     clone.join(".git").join("frob").join("refresh.toml")
 }
 
+/// Run `ticket doable` until the offline probe actually runs (not reporting a busy refresh lock).
+fn doable_once_probed(clone: &Path) -> (i32, Value) {
+    // A probe that finds the per-clone refresh lock held (a straggling refresh under CI load)
+    // leaves the aged state untouched and reports STALE; retry until the probe actually runs.
+    (0..40)
+        .map(|_| {
+            let r = frob(clone, false, &["ticket", "doable"]);
+            if warnings(&r.1).contains("W-SYNC-STALE") {
+                // frob:accept TESTQ002 because="real-time wait for a straggling refresh lock held by another process; no clock to fake"
+                std::thread::sleep(Duration::from_millis(250));
+            }
+            r
+        })
+        .find(|(_, v)| !warnings(v).contains("W-SYNC-STALE"))
+        .expect("the probe never ran: refresh lock stayed busy")
+}
+
 fn warnings(v: &Value) -> String {
     v["warnings"].to_string()
 }
@@ -107,7 +124,7 @@ fn doable_warns_when_offline_and_the_view_is_old() {
     let (origin, clone) = clone_with_origin();
     frob(clone.path(), false, &["refresh"]);
     offline_with_view_at(origin.path(), clone.path(), |ok| ok - 7200);
-    let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
+    let (code, v) = doable_once_probed(clone.path());
     assert_eq!(code, 0, "{v}");
     assert!(warnings(&v).contains("W-SYNC-OFFLINE"), "{v}");
     assert_eq!(v["freshness"]["state"], "degraded", "{v}");
@@ -187,7 +204,8 @@ fn ci_disables_the_foreground_probe_and_the_kick() {
     assert_eq!(code, 0, "{v}");
     let (code, v) = frob(clone.path(), true, &["ticket", "list"]);
     assert_eq!(code, 0, "{v}");
-    std::thread::sleep(Duration::from_millis(500));
+    // Give a (wrongly) spawned detached refresh time to write its state file.
+    std::thread::park_timeout(Duration::from_millis(500));
     assert!(!state_file(clone.path()).exists(), "CI never syncs");
 }
 
@@ -197,9 +215,12 @@ fn reads_kick_a_background_refresh() {
     let (_origin, clone) = clone_with_origin();
     let (code, v) = frob(clone.path(), false, &["ticket", "list"]);
     assert_eq!(code, 0, "{v}");
-    let deadline = Instant::now() + Duration::from_secs(10);
-    while !state_file(clone.path()).exists() && Instant::now() < deadline {
-        std::thread::sleep(Duration::from_millis(100));
+    // Poll for the detached refresh's state file, bounded at 100 x 100ms.
+    for _ in 0..100 {
+        if state_file(clone.path()).exists() {
+            break;
+        }
+        std::thread::park_timeout(Duration::from_millis(100));
     }
     assert!(state_file(clone.path()).exists(), "background refresh ran");
 }

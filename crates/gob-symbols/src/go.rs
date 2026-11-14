@@ -9,9 +9,12 @@
 //! - Exported names (leading upper-case letter) are `public`, the rest `private`.
 //! - Imports are not units; they are read by the import-resolved capability scanner
 //!   ([`crate::go_uses`]), not folded into the term.
+//! - Every `call_expression` inside a function or method body is a [`CallSite`] whose caller is that
+//!   unit (`f()` is a plain call, `x.f()` a method call), so reachability rules see Go calls.
 //! - Syntax errors become `hole(parse-error)` nodes, so the file reads as a partial parse.
 
 // frob:ticket 01M64VBRCNYQ3WC895EYXR6GME
+// frob:ticket 01M7AV38DKR1SA56E17SY378XX
 
 use gob_ir::{NodeId, Operator, ScopeGraph, TermError};
 use gob_languages::{Language, ParseLimits, ParseResult, grammar_identity, parse};
@@ -20,8 +23,13 @@ use tree_sitter::Node;
 use crate::adapter::{
     Adapter, CapabilityDecl, ConcreteTree, Fidelity, FileInput, FoldError, Folded, Lang,
 };
-use crate::fold::{Cx, base_file, children, failed_file, file_root_spec, text_of, text_unit};
+use crate::fold::{
+    Cx, base_file, call_text, children, failed_file, file_root_spec, line_of, span_of, text_of,
+    text_unit,
+};
+use crate::model::{CallSite, LocalBinding, Receiver};
 use crate::pipeline::EXTRACTOR_VERSION;
+use crate::symref::Symref;
 use crate::view::{self, HOLE_MISSING, HOLE_PARSE_ERROR, Naming};
 
 type R<T> = Result<T, TermError>;
@@ -81,8 +89,9 @@ pub fn is_go_path(path: &str) -> bool {
 fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded, FoldError> {
     let mut cx = Cx::new(input.path, "go", text);
     let mut kids = Vec::new();
+    let mut raw_calls: Vec<(NodeId, CallSite)> = Vec::new();
     for n in children(root) {
-        kids.extend(top_level(&mut cx, text, n)?);
+        kids.extend(top_level(&mut cx, text, n, &mut raw_calls)?);
     }
     let spec = file_root_spec(&cx, input.size as usize);
     let root_id = cx.add(spec, &kids)?;
@@ -94,8 +103,15 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
     file.parse_status = view::parse_status_of(&term);
     file.symbols = v.symbols;
     file.extras = v.extras;
+    for (node, mut site) in raw_calls {
+        if let Some(caller) = v.by_node.get(&node) {
+            site.caller = caller.clone();
+            file.calls.push(site);
+        }
+    }
     tracing::debug!(
         path = input.path,
+        calls = file.calls.len(),
         symbols = file.symbols.len(),
         "go file folded"
     );
@@ -103,12 +119,19 @@ fn fold_tree(text: &str, root: Node<'_>, input: &FileInput<'_>) -> Result<Folded
 }
 
 /// The units one top-level node contributes (none for package and import clauses).
-fn top_level(cx: &mut Cx<'_>, text: &str, n: Node<'_>) -> R<Vec<NodeId>> {
+fn top_level(
+    cx: &mut Cx<'_>,
+    text: &str,
+    n: Node<'_>,
+    calls: &mut Vec<(NodeId, CallSite)>,
+) -> R<Vec<NodeId>> {
     let mut out = Vec::new();
     match n.kind() {
         "function_declaration" => {
             if let Some(name) = n.child_by_field_name("name") {
-                out.push(unit(cx, text, n, "function", text_of(text, name))?);
+                let id = unit(cx, text, n, "function", text_of(text, name))?;
+                attach_calls(text, n, id, calls);
+                out.push(id);
             }
         }
         "method_declaration" => {
@@ -122,7 +145,9 @@ fn top_level(cx: &mut Cx<'_>, text: &str, n: Node<'_>) -> R<Vec<NodeId>> {
                 } else {
                     format!("{recv}.{}", text_of(text, name))
                 };
-                out.push(unit(cx, text, n, "method", &full)?);
+                let id = unit(cx, text, n, "method", &full)?;
+                attach_calls(text, n, id, calls);
+                out.push(id);
             }
         }
         "type_declaration" => {
@@ -166,6 +191,58 @@ fn top_level(cx: &mut Cx<'_>, text: &str, n: Node<'_>) -> R<Vec<NodeId>> {
         _ => {}
     }
     Ok(out)
+}
+
+/// Records every call in the body of declaration `n` as a call site owned by unit `id`.
+fn attach_calls(text: &str, n: Node<'_>, id: NodeId, out: &mut Vec<(NodeId, CallSite)>) {
+    let Some(body) = n.child_by_field_name("body") else {
+        return;
+    };
+    let mut found = Vec::new();
+    collect_calls(text, body, &mut found);
+    found.sort_by_key(|c| c.start);
+    tracing::trace!(calls = found.len(), "go calls collected");
+    out.extend(found.into_iter().map(|c| (id, c)));
+}
+
+/// Every `call_expression` under `body`, as caller-less call sites.
+fn collect_calls(text: &str, body: Node<'_>, out: &mut Vec<CallSite>) {
+    let mut stack = vec![body];
+    while let Some(x) = stack.pop() {
+        if x.kind() == "call_expression"
+            && let Some(f) = x.child_by_field_name("function")
+        {
+            let (member, name) = match f.kind() {
+                "identifier" => (false, Some(f)),
+                "selector_expression" => (true, f.child_by_field_name("field")),
+                _ => (false, None),
+            };
+            if let Some(name) = name {
+                let (start, end) = span_of(x);
+                out.push(CallSite {
+                    caller: Symref::file(""),
+                    callee: text_of(text, name).to_owned(),
+                    qualifier: None,
+                    method: member,
+                    local: LocalBinding::None,
+                    in_macro: false,
+                    receiver: member.then_some(Receiver::Expr),
+                    opaque_qualifier: false,
+                    macro_exact: None,
+                    args: x
+                        .child_by_field_name("arguments")
+                        .map(|a| children(a).iter().filter(|c| c.is_named()).count()),
+                    qual_path: Vec::new(),
+                    bound: Vec::new(),
+                    line: line_of(x),
+                    text: call_text(text_of(text, f)),
+                    start,
+                    end,
+                });
+            }
+        }
+        stack.extend(children(x));
+    }
 }
 
 /// The receiver base type of a method receiver list `(r *T)` as `T` (generics dropped).
@@ -240,6 +317,18 @@ mod tests {
             assert!(names.iter().any(|n| n == want), "{want} in {names:?}");
         }
         assert_eq!(f.file.language, "go");
+    }
+
+    // frob:tests crates/gob-symbols/src/go.rs::collect_calls
+    #[test]
+    fn records_calls_in_function_bodies() {
+        let f = fold_src("package main\nfunc helper() {}\nfunc run() {\n\thelper()\n\tx.m(1)\n}\n");
+        let calls = &f.file.calls;
+        assert_eq!(calls.len(), 2, "{calls:?}");
+        assert_eq!(calls[0].callee, "helper");
+        assert_eq!(calls[0].caller.to_string(), "main.go::run");
+        assert!(!calls[0].method && calls[1].method);
+        assert_eq!(calls[1].args, Some(1));
     }
 
     // frob:tests crates/gob-symbols/src/go.rs::is_go_path

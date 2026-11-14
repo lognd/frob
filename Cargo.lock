@@ -590,6 +590,7 @@ name = "crunk-check"
 version = "0.532.0"
 dependencies = [
  "blake3",
+ "crunk-gallery",
  "crunk-ingest",
  "crunk-rules",
  "crunk-spec",
@@ -600,6 +601,7 @@ dependencies = [
  "gob-config",
  "gob-diagnostics",
  "gob-exec",
+ "gob-fs",
  "gob-lock",
  "gob-mdtest",
  "gob-packs",
@@ -633,6 +635,8 @@ dependencies = [
 name = "crunk-gallery"
 version = "0.532.0"
 dependencies = [
+ "crunk-layout",
+ "crunk-scene",
  "crunk-spec",
  "getrandom 0.3.4",
  "gob-exec",
@@ -646,6 +650,7 @@ dependencies = [
  "tempfile",
  "thiserror",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1273,6 +1278,7 @@ dependencies = [
  "gob-time",
  "gob-walk",
  "grimble-check",
+ "gungraun",
  "rayon",
  "schemars",
  "serde",
@@ -1448,7 +1454,6 @@ version = "0.532.0"
 dependencies = [
  "clap",
  "frob-ledger",
- "frob-metrics",
  "globset",
  "gob-cli",
  "gob-config",
@@ -2921,6 +2926,7 @@ dependencies = [
  "cortexkit-tree-sitter-scss",
  "gob-path",
  "gob-text",
+ "gungraun",
  "thiserror",
  "tracing",
  "tree-sitter",
@@ -3318,7 +3324,6 @@ dependencies = [
  "toml",
  "tracing",
  "tree-sitter",
- "unicode-normalization",
 ]
 
 [[package]]

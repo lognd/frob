@@ -592,6 +592,21 @@ fn is_integer_accepts_signed_whole_numbers_and_rejects_the_rest() {
     assert_eq!(rows_of(&plan, &m, 0), want);
 }
 
+/// Rows of `m` whose function name satisfies the `is <word>` BEM test.
+fn bem_rows(m: &Model, word: &str) -> Vec<usize> {
+    let mut b = PlanBuilder::new("BEM001", Polarity::Pplus);
+    let f = b.find("function");
+    let s = b.field(f, "name");
+    let t = b.s(word);
+    let op = b.op(Op::Is {
+        subject: s,
+        test: t,
+    });
+    b.clause(op);
+    b.report(None, f, "x");
+    rows_of(&b.build(), m, 0)
+}
+
 // frob:ticket 01M5ETSE956ZY0S15CMQGH367X
 // frob:tests crates/gob-plan/src/exec/core/eval/predicate.rs::Eval.is_op
 #[test]
@@ -606,22 +621,9 @@ fn is_bem_words_judge_each_segment_in_its_own_case() {
         "card__Item",
     ];
     let (m, _) = model(&names);
-    let run_word = |word: &str| -> Vec<usize> {
-        let mut b = PlanBuilder::new("BEM001", Polarity::Pplus);
-        let f = b.find("function");
-        let s = b.field(f, "name");
-        let t = b.s(word);
-        let op = b.op(Op::Is {
-            subject: s,
-            test: t,
-        });
-        b.clause(op);
-        b.report(None, f, "x");
-        rows_of(&b.build(), &m, 0)
-    };
-    assert_eq!(run_word("bem_kebab"), vec![0, 1, 2]);
-    assert_eq!(run_word("bem_snake"), vec![0, 3]);
-    assert_eq!(run_word("bem_camel"), vec![0, 4]);
+    assert_eq!(bem_rows(&m, "bem_kebab"), vec![0, 1, 2]);
+    assert_eq!(bem_rows(&m, "bem_snake"), vec![0, 3]);
+    assert_eq!(bem_rows(&m, "bem_camel"), vec![0, 4]);
 }
 
 // frob:ticket 01M5ETSE956ZY0S15CMQGH367X

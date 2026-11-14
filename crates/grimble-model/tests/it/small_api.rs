@@ -110,3 +110,13 @@ fn bind_yields_one_rule_per_declared_rule() {
         grimble_model::rules::METAS.len()
     );
 }
+
+#[test]
+// frob:tests crates/grimble-model/src/rules/mod.rs::BindPart.push_all
+fn a_part_appends_only_its_own_rules() {
+    use grimble_model::rules::{BindPart, Part0};
+    let mut rules: Vec<gob_rules::BoundRule<Stub>> = Vec::new();
+    Part0::push_all(&mut rules);
+    assert!(!rules.is_empty());
+    assert!(rules.len() < grimble_model::rules::METAS.len());
+}

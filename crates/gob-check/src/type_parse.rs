@@ -192,11 +192,28 @@ pub(crate) fn parse_tsc(stdout: &str) -> Result<Vec<RawFinding>, ParseError> {
     Ok(out)
 }
 
-/// Whether `stage` is a type checker whose clean verdict means strict: Python checkers always, `tsc` only with an explicit `--strict` argument (a bare `tsc` run proves nothing about `any`).
+/// Whether `root/tsconfig.json` sets `compilerOptions.strict` to true (unreadable, commented or absent config is not strict).
+fn tsconfig_strict(root: &std::path::Path) -> bool {
+    // The tsconfig is repository config read once per stage, not walked rule content.
+    #[allow(clippy::disallowed_methods)]
+    let read = std::fs::read_to_string(root.join("tsconfig.json"));
+    let Ok(text) = read else {
+        return false;
+    };
+    let strict = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.pointer("/compilerOptions/strict")?.as_bool())
+        .unwrap_or(false);
+    tracing::debug!(strict, "tsconfig strictness read");
+    strict
+}
+
+/// Whether `stage` run in `root` is a type checker whose clean verdict means strict: Python checkers always, `tsc` only with an explicit `--strict` argument or `strict: true` in `root/tsconfig.json` (a bare `tsc` run proves nothing about `any`).
 // frob:ticket 01M4CXSY224VNMR2R5Q69D9E89
-pub fn is_strict_checker(stage: &crate::config::ToolStage) -> bool {
+// frob:ticket 01M5HMPQJH9F5WRY1HR5G8XEG9
+pub fn is_strict_checker(stage: &crate::config::ToolStage, root: &std::path::Path) -> bool {
     match stage.parser {
-        ToolParser::TscText => stage.args.iter().any(|a| a == "--strict"),
+        ToolParser::TscText => stage.args.iter().any(|a| a == "--strict") || tsconfig_strict(root),
         ToolParser::TyGitlab | ToolParser::PyrightJson => true,
         _ => false,
     }
@@ -209,7 +226,15 @@ fn is_ts_path(path: &str) -> bool {
         .any(|e| path.ends_with(e))
 }
 
+/// Whether a checker-reported path (possibly `./`-prefixed or absolute) names the repo-relative `path`.
+fn names_path(reported: &str, path: &str) -> bool {
+    let p = reported.trim_start_matches("./");
+    p == path || p.ends_with(&format!("/{path}"))
+}
+
 /// Derive [`TypeFacts`] from a bound checker's stdout: every `(path, text)` file the checker reported nothing on is clean, and ignore comments are scanned from `text`.
+///
+/// When `listed` is `Some` (the checker's `--listFilesOnly` output lines), only files it lists can be clean: a file outside the program was never checked.
 ///
 /// # Errors
 ///
@@ -219,15 +244,14 @@ pub fn type_facts_from_output(
     stdout: &str,
     trust: TypesTrust,
     files: &[(String, String)],
+    listed: Option<&[String]>,
 ) -> Result<TypeFacts, String> {
     let found = crate::tool_parse::parse(parser, stdout).map_err(|e| e.to_string())?;
     let mut facts = TypeFacts::new(trust);
     for (path, text) in files {
-        let dirty = found.iter().any(|f| {
-            let p = f.path.trim_start_matches("./");
-            p == path || p.ends_with(&format!("/{path}"))
-        });
-        if !dirty {
+        let dirty = found.iter().any(|f| names_path(&f.path, path));
+        let unchecked = listed.is_some_and(|l| !l.iter().any(|r| names_path(r, path)));
+        if !dirty && !unchecked {
             facts.mark_clean(path);
         }
         if is_ts_path(path) {
@@ -247,6 +271,12 @@ pub fn type_facts_from_output(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn stage(args: &str) -> crate::config::ToolStage {
+        let toml =
+            format!("name = \"t\"\ncommand = \"tsc\"\nargs = [{args}]\nparser = \"tsc-text\"\n");
+        toml::from_str(&toml).expect("stage")
+    }
 
     const TY: &str = include_str!("../tests/fixtures/ty-gitlab.json");
     const TSC: &str = include_str!("../tests/fixtures/tsc.txt");
@@ -291,14 +321,12 @@ mod tests {
     #[test]
     // frob:tests crates/gob-check/src/type_parse.rs::is_strict_checker
     fn tsc_needs_an_explicit_strict_flag() {
-        let stage = |args: &str| -> crate::config::ToolStage {
-            let toml = format!(
-                "name = \"t\"\ncommand = \"tsc\"\nargs = [{args}]\nparser = \"tsc-text\"\n"
-            );
-            toml::from_str(&toml).expect("stage")
-        };
-        assert!(is_strict_checker(&stage("\"--noEmit\", \"--strict\"")));
-        assert!(!is_strict_checker(&stage("\"--noEmit\"")));
+        let root = std::path::Path::new("/nonexistent-root");
+        assert!(is_strict_checker(
+            &stage("\"--noEmit\", \"--strict\""),
+            root
+        ));
+        assert!(!is_strict_checker(&stage("\"--noEmit\""), root));
     }
 
     #[test]
@@ -332,8 +360,9 @@ mod tests {
                 "// @ts-ignore\nx.run();\ny.run();\n".to_owned(),
             ),
         ];
-        let facts = type_facts_from_output(ToolParser::TscText, TSC, TypesTrust::Checked, &files)
-            .expect("facts");
+        let facts =
+            type_facts_from_output(ToolParser::TscText, TSC, TypesTrust::Checked, &files, None)
+                .expect("facts");
         assert_eq!(
             facts.weight("src/bad.ts", 1),
             gob_symbols::AnnotationWeight::Claimed
@@ -350,13 +379,52 @@ mod tests {
 
     #[test]
     // frob:tests crates/gob-check/src/type_parse.rs::type_facts_from_output
+    fn unlisted_files_are_not_clean() {
+        let files = vec![
+            ("src/in.ts".to_owned(), "y.run();\n".to_owned()),
+            ("other/out.ts".to_owned(), "y.run();\n".to_owned()),
+        ];
+        let listed = vec!["/repo/src/in.ts".to_owned()];
+        let facts = type_facts_from_output(
+            ToolParser::TscText,
+            "",
+            TypesTrust::Checked,
+            &files,
+            Some(&listed),
+        )
+        .expect("facts");
+        assert_eq!(
+            facts.weight("src/in.ts", 1),
+            gob_symbols::AnnotationWeight::Exact
+        );
+        assert_eq!(
+            facts.weight("other/out.ts", 1),
+            gob_symbols::AnnotationWeight::Claimed
+        );
+    }
+
+    #[test]
+    // frob:tests crates/gob-check/src/type_parse.rs::is_strict_checker
+    fn tsconfig_strict_makes_tsc_strict() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            dir.path().join("tsconfig.json"),
+            r#"{"compilerOptions":{"strict":true}}"#,
+        )
+        .expect("write");
+        assert!(is_strict_checker(&stage("\"--noEmit\""), dir.path()));
+    }
+
+    #[test]
+    // frob:tests crates/gob-check/src/type_parse.rs::type_facts_from_output
     fn files_with_findings_are_not_clean() {
         let files = vec![
             ("app/main.py".to_owned(), "x = 1\n".to_owned()),
             ("app/ok.py".to_owned(), "y = 2\n".to_owned()),
         ];
-        let facts = type_facts_from_output(ToolParser::TyGitlab, TY, TypesTrust::Checked, &files)
-            .expect("facts");
+        let facts =
+            type_facts_from_output(ToolParser::TyGitlab, TY, TypesTrust::Checked, &files, None)
+                .expect("facts");
         assert_eq!(
             facts.weight("app/main.py", 1),
             gob_symbols::AnnotationWeight::Claimed
@@ -366,7 +434,8 @@ mod tests {
             gob_symbols::AnnotationWeight::Exact
         );
         assert!(
-            type_facts_from_output(ToolParser::TyGitlab, "[", TypesTrust::Checked, &files).is_err()
+            type_facts_from_output(ToolParser::TyGitlab, "[", TypesTrust::Checked, &files, None)
+                .is_err()
         );
         assert!(parse_pyright("{").is_err());
     }

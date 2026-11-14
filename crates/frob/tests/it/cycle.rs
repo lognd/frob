@@ -96,7 +96,16 @@ impl Repo {
     /// A ticket with `points` story points, started when `category` is `in-progress`; returns its ULID.
     fn ticket(&self, category: &str, points: &str) -> String {
         let id = self.ok(&[
-            "ticket", "new", "--title", "t", "--type", "task", "--points", points,
+            "ticket",
+            "new",
+            "--title",
+            "t",
+            "--type",
+            "task",
+            "--points",
+            points,
+            "--label",
+            "no-criteria",
         ])["data"]["id"]
             .as_str()
             .expect("id")

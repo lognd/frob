@@ -54,6 +54,9 @@ pub struct CrunkInputs {
     /// The authored `design/components/*.component.toml` files, parsed (the COMP rules' input).
     // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
     pub components: Option<crunk_rules::component_files::ComponentFacts>,
+    // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
+    /// Which spec cells have a render in the gallery manifest; `None` when there is no manifest or spec.
+    pub renders: Option<crunk_rules::render_ledger::RenderLedger>,
     /// The repository `frob-baseline.toml`; tables of other products' rules never match a crunk finding.
     pub baseline: gob_rules::Baseline,
 }
@@ -99,6 +102,11 @@ impl CrunkHost for CrunkInputs {
     fn components(&self) -> Option<&crunk_rules::component_files::ComponentFacts> {
         self.components.as_ref()
     }
+
+    // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
+    fn renders(&self) -> Option<&crunk_rules::render_ledger::RenderLedger> {
+        self.renders.as_ref()
+    }
 }
 
 /// The host the declared rules judge: crunk's inputs.
@@ -129,7 +137,11 @@ fn waiver_exceptions(snap: &Snapshot<Crunk>) -> Vec<BoundException> {
 
 /// The crunk product driving the shared check pipeline.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Crunk;
+pub struct Crunk {
+    // frob:ticket 01M7AV37ZMX53C3NNTGFA8TB2V
+    /// `--static`: never run the project's Tailwind, whatever `[tailwind] engine` says.
+    pub static_tailwind: bool,
+}
 
 impl Product for Crunk {
     type Shared = CrunkShared;
@@ -176,10 +188,9 @@ impl Product for Crunk {
                 }
             }
         });
-        let tailwind = spec
-            .as_ref()
-            .zip(styles.as_ref())
-            .map(|(spec, styles)| crate::tailwind::collect(spec, styles, &self.state_dir()));
+        let tailwind = spec.as_ref().zip(styles.as_ref()).map(|(spec, styles)| {
+            crate::tailwind::collect(spec, styles, &self.state_dir(), self.static_tailwind)
+        });
         // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
         let reviews = spec.as_ref().map(|spec| {
             crate::review::gather(spec, &crate::review::GitSignatures::new(&cx.core.root))
@@ -208,6 +219,10 @@ impl Product for Crunk {
         let components = spec
             .as_ref()
             .map(crunk_rules::component_files::ComponentFacts::load);
+        // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
+        let renders = spec
+            .as_ref()
+            .and_then(|spec| crate::render_ledger::gather(&cx.core.root, spec));
         let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
             tracing::warn!(%e, "crunk collect: frob-baseline.toml is unusable; the check refuses to run");
             CheckError::Config(gob_config::ConfigError::Invalid {
@@ -228,6 +243,7 @@ impl Product for Crunk {
                 content,
                 screens,
                 components,
+                renders,
                 baseline,
             },
             findings: Vec::new(),
@@ -282,6 +298,10 @@ impl Product for Crunk {
         if let Some(facts) = &snap.inputs.components {
             // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
             digest.extend(facts.fingerprint().into_bytes());
+        }
+        if let Some(ledger) = &snap.inputs.renders {
+            // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
+            digest.extend(format!("{ledger:?}").into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {
             // TOKENS001 reads the generated files from disk, outside the walk.

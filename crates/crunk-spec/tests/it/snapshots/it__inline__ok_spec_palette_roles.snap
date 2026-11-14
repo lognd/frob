@@ -97,6 +97,7 @@ Ok(
             namespace_keys: false,
             alpha_channels: false,
             version: Auto,
+            engine: Node,
         },
         breakpoints: BreakpointsConfig {
             points: {},

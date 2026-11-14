@@ -4,12 +4,17 @@
 
 // frob:ticket 01M4CXSTHZXVBMWSTRCBH9BHQ5
 
+use crate::union_find::Union;
 use std::collections::{BTreeMap, BTreeSet};
 
 use gob_ir::{NodeId, Operator, Term, Universal};
 use tracing::debug;
 
 use crate::coh001::statements;
+use crate::config::{CohTable, extend_unique};
+
+/// The built-in value of `[coh] vocab_min_cluster_words`.
+pub const DEFAULT_MIN_CLUSTER_WORDS: usize = 2;
 
 /// Knobs of COH004.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,7 +30,7 @@ pub struct Coh004Options {
 impl Default for Coh004Options {
     fn default() -> Self {
         Self {
-            min_cluster_words: 2,
+            min_cluster_words: DEFAULT_MIN_CLUSTER_WORDS,
             min_word_len: 3,
             stop_words: [
                 "self", "this", "cls", "new", "get", "set", "len", "str", "int", "let", "true",
@@ -34,6 +39,24 @@ impl Default for Coh004Options {
             ]
             .map(str::to_owned)
             .to_vec(),
+        }
+    }
+}
+
+impl From<&CohTable> for Coh004Options {
+    /// The knobs of a loaded `[coh]` table: the cluster floor and extra stop words on the built-ins.
+    fn from(table: &CohTable) -> Self {
+        let mut stop_words = Self::default().stop_words;
+        extend_unique(&mut stop_words, &table.vocab_stop_words);
+        debug!(
+            floor = table.vocab_min_cluster_words,
+            stop_words = stop_words.len(),
+            "coh004 options from [coh]"
+        );
+        Self {
+            min_cluster_words: usize::try_from(table.vocab_min_cluster_words).unwrap_or(usize::MAX),
+            stop_words,
+            ..Self::default()
         }
     }
 }
@@ -94,20 +117,6 @@ fn idents(term: &Term, n: NodeId, out: &mut Vec<String>) {
     }
 }
 
-struct Union(Vec<usize>);
-
-impl Union {
-    fn find(&mut self, x: usize) -> usize {
-        let p = self.0[x];
-        if p == x {
-            return x;
-        }
-        let r = self.find(p);
-        self.0[x] = r;
-        r
-    }
-}
-
 /// Judge `unit` of `term`: cluster the words of its statements and report disjoint vocabularies.
 pub fn coh004(term: &Term, unit: NodeId, opts: &Coh004Options) -> Coh004 {
     let per_stmt: Vec<BTreeSet<String>> = statements(term, unit)
@@ -129,7 +138,7 @@ pub fn coh004(term: &Term, unit: NodeId, opts: &Coh004Options) -> Coh004 {
         .into_iter()
         .collect();
     let index: BTreeMap<&String, usize> = vocab.iter().enumerate().map(|(i, &w)| (w, i)).collect();
-    let mut uf = Union((0..vocab.len()).collect());
+    let mut uf = Union::new(vocab.len());
     for words in &per_stmt {
         let mut it = words.iter().map(|w| index[w]);
         if let Some(first) = it.next() {

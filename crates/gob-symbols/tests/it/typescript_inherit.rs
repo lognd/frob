@@ -191,3 +191,26 @@ fn bases_resolve_through_imports_in_another_file() {
         "{targets:?}"
     );
 }
+
+#[test]
+// frob:ticket 01M5HMPQEYJ2FRW9YG7FMVKQY6
+// frob:tests crates/gob-symbols/src/graph/typescript.rs::SymbolGraph.ts_typed_method
+fn annotated_locals_narrow_method_dispatch() {
+    let base = "class Foo { run(): void {} }\nclass Other { run(): void {} }\n";
+    assert_sole(
+        &one(&format!(
+            "{base}function go() {{ const x: Foo = null!; x.run(); }}\n"
+        )),
+        "Foo.run",
+    );
+    assert_sole(
+        &one(&format!(
+            "{base}function go(c: boolean) {{ if (c) {{ let x: Foo = null!; x.run(); }} }}\n"
+        )),
+        "Foo.run",
+    );
+    let got = one(&format!(
+        "{base}function go() {{ const x = null as any; x.run(); }}\n"
+    ));
+    assert!(got.iter().all(|e| e.1 != Status::Must), "{got:?}");
+}

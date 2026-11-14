@@ -59,5 +59,12 @@ tree-sitter-bash = { version = "=0.25.1", optional = true }
 tree-sitter-zig = { version = "=1.1.2", optional = true }
 tree-sitter-cuda = { version = "=0.21.2", optional = true }
 
+[dev-dependencies]
+gungraun = "0.20.0"
+
+[[bench]]
+name = "ic_parse"
+harness = false
+
 [lints]
 workspace = true

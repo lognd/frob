@@ -1416,7 +1416,7 @@ fn the_pinned_base_is_found_by_the_worktree_holding_the_lease() {
 // frob:tests crates/frob-lease/src/store.rs::acquire
 #[test]
 fn acquire_and_refusal_are_journaled_as_activity_signals() {
-    use frob_metrics::activity::{Journal, Signal};
+    use frob_ledger::activity::{Journal, Signal};
     let dir = tempfile::tempdir().expect("tempdir");
     let store = store_in(dir.path(), LeaseConfig::default());
     let (a, b) = (TicketId::mint(), TicketId::mint());

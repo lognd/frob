@@ -79,6 +79,42 @@ const _: () = {
 /// its `resolve_ref` cell now says so.
 pub const UNJUSTIFIED: [Lang; 0] = [];
 
+// frob:ticket 01M5GM4B049PYVSS1CVA1XEKJS
+/// A gap cell that names the ticket which will fill it (docs/design/shared/code-model.md section 3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct GapTicket {
+    /// The language whose cell is a gap.
+    pub lang: Lang,
+    /// The capability whose cell is a gap.
+    pub cap: Capability,
+    /// The ticket reference, e.g. `~A1XEKJS`.
+    pub ticket: &'static str,
+}
+
+/// Gap cells with a named ticket; cells absent here are bare gaps. Every entry must sit on a `Gap` cell.
+pub const GAP_TICKETS: [GapTicket; 0] = [];
+
+/// The ticket named for the gap at (`lang`, `cap`), if any; `None` for bare gaps and non-gap cells.
+pub fn gap_ticket(lang: Lang, cap: Capability) -> Option<&'static str> {
+    GAP_TICKETS
+        .iter()
+        .find(|g| g.lang == lang && g.cap == cap)
+        .map(|g| g.ticket)
+}
+
+// A gap ticket on a provided or not-applicable cell fails the build.
+const _: () = {
+    let mut i = 0;
+    while i < GAP_TICKETS.len() {
+        let g = &GAP_TICKETS[i];
+        assert!(
+            matches!(precision(g.lang, g.cap), Precision::None),
+            "GAP_TICKETS entry is not on a Gap cell"
+        );
+        i += 1;
+    }
+};
+
 const fn has(cells: &[Precision; 12], cap: Capability) -> bool {
     cells[cap as usize].is_provided()
 }

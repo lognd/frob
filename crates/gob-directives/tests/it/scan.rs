@@ -549,7 +549,7 @@ fn grimble_binds_is_registered_and_read_only_when_the_namespace_is_honoured() {
         .find(|m| m.namespace == "grimble" && m.verb == "binds")
         .expect("grimble:binds is registered");
     assert_eq!(meta.qualified(), "grimble:binds");
-    let _ = std::any::type_name::<Binds>();
+    assert!(!std::any::type_name::<Binds>().is_empty());
     // The default scanner honours only `frob`, so a grimble directive is ignored.
     let r = common::scan("src/a.rs", "// grimble:binds design:node/a\nfn f() {}\n");
     assert!(r.directives.is_empty() && r.findings.is_empty());

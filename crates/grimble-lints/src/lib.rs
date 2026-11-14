@@ -68,6 +68,7 @@ pub mod err;
 pub mod err_pass;
 mod fn_spans;
 pub mod host;
+pub mod lang;
 pub mod neat;
 pub mod pair_pass;
 pub mod pass;

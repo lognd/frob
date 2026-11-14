@@ -146,10 +146,7 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
         .into_iter()
         .filter(|c| Some(c.id()) != func.map(|f| f.id()))
         .collect();
-    let args = args_of(st, &arg_nodes);
-    let hit = func
-        .and_then(|f| path_of(st, f))
-        .is_some_and(|p| st.hit_call(n, &p, &args));
+    let hit = call_hit(st, n, func, &arg_nodes);
     st.scoped_flags(|st| {
         if hit {
             st.in_chain = true;
@@ -165,6 +162,18 @@ fn do_call(st: &mut State<'_>, n: Node<'_>) {
             visit(st, a);
         }
     });
+}
+
+/// Whether the call `n` (callee `func`, arguments `arg_nodes`) is a logging hit.
+fn call_hit(
+    st: &mut State<'_>,
+    n: Node<'_>,
+    func: Option<Node<'_>>,
+    arg_nodes: &[Node<'_>],
+) -> bool {
+    let args = args_of(st, arg_nodes);
+    func.and_then(|f| path_of(st, f))
+        .is_some_and(|p| st.hit_call(n, &p, &args))
 }
 
 /// Visit the callee of a call: only its receiver chain, never the callee path itself as a ref.

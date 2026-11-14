@@ -8,6 +8,7 @@ use crunk_spec::DesignSpec;
 
 use crate::component_files::ComponentFacts;
 use crate::content_files::ContentFacts;
+use crate::render_ledger::RenderLedger;
 use crate::review::ReviewFacts;
 use crate::scene_docs::SceneDocFacts;
 use crate::scene_files::SceneFacts;
@@ -77,6 +78,12 @@ pub trait CrunkHost {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The judged human reviews, when the pipeline gathered them (HUMAN001 and HUMAN002's input).
     fn reviews(&self) -> Option<&ReviewFacts> {
+        None
+    }
+
+    // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
+    /// The render ledger (which cells have a render), when the pipeline gathered it (STATE004's input).
+    fn renders(&self) -> Option<&RenderLedger> {
         None
     }
 }

@@ -38,24 +38,26 @@ impl tracing::Subscriber for Opens {
     }
 }
 
+/// Run `git args` in `root` as a fixed identity, asserting success.
+fn git_in(root: &std::path::Path, args: &[&str]) {
+    let out = std::process::Command::new("git")
+        .current_dir(root)
+        .args(["-c", "user.name=T", "-c", "user.email=t@example.com"])
+        .args(args)
+        .output()
+        .expect("git runs");
+    assert!(out.status.success(), "git {args:?}: {out:?}");
+}
+
 /// A committed one-file repository.
 fn fixture() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
     let root = dir.path();
-    let git = |args: &[&str]| {
-        let out = std::process::Command::new("git")
-            .current_dir(root)
-            .args(["-c", "user.name=T", "-c", "user.email=t@example.com"])
-            .args(args)
-            .output()
-            .expect("git runs");
-        assert!(out.status.success(), "git {args:?}: {out:?}");
-    };
-    git(&["init", "-q"]);
+    git_in(root, &["init", "-q"]);
     std::fs::write(root.join("frob.toml"), "").expect("write");
     std::fs::write(root.join("a.txt"), "a\n").expect("write");
-    git(&["add", "-A"]);
-    git(&["commit", "-q", "-m", "init"]);
+    git_in(root, &["add", "-A"]);
+    git_in(root, &["commit", "-q", "-m", "init"]);
     dir
 }
 

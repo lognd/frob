@@ -458,6 +458,8 @@ impl Doctor {
         warnings.extend(crate::agent_cmd::drift_warnings(&located.root, &cfg));
         warnings.extend(sibling_warnings(&siblings));
         warnings.extend(demotion_warnings(&located.root, &cfg));
+        // frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+        warnings.extend(attester_warnings(&runner, &located.root, &cfg));
         let payload = Payload::new(DoctorData {
             toolchain,
             git,
@@ -480,6 +482,44 @@ impl Doctor {
             .into_iter()
             .fold(payload, gob_cli::Payload::with_warning))
     }
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// Warnings for `[evidence] attesters` entries that match no committer in history; none when git history is unreadable.
+fn attester_warnings(runner: &Runner, root: &std::path::Path, cfg: &FrobConfig) -> Vec<String> {
+    if cfg.evidence.attesters.is_empty() {
+        return Vec::new();
+    }
+    let spec = Spec {
+        program: Program::Git,
+        args: ["log", "--format=%ae%n%ce"].map(str::to_owned).to_vec(),
+        cwd: Some(root.to_path_buf()),
+        env: Vec::new(),
+        timeout: PROBE_TIMEOUT,
+        capture: true,
+    };
+    match runner.run(&spec) {
+        Ok(out) if out.status == ExecOutcome::Exited(0) => {
+            let committers = committer_emails(&out.stdout);
+            frob_release::criteria::attester_problems(&cfg.evidence.attesters, &committers)
+        }
+        other => {
+            tracing::warn!(result = ?other.map(|o| o.status), "committer history unreadable; attesters not checked");
+            Vec::new()
+        }
+    }
+}
+
+// frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+/// Distinct, sorted, non-empty emails from `git log --format=%ae%n%ce` output.
+fn committer_emails(stdout: &str) -> Vec<String> {
+    let set: std::collections::BTreeSet<String> = stdout
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect();
+    set.into_iter().collect()
 }
 
 /// Judge the configured merge driver; a missing repository or an unset driver is not a problem.
@@ -983,6 +1023,18 @@ mod protection_tests {
     const REMOTE: &str = "https://github.com/o/r.git";
 
     // frob:tests crates/frob/src/doctor.rs::protection_check
+    // frob:ticket 01M7BP3DVBGTPRC7R3THSP1Y5P
+    // frob:tests crates/frob/src/doctor.rs::committer_emails
+    #[test]
+    fn committer_emails_are_distinct_sorted_and_feed_the_attester_check() {
+        let emails = committer_emails("b@x.io\na@x.io\n\nb@x.io\n");
+        assert_eq!(emails, ["a@x.io", "b@x.io"]);
+        let ok = frob_release::criteria::attester_problems(&["A@x.io".to_owned()], &emails);
+        assert!(ok.is_empty());
+        let bad = frob_release::criteria::attester_problems(&["z@x.io".to_owned()], &emails);
+        assert_eq!(bad.len(), 1);
+    }
+
     #[test]
     fn allowed_force_push_is_an_error() {
         let body = r#"{"allow_force_pushes":{"enabled":true},"allow_deletions":{"enabled":false}}"#;

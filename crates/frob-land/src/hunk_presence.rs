@@ -92,6 +92,52 @@ fn branch_commits(repo: &Repo, wt: &Path, base: &str, pre: &str) -> Result<Strin
     Ok(revs.text)
 }
 
+// frob:ticket 01M7AVDYTWT6TV0C7FFJ59JH0S
+/// Paths changed between `from` and `to` (renames off, so both ends of a rename are listed).
+fn changed_paths(
+    repo: &Repo,
+    wt: &Path,
+    from: &str,
+    to: &str,
+) -> Result<BTreeSet<String>, LandError> {
+    let run = git(
+        repo,
+        wt,
+        &["diff", "--name-only", "--no-renames", "-z", from, to],
+    )?;
+    if !run.ok() {
+        return Err(LandError::Config(format!(
+            "git diff {from} {to}: {}",
+            run.text
+        )));
+    }
+    Ok(run
+        .text
+        .split('\0')
+        .filter(|p| !p.is_empty())
+        .map(str::to_owned)
+        .collect())
+}
+
+// frob:ticket 01M7AVDYTWT6TV0C7FFJ59JH0S
+/// True when `base` and `pre` changed no file in common since their merge base, so a merge cannot drop lines.
+///
+/// One cheap probe (merge-base plus two name-only diffs) that spares the per-commit walk; a missing
+/// merge base is treated as overlapping so the full check still runs.
+fn sides_disjoint(repo: &Repo, wt: &Path, base: &str, pre: &str) -> Result<bool, LandError> {
+    let mb = git(repo, wt, &["merge-base", base, pre])?;
+    if !mb.ok() || mb.text.trim().is_empty() {
+        return Ok(false);
+    }
+    let mb = mb.text.trim().to_owned();
+    let theirs = changed_paths(repo, wt, &mb, base)?;
+    if theirs.is_empty() {
+        return Ok(true);
+    }
+    let ours = changed_paths(repo, wt, &mb, pre)?;
+    Ok(theirs.is_disjoint(&ours))
+}
+
 /// The ticket's own added lines (premerge tip `pre`, against `base`) that `merged` lost, one entry per commit and file.
 ///
 /// Own commits are the non-merge commits of `base..pre` whose patch is not already on the base
@@ -107,6 +153,14 @@ pub fn dropped_hunks(
     pre: &str,
     merged: &str,
 ) -> Result<Vec<DroppedHunk>, LandError> {
+    if sides_disjoint(repo, wt, base, pre)? {
+        tracing::debug!(
+            base,
+            pre,
+            "base and branch touch disjoint files; nothing can drop"
+        );
+        return Ok(Vec::new());
+    }
     let revs = branch_commits(repo, wt, base, pre)?;
     let mut dropped = Vec::new();
     for entry in revs.lines().filter(|l| !l.starts_with("commit ")) {

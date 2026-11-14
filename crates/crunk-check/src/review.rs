@@ -21,13 +21,14 @@ pub fn lock_path(root: &Path) -> PathBuf {
     root.join(gob_lock::file_name(crate::PRODUCT))
 }
 
-/// Where the signature of the commit that introduced an ack comes from.
+/// Where the signature vouching for a recorded review comes from.
 pub trait SignatureSource {
-    /// The signature of the first commit that put `digest` into `crunk.lock`.
-    fn signature(&self, digest: &str) -> AckSignature;
+    /// The signature of the last commit that changed `entry` (the whole `[[review]]` row for
+    /// `subject`), or `Unsigned` when the working copy differs from what is committed.
+    fn signature(&self, subject: &str, entry: &ReviewEntry) -> AckSignature;
 }
 
-/// [`SignatureSource`] over `git log -S`.
+/// [`SignatureSource`] over the history of `crunk.lock`.
 #[derive(Debug, Clone)]
 pub struct GitSignatures {
     root: PathBuf,
@@ -40,42 +41,78 @@ impl GitSignatures {
             root: root.to_path_buf(),
         }
     }
-}
 
-impl SignatureSource for GitSignatures {
-    fn signature(&self, digest: &str) -> AckSignature {
+    /// Run `git args` in the repository; stdout on a clean exit, else why it failed.
+    fn git(&self, args: Vec<String>) -> Result<String, String> {
         let spec = Spec {
             program: Program::Git,
-            args: vec![
-                "log".to_owned(),
-                "--reverse".to_owned(),
-                "--format=%G?%x1f%GF%x1f%GK".to_owned(),
-                format!("-S{digest}"),
-                "--".to_owned(),
-                gob_lock::file_name(crate::PRODUCT),
-            ],
+            args,
             cwd: Some(self.root.clone()),
             env: Vec::new(),
             timeout: Duration::from_secs(30),
             capture: true,
         };
-        let out = match Runner::new(Limits { jobs: 1 }).run(&spec) {
-            Ok(out) if out.status == Outcome::Exited(0) => out,
+        match Runner::new(Limits { jobs: 1 }).run(&spec) {
+            Ok(out) if out.status == Outcome::Exited(0) => Ok(out.stdout_raw),
             Ok(out) => {
-                tracing::warn!(status = ?out.status, "git log for ack signature failed");
-                return AckSignature::Unsigned(
-                    "the ack is not committed yet, or git could not read the history".to_owned(),
-                );
+                tracing::warn!(status = ?out.status, "git for ack signature failed");
+                Err("the ack is not committed yet, or git could not read the history".to_owned())
             }
             Err(err) => {
-                tracing::warn!(%err, "git log for ack signature did not run");
-                return AckSignature::Unsigned(format!("git did not run: {err}"));
+                tracing::warn!(%err, "git for ack signature did not run");
+                Err(format!("git did not run: {err}"))
             }
+        }
+    }
+
+    /// The `subject` row of `crunk.lock` as committed in `commit`, if it parses and has one.
+    fn entry_at(&self, commit: &str, subject: &str) -> Option<ReviewEntry> {
+        let name = gob_lock::file_name(crate::PRODUCT);
+        let text = self
+            .git(vec!["show".to_owned(), format!("{commit}:{name}")])
+            .ok()?;
+        let lock = LockFile::parse(&text, Path::new(&name)).ok()?;
+        lock.reviews.get(subject).cloned()
+    }
+}
+
+impl SignatureSource for GitSignatures {
+    fn signature(&self, subject: &str, entry: &ReviewEntry) -> AckSignature {
+        let name = gob_lock::file_name(crate::PRODUCT);
+        let log = match self.git(vec![
+            "log".to_owned(),
+            "--first-parent".to_owned(),
+            "--reverse".to_owned(),
+            "--format=%H%x1f%G?%x1f%GF%x1f%GK".to_owned(),
+            "--".to_owned(),
+            name,
+        ]) {
+            Ok(log) => log,
+            Err(why) => return AckSignature::Unsigned(why),
         };
-        let Some(line) = out.stdout_raw.lines().next() else {
-            return AckSignature::Unsigned("the ack is not committed yet".to_owned());
-        };
-        parse_signature(line)
+        // Walk oldest to newest; the last commit that changed the row is the one that vouches
+        // for its verdict and reviewer, not the first commit that introduced the digest.
+        let mut previous: Option<ReviewEntry> = None;
+        let mut vouching: Option<AckSignature> = None;
+        for line in log.lines() {
+            let (commit, sig) = line.split_once('\u{1f}').unwrap_or((line, "N"));
+            let at = self.entry_at(commit, subject);
+            if at != previous {
+                tracing::debug!(commit, subject, "review row changed in commit");
+                vouching = Some(parse_signature(sig));
+                previous = at;
+            }
+        }
+        match (vouching, previous) {
+            (Some(sig), Some(committed)) if committed == *entry => sig,
+            (Some(_), _) => {
+                tracing::warn!(subject, "working review row differs from the committed one");
+                AckSignature::Unsigned(
+                    "the review entry was edited after its last commit".to_owned(),
+                )
+            }
+            (None, _) => AckSignature::Unsigned("the ack is not committed yet".to_owned()),
+        }
     }
 }
 
@@ -318,7 +355,7 @@ pub fn gather(spec: &DesignSpec, signatures: &dyn SignatureSource) -> ReviewFact
             let signature = (spec.review.require_signed)
                 .then(|| entry.filter(|e| e.digest == subject.digest()))
                 .flatten()
-                .map(|e| signatures.signature(&e.digest));
+                .map(|e| signatures.signature(&subject.id, e));
             judge(subject, entry, &spec.review, signature.as_ref())
         })
         .collect();

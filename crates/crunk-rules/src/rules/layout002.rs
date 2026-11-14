@@ -7,6 +7,7 @@ use gob_rules::{Measured, Out, RepoRule, rule};
 use crunk_layout::findings::{SiblingOverlap, sibling_overlaps};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
+use crate::scene_docs::SceneDocFile;
 
 /// Two sibling scene nodes whose rectangles overlap.
 #[derive(Debug, Clone, Copy, Default)]
@@ -31,8 +32,13 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Layout002 {
             return;
         };
         for file in &facts.files {
-            let Some(solve) = file.solve() else {
-                continue;
+            let solve = match file.solve() {
+                Ok(solve) => solve,
+                Err(why) => {
+                    tracing::warn!(path = %file.path, %why, "LAYOUT002: scene does not solve");
+                    out.unresolved_in(&file.path, 0, SceneDocFile::unsolved_message(why));
+                    continue;
+                }
             };
             for SiblingOverlap { a, b, across, down } in sibling_overlaps(solve) {
                 tracing::debug!(path = %file.path, a = %a.id, b = %b.id, "LAYOUT002: siblings overlap");

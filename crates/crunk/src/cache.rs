@@ -180,7 +180,7 @@ impl Command for CachePrune {
 // frob:ticket 01M6BFHB1VR63SY8VFQ6M9E4NB
 /// The engine crunk's check runs under; prune must use it or it would delete every live row.
 fn run_engine() -> String {
-    gob_check::Product::cache_engine(&crunk_check::Crunk)
+    gob_check::Product::cache_engine(&crunk_check::Crunk::default())
 }
 
 #[cfg(test)]
