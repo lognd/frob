@@ -13,7 +13,7 @@ scope = ["crates/gob-plan/src/exec/**"]
 
 [[acceptance]]
 text = "Bounded reaches closures keep the budget, may-edge and frontier verdicts after the hashed breadth-first search"
-bound = false
+bound = true
 +++
 
 Remaining gap after ~BA2A6ST. Suspects: link and path resolution joins, BTreeMap attribute lookups, KindTest::member. Profile with perf on the b1 bench binary.
