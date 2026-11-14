@@ -2,7 +2,8 @@
 id = "01M5XK12082GJW5KQTMK4DJXGN"
 title = "crunk exports ignore design/tokens/*.toml: authored tokens never reach CSS, Tailwind, USS or C#"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
