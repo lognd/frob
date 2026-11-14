@@ -227,7 +227,7 @@ impl<'a> Reader<'a> {
                 declared => declared,
             },
             "tag" | "spread" => self.markup(node, name),
-            "selector" | "property" | "important" | "raw" => self.style(node, name),
+            "selector" | "prelude" | "property" | "important" | "raw" => self.style(node, name),
             "callee" => self.callee(node).map_or(Datum::Absent, Datum::text),
             "target" => self.target(node),
             "slug" => self.slug(node),
@@ -523,6 +523,11 @@ impl<'a> Reader<'a> {
                 if kind == style::STYLE_RULE =>
             {
                 n.name().map_or(Datum::Unknown, Datum::text)
+            }
+            ("prelude", Operator::Universal(Universal::Unit { kind, .. }))
+                if kind == style::AT_RULE =>
+            {
+                Datum::text(n.attrs().get_str(style::PRELUDE).unwrap_or_default())
             }
             ("property", Operator::Adapter(a)) if a.lang == style::LANG => {
                 n.name().map_or(Datum::Unknown, Datum::text)

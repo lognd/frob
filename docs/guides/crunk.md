@@ -202,6 +202,7 @@ is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `c
 | WEBPERF | WEBPERF105 | a font `link rel="preload"` carries `crossorigin` |
 | WEBPERF | WEBPERF106 | an `src` attribute does not name a legacy image (`.png`, `.jpg`, `.jpeg`, `.gif`); serve WebP or AVIF |
 | WEBPERF | WEBPERF107 | a stylesheet `link` carries a `media` attribute (no render-blocking) |
+| WEBPERF | WEBPERF108 | every `@font-face` declares a `font-display` |
 
 Each family ships worked rules; more land under the same prefixes. WEBPERF1xx covers markup and
 assets only (server-side WEBPERF lives in grimble-websec, 2xx). A file type with no adapter (for

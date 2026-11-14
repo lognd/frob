@@ -34,6 +34,17 @@ an assignment statement.
 Query: Q16. Languages: code languages (not data, prose or style files).
 
 
+## `at_rule`
+
+a style at-rule such as `@font-face` or `@media`; its declarations are its descendants.
+
+Query: Q49 style. Languages: typescript, css, html (languages providing `style`).
+
+| Field | Type | Example | Unknown |
+|---|---|---|---|
+| `.name` | string | `"font-face"` | never |
+| `.prelude` | string | `"(min-width: 40em)"` | never |
+
 ## `attribute`
 
 an attribute of an element; a spread is an attribute at status May.
