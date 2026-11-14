@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-14T04:33:32Z"
+updated = "2026-11-14T04:46:26Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/glossary/**"]
 

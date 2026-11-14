@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-14T04:46:26Z"
+digest = "339ca93136f87a7643bc5272b40571523371b7f647eb6add10b647959fc8da77"
+head = "39fedfa96a5575c04e4a2cb6436a629028f88469"
+provider = "file"
+ref = "docs/glossary/ticket-lease.md"
+size = 1315
+status = "measured"
+at = "2026-11-14T04:46:26Z"
+actor = "lognd"
+rev = 1
