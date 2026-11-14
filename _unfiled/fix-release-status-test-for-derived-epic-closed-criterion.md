@@ -2,12 +2,12 @@
 id = "01M7C0NP7PDEG4TAERS90D3M8V"
 title = "Fix release_status test for derived epic-closed criterion"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T03:12:31Z"
-updated = "2026-11-14T03:12:31Z"
+updated = "2026-11-14T03:12:40Z"
 scope = ["crates/frob/tests/it/release_status.rs"]
 
 [[acceptance]]
