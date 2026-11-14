@@ -4,9 +4,10 @@ title = "grimble-websec ROUTE: adapter-based route tables, guards and Unresolved
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-14T15:18:12Z"
-updated = "2026-11-14T15:18:12Z"
+updated = "2026-11-14T16:52:30Z"
 labels = ["no-story"]
 +++
 
