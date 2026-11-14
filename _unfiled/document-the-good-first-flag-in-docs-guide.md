@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-13T09:50:06Z"
-updated = "2026-11-14T04:34:14Z"
+updated = "2026-11-14T04:41:50Z"
 labels = ["no-story", "good-first"]
 scope = ["docs/guide/**", "docs/guides/**", "docs/README.md"]
 
