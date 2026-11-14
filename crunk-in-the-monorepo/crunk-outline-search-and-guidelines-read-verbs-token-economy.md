@@ -2,13 +2,13 @@
 id = "01M5XCW9WCHSZBR5F29VKYBM25"
 title = "crunk outline, search and guidelines read verbs (token-economy design-system access for agents, served over MCP)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-10-28T12:56:03Z"
+updated = "2026-11-14T22:01:52Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/outline.rs, crates/crunk/src/guidelines.rs, crates/crunk/tests/outline.rs"]
 
