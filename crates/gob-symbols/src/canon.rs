@@ -12,8 +12,9 @@
 //! at `crate` / `self` / `super` is kept for the consumer to follow across files; see
 //! [`rust_module`] and [`rust_includes`]); a name no
 //! Rust scope binds while a glob import (`use m::*`) is in force is emitted bare with the
-//! candidate modules in [`PathUse::wildcards`] (ticket AG8HHEC); a computed attribute name are not resolved (a literal `getattr` and
-//! `importlib.import_module` argument is, flagged `dynamic`). A Python name that no scope binds
+//! candidate modules in [`PathUse::wildcards`] (ticket AG8HHEC); a literal `getattr` and
+//! `importlib.import_module` argument resolves, flagged `dynamic`, while a computed name is an
+//! Unresolved (`computed`) use of its known prefix. A Python name that no scope binds
 //! while `from m import *` is in force (ticket G68NRS1) is emitted bare, with the candidate
 //! modules in [`PathUse::wildcards`] for the consumer to resolve; [`python_all`] reads a module's
 //! literal `__all__`.
@@ -2361,6 +2362,19 @@ mod tests {
             got.iter().filter(|(p, _, _)| p == "subprocess.run").count(),
             1
         );
+    }
+
+    // frob:ticket 01M61QA7GY8CG9YQVFXQ71TFKF
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_computed_getattr_is_an_unresolved_use() {
+        let src = "import os\ndef f(n):\n    getattr(os, n)('x')\n    getattr(os, 'sys' + n)\n";
+        let got: Vec<_> = path_uses("python", src)
+            .into_iter()
+            .filter(|u| u.computed)
+            .collect();
+        assert!(!got.is_empty(), "{got:?}");
+        assert!(got.iter().all(|u| u.dynamic && u.path == "os"), "{got:?}");
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
