@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a scene with <style> rules, when style mapping runs, then each rule selector is associated to its matching elements and no StylesheetNotApplied finding is raised for supported selectors"]
+moved = []
+at = "2026-11-15T10:41:32Z"
+actor = "lognd"
+rev = 1
