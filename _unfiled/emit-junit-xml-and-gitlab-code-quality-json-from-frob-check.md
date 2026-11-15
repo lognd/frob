@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:20:52Z"
-updated = "2026-11-15T06:20:53Z"
+updated = "2026-11-15T06:21:17Z"
 idempotency_key = "static-research-k11"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXT152EKW9V8Q9Q3QWZ838"
 
 [[acceptance]]
 text = "frob test emits well-formed JUnit XML with one testcase per test and failures with messages"
