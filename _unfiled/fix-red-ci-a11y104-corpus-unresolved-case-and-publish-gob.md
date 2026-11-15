@@ -2,12 +2,12 @@
 id = "01M7EXZ20VEG1WPQJP5TY499D4"
 title = "Fix red CI: A11Y104 corpus unresolved case and publish gob-frameworks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:22:56Z"
-updated = "2026-11-15T06:22:59Z"
+updated = "2026-11-15T06:23:06Z"
 labels = ["no-story"]
 
 [[acceptance]]
