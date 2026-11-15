@@ -2,13 +2,13 @@
 id = "01M5XCW9ZZ5GX5VGERB6H96M2G"
 title = "crunk serve patch tool: edit --patch exposed as a write MCP tool with touched-node findings"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-10-28T12:55:44Z"
+updated = "2026-11-15T01:12:46Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/serve_patch.rs, crates/crunk/tests/serve_patch.rs"]
 
