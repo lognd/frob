@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Remapper leaves compiled sections untouched (test)"]
+moved = []
+at = "2026-11-15T06:19:02Z"
+actor = "lognd"
+rev = 1

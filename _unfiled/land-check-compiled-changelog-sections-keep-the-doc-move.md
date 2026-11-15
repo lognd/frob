@@ -4,10 +4,15 @@ title = "land: check compiled CHANGELOG sections; keep the doc-move remapper out
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-15T06:19:02Z"
 updated = "2026-11-15T06:19:02Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "Remapper leaves compiled sections untouched (test)"
+bound = false
 +++
 
 Source: frob-audit-meta.md M11. Evidence: the doc-move remapper can rewrite released CHANGELOG text. Remedy: exclude compiled sections and verify at land. Files: doc-move remapper, CHANGELOG check.
