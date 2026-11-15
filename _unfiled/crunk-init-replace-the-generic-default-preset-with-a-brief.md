@@ -10,6 +10,10 @@ created = "2026-11-15T05:19:39Z"
 updated = "2026-11-15T06:21:24Z"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7ETB54NC45Z1NN143S2KCRQ"
+
 [[acceptance]]
 text = "init writes no Inter or stock blue token (test)"
 bound = false
