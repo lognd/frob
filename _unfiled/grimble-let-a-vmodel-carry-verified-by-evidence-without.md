@@ -7,8 +7,24 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
-updated = "2026-11-15T05:47:44Z"
+updated = "2026-11-15T05:51:37Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "A vmodel accepts verified_by SEL; without MDL000 or MDL012"
+bound = false
+
+[[acceptance]]
+text = "A vmodel accepts verified_by manual because=...; without MDL000 or MDL012"
+bound = false
+
+[[acceptance]]
+text = "MDL000 prints verified_by as written, not the internal evidence name"
+bound = false
+
+[[acceptance]]
+text = "grimble fmt keeps verified_by after ref on a vmodel"
+bound = false
 +++
 
 Audit2 H1. See /home/logan/projects/frob-audit2-grimble.md section H1 for evidence and remedy.

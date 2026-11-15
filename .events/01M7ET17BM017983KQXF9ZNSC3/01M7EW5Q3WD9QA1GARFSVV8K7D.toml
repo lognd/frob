@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A vmodel accepts verified_by SEL; without MDL000 or MDL012", "A vmodel accepts verified_by manual because=...; without MDL000 or MDL012", "MDL000 prints verified_by as written, not the internal evidence name", "grimble fmt keeps verified_by after ref on a vmodel"]
+moved = []
+at = "2026-11-15T05:51:37Z"
+actor = "lognd"
+rev = 1
