@@ -2,7 +2,8 @@
 id = "01M5XPZJAAX4ZKHGSQGAHK30R3"
 title = "PATH001: distinguish path-as-data fixtures, make [path] allowed configurable"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
