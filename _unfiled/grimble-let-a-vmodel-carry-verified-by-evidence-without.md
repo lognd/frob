@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
-updated = "2026-11-15T05:53:59Z"
+updated = "2026-11-15T05:54:00Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "grimble fmt keeps verified_by after ref on a vmodel"
-bound = false
+bound = true
 +++
 
 Audit2 H1. See /home/logan/projects/frob-audit2-grimble.md section H1 for evidence and remedy.

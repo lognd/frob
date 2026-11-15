@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-15T05:54:00Z"
+digest = "d863f925bb07edf66d2ad792b68e86b245e4b91de19bed964c22ddedf15f631c"
+exit_code = 0
+head = "c3f7427fbce4cf8041d2e69fbb275fce8d27b34c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 68dded8b-4c8c-48da-97a9-603f386ace32 with nextest profile: default
+    Starting 1 test across 2 binaries (149 tests skipped)
+        PASS [   0.011s] grimble-model::it vmodel_verified_by::fmt_keeps_verified_by_after_ref_on_a_vmodel
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 149 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E test(=vmodel_verified_by::fmt_keeps_verified_by_after_ref_on_a_vmodel)"
+size = 574
+status = "measured"
+test_count = 1
+tests_digest = "ffaa6f0f1b24ecfb318a170c8dd9184a1b21998a5d740d008d2285c4eb91f1ac"
+at = "2026-11-15T05:54:00Z"
+actor = "lognd"
+rev = 1
