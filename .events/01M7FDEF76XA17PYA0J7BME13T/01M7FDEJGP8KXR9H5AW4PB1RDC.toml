@@ -1,0 +1,6 @@
+kind = "field"
+field = "body"
+new = "Follow-up of CDS3X1G. crunk-scene now exposes SceneDoc::rules (selector, supported, matches, at_rule). crunk-layout style/tree.rs and solve/mod.rs still raise StylesheetNotApplied; apply supported rules and drop the finding for them."
+at = "2026-11-15T10:53:33Z"
+actor = "lognd"
+rev = 1
