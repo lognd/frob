@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
-updated = "2026-11-15T05:51:37Z"
+updated = "2026-11-15T05:51:42Z"
 labels = ["no-story"]
 
 [[acceptance]]
 text = "A vmodel accepts verified_by SEL; without MDL000 or MDL012"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A vmodel accepts verified_by manual because=...; without MDL000 or MDL012"
