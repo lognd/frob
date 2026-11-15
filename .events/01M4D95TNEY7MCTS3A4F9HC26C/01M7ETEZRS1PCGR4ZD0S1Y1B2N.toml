@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given routes that render without setting the title or moving focus, when crunk check runs, then one finding per route", "Given a route-level title and focus handler, when checked, then clean"]
+new = ["Given routes that render without setting the title or moving focus, when crunk check runs, then one finding per route", "Given a route-level title and focus handler, when checked, then clean", "Given a React Router route with no title or focus move, A11Y104 fires once per route (a11y104.md corpus)"]
+moved = [1, 2]
+at = "2026-11-15T05:21:44Z"
+actor = "lognd"
+rev = 1
