@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:18:07Z"
+digest = "bd4cb63d74751cb4a51e6f29e38436c2d7cded8a872e4194ba11abc9e18e7486"
+exit_code = 0
+head = "6944a8797b3759c7ede2b03e9d9ae1bb084559c2"
+inline = '''
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 86bb8f0b-7a0e-4d4a-9f96-5c3316d5b594 with nextest profile: default
+    Starting 1 test across 2 binaries (420 tests skipped)
+        PASS [   0.135s] grimble-check::it typing_rules::typing004_findings_from_the_cached_run_match_the_first_run
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.136s] 1 test run: 1 passed, 420 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-check -E test(=typing_rules::typing004_findings_from_the_cached_run_match_the_first_run)"
+size = 653
+status = "measured"
+test_count = 1
+tests_digest = "3e76350564ec19b7f0331529f107eb3b0e0d2b42d31d921a7e9c09f13d1dd610"
+at = "2026-11-15T01:18:07Z"
+actor = "lognd"
+rev = 1
