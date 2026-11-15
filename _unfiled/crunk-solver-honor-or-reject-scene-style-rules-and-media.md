@@ -2,12 +2,12 @@
 id = "01M7ETK7YXDYFF9HM71TE2A1YR"
 title = "crunk solver: honor or reject scene <style> rules and @media blocks"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T05:47:50Z"
+updated = "2026-11-15T05:47:55Z"
 labels = ["no-story"]
 +++
 
