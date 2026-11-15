@@ -32,7 +32,7 @@ fn token_of(announce: &str) -> String {
 // frob:tests crates/grimble-serve/src/lib.rs::launch
 // frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.list
 #[test]
-fn a_client_lists_check_and_graph_and_a_request_without_the_token_is_refused() {
+fn a_client_lists_check_graph_and_explore_and_a_request_without_the_token_is_refused() {
     // Without the token: refused, and the reply carries no tool list.
     let list = |token: Option<&str>| {
         let mut params = json!({});
@@ -67,14 +67,14 @@ fn ask_server(
 // frob:tests crates/grimble-serve/src/lib.rs::server
 // frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
 #[test]
-fn with_the_token_check_and_graph_are_listed_and_callable_read_only() {
+fn with_the_token_the_tools_are_listed_and_callable_read_only() {
     let root = tempfile::tempdir().expect("tempdir");
     let token = gob_serve::Token::from_value("placeholder-token").expect("token");
     let server = grimble_serve::server(root.path(), token);
     let listed = ask_server(&server, "tools/list", json!({}));
     let tools = listed["result"]["tools"].as_array().expect("tools");
     let names: Vec<&str> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
-    assert_eq!(names, ["check", "graph"]);
+    assert_eq!(names, ["check", "graph", "explore"]);
     assert!(
         tools
             .iter()
@@ -119,4 +119,70 @@ fn served_tools_leave_no_files_in_the_repository() {
         .map(|e| e.expect("entry").file_name())
         .collect();
     assert_eq!(names, ["m.grmb"], "serve wrote into the repo");
+}
+
+const EXPLORE_MODEL: &str = r#"grimble = "2";
+module m;
+system s {
+  actor customer : human;
+  goal customer { attr dimension = action; buy; }
+  step customer.lands;
+  step system.pay : { ok, declined, timeout };
+  scenario sc realizes customer.buy fails with { declined, timeout } {
+    customer.lands -> system.pay -!> end ok;
+    verified_by "tests/pay.rs::ok_path" for system.pay.ok;
+  }
+}
+"#;
+
+/// Serve `EXPLORE_MODEL` and call `tool` with `arguments`, returning the reply.
+fn call_on_model(tool: &str, arguments: Value) -> Value {
+    let root = tempfile::tempdir().expect("tempdir");
+    std::fs::write(
+        root.path().join("grimble.toml"),
+        "[grimble]\nmodels = [\"design/m.grmb\"]\n",
+    )
+    .expect("config");
+    std::fs::create_dir_all(root.path().join("design")).expect("design dir");
+    std::fs::write(root.path().join("design/m.grmb"), EXPLORE_MODEL).expect("model");
+    let token = gob_serve::Token::from_value("placeholder-token").expect("token");
+    let server = grimble_serve::server(root.path(), token);
+    ask_server(
+        &server,
+        "tools/call",
+        json!({ "name": tool, "arguments": arguments }),
+    )
+}
+
+/// The structured payload of a successful tool reply.
+fn payload(reply: &Value) -> Value {
+    assert_eq!(reply["result"]["isError"], false, "{reply}");
+    serde_json::from_str(
+        reply["result"]["content"][0]["text"]
+            .as_str()
+            .expect("text"),
+    )
+    .expect("json payload")
+}
+
+// frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
+#[test]
+fn explore_returns_the_node_and_its_neighbours_as_structured_data() {
+    let doc = payload(&call_on_model("explore", json!({ "id": "scenario/s.sc" })));
+    assert_eq!(doc["node"]["anchor"], "scenario/s.sc");
+    let neighbours: Vec<&Value> = doc["neighbours"]
+        .as_array()
+        .expect("neighbours")
+        .iter()
+        .collect();
+    assert_eq!(neighbours.len(), 1);
+    assert_eq!(neighbours[0]["anchor"], "goal/s.customer.buy");
+    assert_eq!(doc["edges"][0]["kind"], "realizes");
+}
+
+// frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
+#[test]
+fn explore_of_an_unknown_node_is_a_tool_error() {
+    let reply = call_on_model("explore", json!({ "id": "goal/nope" }));
+    assert_eq!(reply["result"]["isError"], true, "{reply}");
 }
