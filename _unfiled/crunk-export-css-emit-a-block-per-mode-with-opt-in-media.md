@@ -8,9 +8,13 @@ points = 3
 parent = "01M7ETK97Q5VJ027ZV8AFBJWRQ"
 reporter = "lognd"
 created = "2026-11-15T06:19:47Z"
-updated = "2026-11-15T06:19:47Z"
+updated = "2026-11-15T06:19:48Z"
 idempotency_key = "crunkplan-a69aaf56ee61"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXS9F60CP83A9BK9W5FC9P"
 
 [[acceptance]]
 text = "css export contains a block per declared mode (snapshot)"
