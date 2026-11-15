@@ -1,0 +1,10 @@
+kind = "create"
+title = "file-size ratchet rule"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit2-repo.md M7/F9. Evidence: land.rs and gob-symbols rust.rs oversized. Remedy: rule with per-file baseline. Files: rule crate, baseline."
+at = "2026-11-15T06:19:08Z"
+actor = "lognd"
+rev = 1
