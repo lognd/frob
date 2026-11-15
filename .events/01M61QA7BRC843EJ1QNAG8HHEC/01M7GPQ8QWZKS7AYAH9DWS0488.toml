@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T22:54:49Z"
+digest = "1c1dce89ece72e2dda1cea1cdbfc83439fe7a4327a72f33bd6354e9e766401ea"
+exit_code = 0
+head = "75fd82c8d208477ff6ae49a46668012a2b3026eb"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a091f8ea-03d9-4436-961f-2446176c9c69 with nextest profile: default
+    Starting 2 tests across 2 binaries (576 tests skipped)
+        PASS [   0.005s] gob-symbols canon::tests::rust_glob_ignores_bound_and_rooted_names
+        PASS [   0.005s] gob-symbols canon::tests::rust_unbound_name_carries_its_glob_modules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 2 tests run: 2 passed, 576 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(rust_unbound_name_carries_its_glob_modules) | test(rust_glob_ignores_bound_and_rooted_names)'"
+size = 655
+status = "measured"
+test_count = 2
+tests_digest = "106c44c26758b8a78425baeccb6a459cbf14823e6a43129a7894476b97bb22e0"
+at = "2026-11-15T22:54:49Z"
+actor = "lognd"
+rev = 1
