@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T15:29:51Z"
+digest = "77012a0837c5ed9d106d0b16f4994fab17583bdb227daa764094fc94249660ac"
+exit_code = 0
+head = "1bfcd392ab081e50f36cff5aa5bc7c791ae2da58"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 330928ef-c0cd-4a20-bd82-594a7a3cea8c with nextest profile: default
+    Starting 1 test across 3 binaries (176 tests skipped)
+        PASS [   2.174s] frob-check::it rule_matrix::garbage_input_never_panics_and_stays_unresolved
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   2.175s] 1 test run: 1 passed, 176 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-check -E test(=rule_matrix::garbage_input_never_panics_and_stays_unresolved)"
+size = 568
+status = "measured"
+test_count = 1
+tests_digest = "593b07dffa9549f3dd8f0030dafad9347dd4e5a302ad64dcbbad43c4be47c106"
+at = "2026-11-15T15:29:51Z"
+actor = "lognd"
+rev = 1
