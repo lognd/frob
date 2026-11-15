@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:22:12Z"
-updated = "2026-11-15T06:22:12Z"
+updated = "2026-11-15T06:22:16Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXXPTMRWQFK5SJ48GVH66V"
 
 [[acceptance]]
 text = "status --hill prints each scenario in uphill or downhill"
