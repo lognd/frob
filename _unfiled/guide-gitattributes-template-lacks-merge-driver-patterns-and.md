@@ -2,7 +2,8 @@
 id = "01M5XBTMCCFSS2X4J6BPGYE0EB"
 title = "Guide gitattributes template lacks merge-driver patterns and LF pin, so reindex fights branch init"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
