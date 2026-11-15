@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-cli/**", "crates/crunk/**", "crates/crunk-rules/src/screen_files.rs", "crates/crunk-rules/src/component_files.rs", "crates/crunk-rules/src/rules/state007.rs", "crates/crunk-rules/src/rules/state007.md"]
+new = ["crates/crunk-cli/**", "crates/crunk/**", "crates/crunk-rules/src/screen_files.rs", "crates/crunk-rules/src/component_files.rs", "crates/crunk-rules/src/rules/state007.rs", "crates/crunk-rules/src/rules/state007.md", "crates/gob-dev/profile.toml"]
+at = "2026-11-15T08:34:06Z"
+actor = "lognd"
+rev = 1
