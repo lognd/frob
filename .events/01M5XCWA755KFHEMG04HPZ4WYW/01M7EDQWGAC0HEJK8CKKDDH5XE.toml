@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:39:23Z"
+digest = "592e2b6cb4b60e1c1ab23211bf551be69790834067edb75ce932f6228bb96b4b"
+exit_code = 0
+head = "ac27753b64ccb340b6566b1e27bbeefb67dec5af"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a6465277-f23f-45ee-aeff-ed484bbb82f6 with nextest profile: default
+    Starting 1 test across 5 binaries (311 tests skipped)
+        PASS [   0.008s] crunk::it new::new_token_from_an_unknown_token_is_refused_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 311 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=new::new_token_from_an_unknown_token_is_refused_and_writes_nothing)"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "5944a11378ff1fdbc17ad48c3f19b0f0cac17c7780f9cd8bf87105ca8c54815a"
+at = "2026-11-15T01:39:23Z"
+actor = "lognd"
+rev = 1
