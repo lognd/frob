@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T13:01:27Z"
+digest = "59ca65c1d308a19acefd09c57411bafdb0fb1934b5d97058204af9641f188535"
+exit_code = 0
+head = "cc26b9564faefdb242d38e657b2f2d73b63d30a0"
+inline = '''
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5bb24e4d-d43c-488b-97b3-abbf14690404 with nextest profile: default
+    Starting 1 test across 2 binaries (87 tests skipped)
+        PASS [   0.100s] crunk-check::it static_tailwind::the_static_flag_never_executes_repository_javascript
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.101s] 1 test run: 1 passed, 87 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(=static_tailwind::the_static_flag_never_executes_repository_javascript)"
+size = 642
+status = "measured"
+test_count = 1
+tests_digest = "f5fa2c602871d1d0fa4b2aa869294e033a324ac54dbfa0177c009980edf26867"
+at = "2026-11-15T13:01:27Z"
+actor = "lognd"
+rev = 1
