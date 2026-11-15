@@ -1,0 +1,10 @@
+kind = "create"
+title = "always select registry and contract tests when a verb or rule is added"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M4. Evidence: touched-set selection can miss registry/contract tests. Remedy: add always-select globs in frob test selection. Files: crates/frob-test*, frob.toml."
+at = "2026-11-15T06:10:53Z"
+actor = "lognd"
+rev = 1
