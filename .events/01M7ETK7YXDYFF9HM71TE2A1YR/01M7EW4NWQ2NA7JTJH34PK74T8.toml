@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A scene whose <style> body has rules is refused by solve_scene_html with SolveError::StylesheetNotApplied, not solved unstyled", "A scene with an @media block is refused the same way", "An empty <style> and inline styles still solve", "The reject-vs-honor decision is recorded in docs/design/crunk/stylesheet-solve.md"]
+moved = []
+at = "2026-11-15T05:51:03Z"
+actor = "lognd"
+rev = 1
