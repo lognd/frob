@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk look --marks: draw data-id on each box in a PNG"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M7ETB5STFQ9HV11RVBPHRVYA"
+idempotency_key = "crunkplan-dcc5f4507ec8"
+labels = ["no-story"]
+acceptance = ["the marks option writes a PNG whose boxes match the solve ids"]
+body = """
+Source: /home/logan/projects/frob-research-ui.md, section T4.
+Remedy: draw each data-id on its box over the render so the model answers by id; depends on a rasteriser (~WNQ6NF3 child)
+Crates/files: crates/crunk look
+Keep any new heuristic advisory and dated; a clean run means no known defect, not quality."""
+at = "2026-11-15T06:28:41Z"
+actor = "lognd"
+rev = 1
