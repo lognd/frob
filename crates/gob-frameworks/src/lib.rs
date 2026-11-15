@@ -49,7 +49,7 @@ use tracing::info;
 pub use http::{ClientCall, HttpEdge, Library, link};
 pub use registry::{Detector, FrameworkEntry, detect, detect_with, frameworks};
 pub use repo::Repo;
-pub use route_a11y::{RouteGap, route_gaps};
+pub use route_a11y::{RouteGap, RouteUnjudged, route_gaps, route_unjudged};
 pub use types::{
     Analysis, Detection, Discovery, Entrypoint, EntrypointKind, Method, Problem, Route, Status,
 };

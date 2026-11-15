@@ -4,9 +4,11 @@
 //! The judgement is lexical over the route's page component file and its layouts' files:
 //! a title is set when any of them mentions a title API, and the change is announced when any of them
 //! moves focus or writes a live region. Next.js announces a route change itself, so only its title is
-//! required. A route none of whose sources could be read is left out, never guessed.
+//! required. A route none of whose sources could be read is never guessed: it is reported by
+//! [`route_unjudged`] so the rule can say it is Unresolved.
 
 // frob:ticket 01M4D95TNEY7MCTS3A4F9HC26C
+// frob:ticket 01M7EXZ20VEG1WPQJP5TY499D4
 
 use tracing::{debug, trace};
 
@@ -62,6 +64,19 @@ pub struct RouteGap {
     pub missing_focus: bool,
 }
 
+/// One page route whose sources could not be read, so it cannot be judged.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RouteUnjudged {
+    /// The registry name of the framework that declares the route.
+    pub framework: &'static str,
+    /// The path pattern, or `None` when it is not statically known.
+    pub pattern: Option<String>,
+    /// Repo-relative path of the file that declares the route.
+    pub file: String,
+    /// One-based line of the declaration.
+    pub line: u32,
+}
+
 /// The repo-relative file a symref text names: the part before `::`, or the text itself when it is a path.
 fn file_of(symref: &str) -> &str {
     symref.split_once("::").map_or(symref, |(file, _)| file)
@@ -81,8 +96,18 @@ fn mentions(texts: &[&str], signals: &[&str]) -> bool {
     texts.iter().any(|t| signals.iter().any(|s| t.contains(s)))
 }
 
-/// The gap of one page route, or `None` when it is judged fine or cannot be judged.
-fn gap_of(repo: &Repo<'_>, route: &Route) -> Option<RouteGap> {
+/// What the lexical judgement made of one page route.
+enum Verdict {
+    /// The route is fine.
+    Clean,
+    /// The route changes the page silently.
+    Gap(RouteGap),
+    /// No source of the route could be read.
+    Unjudged(RouteUnjudged),
+}
+
+/// Judge one page route, or `None` when it has no page component.
+fn judge(repo: &Repo<'_>, route: &Route) -> Option<Verdict> {
     route.component.as_ref()?;
     let texts: Vec<&str> = sources_of(route)
         .into_iter()
@@ -90,18 +115,27 @@ fn gap_of(repo: &Repo<'_>, route: &Route) -> Option<RouteGap> {
         .collect();
     if texts.is_empty() {
         debug!(file = %route.file, "route a11y: no source readable, route not judged");
-        return None;
+        return Some(Verdict::Unjudged(RouteUnjudged {
+            framework: route.framework,
+            pattern: route.pattern.clone(),
+            file: route.file.clone(),
+            line: route.line,
+        }));
     }
     let missing_title = !mentions(&texts, &TITLE_SIGNALS);
     let missing_focus = route.framework != SELF_ANNOUNCING && !mentions(&texts, &FOCUS_SIGNALS);
     trace!(file = %route.file, missing_title, missing_focus, "route a11y judged");
-    (missing_title || missing_focus).then(|| RouteGap {
-        framework: route.framework,
-        pattern: route.pattern.clone(),
-        file: route.file.clone(),
-        line: route.line,
-        missing_title,
-        missing_focus,
+    Some(if missing_title || missing_focus {
+        Verdict::Gap(RouteGap {
+            framework: route.framework,
+            pattern: route.pattern.clone(),
+            file: route.file.clone(),
+            line: route.line,
+            missing_title,
+            missing_focus,
+        })
+    } else {
+        Verdict::Clean
     })
 }
 
@@ -109,7 +143,13 @@ fn gap_of(repo: &Repo<'_>, route: &Route) -> Option<RouteGap> {
 ///
 /// One entry per route, sorted; handler-only routes (API endpoints) are never judged.
 pub fn route_gaps(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteGap> {
-    let mut gaps: Vec<RouteGap> = routes.iter().filter_map(|r| gap_of(repo, r)).collect();
+    let mut gaps: Vec<RouteGap> = routes
+        .iter()
+        .filter_map(|r| match judge(repo, r)? {
+            Verdict::Gap(g) => Some(g),
+            _ => None,
+        })
+        .collect();
     gaps.sort();
     gaps.dedup();
     debug!(
@@ -118,4 +158,25 @@ pub fn route_gaps(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteGap> {
         "route a11y gaps found"
     );
     gaps
+}
+
+/// The page routes of `routes` none of whose component or layout sources could be read.
+///
+/// One entry per route, sorted; the rule cannot decide these, so it reports them Unresolved.
+pub fn route_unjudged(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteUnjudged> {
+    let mut out: Vec<RouteUnjudged> = routes
+        .iter()
+        .filter_map(|r| match judge(repo, r)? {
+            Verdict::Unjudged(u) => Some(u),
+            _ => None,
+        })
+        .collect();
+    out.sort();
+    out.dedup();
+    debug!(
+        routes = routes.len(),
+        unjudged = out.len(),
+        "route a11y unjudged routes found"
+    );
+    out
 }

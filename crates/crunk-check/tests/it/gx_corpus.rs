@@ -27,6 +27,7 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-check/src/route_a11y.rs::A11y104
     // frob:tests crates/crunk-check/src/route_a11y.rs::group
     // frob:tests crates/crunk-check/src/route_a11y.rs::fingerprint
+    // frob:tests crates/crunk-check/src/route_a11y.rs::to_unresolved
     let dir = tempfile::tempdir().expect("tempdir");
     let mut config = crunk_spec::presets::preset("default")
         .expect("default preset")
