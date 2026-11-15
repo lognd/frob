@@ -563,6 +563,12 @@
 |---|---|---|---|---|---|---|
 | [SPACE001](SPACE001.md) | spacing-off-scale | error | deterministic | P+ | true | Margins, paddings, gaps and insets must be steps of the spacing scale. Each block below is one source |
 
+## SPEC
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [SPEC001](SPEC001.md) | design-file-invalid | error | manual | P+ | true | A component, screen or content file loads. Each block is one file in a project whose `crunk.toml` is the default preset. |
+
 ## STATE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
