@@ -2,7 +2,8 @@
 id = "01M4DVX007B7659YHBWVQK2ZMX"
 title = "docs/crunk/README.md: document the tokens verb, the token exports and the Tailwind runtime"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
