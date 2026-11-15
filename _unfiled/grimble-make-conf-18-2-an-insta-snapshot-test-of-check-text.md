@@ -14,6 +14,10 @@ labels = ["no-story"]
 kind = "blocked-by"
 target = "01M7EXTJ88WR479046W9D3NAYY"
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXTYXTQNPAEPR1C8R96SGE"
+
 [[acceptance]]
 text = "A snapshot test runs check --text on the CONF 18.2 model and fails on drift"
 bound = false
