@@ -2,7 +2,8 @@
 id = "01M5M682VX5JMQ8076X42VGPKQ"
 title = "grimble-serve: add the explore tool"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
