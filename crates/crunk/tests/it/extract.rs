@@ -146,16 +146,38 @@ fn extract_token_converts_rem_and_honours_scale_and_dry_run() {
     );
 }
 
+// frob:tests crates/crunk/src/extract.rs::LengthMatcher.duration
 // frob:tests crates/crunk/src/extract.rs::ExtractToken
 #[test]
-fn extract_token_refuses_durations_and_unsupported_lengths() {
+fn extract_token_promotes_a_duration_and_rewrites_both_spellings() {
     let dir = project();
     let p = dir.path();
-    refused(p, &["extract-token", "150ms"], "E-EXTRACT-DURATION");
-    refused(p, &["extract-token", "0.2s"], "E-EXTRACT-DURATION");
+    std::fs::write(
+        p.join("styles/base/m.css"),
+        ".a { transition: opacity 200ms; animation-duration: 0.2s; delay: 2000ms; }\n",
+    )
+    .unwrap();
+    let (code, out, err) = crunk(p, &["extract-token", "200ms"]);
+    assert_eq!(code, 0, "{out} {err}");
+    assert!(read(p, "crunk.toml").contains("durations = [200]"));
+    assert!(read(p, "styles/tokens.css").contains("--duration-200: 200ms;"));
+    let css = read(p, "styles/base/m.css");
+    assert!(css.contains("opacity var(--duration-200);"), "{css}");
+    assert!(css.contains("animation-duration: var(--duration-200);"), "{css}");
+    assert!(css.contains("delay: 2000ms;"), "near miss kept: {css}");
+    let (code, out, err) = crunk(p, &["tokens", "--check"]);
+    assert_eq!(code, 0, "{out} {err}");
+}
+
+// frob:tests crates/crunk/src/extract.rs::ExtractToken
+#[test]
+fn extract_token_refuses_unsupported_literals() {
+    let dir = project();
+    let p = dir.path();
     refused(p, &["extract-token", "50%"], "E-EXTRACT-UNIT");
     refused(p, &["extract-token", "1em"], "E-EXTRACT-UNIT");
     refused(p, &["extract-token", "0px"], "E-EXTRACT-ZERO");
+    refused(p, &["extract-token", "0ms"], "E-EXTRACT-ZERO");
     refused(p, &["extract-token", "-4px"], "E-EXTRACT-NEGATIVE");
 }
 

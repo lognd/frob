@@ -632,6 +632,11 @@
           "description": "Prefix of palette color tokens: `--color-ink`.",
           "type": "string"
         },
+        "duration": {
+          "default": "duration",
+          "description": "Prefix of duration tokens: `--duration-200`.",
+          "type": "string"
+        },
         "font_family": {
           "default": "font-family",
           "description": "Prefix of font-family tokens: `--font-family-base`.",
@@ -1560,6 +1565,15 @@
       "additionalProperties": false,
       "description": "The `[scales]` table: strictly ascending px step lists.\n\n`spacing` and `font_sizes` are required and non-empty. `radii` and `sizes` are optional:\nempty `radii` keeps RADIUS001 silent and empty `sizes` makes SIZE001 fall back to `spacing`.",
       "properties": {
+        "durations": {
+          "default": [],
+          "description": "Allowed durations in milliseconds, strictly ascending; empty means no duration tokens.",
+          "items": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": "array"
+        },
         "font_sizes": {
           "description": "Allowed font sizes in px, strictly ascending.",
           "items": {
@@ -1781,6 +1795,7 @@
           "$ref": "#/$defs/TokenPrefixes",
           "default": {
             "color": "color",
+            "duration": "duration",
             "font_family": "font-family",
             "font_size": "font-size",
             "layer": "layer",

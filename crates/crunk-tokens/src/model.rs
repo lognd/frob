@@ -14,7 +14,7 @@ use std::collections::BTreeSet;
 use crunk_spec::DesignSpec;
 use crunk_spec::naming::{
     color_token, font_family_stack_token, font_family_token, font_size_token, format_step,
-    layer_token, radius_token, size_token, space_token,
+    duration_token, layer_token, radius_token, size_token, space_token,
 };
 use crunk_tailwind::defaults::{
     V3_BORDER_RADIUS_KEYS, V3_FONT_SIZE_KEYS, V3_SPACING_KEYS, V3_Z_INDEX_KEYS, has_key,
@@ -71,6 +71,8 @@ pub enum TokenKind {
     Radius,
     /// A `[scales] sizes` step.
     Size,
+    /// A `[scales] durations` step, in milliseconds.
+    Duration,
     /// A `[layers]` z-index.
     Layer,
     /// The `base` font-family stack or a `[typography.stacks]` entry.
@@ -517,16 +519,23 @@ impl Builder {
         scale: &str,
         name_of: impl Fn(f64) -> String,
     ) -> Result<(), TokenError> {
+        let value_of = |step: f64| {
+            if kind == TokenKind::Duration {
+                TokenValue::Duration(step)
+            } else {
+                TokenValue::Dimension {
+                    value: step,
+                    unit: Unit::Px,
+                }
+            }
+        };
         for &step in steps {
             self.primitive(
                 name_of(step),
                 kind,
                 format_step(step),
                 format!("[scales] {scale} {}", format_step(step)),
-                TokenValue::Dimension {
-                    value: step,
-                    unit: Unit::Px,
-                },
+                value_of(step),
             )?;
         }
         Ok(())
@@ -536,7 +545,7 @@ impl Builder {
 impl TokenSet {
     /// Derive the token set from `spec`, in the Python crunk's emission order: palette colors,
     /// their `-rgb` companions (when `[tailwind] alpha_channels`), spacing, font sizes, radii,
-    /// sizes, layers, the `base` font stack, then the declared stacks.
+    /// sizes, durations, layers, the `base` font stack, then the declared stacks.
     ///
     /// # Errors
     ///
@@ -587,6 +596,12 @@ impl TokenSet {
         b.scale(TokenKind::Size, &spec.scales.sizes, "sizes", |s| {
             size_token(cfg, s)
         })?;
+        b.scale(
+            TokenKind::Duration,
+            &spec.scales.durations,
+            "durations",
+            |s| duration_token(cfg, s),
+        )?;
         for (name, z_index) in &spec.layers {
             b.primitive(
                 layer_token(cfg, name),

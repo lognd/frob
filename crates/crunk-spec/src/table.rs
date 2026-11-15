@@ -49,6 +49,8 @@ pub struct ScalesConfig {
     pub radii: Vec<f64>,
     /// Allowed sizes (width and height) in px, strictly ascending; empty means use `spacing`.
     pub sizes: Vec<f64>,
+    /// Allowed durations in milliseconds, strictly ascending; empty means no duration tokens.
+    pub durations: Vec<f64>,
 }
 
 /// The `[typography]` table: allowed font families and weights, and named stacks.
@@ -198,6 +200,9 @@ pub struct TokenPrefixes {
     /// Prefix of size tokens: `--size-32`.
     #[config(default = "size".to_owned())]
     pub size: String,
+    /// Prefix of duration tokens: `--duration-200`.
+    #[config(default = "duration".to_owned())]
+    pub duration: String,
 }
 
 /// The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON export path.

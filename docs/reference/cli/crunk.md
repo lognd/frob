@@ -20,7 +20,7 @@
 | `export figma-variables` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Figma variables JSON export, or write it to `--out`. |
 | `export tailwind` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Tailwind theme export, or write it to `--out`. |
 | `export uss` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Print the Unity USS variable sheet, or write it to `--out`. |
-| `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour or px/rem length literal to a token and rewrite its uses. |
+| `extract-token` | no | yes | 0 ok, 3 refused, 2 usage, 4 internal | Promote a hex colour, px/rem length or ms/s duration literal to a token and rewrite its uses. |
 | `fix` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Apply (or with `--dry-run` only show) the machine-applicable fixes. |
 | `gallery check` | yes | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Check the gallery manifest against the spec's cells (needs the `gallery` feature). |
 | `gallery enumerate` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the cells the spec enumerates. |

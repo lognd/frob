@@ -2,8 +2,8 @@
 //!
 //! A colour is added to `[palette]`, a length to a `[scales]` list (`--scale`, default `spacing`).
 //! Every use of the literal in stylesheets and `[jsx] globs` sources becomes `var(--TOKEN)`, and
-//! the generated exports are regenerated. Durations are refused: `crunk.toml` has no duration
-//! table. Files are written all-or-nothing; `--dry-run` writes nothing.
+//! the generated exports are regenerated. A duration (`200ms`, `0.2s`) joins `[scales] durations`
+//! in milliseconds and every spelling of it is rewritten. Files are written all-or-nothing; `--dry-run` writes nothing.
 
 // frob:ticket 01M4CXRB2DX0B0BW7YJPAN1YXT
 // frob:ticket 01M5H3RXZHDEDM508R6K4DBBVJ
@@ -11,7 +11,9 @@
 use std::path::Path;
 
 use crunk_spec::DesignSpec;
-use crunk_spec::naming::{color_token, font_size_token, radius_token, sanitize_ident, space_token};
+use crunk_spec::naming::{
+    color_token, duration_token, font_size_token, radius_token, sanitize_ident, space_token,
+};
 use gob_cli::clap::ArgMatches;
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
 
@@ -22,7 +24,7 @@ use crate::rewrite::{
     normalize_hex, reference_changes, scan, source_files,
 };
 
-/// Promote a hex colour or px/rem length literal to a token and rewrite its uses.
+/// Promote a hex colour, px/rem length or ms/s duration literal to a token and rewrite its uses.
 #[derive(Debug, Clone, Default, gob_cli::Command)]
 #[command(
     verb = "extract-token",
@@ -44,7 +46,7 @@ struct ExtractArgs {
     #[arg(
         value_name = "LITERAL",
         allow_hyphen_values = true,
-        help = "The hex colour or px/rem length to promote, e.g. #1a2b3c or 16px"
+        help = "The hex colour, px/rem length or ms/s duration to promote, e.g. #1a2b3c, 16px or 200ms"
     )]
     literal: String,
     #[arg(
@@ -156,6 +158,7 @@ impl Scale {
 enum Request {
     Hex(String),
     Length { value: f64, unit: String },
+    Duration { ms: f64 },
 }
 
 /// Split a bare dimension (`16px`, `.5REM`, `-2px`) into its number and lowercase unit.
@@ -202,7 +205,8 @@ fn is_ident(b: u8) -> bool {
 /// Matches one px/rem length wherever it is written, in any case or number form.
 pub struct LengthMatcher {
     value: f64,
-    unit: String,
+    /// Accepted unit spellings (lowercase) with the factor that converts each to `value`'s unit.
+    units: Vec<(&'static str, f64)>,
     replacement: String,
 }
 
@@ -210,9 +214,20 @@ impl LengthMatcher {
     /// A matcher for `value` in `unit` (lowercase), replaced by `replacement`.
     #[must_use]
     pub fn new(value: f64, unit: &str, replacement: String) -> Self {
+        let unit = if unit == "rem" { "rem" } else { "px" };
         Self {
             value,
-            unit: unit.to_owned(),
+            units: vec![(unit, 1.0)],
+            replacement,
+        }
+    }
+
+    /// A matcher for a duration of `ms` milliseconds written as `ms` or `s`.
+    #[must_use]
+    pub fn duration(ms: f64, replacement: String) -> Self {
+        Self {
+            value: ms,
+            units: vec![("ms", 1.0), ("s", 1000.0)],
             replacement,
         }
     }
@@ -240,9 +255,12 @@ impl LengthMatcher {
         if bytes.get(end).is_some_and(|&b| is_ident(b) || b == b'%') {
             return None;
         }
-        if !text[unit_start..end].eq_ignore_ascii_case(&self.unit)
-            || (value - self.value).abs() > 1e-9
-        {
+        let spelled = &text[unit_start..end];
+        let (_, factor) = self
+            .units
+            .iter()
+            .find(|(unit, _)| spelled.eq_ignore_ascii_case(unit))?;
+        if (value * factor - self.value).abs() > 1e-6 {
             return None;
         }
         if in_url(text, k) || in_prelude(text, k) {
@@ -308,13 +326,14 @@ fn classify(literal: &str) -> Result<Request, CliError> {
             format!("{literal:?} is zero, which needs no token and would rewrite every zero"),
         )),
         "px" | "rem" => Ok(Request::Length { value, unit }),
-        "ms" | "s" => Err(refuse(
-            "E-EXTRACT-DURATION",
-            format!(
-                "{literal:?} is a duration; crunk.toml has no duration table (design/tokens \
-                 files are linted but never emitted as custom properties)"
-            ),
+        "ms" | "s" if value == 0.0 => Err(refuse(
+            "E-EXTRACT-ZERO",
+            format!("{literal:?} is zero, which needs no token and would rewrite every zero"),
         )),
+        "ms" => Ok(Request::Duration { ms: value }),
+        "s" => Ok(Request::Duration {
+            ms: round_px(value * 1000.0),
+        }),
         _ => Err(refuse(
             "E-EXTRACT-UNIT",
             format!(
@@ -354,6 +373,7 @@ fn plan(
         Request::Length { value, unit } => {
             length_definition(&spec, &toml_text, value, &unit, key, scale)?
         }
+        Request::Duration { ms } => duration_definition(&spec, &toml_text, ms, key, scale)?,
     };
     let Definition {
         name,
@@ -466,6 +486,31 @@ fn length_definition(
         name: name.clone(),
         edited,
         matcher: Matcher::Length(LengthMatcher::new(value, unit, format!("var({name})"))),
+    })
+}
+
+/// The `[scales] durations` step definition for a duration (stored in milliseconds).
+fn duration_definition(
+    spec: &DesignSpec,
+    toml_text: &str,
+    ms: f64,
+    key: Option<&str>,
+    scale: Option<&str>,
+) -> Result<Definition, CliError> {
+    if key.is_some() || scale.is_some() {
+        return Err(refuse(
+            "E-EXTRACT-NAME",
+            "--name and --scale do not apply to a duration; it joins [scales] durations".to_owned(),
+        ));
+    }
+    let name = duration_token(&spec.tokens, ms);
+    let edited = insert_scale_step(toml_text, "durations", ms)
+        .map_err(|why| refuse("E-EXTRACT-DEF", why))?;
+    tracing::debug!(%name, ms, "extract-token: duration step");
+    Ok(Definition {
+        name: name.clone(),
+        edited,
+        matcher: Matcher::Length(LengthMatcher::duration(ms, format!("var({name})"))),
     })
 }
 

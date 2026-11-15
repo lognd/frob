@@ -60,7 +60,7 @@ pub struct BreakpointsConfig {
     pub base_required: Vec<String>,
 }
 
-/// The `[tokens]` table flattened for naming: the seven prefixes, header and JSON export path.
+/// The `[tokens]` table flattened for naming: the eight prefixes, header and JSON export path.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct TokensConfig {
     /// Prefix of color tokens (may be empty).
@@ -77,6 +77,8 @@ pub struct TokensConfig {
     pub font_family: String,
     /// Prefix of size tokens.
     pub size: String,
+    /// Prefix of duration tokens.
+    pub duration: String,
     /// Verbatim CSS header comment, or empty.
     pub header: String,
     /// Committed flat-JSON export path relative to the project root, or empty.
@@ -96,6 +98,7 @@ impl Default for TokensConfig {
             layer: prefixes.layer,
             font_family: prefixes.font_family,
             size: prefixes.size,
+            duration: prefixes.duration,
             header: String::new(),
             json_file: String::new(),
             max_duration_ms: None,

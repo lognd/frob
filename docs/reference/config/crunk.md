@@ -247,6 +247,7 @@ empty `radii` keeps RADIUS001 silent and empty `sizes` makes SIZE001 fall back t
 
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
+| `durations` | `Vec<f64>` | no | `[]` | Allowed durations in milliseconds, strictly ascending; empty means no duration tokens. |
 | `font_sizes` | `Vec<f64>` | yes | - | Allowed font sizes in px, strictly ascending. |
 | `radii` | `Vec<f64>` | no | `[]` | Allowed border radii in px, strictly ascending; empty means no radius tokens. |
 | `sizes` | `Vec<f64>` | no | `[]` | Allowed sizes (width and height) in px, strictly ascending; empty means use `spacing`. |
@@ -336,7 +337,7 @@ The `[tokens]` table: prefixes, an optional verbatim CSS header and a JSON expor
 | `header` | `String` | no | `""` | A complete CSS comment block emitted verbatim above the generated marker; empty means no header. Must start with `/*`, end with `*/` and hold no interior `*/`. |
 | `json_file` | `String` | no | `""` | Path of a committed flat JSON export of the tokens, relative to the project root; empty means none. |
 | `max_duration_ms` | `f64` | no | - | Longest allowed duration token in milliseconds (TOKEN010); greater than zero, unset means no bound. |
-| `prefixes` | `TokenPrefixes` | no | `{ color = "color", font_family = "font-family", font_size = "font-size", layer = "layer", radius = "radius", size = "size", space = "space" }` | Custom-property prefixes, see `[tokens.prefixes]`. |
+| `prefixes` | `TokenPrefixes` | no | `{ color = "color", duration = "duration", font_family = "font-family", font_size = "font-size", layer = "layer", radius = "radius", size = "size", space = "space" }` | Custom-property prefixes, see `[tokens.prefixes]`. |
 
 ## `[tokens.prefixes]`
 
@@ -348,6 +349,7 @@ non-empty so numeric steps keep a leading letter. A non-empty prefix matches `[a
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
 | `color` | `String` | no | `"color"` | Prefix of palette color tokens: `--color-ink`. |
+| `duration` | `String` | no | `"duration"` | Prefix of duration tokens: `--duration-200`. |
 | `font_family` | `String` | no | `"font-family"` | Prefix of font-family tokens: `--font-family-base`. |
 | `font_size` | `String` | no | `"font-size"` | Prefix of font-size tokens: `--font-size-16`. |
 | `layer` | `String` | no | `"layer"` | Prefix of layer (z-index) tokens: `--layer-toast`. |

@@ -77,6 +77,11 @@ pub fn size_token(cfg: &TokensConfig, step: f64) -> String {
     prefixed(&cfg.size, &format_step(step))
 }
 
+/// Full `--...` custom property name for a duration scale step in milliseconds.
+pub fn duration_token(cfg: &TokensConfig, step: f64) -> String {
+    prefixed(&cfg.duration, &format_step(step))
+}
+
 /// Full `--...` custom property name for layer entry `name`.
 pub fn layer_token(cfg: &TokensConfig, name: &str) -> String {
     prefixed(&cfg.layer, &sanitize_ident(name))

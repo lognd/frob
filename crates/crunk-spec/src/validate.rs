@@ -134,7 +134,8 @@ pub(crate) fn scales(s: &ScalesConfig) -> Res<()> {
     check_scale("scales", "spacing", &s.spacing, true)?;
     check_scale("scales", "font_sizes", &s.font_sizes, true)?;
     check_scale("scales", "radii", &s.radii, false)?;
-    check_scale("scales", "sizes", &s.sizes, false)
+    check_scale("scales", "sizes", &s.sizes, false)?;
+    check_scale("scales", "durations", &s.durations, false)
 }
 
 /// `[typography]`: non-empty lists, and stacks of declared families only.
@@ -235,6 +236,7 @@ pub(crate) fn tokens(raw: &RawTokens) -> Res<TokensConfig> {
     check_prefix("layer", &p.layer, true)?;
     check_prefix("font_family", &p.font_family, true)?;
     check_prefix("size", &p.size, false)?;
+    check_prefix("duration", &p.duration, false)?;
     check_header(&raw.header)?;
     Ok(TokensConfig {
         color: p.color.clone(),
@@ -244,6 +246,7 @@ pub(crate) fn tokens(raw: &RawTokens) -> Res<TokensConfig> {
         layer: p.layer.clone(),
         font_family: p.font_family.clone(),
         size: p.size.clone(),
+        duration: p.duration.clone(),
         header: raw.header.clone(),
         json_file: raw.json_file.clone(),
         max_duration_ms: crate::timing::max_duration(raw.max_duration_ms)?,
