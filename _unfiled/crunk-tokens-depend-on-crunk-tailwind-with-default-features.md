@@ -2,12 +2,12 @@
 id = "01M4DVX0SRX3HW57XKGEHFB7JE"
 title = "crunk-tokens: depend on crunk-tailwind with default-features = false so the token crate does not pull the node runtime stack"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:32Z"
-updated = "2026-10-28T12:55:52Z"
+updated = "2026-11-15T04:41:52Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/Cargo.toml"]
 +++
