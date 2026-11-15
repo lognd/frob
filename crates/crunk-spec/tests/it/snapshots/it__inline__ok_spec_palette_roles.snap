@@ -86,6 +86,7 @@ Ok(
             size: "size",
             header: "",
             json_file: "",
+            max_duration_ms: None,
         },
         jsx: JsxConfig {
             globs: [],

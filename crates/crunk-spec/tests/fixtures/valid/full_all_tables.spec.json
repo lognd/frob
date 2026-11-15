@@ -135,7 +135,8 @@
     "font_family": "ff",
     "size": "sz",
     "header": "/* project header */",
-    "json_file": "tokens.json"
+    "json_file": "tokens.json",
+    "max_duration_ms": null
   },
   "jsx": {
     "globs": [

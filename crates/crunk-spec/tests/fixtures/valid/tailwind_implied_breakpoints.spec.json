@@ -109,7 +109,8 @@
     "font_family": "font-family",
     "size": "size",
     "header": "",
-    "json_file": ""
+    "json_file": "",
+    "max_duration_ms": null
   },
   "jsx": {
     "globs": []
