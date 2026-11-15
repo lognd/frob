@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T06:00:23Z"
+updated = "2026-11-15T06:00:27Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "An unparsable screen file yields a SPEC001 Error finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An unparsable content file yields a SPEC001 Error finding"
