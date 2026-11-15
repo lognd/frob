@@ -4,9 +4,10 @@ title = "grimble: classify contract changes at member level by compat=; schema f
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:43Z"
-updated = "2026-11-15T05:23:43Z"
+updated = "2026-11-15T09:24:43Z"
 labels = ["no-story"]
 +++
 
