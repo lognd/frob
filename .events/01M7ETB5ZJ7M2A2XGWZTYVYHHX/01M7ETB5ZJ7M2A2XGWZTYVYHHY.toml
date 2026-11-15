@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: one-target critique loop with accept-only-if-better ratchet"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Research rec 3. Source: /home/logan/projects/frob-research-ui.md (recommendation 3). Decompose before implementing."
+at = "2026-11-15T05:19:39Z"
+actor = "lognd"
+rev = 1
