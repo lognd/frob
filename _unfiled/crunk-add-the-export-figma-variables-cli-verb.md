@@ -2,7 +2,8 @@
 id = "01M7E61BQ80VGD5FXMAP0V42TV"
 title = "crunk: add the export figma-variables CLI verb"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
