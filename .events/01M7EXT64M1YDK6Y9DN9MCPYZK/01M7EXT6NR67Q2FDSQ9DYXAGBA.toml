@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["TOOL003 fires on a fixture repo with a python stack and no ruff stage and is silent once the stage is added", "Rule page documents TOOL003 and its default severity/off-in-baseline behavior"]
+moved = []
+at = "2026-11-15T06:20:17Z"
+actor = "lognd"
+rev = 1
