@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk layout: root-exceeds-viewport finding"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETKAPM2000N80NA0W5NAM5"
+idempotency_key = "crunkplan-69deb3568827"
+labels = ["no-story"]
+acceptance = ["a 2000px root at 1280 viewport raises a finding"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Evidence: overflowing root is not reported
+Remedy: emit a finding when the root box exceeds the viewport
+Crates/files: crates/crunk-rules layout
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:56Z"
+actor = "lognd"
+rev = 1
