@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T06:00:03Z"
+updated = "2026-11-15T06:00:04Z"
 labels = ["no-story"]
-scope = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/it/solve_scene.rs"]
+scope = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/it/solve_scene.rs", "docs/design/crunk/stylesheet-solve.md"]
 
 [[acceptance]]
 text = "A scene whose <style> body has rules is refused by solve_scene_html with SolveError::StylesheetNotApplied, not solved unstyled"

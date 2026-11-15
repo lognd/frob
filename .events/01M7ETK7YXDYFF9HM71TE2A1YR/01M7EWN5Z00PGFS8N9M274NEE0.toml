@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/it/solve_scene.rs"]
+new = ["crates/crunk-layout/src/**", "crates/crunk-layout/tests/it/solve_scene.rs", "docs/design/crunk/stylesheet-solve.md"]
+at = "2026-11-15T06:00:04Z"
+actor = "lognd"
+rev = 1
