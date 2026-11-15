@@ -1,0 +1,27 @@
++++
+id = "01M7EXWNDAT5YXREKS0AADJ4WY"
+title = "crunk tokens: surface token kind (named multi-layer border/shadow recipe)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+parent = "01M7ETB6DKRHKAHRBA2NCGNQTB"
+reporter = "lognd"
+created = "2026-11-15T06:21:38Z"
+updated = "2026-11-15T06:21:38Z"
+idempotency_key = "crunkplan-e1b188ba4c9f"
+labels = ["no-story"]
+
+[[acceptance]]
+text = "a surface token round trips spec to css (snapshot)"
+bound = false
+
+[[acceptance]]
+text = "invalid layer is a typed error"
+bound = false
++++
+
+Source: /home/logan/projects/frob-research-ui.md, section T3.
+Remedy: add TokenKind::Surface with css export to box-shadow and border layers
+Crates/files: crates/crunk-tokens, crates/crunk-export, crates/crunk-spec
+Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.
