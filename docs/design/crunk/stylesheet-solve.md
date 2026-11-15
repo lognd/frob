@@ -1,5 +1,8 @@
 # Crunk solver and scene stylesheets
 
+Status: current
+Owner: crunk
+
 Decision for audit2 H2: the solver REJECTS a scene whose `<style>` body holds rules or an
 `@media` block, instead of honoring them.
 
