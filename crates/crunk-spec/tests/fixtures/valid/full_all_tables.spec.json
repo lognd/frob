@@ -75,7 +75,8 @@
       16.0,
       32.0,
       64.0
-    ]
+    ],
+    "durations": []
   },
   "typography": {
     "families": [
@@ -136,7 +137,8 @@
     "size": "sz",
     "header": "/* project header */",
     "json_file": "tokens.json",
-    "max_duration_ms": null
+    "max_duration_ms": null,
+    "duration": "duration"
   },
   "jsx": {
     "globs": [

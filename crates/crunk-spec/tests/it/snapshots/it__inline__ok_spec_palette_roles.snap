@@ -47,6 +47,7 @@ Ok(
                 8.0,
             ],
             sizes: [],
+            durations: [],
         },
         typography: TypographyConfig {
             families: [
@@ -84,6 +85,7 @@ Ok(
             layer: "layer",
             font_family: "font-family",
             size: "size",
+            duration: "duration",
             header: "",
             json_file: "",
             max_duration_ms: None,

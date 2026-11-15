@@ -21,7 +21,8 @@
       10.0
     ],
     "radii": [],
-    "sizes": []
+    "sizes": [],
+    "durations": []
   },
   "typography": {
     "families": [
@@ -59,7 +60,8 @@
     "size": "size",
     "header": "",
     "json_file": "",
-    "max_duration_ms": null
+    "max_duration_ms": null,
+    "duration": "duration"
   },
   "jsx": {
     "globs": []
