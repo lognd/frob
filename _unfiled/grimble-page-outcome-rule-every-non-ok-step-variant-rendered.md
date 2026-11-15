@@ -4,9 +4,10 @@ title = "grimble: page outcome rule, every non-ok step variant rendered by a ui 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:44Z"
-updated = "2026-11-15T05:23:44Z"
+updated = "2026-11-15T09:24:42Z"
 labels = ["no-story"]
 +++
 
