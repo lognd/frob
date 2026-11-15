@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T00:00:57Z"
+digest = "e5d06398554d5bee91ee33f6724946c6db34ef350ddad7c52e6a3c96dde102fe"
+exit_code = 0
+head = "c7bba829488abf5e5cb0f9312ee72c185b1404f1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a2f376e3-9412-4dea-a280-529cdeae5f2c with nextest profile: default
+    Starting 1 test across 2 binaries (308 tests skipped)
+        PASS [   0.039s] crunk-rules::it rules::figma_plan_findings_name_the_limit_only_when_a_table_is_set
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.040s] 1 test run: 1 passed, 308 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=rules::figma_plan_findings_name_the_limit_only_when_a_table_is_set)"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "b84105ad2a34ad201cd6b8e6589e4a2ab2823ff601e68b72fbe6b90c3da8f98a"
+at = "2026-11-15T00:00:57Z"
+actor = "lognd"
+rev = 1
