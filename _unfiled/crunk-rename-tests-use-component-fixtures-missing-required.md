@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-15T11:11:43Z"
-updated = "2026-11-15T11:19:14Z"
+updated = "2026-11-15T11:24:00Z"
 labels = ["no-story"]
 scope = ["crates/crunk/tests/it/rename.rs"]
 
