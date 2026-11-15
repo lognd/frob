@@ -7,12 +7,12 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T21:02:57Z"
-updated = "2026-11-15T21:03:06Z"
+updated = "2026-11-15T21:05:25Z"
 scope = ["crates/crunk-spec/tests/**"]
 
 [[acceptance]]
 text = "every_fixture_equals_the_python_spec_dump passes with the durations scale and duration token"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "inline::ok_cases_parse_cleanly passes with refreshed snapshots"
