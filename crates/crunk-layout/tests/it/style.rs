@@ -231,7 +231,7 @@ fn prop_grid_tracks_and_flow() {
     ));
     assert!(
         try_map(
-            "grid-template-columns:[a] 1fr",
+            "grid-template-columns:[a 1fr",
             &TokenMap::new(),
             ParentCtx::DEFINITE
         )
@@ -415,7 +415,7 @@ fn bad_values_are_typed_errors_not_panics() {
 // frob:tests map_declarations
 #[test]
 fn unmapped_layout_property_is_a_finding() {
-    let m = map("grid-template-areas:\"a b\";color:red");
+    let m = map("grid-template:\"a b\";color:red");
     assert_eq!(kinds(&m), vec![FindingKind::UnmappedProperty]);
 }
 
@@ -426,4 +426,172 @@ fn display_none_sets_hidden() {
     assert!(m.hidden);
     assert_eq!(m.style.display, Display::None);
     assert!(!map("display:flex").hidden);
+}
+
+// frob:tests map_declarations
+#[test]
+fn place_items_sets_both_axes() {
+    let m = map("place-items:center start");
+    assert_eq!(m.style.align_items, AlignItems::CENTER);
+    assert_eq!(m.style.justify_items, AlignItems::START);
+    assert!(m.findings.is_empty());
+}
+
+// frob:tests map_declarations
+#[test]
+fn place_self_one_value_sets_both_axes() {
+    let m = map("place-self:end");
+    assert_eq!(m.style.align_self, Some(AlignItems::END));
+    assert_eq!(m.style.justify_self, Some(AlignItems::END));
+}
+
+// frob:tests map_declarations
+#[test]
+fn place_content_sets_both_axes() {
+    let m = map("place-content:center space-between");
+    assert_eq!(m.style.align_content, AlignContent::CENTER);
+    assert_eq!(m.style.justify_content, AlignContent::SPACE_BETWEEN);
+}
+
+// frob:tests map_declarations
+#[test]
+fn width_keywords_map_to_intrinsic_dimensions() {
+    let m = map("width:min-content;height:fit-content");
+    assert_eq!(m.style.size.width, Dimension::min_content());
+    assert_eq!(m.style.size.height, Dimension::fit_content());
+    assert!(m.findings.is_empty());
+}
+
+// frob:tests map_declarations
+#[test]
+fn later_width_length_overrides_keyword() {
+    let m = map("width:max-content;width:40px");
+    assert_eq!(m.style.size.width, Dimension::length(40.0));
+}
+
+// frob:tests map_declarations
+#[test]
+fn min_width_keyword_is_bad_value() {
+    let r = try_map(
+        "min-width:min-content",
+        &TokenMap::new(),
+        ParentCtx::DEFINITE,
+    );
+    assert!(matches!(r, Err(StyleError::BadValue { .. })));
+}
+
+// frob:tests map_declarations
+#[test]
+fn order_is_mapped() {
+    assert_eq!(map("order:-2").order, -2);
+    assert_eq!(map("color:red").order, 0);
+}
+
+// frob:tests map_declarations
+#[test]
+fn order_non_integer_is_bad_value() {
+    let r = try_map("order:1.5", &TokenMap::new(), ParentCtx::DEFINITE);
+    assert!(matches!(r, Err(StyleError::BadValue { .. })));
+}
+
+// frob:tests map_declarations
+#[test]
+fn template_areas_map_rectangles() {
+    let m = map("grid-template-areas:\"h h\" \"s c\"");
+    let a = m.style.grid_template_areas.expect("areas");
+    assert_eq!((a.row_count, a.column_count), (2, 2));
+    let h = a.areas.iter().find(|x| x.name == "h").expect("h");
+    assert_eq!(
+        (h.row_start, h.row_end, h.column_start, h.column_end),
+        (1, 2, 1, 3)
+    );
+    assert!(m.findings.is_empty());
+}
+
+// frob:tests map_declarations
+#[test]
+fn template_areas_non_rectangle_is_bad_value() {
+    let r = try_map(
+        "grid-template-areas:\"a b\" \"b a\"",
+        &TokenMap::new(),
+        ParentCtx::DEFINITE,
+    );
+    assert!(matches!(r, Err(StyleError::BadValue { .. })));
+}
+
+// frob:tests map_declarations
+#[test]
+fn template_areas_ragged_rows_are_bad_value() {
+    let r = try_map(
+        "grid-template-areas:\"a b\" \"c\"",
+        &TokenMap::new(),
+        ParentCtx::DEFINITE,
+    );
+    assert!(matches!(r, Err(StyleError::BadValue { .. })));
+}
+
+// frob:tests map_declarations
+#[test]
+fn grid_area_name_places_all_edges() {
+    let m = map("grid-area:main");
+    let n = GridPlacement::NamedLine("main".to_owned(), 0);
+    assert_eq!(m.style.grid_row.start, n);
+    assert_eq!(m.style.grid_row.end, n);
+    assert_eq!(m.style.grid_column.start, n);
+    assert_eq!(m.style.grid_column.end, n);
+}
+
+// frob:tests map_declarations
+#[test]
+fn grid_area_numeric_four_values() {
+    let m = map("grid-area:1 / 2 / 3 / 4");
+    assert_eq!(m.style.grid_row.start, GridPlacement::from_line_index(1));
+    assert_eq!(m.style.grid_column.start, GridPlacement::from_line_index(2));
+    assert_eq!(m.style.grid_row.end, GridPlacement::from_line_index(3));
+    assert_eq!(m.style.grid_column.end, GridPlacement::from_line_index(4));
+}
+
+// frob:tests map_declarations
+#[test]
+fn named_lines_in_track_lists() {
+    let m = map("grid-template-columns:[a] 10px [b c] 20px [d]");
+    assert_eq!(m.style.grid_template_columns.len(), 2);
+    let names = &m.style.grid_template_column_names;
+    assert_eq!(names.len(), 3);
+    assert_eq!(names[0], vec!["a".to_owned()]);
+    assert_eq!(names[1], vec!["b".to_owned(), "c".to_owned()]);
+    assert_eq!(names[2], vec!["d".to_owned()]);
+}
+
+// frob:tests map_declarations
+#[test]
+fn named_lines_beside_repeat_are_bad_value() {
+    let r = try_map(
+        "grid-template-columns:[a] repeat(2, 10px)",
+        &TokenMap::new(),
+        ParentCtx::DEFINITE,
+    );
+    assert!(matches!(r, Err(StyleError::BadValue { .. })));
+}
+
+// frob:tests map_declarations
+#[test]
+fn named_line_placements() {
+    let m = map("grid-column:a / span 2 b;grid-row:c 2 / span d");
+    assert_eq!(
+        m.style.grid_column.start,
+        GridPlacement::NamedLine("a".to_owned(), 0)
+    );
+    assert_eq!(
+        m.style.grid_column.end,
+        GridPlacement::NamedSpan("b".to_owned(), 2)
+    );
+    assert_eq!(
+        m.style.grid_row.start,
+        GridPlacement::NamedLine("c".to_owned(), 2)
+    );
+    assert_eq!(
+        m.style.grid_row.end,
+        GridPlacement::NamedSpan("d".to_owned(), 1)
+    );
 }

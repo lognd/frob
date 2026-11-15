@@ -137,3 +137,53 @@ fn tokens_resolve_through_the_scene() {
         taffy::Dimension::length(64.0)
     );
 }
+
+// frob:tests build_taffy
+#[test]
+fn order_sorts_flex_siblings() {
+    let html = "<div data-id=\"f\" style=\"display:flex;width:100px;height:10px\">\
+<div data-id=\"a\" style=\"width:10px;height:10px;order:2\"></div>\
+<div data-id=\"b\" style=\"width:10px;height:10px\"></div></div>";
+    let (lt, _) = solve(html, 100.0, 10.0);
+    let a = lt.tree.layout(lt.ids["a"]).expect("layout");
+    let b = lt.tree.layout(lt.ids["b"]).expect("layout");
+    assert!(
+        b.location.x < a.location.x,
+        "a={} b={}",
+        a.location.x,
+        b.location.x
+    );
+}
+
+// frob:tests build_taffy
+#[test]
+fn grid_template_areas_place_named_areas() {
+    let html = "<div data-id=\"g\" style=\"display:grid;width:200px;height:100px;grid-template-columns:50px 150px;grid-template-rows:20px 80px;grid-template-areas:'h h' 's c'\">\
+<div data-id=\"c\" style=\"grid-area:c\"></div></div>";
+    let html = html.replace('\'', "&quot;");
+    let (lt, _) = solve(&html, 200.0, 100.0);
+    let l = lt.tree.layout(lt.ids["c"]).expect("layout");
+    assert!((l.location.x - 50.0).abs() < 0.01, "x = {}", l.location.x);
+    assert!((l.location.y - 20.0).abs() < 0.01, "y = {}", l.location.y);
+    assert!((l.size.width - 150.0).abs() < 0.01);
+}
+
+// frob:tests build_taffy
+#[test]
+fn named_line_places_item() {
+    let html = "<div data-id=\"g\" style=\"display:grid;width:200px;height:50px;grid-template-columns:[a] 50px [b] 150px [c]\">\
+<div data-id=\"i\" style=\"grid-column:b / c;height:10px\"></div></div>";
+    let (lt, _) = solve(html, 200.0, 50.0);
+    let l = lt.tree.layout(lt.ids["i"]).expect("layout");
+    assert!((l.location.x - 50.0).abs() < 0.01, "x = {}", l.location.x);
+    assert!((l.size.width - 150.0).abs() < 0.01);
+}
+
+// frob:tests build_taffy
+#[test]
+fn fit_content_width_keyword_solves() {
+    let html = "<div data-id=\"p\" style=\"width:200px;height:50px\">\
+<div data-id=\"i\" style=\"width:fit-content;height:10px\"></div></div>";
+    let (lt, _) = solve(html, 200.0, 50.0);
+    assert!(lt.tree.layout(lt.ids["i"]).is_ok());
+}

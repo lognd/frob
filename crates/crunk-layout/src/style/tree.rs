@@ -31,6 +31,8 @@ pub struct StyledNode {
     pub hidden: bool,
     /// The element has direct text (a later text ticket attaches a measure hook).
     pub has_text: bool,
+    /// CSS `order`: siblings are laid out by ascending order, ties in document order.
+    pub order: i32,
 }
 
 /// Every layout node of a scene, in document order (parents before children), plus findings.
@@ -117,6 +119,7 @@ pub fn style_scene(
                     style: m.style,
                     hidden: m.hidden || parent_hidden,
                     has_text: el.text.iter().any(|t| !t.trim().is_empty()),
+                    order: m.order,
                 });
                 ctxs.push(m.child_ctx);
                 anchor.push(Some(idx));
@@ -188,18 +191,25 @@ pub fn build_taffy(scene: &StyledScene) -> Result<LayoutTree, StyleError> {
     let mut ids = BTreeMap::new();
     let mut by_index: BTreeMap<usize, NodeId> = BTreeMap::new();
     let (mut roots, mut hidden) = (Vec::new(), Vec::new());
+    let mut kids: BTreeMap<usize, Vec<(i32, NodeId)>> = BTreeMap::new();
     for (i, n) in scene.nodes.iter().enumerate() {
         if n.hidden {
             hidden.push(n.data_id.clone());
             continue;
         }
         let id = tree.new_leaf(n.style.clone()).map_err(engine)?;
-        match n.parent.and_then(|p| by_index.get(&p)) {
-            Some(parent) => tree.add_child(*parent, id).map_err(engine)?,
+        match n.parent.filter(|p| by_index.contains_key(p)) {
+            Some(parent) => kids.entry(parent).or_default().push((n.order, id)),
             None => roots.push(id),
         }
         by_index.insert(i, id);
         ids.insert(n.data_id.clone(), id);
+    }
+    for (parent, mut children) in kids {
+        children.sort_by_key(|(order, _)| *order);
+        for (_, child) in children {
+            tree.add_child(by_index[&parent], child).map_err(engine)?;
+        }
     }
     tracing::debug!(
         laid_out = ids.len(),

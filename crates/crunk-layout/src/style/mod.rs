@@ -12,9 +12,12 @@
 //! bottom/left/inset`, `width/height`, `min-*`, `max-*`, `margin`, `padding`, `border` widths,
 //! `gap/row-gap/column-gap`, `flex-direction/wrap/flow/flex/grow/shrink/basis`, `align-*`,
 //! `justify-*`, `aspect-ratio`, `box-sizing`, `grid-template-columns/rows` (px, %, fr, auto,
-//! min/max-content, `minmax()`, `repeat()`), `grid-auto-*`, `grid-column/row` (lines, spans).
-//! Units: `px`, `rem` (16px), `%`, unitless `0`. Properties not mapped yet
-//! (`grid-template-areas`, `grid-area`, `order`, `place-*`) yield an `UnmappedProperty` finding;
+//! min/max-content, `minmax()`, `repeat()`), `grid-auto-*`, `grid-column/row` (lines, names, spans),
+//! `grid-template-areas`, `grid-area`, `[name]` lines in track lists (not beside `repeat()`),
+//! `order` (siblings sorted stably in [`build_taffy`]), `place-items/self/content`, and
+//! `width/height: min-content | max-content | fit-content`.
+//! Units: `px`, `rem` (16px), `%`, unitless `0`; `em` is unsupported (it needs font-size).
+//! Properties not mapped yet (`grid-template`, `grid`) yield an `UnmappedProperty` finding;
 //! paint and text properties are ignored.
 //!
 //! # Rules

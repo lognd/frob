@@ -5,9 +5,9 @@
 use taffy::style_helpers::{TaffyGridLine, TaffyGridSpan};
 use taffy::{
     AlignContent, AlignItems, BoxSizing, Dimension, Display, FlexDirection, FlexWrap, GridAutoFlow,
-    GridPlacement, GridTemplateComponent, GridTemplateRepetition, LengthPercentage,
-    LengthPercentageAuto, MaxTrackSizingFunction, MinTrackSizingFunction, Position, Rect,
-    RepetitionCount, Size, Style, TrackSizingFunction,
+    GridPlacement, GridTemplateArea, GridTemplateAreas, GridTemplateComponent,
+    GridTemplateRepetition, LengthPercentage, LengthPercentageAuto, Line, MaxTrackSizingFunction,
+    MinTrackSizingFunction, Position, Rect, RepetitionCount, Size, Style, TrackSizingFunction,
 };
 
 use super::error::{FindingKind, StyleError, StyleFinding};
@@ -51,6 +51,8 @@ pub struct MappedStyle {
     pub hidden: bool,
     /// The definiteness this element's own children see.
     pub child_ctx: ParentCtx,
+    /// The CSS `order` value (default 0); siblings are laid out in ascending order.
+    pub order: i32,
 }
 
 /// Map `(property, value)` declarations (document order, later wins) to a taffy style.
@@ -99,16 +101,7 @@ fn side_mut<T>(r: &mut Rect<T>, s: Side) -> &mut T {
 }
 
 /// Layout properties recognised but not mapped yet; they produce a finding.
-const UNMAPPED: &[&str] = &[
-    "grid-template-areas",
-    "grid-template",
-    "grid",
-    "grid-area",
-    "order",
-    "place-items",
-    "place-content",
-    "place-self",
-];
+const UNMAPPED: &[&str] = &["grid-template", "grid"];
 
 struct Mapper<'a> {
     el: ElementRef<'a>,
@@ -118,6 +111,9 @@ struct Mapper<'a> {
     size: [Len; 2],
     min: [Len; 2],
     max: [Len; 2],
+    /// An intrinsic-size keyword for `width`/`height` (it replaces the length in `size`).
+    size_kw: [Option<Dimension>; 2],
+    order: i32,
 }
 
 impl<'a> Mapper<'a> {
@@ -135,6 +131,8 @@ impl<'a> Mapper<'a> {
             size: [Len::Auto; 2],
             min: [Len::Auto; 2],
             max: [Len::Auto; 2],
+            size_kw: [None; 2],
+            order: 0,
         }
     }
 
@@ -356,11 +354,14 @@ impl<'a> Mapper<'a> {
                 }
             }
             "grid-template-columns" => {
-                self.style.grid_template_columns =
-                    self.template(prop, value)?.into_iter().collect();
+                let (tracks, names) = self.template(prop, value)?;
+                self.style.grid_template_columns = tracks.into_iter().collect();
+                self.style.grid_template_column_names = names;
             }
             "grid-template-rows" => {
-                self.style.grid_template_rows = self.template(prop, value)?.into_iter().collect();
+                let (tracks, names) = self.template(prop, value)?;
+                self.style.grid_template_rows = tracks.into_iter().collect();
+                self.style.grid_template_row_names = names;
             }
             "grid-auto-columns" => {
                 self.style.grid_auto_columns = self.auto_tracks(prop, value)?.into_iter().collect();
@@ -369,6 +370,10 @@ impl<'a> Mapper<'a> {
                 self.style.grid_auto_rows = self.auto_tracks(prop, value)?.into_iter().collect();
             }
             "grid-auto-flow" => self.style.grid_auto_flow = self.auto_flow(prop, value)?,
+            "grid-template-areas" => self.template_areas(prop, value)?,
+            "grid-area" => self.grid_area(prop, value)?,
+            "order" => self.order = self.order_value(prop, value)?,
+            "place-items" | "place-self" | "place-content" => self.place(prop, value, toks)?,
             "grid-column" | "grid-row" | "grid-column-start" | "grid-column-end"
             | "grid-row-start" | "grid-row-end" => self.placement(prop, value)?,
             p if UNMAPPED.contains(&p) => self.find(
@@ -468,6 +473,19 @@ impl<'a> Mapper<'a> {
     }
 
     fn sizing(&mut self, prop: &str, value: &str, toks: &[&str]) -> Result<(), StyleError> {
+        let axis = usize::from(prop.ends_with("height"));
+        if let Some(d) = Self::size_keyword(value) {
+            if prop.starts_with("min-") || prop.starts_with("max-") {
+                return Err(self.bad(
+                    prop,
+                    value,
+                    "the solver takes only lengths for min-*/max-*; use width/height for \
+                     min-content, max-content and fit-content",
+                ));
+            }
+            self.size_kw[axis] = Some(d);
+            return Ok(());
+        }
         let l = match (value, prop.starts_with("max-")) {
             ("none", true) => Len::Auto,
             _ => self.single_len(prop, value, toks)?,
@@ -482,13 +500,66 @@ impl<'a> Mapper<'a> {
         } else {
             l
         };
-        let axis = usize::from(prop.ends_with("height"));
         if prop.starts_with("min-") {
             self.min[axis] = l;
         } else if prop.starts_with("max-") {
             self.max[axis] = l;
         } else {
             self.size[axis] = l;
+            self.size_kw[axis] = None;
+        }
+        Ok(())
+    }
+
+    /// An intrinsic-size keyword: `min-content`, `max-content`, `fit-content` or `fit-content(<len>)`.
+    fn size_keyword(value: &str) -> Option<Dimension> {
+        match value {
+            "min-content" => return Some(Dimension::min_content()),
+            "max-content" => return Some(Dimension::max_content()),
+            "fit-content" => return Some(Dimension::fit_content()),
+            _ => {}
+        }
+        let inner = value.strip_prefix("fit-content(")?.strip_suffix(')')?;
+        match parse_len(inner.trim()).ok()? {
+            Len::Px(v) if v >= 0.0 => Some(Dimension::fit_content_px(v)),
+            Len::Pct(v) if v >= 0.0 => Some(Dimension::fit_content_percent(v)),
+            _ => None,
+        }
+    }
+
+    fn order_value(&self, prop: &str, value: &str) -> Result<i32, StyleError> {
+        value
+            .parse::<i32>()
+            .map_err(|_| self.bad(prop, value, "order must be an integer"))
+    }
+
+    /// `place-items`, `place-self` and `place-content`: `<align> [<justify>]`.
+    fn place(&mut self, prop: &str, value: &str, toks: &[&str]) -> Result<(), StyleError> {
+        let (align, justify) = match toks {
+            [a] => (*a, *a),
+            [a, j] => (*a, *j),
+            _ => return Err(self.bad(prop, value, "expected one or two values")),
+        };
+        match prop {
+            "place-items" => {
+                self.style.align_items = self.align_items(prop, align)?;
+                self.style.justify_items = self.align_items(prop, justify)?;
+            }
+            "place-self" => {
+                let one = |this: &Self, v: &str| -> Result<Option<AlignItems>, StyleError> {
+                    if v == "auto" {
+                        Ok(None)
+                    } else {
+                        this.align_items(prop, v).map(Some)
+                    }
+                };
+                self.style.align_self = one(self, align)?;
+                self.style.justify_self = one(self, justify)?;
+            }
+            _ => {
+                self.style.align_content = self.align_content(prop, align)?;
+                self.style.justify_content = self.align_content(prop, justify)?;
+            }
         }
         Ok(())
     }
@@ -703,14 +774,14 @@ impl<'a> Mapper<'a> {
             .collect()
     }
 
-    fn template(
-        &self,
-        prop: &str,
-        value: &str,
-    ) -> Result<Vec<GridTemplateComponent<String>>, StyleError> {
+    /// Parse a track list; also returns the per-line names (one entry per line, empty when no
+    /// `[name]` was written).
+    fn template(&self, prop: &str, value: &str) -> Result<TemplateParts, StyleError> {
         if value == "none" {
-            return Ok(Vec::new());
+            return Ok((Vec::new(), Vec::new()));
         }
+        let (stripped, named) = self.extract_line_names(prop, value)?;
+        let value = stripped.as_str();
         let mut out = Vec::new();
         for t in split_top(value) {
             if let Some(inner) = t.strip_prefix("repeat(").and_then(|r| r.strip_suffix(')')) {
@@ -745,7 +816,167 @@ impl<'a> Mapper<'a> {
                 out.push(GridTemplateComponent::Single(self.track(prop, value, t)?));
             }
         }
-        Ok(out)
+        let mut line_names: Vec<Vec<String>> = Vec::new();
+        if !named.is_empty() {
+            line_names.resize(out.len() + 1, Vec::new());
+            for (line, name) in named {
+                line_names[line].push(name);
+            }
+        }
+        Ok((out, line_names))
+    }
+
+    /// Remove top-level `[a b]` groups from a track list, returning the rest and `(line, name)`
+    /// pairs. Names are refused beside `repeat()`, whose line numbering the solver input cannot
+    /// express here.
+    fn extract_line_names(
+        &self,
+        prop: &str,
+        value: &str,
+    ) -> Result<(String, Vec<(usize, String)>), StyleError> {
+        let mut rest = String::new();
+        let mut named = Vec::new();
+        let mut depth = 0usize;
+        let mut chars = value.char_indices();
+        while let Some((i, c)) = chars.next() {
+            match c {
+                '(' => depth += 1,
+                ')' => depth = depth.saturating_sub(1),
+                '[' if depth == 0 => {
+                    let Some(len) = value[i..].find(']') else {
+                        return Err(self.bad(prop, value, "unclosed `[` in line names"));
+                    };
+                    let line = split_top(&rest).len();
+                    for name in value[i + 1..i + len].split_whitespace() {
+                        if !is_ident(name) {
+                            return Err(self.bad(
+                                prop,
+                                value,
+                                format!("`{name}` is not a line name"),
+                            ));
+                        }
+                        named.push((line, name.to_owned()));
+                    }
+                    rest.push(' ');
+                    for _ in 0..len {
+                        chars.next();
+                    }
+                    continue;
+                }
+                _ => {}
+            }
+            rest.push(c);
+        }
+        if !named.is_empty() && rest.contains("repeat(") {
+            return Err(self.bad(
+                prop,
+                value,
+                "named grid lines cannot be combined with repeat()",
+            ));
+        }
+        Ok((rest, named))
+    }
+
+    /// `grid-template-areas`: quoted rows of area names, `.` for an empty cell.
+    fn template_areas(&mut self, prop: &str, value: &str) -> Result<(), StyleError> {
+        if value == "none" {
+            self.style.grid_template_areas = None;
+            return Ok(());
+        }
+        // `"a b" "c d"` splits into ["", "a b", " ", "c d", ""]: rows at odd indices, blanks between.
+        let parts: Vec<&str> = value.split('"').collect();
+        if parts.len() < 3
+            || parts.len().is_multiple_of(2)
+            || parts.iter().step_by(2).any(|p| !p.trim().is_empty())
+        {
+            return Err(self.bad(prop, value, "expected one quoted string per row"));
+        }
+        let rows: Vec<Vec<&str>> = parts
+            .iter()
+            .skip(1)
+            .step_by(2)
+            .map(|row| row.split_whitespace().collect())
+            .collect();
+        let cols = rows.first().map_or(0, Vec::len);
+        if cols == 0 || rows.iter().any(|r| r.len() != cols) {
+            return Err(self.bad(prop, value, "every row needs the same non-zero cell count"));
+        }
+        let mut areas: Vec<GridTemplateArea<String>> = Vec::new();
+        for (r, row) in rows.iter().enumerate() {
+            for (c, cell) in row.iter().enumerate() {
+                if cell.chars().all(|ch| ch == '.') {
+                    continue;
+                }
+                if !is_ident(cell) {
+                    return Err(self.bad(prop, value, format!("`{cell}` is not an area name")));
+                }
+                let (r1, c1) = (to_u16(r + 1), to_u16(c + 1));
+                match areas.iter_mut().find(|a| a.name == *cell) {
+                    Some(a) => {
+                        a.row_start = a.row_start.min(r1);
+                        a.row_end = a.row_end.max(r1 + 1);
+                        a.column_start = a.column_start.min(c1);
+                        a.column_end = a.column_end.max(c1 + 1);
+                    }
+                    None => areas.push(GridTemplateArea {
+                        name: (*cell).to_owned(),
+                        row_start: r1,
+                        row_end: r1 + 1,
+                        column_start: c1,
+                        column_end: c1 + 1,
+                    }),
+                }
+            }
+        }
+        for a in &areas {
+            let cells = rows
+                .iter()
+                .flatten()
+                .filter(|cell| **cell == a.name)
+                .count();
+            let rect = usize::from((a.row_end - a.row_start) * (a.column_end - a.column_start));
+            if cells != rect {
+                return Err(self.bad(prop, value, format!("area `{}` is not a rectangle", a.name)));
+            }
+        }
+        self.style.grid_template_areas = Some(GridTemplateAreas {
+            areas: areas.into_iter().collect(),
+            row_count: to_u16(rows.len()),
+            column_count: to_u16(cols),
+        });
+        Ok(())
+    }
+
+    /// `grid-area`: `<row-start> [/ <col-start> [/ <row-end> [/ <col-end>]]]`.
+    fn grid_area(&mut self, prop: &str, value: &str) -> Result<(), StyleError> {
+        let parts = value
+            .split('/')
+            .map(|p| self.one_placement(prop, value, p))
+            .collect::<Result<Vec<_>, _>>()?;
+        let named = |p: &GridPlacement<String>| matches!(p, GridPlacement::NamedLine(_, 0));
+        if parts.len() > 4 {
+            return Err(self.bad(prop, value, "grid-area takes at most four values"));
+        }
+        let copy = |first: &GridPlacement<String>| {
+            if named(first) {
+                first.clone()
+            } else {
+                GridPlacement::Auto
+            }
+        };
+        let row_start = parts[0].clone();
+        let col_start = parts.get(1).cloned().unwrap_or_else(|| copy(&row_start));
+        let row_end = parts.get(2).cloned().unwrap_or_else(|| copy(&row_start));
+        let col_end = parts.get(3).cloned().unwrap_or_else(|| copy(&col_start));
+        self.style.grid_row = Line {
+            start: row_start,
+            end: row_end,
+        };
+        self.style.grid_column = Line {
+            start: col_start,
+            end: col_end,
+        };
+        Ok(())
     }
 
     fn one_placement(
@@ -753,25 +984,39 @@ impl<'a> Mapper<'a> {
         prop: &str,
         value: &str,
         part: &str,
-    ) -> Result<GridPlacement, StyleError> {
+    ) -> Result<GridPlacement<String>, StyleError> {
         let part = part.trim();
         if part == "auto" {
             return Ok(GridPlacement::Auto);
         }
         let words = split_top(part);
         match words.as_slice() {
+            ["span", n] | [n, "span"] if is_ident(n) => {
+                Ok(GridPlacement::NamedSpan((*n).to_owned(), 1))
+            }
             ["span", n] | [n, "span"] => match n.parse::<u16>() {
                 Ok(s) if s >= 1 => Ok(GridPlacement::from_span(s)),
                 _ => Err(self.bad(prop, value, "span must be a positive integer")),
             },
+            ["span", n, name] | [n, "span", name] | ["span", name, n] | [name, "span", n]
+                if is_ident(name) && n.parse::<u16>().is_ok_and(|s| s >= 1) =>
+            {
+                Ok(GridPlacement::NamedSpan(
+                    (*name).to_owned(),
+                    n.parse().unwrap_or(1),
+                ))
+            }
+            [n] if is_ident(n) => Ok(GridPlacement::NamedLine((*n).to_owned(), 0)),
             [n] => match n.parse::<i16>() {
                 Ok(l) if l != 0 => Ok(GridPlacement::from_line_index(l)),
-                _ => Err(self.bad(
-                    prop,
-                    value,
-                    "line must be a non-zero integer (named lines unsupported)",
-                )),
+                _ => Err(self.bad(prop, value, "line must be a non-zero integer or a name")),
             },
+            [name, n] | [n, name] if is_ident(name) && n.parse::<i16>().is_ok_and(|i| i != 0) => {
+                Ok(GridPlacement::NamedLine(
+                    (*name).to_owned(),
+                    n.parse().unwrap_or(1),
+                ))
+            }
             _ => Err(self.bad(prop, value, "expected `auto`, `<line>` or `span <n>`")),
         }
     }
@@ -779,7 +1024,14 @@ impl<'a> Mapper<'a> {
     fn placement(&mut self, prop: &str, value: &str) -> Result<(), StyleError> {
         let parts: Vec<&str> = value.split('/').collect();
         let (start, end) = match parts.as_slice() {
-            [s] => (self.one_placement(prop, value, s)?, GridPlacement::Auto),
+            [s] => {
+                let start = self.one_placement(prop, value, s)?;
+                let end = match &start {
+                    GridPlacement::NamedLine(_, 0) => start.clone(),
+                    _ => GridPlacement::Auto,
+                };
+                (start, end)
+            }
             [s, e] => (
                 self.one_placement(prop, value, s)?,
                 self.one_placement(prop, value, e)?,
@@ -787,7 +1039,7 @@ impl<'a> Mapper<'a> {
             _ => return Err(self.bad(prop, value, "expected `<start> / <end>`")),
         };
         let col = prop.contains("column");
-        let line = if col {
+        let line: &mut Line<GridPlacement<String>> = if col {
             &mut self.style.grid_column
         } else {
             &mut self.style.grid_row
@@ -795,7 +1047,6 @@ impl<'a> Mapper<'a> {
         if prop.ends_with("-start") {
             line.start = start;
         } else if prop.ends_with("-end") {
-            line.start = line.start.clone();
             line.end = start;
         } else {
             line.start = start;
@@ -860,8 +1111,8 @@ impl<'a> Mapper<'a> {
             );
         }
         self.style.size = Size {
-            width: dim(self.size[0]),
-            height: dim(self.size[1]),
+            width: self.size_kw[0].unwrap_or_else(|| dim(self.size[0])),
+            height: self.size_kw[1].unwrap_or_else(|| dim(self.size[1])),
         };
         self.style.min_size = Size {
             width: lpa(self.min[0]),
@@ -882,8 +1133,25 @@ impl<'a> Mapper<'a> {
             findings: self.findings,
             hidden: self.hidden,
             child_ctx,
+            order: self.order,
         }
     }
+}
+
+/// Parsed track list plus its per-line names.
+type TemplateParts = (Vec<GridTemplateComponent<String>>, Vec<Vec<String>>);
+
+/// Whether `s` is a usable custom identifier (an area or line name, not a CSS keyword).
+fn is_ident(s: &str) -> bool {
+    let mut cs = s.chars();
+    cs.next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && cs.all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        && !matches!(s, "auto" | "span" | "none" | "min-content" | "max-content")
+}
+
+fn to_u16(n: usize) -> u16 {
+    u16::try_from(n).unwrap_or(u16::MAX)
 }
 
 fn side_of(name: &str) -> Side {
