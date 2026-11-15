@@ -10,6 +10,7 @@ use gob_symbols::fold_file;
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
 use crate::dialect::KNOWN_TAGS;
+use crate::rules::match_selector;
 
 /// The attribute that gives an element its stable identity.
 const DATA_ID: &str = "data-id";
@@ -83,9 +84,29 @@ pub struct SceneDecl {
 pub struct SceneAtRule {
     /// The at-rule name without `@`, as the adapter reports it.
     pub name: String,
+    /// The prelude text (`(min-width: 600px)` for a `@media`), empty when none.
+    pub prelude: String,
     /// Byte offset of the at-rule.
     pub offset: usize,
     /// 1-based line of the at-rule.
+    pub line: u32,
+}
+
+// frob:ticket 01M5XDN67KE9HCKFSX3CDS3X1G
+/// One style rule of a `<style>` body, associated with the elements its selector matches.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SceneRule {
+    /// The selector text as written, trimmed.
+    pub selector: String,
+    /// Whether every selector of the list is in the supported subset (type, class, id, descendant).
+    pub supported: bool,
+    /// Indices into [`SceneDoc::elements`] the selector matches, ascending; empty when unsupported.
+    pub matches: Vec<usize>,
+    /// Index into [`SceneDoc::at_rule_sites`] of the nearest enclosing at-rule (`@media`), if any.
+    pub at_rule: Option<usize>,
+    /// Byte offset of the rule.
+    pub offset: usize,
+    /// 1-based line of the rule.
     pub line: u32,
 }
 
@@ -101,6 +122,9 @@ pub struct SceneDoc {
     // frob:ticket 01M5H30AQNZSC77EY70P28KM3V
     /// The same at-rules with their positions, in source order (nested ones included).
     pub at_rule_sites: Vec<SceneAtRule>,
+    // frob:ticket 01M5XDN67KE9HCKFSX3CDS3X1G
+    /// Every style rule with the elements it matches, in source order.
+    pub rules: Vec<SceneRule>,
 }
 
 impl SceneDoc {
@@ -229,11 +253,13 @@ pub fn parse_scene_html(text: &str) -> Result<SceneDoc, SceneError> {
         .collect();
     let at_rule_sites = at_rule_sites_of(&model, &lines);
     let at_rules = at_rule_sites.iter().map(|a| a.name.clone()).collect();
+    let rules = rules_of(&model, &lines, &elements);
     let doc = SceneDoc {
         elements,
         declarations,
         at_rules,
         at_rule_sites,
+        rules,
     };
     tracing::debug!(
         elements = doc.elements.len(),
@@ -251,11 +277,44 @@ fn at_rule_sites_of(model: &Model, lines: &LineIndex) -> Vec<SceneAtRule> {
             let offset = start_of(model, a.node).unwrap_or(0);
             SceneAtRule {
                 name: a.name,
+                prelude: a.prelude.trim().to_owned(),
                 offset,
                 line: lines.line_of(offset),
             }
         })
         .collect()
+}
+
+// frob:ticket 01M5XDN67KE9HCKFSX3CDS3X1G
+/// Every style rule of the model with its matched elements and enclosing at-rule, in source order.
+fn rules_of(model: &Model, lines: &LineIndex, elements: &[SceneElement]) -> Vec<SceneRule> {
+    let at_nodes: Vec<NodeId> = style::at_rules(model).into_iter().map(|a| a.node).collect();
+    let mut rules: Vec<SceneRule> = style::style_rules(model)
+        .into_iter()
+        .map(|r| {
+            let selector = r.selector.trim().to_owned();
+            let found = match_selector(elements, &selector);
+            if found.is_none() {
+                tracing::debug!(%selector, "selector outside the supported subset");
+            }
+            let at_rule = model
+                .term()
+                .ancestors(r.node)
+                .into_iter()
+                .find_map(|a| at_nodes.iter().position(|&n| n == a));
+            let offset = start_of(model, r.node).unwrap_or(0);
+            SceneRule {
+                supported: found.is_some(),
+                matches: found.unwrap_or_default(),
+                selector,
+                at_rule,
+                offset,
+                line: lines.line_of(offset),
+            }
+        })
+        .collect();
+    rules.sort_by_key(|r| r.offset);
+    rules
 }
 
 /// Byte offset where `node` starts, when it has a text location.

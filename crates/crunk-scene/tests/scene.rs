@@ -220,3 +220,76 @@ fn unsupported_at_rules_keep_media_and_find_nested_ones() {
         .collect();
     assert_eq!(names, ["import", "keyframes"]);
 }
+
+const SHEET: &str = "<style>\
+.card { padding: 2px }\n\
+#main { gap: 1px }\n\
+section p { gap: 1px }\n\
+div > p { gap: 1px }\n\
+@media (min-width: 600px) { .card { padding: 4px } }\n\
+</style>\
+<section data-id=\"s\"><div data-id=\"d\" class=\"card wide\"><p data-id=\"p1\"></p></div></section>\
+<p data-id=\"p2\" id=\"main\"></p>";
+
+fn rule<'a>(
+    doc: &'a crunk_scene::SceneDoc,
+    selector: &str,
+    nth: usize,
+) -> &'a crunk_scene::SceneRule {
+    doc.rules
+        .iter()
+        .filter(|r| r.selector == selector)
+        .nth(nth)
+        .expect("rule present")
+}
+
+fn tags_of(doc: &crunk_scene::SceneDoc, r: &crunk_scene::SceneRule) -> Vec<String> {
+    r.matches
+        .iter()
+        .map(|&i| doc.elements[i].data_id.clone().unwrap_or_default())
+        .collect()
+}
+
+// frob:tests crunk_scene::parse_scene_html
+#[test]
+fn class_rule_matches_its_elements() {
+    let doc = parse_scene_html(SHEET).expect("parses");
+    let r = rule(&doc, ".card", 0);
+    assert!(r.supported);
+    assert_eq!(tags_of(&doc, r), ["d"]);
+    assert_eq!(r.at_rule, None);
+}
+
+// frob:tests crunk_scene::parse_scene_html
+#[test]
+fn id_rule_matches_its_element() {
+    let doc = parse_scene_html(SHEET).expect("parses");
+    assert_eq!(tags_of(&doc, rule(&doc, "#main", 0)), ["p2"]);
+}
+
+// frob:tests crunk_scene::parse_scene_html
+#[test]
+fn descendant_rule_matches_only_nested_elements() {
+    let doc = parse_scene_html(SHEET).expect("parses");
+    assert_eq!(tags_of(&doc, rule(&doc, "section p", 0)), ["p1"]);
+}
+
+// frob:tests crunk_scene::parse_scene_html
+#[test]
+fn unsupported_selector_is_flagged_and_matches_nothing() {
+    let doc = parse_scene_html(SHEET).expect("parses");
+    let r = rule(&doc, "div > p", 0);
+    assert!(!r.supported);
+    assert!(r.matches.is_empty());
+}
+
+// frob:tests crunk_scene::parse_scene_html
+#[test]
+fn media_rule_is_exposed_with_its_at_rule() {
+    let doc = parse_scene_html(SHEET).expect("parses");
+    let r = rule(&doc, ".card", 1);
+    assert_eq!(tags_of(&doc, r), ["d"]);
+    let at = &doc.at_rule_sites[r.at_rule.expect("inside @media")];
+    assert_eq!(at.name, "media");
+    assert_eq!(at.prelude, "(min-width: 600px)");
+}

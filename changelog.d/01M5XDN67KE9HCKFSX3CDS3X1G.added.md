@@ -1,0 +1,1 @@
+crunk-scene now associates each style rule selector with the scene elements it matches (type, class, id and descendant selectors; other selectors are flagged unsupported) and exposes the enclosing `@media` at-rule and its prelude.

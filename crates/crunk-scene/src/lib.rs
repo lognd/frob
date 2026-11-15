@@ -8,13 +8,14 @@
 
 mod dialect;
 mod doc;
+mod rules;
 mod scene001;
 mod structure;
 
 pub use dialect::{KNOWN_TAGS, SUPPORTED_PROPERTIES, is_supported_property};
 pub use doc::{
-    ElementKind, SceneAtRule, SceneDecl, SceneDoc, SceneElement, SceneError, parse_scene_bytes,
-    parse_scene_html,
+    ElementKind, SceneAtRule, SceneDecl, SceneDoc, SceneElement, SceneError, SceneRule,
+    parse_scene_bytes, parse_scene_html,
 };
 pub use scene001::{Scene001, unsupported_properties};
 pub use structure::{
