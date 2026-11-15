@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T08:33:40Z"
+digest = "880d962c580c8820660fbb920cd4ec35be2ebd1d57fb5a3bb927fd8e4ac91371"
+head = "7f7c5acc20af157139a028c5d09435289132a18f"
+provider = "file"
+ref = "docs/guides/crunk.md"
+size = 32014
+status = "measured"
+at = "2026-11-15T08:33:40Z"
+actor = "lognd"
+rev = 1
