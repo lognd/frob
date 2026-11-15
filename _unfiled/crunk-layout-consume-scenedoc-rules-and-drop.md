@@ -2,12 +2,12 @@
 id = "01M7FDEF76XA17PYA0J7BME13T"
 title = "crunk-layout: consume SceneDoc::rules and drop StylesheetNotApplied for supported selectors"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T10:53:30Z"
-updated = "2026-11-15T11:41:28Z"
+updated = "2026-11-15T11:41:34Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**"]
 
