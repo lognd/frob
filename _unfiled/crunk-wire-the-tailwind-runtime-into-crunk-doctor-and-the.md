@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-08T13:40:33Z"
 updated = "2026-11-15T12:52:53Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/doctor.rs,crates/crunk-spec/src/table.rs,crates/crunk-check/src/**", "crates/crunk/tests/it/doctor_report.rs"]
+scope = ["crates/crunk/src/doctor.rs,crates/crunk-spec/src/table.rs,crates/crunk-check/src/**", "crates/crunk/tests/it/doctor_report.rs", "crates/crunk-check/tests/it/static_tailwind.rs"]
 
 [[acceptance]]
 text = "Given crunk doctor, when run, then it prints the Tailwind runtime presence table; given [tailwind] engine = static or --static, then check and ingest select Engine::Static"
