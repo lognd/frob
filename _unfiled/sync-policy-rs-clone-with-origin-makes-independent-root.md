@@ -2,7 +2,8 @@
 id = "01M5WFSY5XAV6VY4NVXCSTHWPN"
 title = "sync_policy.rs clone_with_origin makes independent root commits (timing flake)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
