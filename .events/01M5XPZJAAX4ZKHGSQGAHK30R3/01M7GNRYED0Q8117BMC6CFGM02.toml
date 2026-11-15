@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T22:30:48Z"
+digest = "9970c1ed09d9e4caec04e3dd8e48bb0486ca785edeb4ebd63b27209fcf46ed2f"
+exit_code = 0
+head = "90ec95905f53c382504c56267dda571710c261c2"
+passed = true
+provider = "nextest"
+ref = "grimble-lints path"
+size = 40210
+status = "measured"
+test_count = 259
+tests_digest = "49f6fa6020c5b45930722d34ab027dffbefa4ddda7e71a96252dd34211b8bcb6"
+uri = "dir:.git/frob/artifacts/9970c1ed09d9e4caec04e3dd8e48bb0486ca785edeb4ebd63b27209fcf46ed2f"
+at = "2026-11-15T22:30:48Z"
+actor = "lognd"
+rev = 1
