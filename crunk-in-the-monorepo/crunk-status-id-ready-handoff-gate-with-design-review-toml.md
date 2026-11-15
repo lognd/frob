@@ -2,7 +2,8 @@
 id = "01M5XCZ18GTA7MKKF4Z0MD95W3"
 title = "crunk status ID ready: handoff gate with design/review/*.toml anchored comments and changed marking"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
