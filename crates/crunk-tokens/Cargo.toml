@@ -16,7 +16,7 @@ workspace = true
 
 [dependencies]
 crunk-spec = { version = "0.532.0", path = "../crunk-spec" }
-crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind" }
+crunk-tailwind = { version = "0.532.0", path = "../crunk-tailwind", default-features = false }
 crunk-values = { version = "0.532.0", path = "../crunk-values" }
 gob-exec = { version = "0.532.0", path = "../gob-exec" }
 gob-fs = { version = "0.532.0", path = "../gob-fs" }
