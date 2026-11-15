@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Takeover aborts if the lock content changed between staleness check and replace (test)", "Two concurrent takeovers: exactly one wins (test)"]
+moved = []
+at = "2026-11-15T06:10:20Z"
+actor = "lognd"
+rev = 1
