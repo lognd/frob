@@ -27,7 +27,7 @@ whose `crunk.toml` is the default preset plus one reviewed screen `home`.
 
 When the `[[review]]` entry of a screen state has the current digest and the verdict `rejected`,
 the rule fires, naming the screen, the reviewer and their note. A rejection of an older digest is
-a stale review (HUMAN001), not a rejection. It is Advisory in `crunk check` and Error at the
+a stale review (HUMAN001), not a rejection. It is not run by `crunk check` at local or CI; it is an Error at the
 release gate.
 
 ## Why it matters

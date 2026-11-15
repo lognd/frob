@@ -28,7 +28,7 @@ clean and is the clean case; the fire case drops the three state roles to leave 
 Flags, once per missing role and at `crunk.toml`, a `[palette.roles]` table with no danger, no
 warning or no success role. A role is matched by name, ignoring ASCII case, and a conventional
 alias counts for it: `error` or `destructive` for danger, `caution` for warning, `positive` for
-success. Advisory.
+success. It is an Error.
 
 ## Why it matters
 

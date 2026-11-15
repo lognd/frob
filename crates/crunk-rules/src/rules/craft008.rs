@@ -3,7 +3,7 @@
 //! deleting the danger, warning or success pair passes it vacuously. Each of the three state roles
 //! missing from `[palette.roles]` fires once at `crunk.toml`. A role is matched by name, ignoring
 //! ASCII case, and a conventional alias counts for its role (`error` and `destructive` for danger,
-//! `caution` for warning, `positive` for success). Advisory; turn it off under `[lint]` for a design
+//! `caution` for warning, `positive` for success). An error; turn it off under `[lint]` for a design
 //! with no state colours.
 
 // frob:ticket 01M5HM3W18AJZET52BZBEJFYD4

@@ -138,3 +138,19 @@ fn the_state_roles_of_every_preset_clear_their_contrast_floor() {
         assert!(found.is_empty(), "{name}: {found:?}");
     }
 }
+
+/// CRAFT008, HUMAN001 and HUMAN002 are errors, and their pages must not still call them advisory.
+// frob:tests rule_docs_match_error_severity
+#[test]
+fn rule_docs_match_error_severity() {
+    use crunk_rules::rules::{human001::Human001, human002::Human002};
+    use gob_rules::RuleDecl;
+    for def in [Craft008::DEF, Human001::DEF, Human002::DEF] {
+        assert_eq!(def.severity, Severity::Error, "{}", def.id);
+        assert!(
+            !def.doc.contains("Advisory"),
+            "{} page says Advisory",
+            def.id
+        );
+    }
+}

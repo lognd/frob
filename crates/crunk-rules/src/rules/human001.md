@@ -13,8 +13,7 @@ For every screen state that requires review (`review = "human"`, or `provenance 
 resolved tokens the sources use per mode, the fonts, the render when one exists) with the digest
 in its `[[review]]` entry. A missing entry, a changed digest, a reviewer outside `[review]
 reviewers`, or (with `require_signed`) an ack introduced by an unsigned commit or a key not listed
-for the reviewer is a finding that names the screen and what changed. It is Advisory in `crunk
-check` and CI; at the release gate (`crunk check --gate release`) it is Error.
+for the reviewer is a finding that names the screen and what changed. It is not run by `crunk check` at local or CI; at the release gate (`crunk check --gate release`) it is Error.
 
 ## Why it matters
 

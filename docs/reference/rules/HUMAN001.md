@@ -32,8 +32,7 @@ For every screen state that requires review (`review = "human"`, or `provenance 
 resolved tokens the sources use per mode, the fonts, the render when one exists) with the digest
 in its `[[review]]` entry. A missing entry, a changed digest, a reviewer outside `[review]
 reviewers`, or (with `require_signed`) an ack introduced by an unsigned commit or a key not listed
-for the reviewer is a finding that names the screen and what changed. It is Advisory in `crunk
-check` and CI; at the release gate (`crunk check --gate release`) it is Error.
+for the reviewer is a finding that names the screen and what changed. It is not run by `crunk check` at local or CI; at the release gate (`crunk check --gate release`) it is Error.
 
 ## Why it matters
 
@@ -89,7 +88,7 @@ terminal) to record the new digest, and commit `crunk.lock`.
 
 ## Examples
 
-### HUMAN001 human-review-stale / Examples / A reviewed screen with no recorded review fires #1 (line 33) (fire)
+### HUMAN001 human-review-stale / Examples / A reviewed screen with no recorded review fires #1 (line 32) (fire)
 
 Config: `review-missing`
 
@@ -99,7 +98,7 @@ Config: `review-missing`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples / A review recorded before a token changed fires #2 (line 41) (fire)
+### HUMAN001 human-review-stale / Examples / A review recorded before a token changed fires #2 (line 40) (fire)
 
 Config: `review-stale`
 
@@ -109,7 +108,7 @@ Config: `review-stale`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples / A current approved review is clean #3 (line 49) (clean)
+### HUMAN001 human-review-stale / Examples / A current approved review is clean #3 (line 48) (clean)
 
 Config: `review-current`
 
@@ -119,7 +118,7 @@ Config: `review-current`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples / A review by someone off the allow-list fires #4 (line 57) (fire)
+### HUMAN001 human-review-stale / Examples / A review by someone off the allow-list fires #4 (line 56) (fire)
 
 Config: `review-unlisted`
 
@@ -129,7 +128,7 @@ Config: `review-unlisted`
 }
 ```
 
-### HUMAN001 human-review-stale / Examples / An ack in an unsigned commit fires when signatures are required #5 (line 65) (fire)
+### HUMAN001 human-review-stale / Examples / An ack in an unsigned commit fires when signatures are required #5 (line 64) (fire)
 
 Config: `review-unsigned`
 
