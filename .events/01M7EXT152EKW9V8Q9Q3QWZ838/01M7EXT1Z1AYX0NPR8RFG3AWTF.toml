@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob check can emit valid SARIF 2.1.0 (--format sarif or equivalent) validated against a schema-shape test", "Each result carries a stable partialFingerprints entry equal to the frob fingerprint, and excepted findings carry suppressions with justification", "Docs list the SARIF output and its field mapping"]
+moved = []
+at = "2026-11-15T06:20:12Z"
+actor = "lognd"
+rev = 1
