@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk check: list unimplemented families in not_run at T1/T3"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-fd8e30410167"
+labels = ["no-story"]
+acceptance = ["a family with zero rules appears in not_run (test)"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M4.
+Evidence: not_run is empty because families with zero rules never register
+Remedy: list families with no rules as not run, or add placeholder rules
+Crates/files: crates/crunk-check, crates/gob-check
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:24Z"
+actor = "lognd"
+rev = 1
