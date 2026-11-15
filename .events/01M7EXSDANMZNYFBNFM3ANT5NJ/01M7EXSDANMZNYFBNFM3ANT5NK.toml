@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk SCENE001: paint properties pass through unjudged"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+parent = "01M7ETKA6EFEZGRH2DMQBD8818"
+idempotency_key = "crunkplan-605a5c4096b7"
+labels = ["no-story"]
+acceptance = ["a scene with a literal background colour is flagged", "a token-backed paint passes"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Evidence: paint properties (background, filter, shadow) are not validated against tokens in scenes
+Remedy: judge paint properties in SCENE001 against token kinds
+Crates/files: crates/crunk-rules scene rules
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:51Z"
+actor = "lognd"
+rev = 1
