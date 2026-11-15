@@ -17,6 +17,28 @@ pub struct ConfigRow {
     pub compute_digest: Option<String>,
 }
 
+/// One line of the Tailwind runtime presence table.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct TailwindRow {
+    /// What was checked (`node`, `tailwindcss`, `helper`).
+    pub item: String,
+    /// `ok`, `missing`, `failed` or `skipped`.
+    pub state: String,
+    /// The path, version or reason.
+    pub detail: String,
+}
+
+/// The Tailwind runtime presence table.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct TailwindTable {
+    /// The table rows, in `node`, `tailwindcss`, `helper` order.
+    pub rows: Vec<TailwindRow>,
+    /// Anything that blocks node-verified Tailwind truth.
+    pub issues: Vec<String>,
+    /// Expected notices, such as the static fallback.
+    pub info: Vec<String>,
+}
+
 /// Output of `doctor`.
 #[derive(Debug, Serialize, JsonSchema)]
 pub struct DoctorData {
@@ -26,6 +48,25 @@ pub struct DoctorData {
     pub root: String,
     /// `crunk.toml` state.
     pub config: ConfigRow,
+    /// The Tailwind runtime presence table.
+    pub tailwind: TailwindTable,
+}
+
+fn tailwind_table(root: &std::path::Path) -> TailwindTable {
+    let report = crunk_check::tailwind_doctor(root);
+    TailwindTable {
+        rows: report
+            .rows
+            .into_iter()
+            .map(|r| TailwindRow {
+                item: r.item,
+                state: r.state,
+                detail: r.detail,
+            })
+            .collect(),
+        issues: report.issues,
+        info: report.info,
+    }
 }
 
 fn config_row(root: &std::path::Path) -> ConfigRow {
@@ -54,5 +95,6 @@ pub fn report(root: &std::path::Path) -> Payload<DoctorData> {
         version: env!("CARGO_PKG_VERSION").to_owned(),
         root: root.display().to_string(),
         config,
+        tailwind: tailwind_table(root),
     })
 }

@@ -37,6 +37,7 @@ use std::time::Instant;
 pub use gob_check::{CheckError, CheckReport, FailOn};
 pub use product::{Crunk, CrunkInputs, CrunkShared};
 pub use sibling::{SCHEMA_VERSION, sibling_document};
+pub use tailwind::doctor as tailwind_doctor;
 pub use tier::{NotRun, Tier};
 
 use gob_config::ComputeTable;

@@ -74,3 +74,19 @@ fn engine_static_in_crunk_toml_never_executes_repository_javascript() {
         "repository JavaScript ran under engine = static"
     );
 }
+
+// frob:tests crates/crunk-check/src/tailwind.rs::doctor
+#[test]
+fn doctor_never_executes_repository_javascript() {
+    let (dir, marker) = booby_trapped("");
+    crunk_check::tailwind_doctor(dir.path());
+    assert!(!marker.exists(), "doctor executed repository JavaScript");
+}
+
+// frob:tests crates/crunk-check/src/tailwind.rs::doctor
+#[test]
+fn doctor_lists_three_rows() {
+    let (dir, _marker) = booby_trapped("");
+    let report = crunk_check::tailwind_doctor(dir.path());
+    assert_eq!(report.rows.len(), 3);
+}
