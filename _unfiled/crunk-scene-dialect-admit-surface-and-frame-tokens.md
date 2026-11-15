@@ -12,6 +12,10 @@ updated = "2026-11-15T06:21:38Z"
 idempotency_key = "crunkplan-ea4582d3e6f7"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXWNDAT5YXREKS0AADJ4WY"
+
 [[acceptance]]
 text = "a scene using a surface token solves with no PORT finding"
 bound = false
