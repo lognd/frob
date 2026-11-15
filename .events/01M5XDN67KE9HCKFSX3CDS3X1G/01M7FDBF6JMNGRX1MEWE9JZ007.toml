@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given a scene with <style> rules, when style mapping runs, then each rule selector is associated to its matching elements and no StylesheetNotApplied finding is raised for supported selectors"]
+new = ["Given a scene with <style> rules, when it is parsed, then SceneDoc::rules exposes each selector with the element indices it matches (type, class, id, descendant, compound, comma lists), flags other selectors unsupported, and links rules to their enclosing @media at-rule"]
+moved = [0]
+at = "2026-11-15T10:51:51Z"
+actor = "lognd"
+rev = 1
