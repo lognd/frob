@@ -2,7 +2,8 @@
 id = "01M7DZCFW0YB0PH3WDFWR5Q961"
 title = "Grimble LOG: open(fd 1/2) and file-handle destinations for json.dump/csv/shutil/pipe"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
