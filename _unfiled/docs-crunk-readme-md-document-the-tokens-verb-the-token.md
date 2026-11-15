@@ -7,9 +7,9 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-08T13:40:25Z"
-updated = "2026-11-15T04:21:47Z"
+updated = "2026-11-15T04:22:29Z"
 labels = ["area:crunk"]
-scope = ["docs/crunk/README.md"]
+scope = ["docs/crunk/README.md", "docs/guides/crunk.md"]
 +++
 
 Found while working ~M635E0X and ~1WS0DQ4: the docs/crunk lease was held by another ticket, so the verb table, the Token exports section, E-SPEC exit-3 note and the runtime bridge notes live in crates/crunk-tokens/README.md and crates/crunk-tailwind/README.md. Move or link them from docs/crunk/README.md.
