@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble docs: planning-layer tutorial 'from use case to code' run by doc_commands.rs"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["A new guide documents actor, goal, scenario, impl and evidence", "doc_commands.rs executes its commands in CI"]
+body = "Audit: /home/logan/projects/frob-audit2-grimble.md M8 (tutorial). Evidence: no guide mentions scenario. Files: docs/guides/grimble.md, crates doc_commands.rs. Remedy: second tutorial executed by the doc command test."
+at = "2026-11-15T06:21:01Z"
+actor = "lognd"
+rev = 1
