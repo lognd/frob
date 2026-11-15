@@ -2,7 +2,8 @@
 id = "01M5NHCSZB0543SWHP6E2ACM70"
 title = "frob-check rule_matrix tests fail at baseline (markdown COV001/DOC001 cells, DOC001 island garbage probe)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
