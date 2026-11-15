@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A non-literal getattr name is reported as a computed (Unresolved) use of its known prefix"]
+moved = []
+at = "2026-11-15T23:29:35Z"
+actor = "lognd"
+rev = 1
