@@ -1,0 +1,10 @@
+kind = "create"
+title = "land candidate: fail closed when the post-drop git reset --hard fails"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md L1, frob-audit-meta.md M1. Evidence: crates/frob-land/src/candidate.rs:275-284 logs reset.ok() but ignores a failed reset, leaving the dropped merge in the candidate. Remedy: propagate the reset failure as an error and abort the candidate. Add negative tests for hunk-drop handling. Files: crates/frob-land/src/candidate.rs."
+at = "2026-11-15T06:10:19Z"
+actor = "lognd"
+rev = 1
