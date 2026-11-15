@@ -1,0 +1,10 @@
+kind = "create"
+title = "LOG001: declarable CLI output sinks instead of defers"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md L4, follow-up to ~72KW077. Remedy: a config list of output-sink fns exempt from LOG001. Files: LOG001 rule, frob.toml."
+at = "2026-11-15T06:19:05Z"
+actor = "lognd"
+rev = 1
