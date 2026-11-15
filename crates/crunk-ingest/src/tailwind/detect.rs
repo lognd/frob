@@ -117,11 +117,12 @@ mod tests {
 
     fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
         let dir = tempfile::tempdir().expect("tempdir");
-        for (rel, text) in files {
+        let place = |(rel, text): &(&str, &str)| -> std::io::Result<()> {
             let path = dir.path().join(rel);
-            std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-            std::fs::write(path, text).expect("write");
-        }
+            path.parent().map_or(Ok(()), std::fs::create_dir_all)?;
+            std::fs::write(path, text)
+        };
+        files.iter().try_for_each(place).expect("fixture tree");
         dir
     }
 
