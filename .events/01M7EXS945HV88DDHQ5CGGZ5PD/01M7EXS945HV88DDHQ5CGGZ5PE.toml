@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk export: flag var() references to tokens the css export does not define"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETK8FEAC1T9J0XMDFWKG0Y"
+idempotency_key = "crunkplan-90737333c989"
+labels = ["no-story"]
+acceptance = ["a var() pointing at an unexported token produces a finding", "a var() to an exported token produces none"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Evidence: var(--x) may reference a token the css export omits
+Remedy: cross-check var() uses against exported custom properties
+Crates/files: crates/crunk-export, crates/crunk-rules
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:47Z"
+actor = "lognd"
+rev = 1
