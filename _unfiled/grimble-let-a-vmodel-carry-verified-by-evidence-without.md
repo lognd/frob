@@ -2,7 +2,8 @@
 id = "01M7ET17BM017983KQXF9ZNSC3"
 title = "grimble: let a vmodel carry verified_by evidence without MDL000/MDL012"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
