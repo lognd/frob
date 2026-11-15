@@ -12,6 +12,10 @@ updated = "2026-11-15T06:21:37Z"
 idempotency_key = "crunkplan-065bcad29363"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXWMNPZ0YZC99ACRBJH1HJ"
+
 [[acceptance]]
 text = "the same seed gives the same direction (test)"
 bound = false
