@@ -2,7 +2,8 @@
 id = "01M5XM07CDFXTTENEEQ156HM4A"
 title = "Add not_run to the gob.sibling/1 schema (crunk verbs test fails)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
