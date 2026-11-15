@@ -8,13 +8,17 @@ points = 3
 parent = "01M7ETB6DKRHKAHRBA2NCGNQTB"
 reporter = "lognd"
 created = "2026-11-15T06:21:38Z"
-updated = "2026-11-15T06:21:38Z"
+updated = "2026-11-15T06:21:39Z"
 idempotency_key = "crunkplan-ea4582d3e6f7"
 labels = ["no-story"]
 
 [[links]]
 kind = "blocked-by"
 target = "01M7EXWNDAT5YXREKS0AADJ4WY"
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXWNMZVTG99EX1ZQHXNDXR"
 
 [[acceptance]]
 text = "a scene using a surface token solves with no PORT finding"
