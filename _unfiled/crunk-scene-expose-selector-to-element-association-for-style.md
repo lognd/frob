@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-27T00:55:08Z"
-updated = "2026-11-15T10:51:51Z"
+updated = "2026-11-15T10:52:17Z"
 labels = ["no-story"]
 scope = ["crates/crunk-scene/**"]
 
 [[acceptance]]
 text = "Given a scene with <style> rules, when it is parsed, then SceneDoc::rules exposes each selector with the element indices it matches (type, class, id, descendant, compound, comma lists), flags other selectors unsupported, and links rules to their enclosing @media at-rule"
-bound = false
+bound = true
 +++
 
 Style mapping currently uses inline style only; <style> rules yield StylesheetNotApplied findings. Found while working QPY31M6.
