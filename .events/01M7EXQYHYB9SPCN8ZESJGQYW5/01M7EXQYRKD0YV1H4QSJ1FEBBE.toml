@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["show prints the drop reason (test)", "superseded close without --by errors (test)"]
+moved = []
+at = "2026-11-15T06:19:03Z"
+actor = "lognd"
+rev = 1
