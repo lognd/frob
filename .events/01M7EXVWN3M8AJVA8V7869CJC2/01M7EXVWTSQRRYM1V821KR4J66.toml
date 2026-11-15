@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A docs page maps at least ratchet, pack, exceptions and fingerprints to their SonarQube, Qodana and Trunk counterparts", "Rule frontmatter accepts quality and attribute and generated docs pass gob-dev gen all --check"]
+moved = []
+at = "2026-11-15T06:21:12Z"
+actor = "lognd"
+rev = 1
