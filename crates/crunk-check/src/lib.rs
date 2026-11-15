@@ -19,13 +19,13 @@
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 pub mod gx_pack;
-pub mod route_a11y;
 pub mod packs;
 mod product;
 pub mod product_rules;
 pub mod render_ledger;
 pub mod report;
 pub mod review;
+pub mod route_a11y;
 pub mod sibling;
 mod tailwind;
 pub mod tier;

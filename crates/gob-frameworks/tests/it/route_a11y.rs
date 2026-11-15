@@ -13,39 +13,30 @@ fn fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/a11y")
 }
 
-/// Every file under `dir` as a [`FileEntry`] relative to `root`, sorted.
-fn entries(root: &Path, dir: &Path, out: &mut Vec<FileEntry>) {
-    let mut found: Vec<_> = std::fs::read_dir(dir)
-        .expect("read dir")
-        .flatten()
-        .collect();
-    found.sort_by_key(std::fs::DirEntry::path);
-    for e in found {
-        let p = e.path();
-        if p.is_dir() {
-            entries(root, &p, out);
-            continue;
-        }
-        let rel = p
-            .strip_prefix(root)
-            .expect("under root")
-            .to_string_lossy()
-            .replace('\\', "/");
-        let bytes = std::fs::read(&p).expect("read");
-        out.push(FileEntry {
-            language: LanguageHint::from_path(&rel),
-            path: rel,
-            size: bytes.len() as u64,
-            digest: Digest::of(&bytes),
-        });
+/// The fixture files the routes are read from.
+const FILES: [&str; 5] = [
+    "package.json",
+    "app/routes.ts",
+    "app/routes/good.tsx",
+    "app/routes/silent.tsx",
+    "app/routes/untitled.tsx",
+];
+
+/// One fixture file as a [`FileEntry`].
+fn entry(root: &Path, rel: &str) -> FileEntry {
+    let bytes = std::fs::read(root.join(rel)).expect("read");
+    FileEntry {
+        language: LanguageHint::from_path(rel),
+        path: rel.to_owned(),
+        size: bytes.len() as u64,
+        digest: Digest::of(&bytes),
     }
 }
 
 /// The gaps found in the fixture.
 fn gaps() -> Vec<RouteGap> {
     let root = fixture();
-    let mut files = Vec::new();
-    entries(&root, &root, &mut files);
+    let files: Vec<FileEntry> = FILES.iter().map(|rel| entry(&root, rel)).collect();
     let symbols = files
         .iter()
         .map(|f| {
