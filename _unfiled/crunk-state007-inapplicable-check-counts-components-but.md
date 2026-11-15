@@ -7,11 +7,11 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T11:19:29Z"
-updated = "2026-11-15T11:42:15Z"
+updated = "2026-11-15T11:46:01Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/src/rules/state007.rs", "crates/crunk-rules/tests/it/component_rules.rs"]
 
 [[acceptance]]
 text = "Given a project with components but no screens, when STATE007 is evaluated, then it is reported inapplicable rather than firing"
-bound = false
+bound = true
 +++
