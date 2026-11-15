@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob init output for an eslint, a dotnet and a ruff repo is byte-identical to today (golden test) while sourced from definitions", "Adding a new definition with detect globs makes init suggest it with no Rust change"]
+moved = []
+at = "2026-11-15T06:20:16Z"
+actor = "lognd"
+rev = 1
