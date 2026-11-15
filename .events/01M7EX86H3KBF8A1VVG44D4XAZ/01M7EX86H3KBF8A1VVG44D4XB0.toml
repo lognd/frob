@@ -1,0 +1,10 @@
+kind = "create"
+title = "ticket work --offline --reason is audited on the ticket"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md L10. Evidence: verb.rs:160,264-292 accept --offline --reason without recording it. Remedy: add a ledger note with the reason. Files: crates/frob/src/verb.rs and callee."
+at = "2026-11-15T06:10:27Z"
+actor = "lognd"
+rev = 1
