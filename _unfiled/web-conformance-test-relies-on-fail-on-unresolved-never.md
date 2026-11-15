@@ -7,8 +7,8 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-24T04:02:05Z"
-updated = "2026-11-15T15:13:04Z"
-scope = ["crates/frob/tests/siblings/**"]
+updated = "2026-11-15T15:13:12Z"
+scope = ["crates/frob/tests/siblings/**", "crates/frob/tests/siblings/web_conformance.rs"]
 
 [[acceptance]]
 text = "The grimble web fixture has an entry point so DEAD001 examines at least one subject, with no fail_on_unresolved override"
