@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["clone_with_origin clones origin so both share the same root commit"]
+moved = []
+at = "2026-11-15T22:09:40Z"
+actor = "lognd"
+rev = 1

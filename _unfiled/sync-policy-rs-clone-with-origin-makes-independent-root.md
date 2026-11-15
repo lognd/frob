@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T16:13:26Z"
-updated = "2026-11-15T22:01:37Z"
+updated = "2026-11-15T22:09:40Z"
 labels = ["no-story"]
 scope = ["crates/frob/tests/it/sync_policy.rs"]
+
+[[acceptance]]
+text = "clone_with_origin clones origin so both share the same root commit"
+bound = false
 +++
 
 Same fixture flaw as ~EK0YNZX: origin and clone each commit an empty c1; hashes differ across a second boundary. Use git clone.
