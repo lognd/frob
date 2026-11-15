@@ -4,9 +4,10 @@ title = "grimble: checked constructs for data model, state machine, deployment, 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:14:13Z"
-updated = "2026-11-15T05:14:13Z"
+updated = "2026-11-15T09:24:43Z"
 labels = ["no-story"]
 +++
 
