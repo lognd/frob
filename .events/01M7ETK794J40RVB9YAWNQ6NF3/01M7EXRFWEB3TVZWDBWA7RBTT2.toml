@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk render --image produces a PNG and SVG from the layout solve", "crunk diff --visual compares two renders"]
+moved = []
+at = "2026-11-15T06:19:21Z"
+actor = "lognd"
+rev = 1
