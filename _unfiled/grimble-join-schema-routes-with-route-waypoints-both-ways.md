@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:22:11Z"
-updated = "2026-11-15T06:22:11Z"
+updated = "2026-11-15T06:22:15Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXXP5JKPMV1M017ST0KS1S"
 
 [[acceptance]]
 text = "A schema route with no waypoint and a waypoint with no route each raise a finding"
