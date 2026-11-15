@@ -321,15 +321,11 @@ fn classify(literal: &str) -> Result<Request, CliError> {
         ));
     }
     match unit.as_str() {
-        "px" | "rem" if value == 0.0 => Err(refuse(
+        "px" | "rem" | "ms" | "s" if value == 0.0 => Err(refuse(
             "E-EXTRACT-ZERO",
             format!("{literal:?} is zero, which needs no token and would rewrite every zero"),
         )),
         "px" | "rem" => Ok(Request::Length { value, unit }),
-        "ms" | "s" if value == 0.0 => Err(refuse(
-            "E-EXTRACT-ZERO",
-            format!("{literal:?} is zero, which needs no token and would rewrite every zero"),
-        )),
         "ms" => Ok(Request::Duration { ms: value }),
         "s" => Ok(Request::Duration {
             ms: round_px(value * 1000.0),
