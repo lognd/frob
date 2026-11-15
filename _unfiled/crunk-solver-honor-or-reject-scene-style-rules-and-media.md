@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T05:52:49Z"
+updated = "2026-11-15T05:52:53Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "A scene with an @media block is refused the same way"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An empty <style> and inline styles still solve"
