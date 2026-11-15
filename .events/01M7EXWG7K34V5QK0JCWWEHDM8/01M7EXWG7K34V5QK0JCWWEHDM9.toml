@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-model: state sets on contract/entity with step-referenced transitions (SPEC 19 item 15)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+acceptance = ["state set parses; a step may reference a transition", "An unreachable state raises a finding", "SPEC 19 item 15 closed"]
+body = "Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 3. Overlaps existing story ~1M6NZ7K (unreachable-exit lifecycle states): link rather than duplicate. Crates: grimble-model."
+at = "2026-11-15T06:21:32Z"
+actor = "lognd"
+rev = 1
