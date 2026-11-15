@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble: gate NAME owner= until= [kill_switch] expiring inventory and readiness pack (G10,G11,G12)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+acceptance = ["Expired gate is an Error", "Duplicate flag binding is an Error", "A readiness pack is documented"]
+body = "Research: /home/logan/projects/frob-research-lifecycle.md rec 9. Expired gate and a flag bound to two scenarios are Errors. Log and metric atoms count as observable effects on end err paths (open question 23)."
+at = "2026-11-15T06:22:12Z"
+actor = "lognd"
+rev = 1
