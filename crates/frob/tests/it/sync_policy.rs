@@ -45,16 +45,25 @@ fn clone_with_origin() -> (tempfile::TempDir, tempfile::TempDir) {
         origin.path(),
         &["commit", "-q", "--allow-empty", "-m", "c1"],
     );
-    let clone = common::git_repo();
-    git(clone.path(), &["commit", "-q", "--allow-empty", "-m", "c1"]);
+    let clone = tempfile::tempdir().expect("tempdir");
     let url = gob_path::Shown::of(origin.path()).to_string();
-    git(clone.path(), &["remote", "add", "origin", &url]);
+    let target = gob_path::Shown::of(clone.path()).to_string();
+    git(origin.path(), &["clone", "-q", &url, &target]);
     std::fs::write(
         clone.path().join("frob.toml"),
         "[tickets]\nref = \"main\"\n",
     )
     .expect("toml");
     (origin, clone)
+}
+
+// frob:tests clone_with_origin
+#[test]
+fn clone_with_origin_shares_the_origin_root_commit() {
+    let (origin, clone) = clone_with_origin();
+    let head =
+        |d: &Path| std::fs::read_to_string(d.join(".git/refs/heads/main")).expect("main ref");
+    assert_eq!(head(origin.path()), head(clone.path()));
 }
 
 fn state_file(clone: &Path) -> std::path::PathBuf {
