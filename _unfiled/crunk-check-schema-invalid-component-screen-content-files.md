@@ -2,7 +2,8 @@
 id = "01M7ETK8WHHFV8590QXMH57TRZ"
 title = "crunk check: schema-invalid component/screen/content files must fail, not be skipped"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
