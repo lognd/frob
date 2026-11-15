@@ -1,0 +1,10 @@
+kind = "create"
+title = "ticket doable: do not report STALE while a finished refresh holds the lock"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md L2. Evidence: crates/frob/tests/it/sync_policy.rs flake class. Remedy: treat a lock held by a finished refresh as fresh. Files: sync policy code."
+at = "2026-11-15T06:19:04Z"
+actor = "lognd"
+rev = 1
