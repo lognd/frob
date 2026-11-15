@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T00:23:09Z"
-updated = "2026-11-15T15:07:24Z"
+updated = "2026-11-15T15:07:35Z"
 scope = ["crates/frob-ledger/templates/**", "crates/frob-ledger/src/gen/guide.rs"]
 
 [[acceptance]]
