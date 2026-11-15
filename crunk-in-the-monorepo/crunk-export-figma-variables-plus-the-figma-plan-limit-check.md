@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
 reporter = "lognd"
 created = "2026-10-27T00:41:22Z"
-updated = "2026-11-15T00:09:57Z"
+updated = "2026-11-15T00:12:12Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/src/export/figma.rs, crates/crunk-rules/src/export_figma.rs", "crates/crunk-tokens/src/export/figma.rs", "crates/crunk-rules/src/export_figma.rs", "crates/crunk-spec/src/table.rs", "crates/crunk-spec/src/load.rs", "crates/crunk-spec/src/model.rs", "crates/crunk-tokens/src/export/mod.rs", "crates/crunk-rules/src/rules/mod.rs", "crates/crunk-rules/src/rules/export003.rs", "crates/crunk-rules/src/rules/export003.md", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/rules.rs", "crates/crunk-spec/src/validate.rs", "crates/crunk-spec/tests/it/parity.rs", "crates/crunk-spec/tests/it/spec.rs", "crates/crunk-spec/tests/it/snapshots/*.snap", "crates/crunk-rules/tests/it/support/mod.rs", "docs/schemas/crunk.json", "docs/reference/rules/EXPORT003.md", "docs/reference/config/crunk.md", "docs/reference/rules/README.md", "docs/README.md"]
 
