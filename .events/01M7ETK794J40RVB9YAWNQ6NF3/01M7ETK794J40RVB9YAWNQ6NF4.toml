@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: a verb that renders an image and a visual diff"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Crunk audit2 H1. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale)."
+at = "2026-11-15T05:24:02Z"
+actor = "lognd"
+rev = 1
