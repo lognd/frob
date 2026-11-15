@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk render: fix E-GALLERY-NOT-BUILT remedy text and exit code"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M7ETK794J40RVB9YAWNQ6NF3"
+idempotency_key = "crunkplan-a12ee1bca722"
+labels = ["no-story"]
+acceptance = ["the error remedy names a command or feature that exists", "exit code matches the documented refusal class (test)"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L3.
+Evidence: E-GALLERY-NOT-BUILT exits 3 and prints a remedy that cannot work in the default build
+Remedy: print a remedy that works (feature flag or alternative verb) and use a usage-class exit code
+Crates/files: crates/crunk/src/render.rs:387, crates/crunk/tests/it/render_solve.rs:95
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:20Z"
+actor = "lognd"
+rev = 1
