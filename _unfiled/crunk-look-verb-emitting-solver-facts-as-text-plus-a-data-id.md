@@ -4,9 +4,10 @@ title = "crunk: look verb emitting solver facts as text plus a data-id-marked sc
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-15T05:19:39Z"
-updated = "2026-11-15T05:19:39Z"
+updated = "2026-11-15T06:27:20Z"
 labels = ["no-story"]
 +++
 
