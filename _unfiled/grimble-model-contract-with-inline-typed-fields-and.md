@@ -8,8 +8,12 @@ points = 5
 parent = "01M7ET180AEP11G148VAGD0PHX"
 reporter = "lognd"
 created = "2026-11-15T06:21:32Z"
-updated = "2026-11-15T06:21:37Z"
+updated = "2026-11-15T06:21:52Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXWFYP0KVRKXQSK3FM24H2"
 
 [[acceptance]]
 text = "contract { field id : int; } parses without MDL000"
