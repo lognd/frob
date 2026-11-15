@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk CONTENT rule: error and empty states reference a copy key"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-f66737cc01f4"
+labels = ["no-story"]
+acceptance = ["literal text in an error state raises a finding"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Evidence: error/empty states may hold literal text
+Remedy: rule requires a copy key reference
+Crates/files: crates/crunk-rules content
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:25Z"
+actor = "lognd"
+rev = 1
