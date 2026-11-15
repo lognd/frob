@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["EXC017 flags a native suppression comment matching a bound tool's suppression_pattern, covered by a mdtest case", "Every std-pack tool recipe with an inline suppression syntax declares suppression_pattern, or states in a comment that it has none"]
+moved = []
+at = "2026-11-15T06:20:13Z"
+actor = "lognd"
+rev = 1
