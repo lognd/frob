@@ -2,7 +2,8 @@
 id = "01M5XCWA3KQZFNDX9F46YNRVA6"
 title = "Agent authoring e2e: new component with variants and new screen with states via new and edit --patch report COMP, STATE and CONTENT findings for touched nodes only"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
