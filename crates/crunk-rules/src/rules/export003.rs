@@ -46,7 +46,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Export003 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        missing_inputs(host)
+        missing_inputs(host).or_else(|| {
+            host.spec()
+                .is_some_and(|s| s.figma.is_none())
+                .then(|| "no [figma] plan is configured".to_owned())
+        })
     }
 }
 
