@@ -7,8 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T10:53:30Z"
-updated = "2026-11-15T10:53:33Z"
+updated = "2026-11-15T11:41:28Z"
 labels = ["no-story"]
+scope = ["crates/crunk-layout/**"]
 
 [[acceptance]]
 text = "Given a scene with supported style rules, when layout styles are mapped, then matching elements receive the rule declarations and no StylesheetNotApplied finding is raised for those rules"
