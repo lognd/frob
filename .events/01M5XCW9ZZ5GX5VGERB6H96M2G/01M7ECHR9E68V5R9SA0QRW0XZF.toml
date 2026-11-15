@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:18:34Z"
+digest = "f548efb0264ea86228221710abb6af6a38f3f57323c29b36da5b3fc15c005abb"
+exit_code = 0
+head = "6944a8797b3759c7ede2b03e9d9ae1bb084559c2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 74d1c61b-5f42-4899-8045-f4b2006d263a with nextest profile: default
+    Starting 1 test across 5 binaries (307 tests skipped)
+        PASS [   0.008s] crunk::it serve_patch::a_schema_failure_writes_nothing_and_returns_a_located_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=serve_patch::a_schema_failure_writes_nothing_and_returns_a_located_error)"
+size = 575
+status = "measured"
+test_count = 1
+tests_digest = "90c6a32e3ddea39fec9da81542a8f73226eaa39094dbd79df0dd5cb253d61420"
+at = "2026-11-15T01:18:34Z"
+actor = "lognd"
+rev = 1
