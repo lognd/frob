@@ -7,9 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-15T06:21:12Z"
-updated = "2026-11-15T06:21:12Z"
+updated = "2026-11-15T06:21:17Z"
 idempotency_key = "static-research-k14"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXT3X9DSSHYJWNQ4ZQPV00"
 
 [[acceptance]]
 text = "A download recipe with a wrong sha256 is refused with a named error and nothing is executed"
