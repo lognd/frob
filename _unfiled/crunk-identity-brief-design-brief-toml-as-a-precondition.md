@@ -4,9 +4,10 @@ title = "crunk: identity brief (design/brief.toml) as a precondition with BRIEF0
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-15T05:19:37Z"
-updated = "2026-11-15T05:19:37Z"
+updated = "2026-11-15T06:27:20Z"
 labels = ["no-story"]
 +++
 
