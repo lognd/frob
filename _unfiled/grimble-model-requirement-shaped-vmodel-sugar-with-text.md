@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 3
+parent = "01M7ET180AEP11G148VAGD0PHX"
 reporter = "lognd"
 created = "2026-11-15T06:21:33Z"
-updated = "2026-11-15T06:21:33Z"
+updated = "2026-11-15T06:21:43Z"
 labels = ["no-story"]
 
 [[acceptance]]
