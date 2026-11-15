@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Pending tip with a green ancestor run is judged green-with-note (test)"]
+moved = []
+at = "2026-11-15T06:10:53Z"
+actor = "lognd"
+rev = 1
