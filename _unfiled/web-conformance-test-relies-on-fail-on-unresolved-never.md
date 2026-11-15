@@ -2,7 +2,8 @@
 id = "01M5P15BEM7AK8EW4Q7VM50AGH"
 title = "web_conformance test relies on fail_on_unresolved=never because DEAD001 has no entry points"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
