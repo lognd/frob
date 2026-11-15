@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T08:45:21Z"
+digest = "274a20d8ab67bbb9893240cdcf9721c67f57e489cd854792303a06acd14231d6"
+exit_code = 0
+head = "ec115c2cbaaf1088c108b6a3b888decd1d518f10"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 06aafa55-755a-414c-8935-871d5d599c8c with nextest profile: default
+    Starting 1 test across 6 binaries (321 tests skipped)
+        PASS [   0.348s] crunk::it stamp::a_stamped_screen_is_clean_until_its_content_changes
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.349s] 1 test run: 1 passed, 321 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=stamp::a_stamped_screen_is_clean_until_its_content_changes)"
+size = 809
+status = "measured"
+test_count = 1
+tests_digest = "1aefd274ec89bcd30a0c914a0e724a0a211c657ee4beeb494a7d35dbcf4ca80a"
+at = "2026-11-15T08:45:21Z"
+actor = "lognd"
+rev = 1
