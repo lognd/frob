@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "invalid"
+reason = "crunk-check has no unused dependencies; every entry is referenced in src or tests"
+at = "2026-11-15T04:22:29Z"
+actor = "lognd"
+rev = 1
