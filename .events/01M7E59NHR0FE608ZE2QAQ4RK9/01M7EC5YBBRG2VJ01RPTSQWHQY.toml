@@ -1,0 +1,179 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:11:43Z"
+digest = "4d7951c12ac4a58d9ee098b0f17e7d0aae73cef319fd2849c6489b34e4f32781"
+exit_code = 0
+head = "007da2d440bd628990ea4c5d17d4d3c075650252"
+inline = '''
+   Compiling hashbrown v0.17.1
+   Compiling serde v1.0.229
+   Compiling gob-caps v0.532.0 (<worktree>/crates/gob-caps)
+   Compiling gob-path v0.532.0 (<worktree>/crates/gob-path)
+   Compiling crunk-values v0.532.0 (<worktree>/crates/crunk-values)
+   Compiling gob-macros v0.532.0 (<worktree>/crates/gob-macros)
+   Compiling tracing-serde v0.2.0
+   Compiling indexmap v2.14.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-fs v0.532.0 (<worktree>/crates/gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>/crates/gob-walk)
+   Compiling schemars v1.2.2
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling serde_json v1.0.151
+   Compiling gob-ir v0.532.0 (<worktree>/crates/gob-ir)
+   Compiling gob-log v0.532.0 (<worktree>/crates/gob-log)
+   Compiling tree-sitter v0.27.0
+   Compiling gob-exec v0.532.0 (<worktree>/crates/gob-exec)
+   Compiling gob-languages v0.532.0 (<worktree>/crates/gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>/crates/gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>/crates/gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>/crates/gob-diagnostics)
+   Compiling gob-testsupport v0.532.0 (<worktree>/crates/gob-testsupport)
+   Compiling crunk-spec v0.532.0 (<worktree>/crates/crunk-spec)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.76s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3b718656-e28b-43fb-87b7-92fcc6e919f1 with nextest profile: default
+    Starting 131 tests across 2 binaries
+        PASS [   0.006s] crunk-spec component_file::tests::minimal_component_needs_only_a_name
+        PASS [   0.006s] crunk-spec component_file::tests::parses_a_full_component
+        PASS [   0.006s] crunk-spec content_file::tests::parses_keys_with_locale_and_budget
+        PASS [   0.006s] crunk-spec flow_file::tests::valid_flow_passes_including_cycles_and_the_skeleton
+        PASS [   0.006s] crunk-spec component_file::tests::unicode_names_and_duplicates_load
+        PASS [   0.006s] crunk-spec ia::tests::a_content_model_with_distinct_types_parses
+        PASS [   0.006s] crunk-spec flow_file::tests::bad_flows_get_a_code_and_a_location
+        PASS [   0.006s] crunk-spec ia::tests::a_content_model_rejects_a_repeated_type
+        PASS [   0.007s] crunk-spec flow_file::tests::a_dangling_from_is_located_and_an_unknown_key_is_named
+        PASS [   0.007s] crunk-spec ia::tests::a_good_sitemap_measures_depth
+        PASS [   0.006s] crunk-spec content_file::tests::rejects_empty_duplicate_and_unknown
+        PASS [   0.007s] crunk-spec component_file::tests::rejects_bad_toml_missing_name_and_unknown_keys
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_a_bad_route_is_a_field_error
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_an_unknown_parent_is_refused
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_a_repeated_route_is_refused
+        PASS [   0.006s] crunk-spec screen_file::tests::old_screen_tables_serialize_without_new_fields
+        PASS [   0.005s] crunk-spec screen_file::tests::screen_file_parses_extended_fields
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_an_unknown_key_is_a_parse_error
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_a_blank_label_is_a_field_error
+        PASS [   0.006s] crunk-spec ia::tests::children_are_reachable_through_their_parent
+        PASS [   0.006s] crunk-spec ia::tests::a_sitemap_with_a_parent_cycle_is_refused
+        PASS [   0.007s] crunk-spec ia::tests::a_sitemap_without_max_depth_uses_the_default_limit
+        PASS [   0.006s] crunk-spec ia::tests::dynamic_segments_share_one_shape
+        PASS [   0.007s] crunk-spec ia::tests::links_extend_reachability_and_orphans_stay_out
+        PASS [   0.007s] crunk-spec timing::tests::max_duration_bounds
+        PASS [   0.007s] crunk-spec tells::tests::provenance_prints_date_and_source
+        PASS [   0.007s] crunk-spec tells::tests::project_file_overrides_bundled
+        PASS [   0.007s] crunk-spec tells::tests::bundled_slop060_parses_with_dates_and_sources
+        PASS [   0.008s] crunk-spec tells::tests::bad_day_and_empty_source_are_rejected
+        PASS [   0.007s] crunk-spec::it cov_unresolved::a_default_review_table_reports_itself_default
+        PASS [   0.007s] crunk-spec::it cov_unresolved::phase_spells_itself_in_lowercase
+        PASS [   0.008s] crunk-spec screen_file::tests::screen_file_rejects_bad_states
+        PASS [   0.008s] crunk-spec voice_file::tests::parses_banned_words_and_glossary_terms_and_ignores_prose
+        PASS [   0.008s] crunk-spec::it cov_unresolved::a_default_game_table_lacks_every_coverage_key
+        PASS [   0.009s] crunk-spec::it naming::size_tokens_honor_the_configured_prefix
+        PASS [   0.010s] crunk-spec::it naming::namespaces_default_and_collapse
+        PASS [   0.010s] crunk-spec::it naming::naming_scheme_edge_cases
+        PASS [   0.010s] crunk-spec::it naming::empty_color_prefix_drops_the_prefix_segment
+        PASS [   0.010s] crunk-spec::it naming::stack_tokens_honor_the_prefix
+        PASS [   0.012s] crunk-spec::it parity::corpus_covers_every_section
+        PASS [   0.008s] crunk-spec::it spec::bad_toml_syntax_is_malformed_with_a_line
+        PASS [   0.010s] crunk-spec::it spec::breakpoints_precedence
+        PASS [   0.011s] crunk-spec::it spec::breakpoints_precedence_part_2
+        PASS [   0.012s] crunk-spec::it spec::actions_round_trip_with_their_kind
+        PASS [   0.023s] crunk-spec::it schema::crunk_tables_are_scoped_to_the_crunk_product
+        PASS [   0.023s] crunk-spec::it schema::schema_describes_every_table_and_rejects_unknown_keys
+        PASS [   0.006s] crunk-spec::it spec::catalog_rows
+        PASS [   0.019s] crunk-spec::it spec::breakpoints_precedence_part_3
+        PASS [   0.011s] crunk-spec::it spec::cell_triples_expand_tags_in_declaration_order
+        PASS [   0.033s] crunk-spec::it spec::a_rules_table_loads_without_error
+        PASS [   0.011s] crunk-spec::it spec::empty_palette_is_legal
+        PASS [   0.014s] crunk-spec::it spec::dangling_role_reference_is_invalid
+        PASS [   0.011s] crunk-spec::it spec::empty_required_scale_is_rejected
+        PASS [   0.017s] crunk-spec::it spec::default_preset_declares_the_state_roles
+        PASS [   0.012s] crunk-spec::it spec::error_display_names_file_line_and_column
+        PASS [   0.029s] crunk-spec::it spec::breakpoints_precedence_part_4
+        PASS [   0.013s] crunk-spec::it spec::figma_max_modes_overrides_the_plan
+        PASS [   0.012s] crunk-spec::it spec::full_example_loads_every_field
+        PASS [   0.028s] crunk-spec::it spec::decisions_table_declares_known_decisions_with_reasons
+        PASS [   0.018s] crunk-spec::it spec::figma_plan_sets_the_modes_limit
+        PASS [   0.017s] crunk-spec::it spec::figma_table_rejects_unknown_plans_and_zero_limits
+        PASS [   0.012s] crunk-spec::it spec::jsx_and_tailwind_defaults_and_values
+        PASS [   0.018s] crunk-spec::it spec::figma_table_is_absent_by_default
+        PASS [   0.017s] crunk-spec::it spec::jsx_and_tailwind_defaults_and_values_part_2
+        PASS [   0.013s] crunk-spec::it spec::lint_catalog_and_overrides
+        PASS [   0.027s] crunk-spec::it spec::game_profiles_actions_and_subtitles_load_and_validate
+        PASS [   0.018s] crunk-spec::it spec::lint_absent_defaults
+        PASS [   0.015s] crunk-spec::it spec::lint_catalog_and_overrides_part_2
+        PASS [   0.027s] crunk-spec::it spec::game_table_loads_reports_missing_keys_and_rejects_unknown_or_duplicate_keys
+        PASS [   0.018s] crunk-spec::it spec::load_spec_reads_the_file_at_root
+        PASS [   0.024s] crunk-spec::it spec::layers_are_optional_ints
+        PASS [   0.006s] crunk-spec::it spec::missing_file_is_missing_with_exit_3
+        PASS [   0.081s] crunk-spec::it parity::every_fixture_equals_the_python_spec_dump
+        PASS [   0.013s] crunk-spec::it spec::mono_preset_declares_the_state_roles_too
+        PASS [   0.013s] crunk-spec::it spec::org_values_and_defaults_part_2
+        PASS [   0.016s] crunk-spec::it spec::org_values_and_defaults
+        PASS [   0.014s] crunk-spec::it spec::org_values_and_defaults_part_3
+        PASS [   0.033s] crunk-spec::it spec::lint_errors_are_located
+        PASS [   0.019s] crunk-spec::it spec::org_values_and_defaults_part_4
+        PASS [   0.012s] crunk-spec::it spec::path_base_law_project_file_keys_resolve_against_css_root_others_against_root
+        PASS [   0.022s] crunk-spec::it spec::packs_table_defaults_off_and_switches_crunk_web
+        PASS [   0.015s] crunk-spec::it spec::palette_value_must_be_a_string
+        PASS [   0.013s] crunk-spec::it spec::path_base_law_project_file_keys_resolve_against_css_root_others_against_root_part_2
+        PASS [   0.017s] crunk-spec::it spec::palette_modes_overlay_declared_names_and_reject_unknown_ones
+        PASS [   0.013s] crunk-spec::it spec::paths_collapse_dot_segments_lexically
+        PASS [   0.013s] crunk-spec::it spec::paths_collapse_dot_segments_lexically_part_2
+        PASS [   0.036s] crunk-spec::it spec::missing_required_section_is_named
+        PASS [   0.011s] crunk-spec::it spec::platform_errors_are_named_and_located_part_2
+        PASS [   0.015s] crunk-spec::it spec::platform_errors_are_named_and_located
+        PASS [   0.014s] crunk-spec::it spec::platform_errors_are_named_and_located_part_3
+        PASS [   0.015s] crunk-spec::it spec::platform_errors_are_named_and_located_part_6
+        PASS [   0.051s] crunk-spec::it spec::malformed_roles_name_the_role
+        PASS [   0.014s] crunk-spec::it spec::platform_errors_are_named_and_located_part_7
+        PASS [   0.014s] crunk-spec::it spec::platform_errors_are_named_and_located_part_8
+        PASS [   0.016s] crunk-spec::it spec::platform_errors_are_named_and_located_part_4
+        PASS [   0.013s] crunk-spec::it spec::platform_errors_are_named_and_located_part_9
+        PASS [   0.019s] crunk-spec::it spec::platform_errors_are_named_and_located_part_5
+        PASS [   0.020s] crunk-spec::it spec::preset_comments_state_the_path_base_rule
+        PASS [   0.013s] crunk-spec::it spec::screens_and_platforms_absent_default_empty
+        PASS [   0.014s] crunk-spec::it spec::screen_file_is_merged_into_spec_screens
+        PASS [   0.013s] crunk-spec::it spec::roles_must_be_a_table
+        PASS [   0.013s] crunk-spec::it spec::screens_resolve_tags_and_report_dangling_references
+        PASS [   0.018s] crunk-spec::it spec::role_pair_floor_defaults_and_extended_form
+        PASS [   0.033s] crunk-spec::it spec::platform_numeric_params_are_range_checked
+        PASS [   0.030s] crunk-spec::it spec::review_table_and_screen_review_fields_load_and_validate
+        PASS [   0.013s] crunk-spec::it spec::screens_resolve_tags_and_report_dangling_references_part_5
+        PASS [   0.014s] crunk-spec::it spec::section_of_the_wrong_shape_is_invalid
+        PASS [   0.015s] crunk-spec::it spec::screens_resolve_tags_and_report_dangling_references_part_4
+        PASS [   0.028s] crunk-spec::it spec::rosters_and_duplicate_ids
+        PASS [   0.019s] crunk-spec::it spec::screens_resolve_tags_and_report_dangling_references_part_3
+        PASS [   0.024s] crunk-spec::it spec::sizes_and_radii_validate_only_when_declared
+        PASS [   0.015s] crunk-spec::it spec::tables_owned_by_other_crates_are_left_to_their_owners
+        PASS [   0.013s] crunk-spec::it spec::tokens_defaults_and_prefix_rules_part_3
+        PASS [   0.014s] crunk-spec::it spec::tokens_defaults_and_prefix_rules
+        PASS [   0.017s] crunk-spec::it spec::tables_owned_by_other_crates_are_left_to_their_owners_part_2
+        PASS [   0.013s] crunk-spec::it spec::tokens_defaults_and_prefix_rules_part_4
+        PASS [   0.012s] crunk-spec::it spec::tokens_defaults_and_prefix_rules_part_5
+        PASS [   0.033s] crunk-spec::it spec::stacks_default_empty_match_case_insensitively_and_reject_strangers
+        PASS [   0.012s] crunk-spec::it spec::unknown_key_in_a_section_names_key_line_and_suggestion
+        PASS [   0.013s] crunk-spec::it spec::unknown_key_without_a_close_match_has_no_suggestion
+        PASS [   0.012s] crunk-spec::it spec::unparseable_palette_color_names_the_key
+        PASS [   0.013s] crunk-spec::it spec::unknown_top_level_key_names_key_line_and_suggestion
+        PASS [   0.018s] crunk-spec::it spec::typography_validation
+        PASS [   0.034s] crunk-spec::it spec::tokens_defaults_and_prefix_rules_part_2
+        PASS [   0.012s] crunk-spec::it spec::unsorted_scale_names_the_offender
+        PASS [   0.012s] crunk-spec::it spec::web_and_command_platforms_resolve_defaults
+        PASS [   0.064s] crunk-spec::it spec::screens_resolve_tags_and_report_dangling_references_part_2
+        PASS [   0.029s] crunk-spec::it spec::tokens_header_and_json_file
+        PASS [   0.033s] crunk-spec::it spec::unknown_key_inside_every_fixed_table_is_rejected
+        PASS [   0.228s] crunk-spec::it inline::err_cases_report_errors
+        PASS [   0.228s] crunk-spec::it inline::ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.242s] 131 tests run: 131 passed, 0 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec"
+size = 13250
+status = "measured"
+test_count = 131
+tests_digest = "d0c5388eb07274446c837bd5607d6c0b427eebfbf42883efe7b1566bff7318b6"
+at = "2026-11-15T01:11:43Z"
+actor = "lognd"
+rev = 1
