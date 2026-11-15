@@ -13,7 +13,7 @@ scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-to
 
 [[acceptance]]
 text = "Given a duration literal such as 200ms, when crunk extract-token runs, then it is promoted to a duration token and references are rewritten"
-bound = false
+bound = true
 +++
 
 found while working K4DBBVJ: durations are currently refused with E-EXTRACT-DURATION because crunk.toml has no duration table. Also candidates: percent and em kinds, JSX string literal rewriting.
