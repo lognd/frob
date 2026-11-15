@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-11-15T21:31:59Z"
-scope = ["crates/crunk/src/new/**"]
+updated = "2026-11-15T21:32:39Z"
+scope = ["crates/crunk/src/new/**", "crates/crunk/src/new.rs"]
 +++
 
 found while working WJH9CR5: new.rs test filters CRAFT002 out of the skeleton validation
