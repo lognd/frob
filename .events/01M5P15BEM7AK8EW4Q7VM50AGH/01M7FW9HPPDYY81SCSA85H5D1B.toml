@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T15:11:55Z"
+digest = "a8060d09aae33143dff246f7d16f4b6b512e1d3a988ca0c1ffdb3087dd8ba333"
+exit_code = 0
+head = "26ad4404a37bc6f225e95febcbfbe4c9b51ba6b2"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 64b5741d-0582-4fee-be62-89305bda4eed with nextest profile: default
+    Starting 1 test across 4 binaries (600 tests skipped)
+        PASS [   5.380s] frob-cli::siblings web_conformance::grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.382s] 1 test run: 1 passed, 600 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(=web_conformance::grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read)"
+size = 662
+status = "measured"
+test_count = 1
+tests_digest = "1f59fe72b3c2549945f784d568b4edae6a9e2f7c983fa5fea572cd34ac50bf2c"
+at = "2026-11-15T15:11:55Z"
+actor = "lognd"
+rev = 1
