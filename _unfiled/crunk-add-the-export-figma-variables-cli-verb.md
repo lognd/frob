@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-14T23:24:46Z"
-updated = "2026-11-15T00:50:53Z"
+updated = "2026-11-15T01:02:45Z"
 scope = ["crates/crunk/src/export.rs", "crates/crunk/tests/it/export.rs", "docs/guides/crunk.md", "crates/gob-dev/profile.toml", "crates/crunk/src/lib.rs", "crates/crunk/tests/it/export_verb.rs", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
