@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk/src/export.rs", "crates/crunk/tests/it/export.rs", "docs/guides/crunk.md", "crates/gob-dev/profile.toml", "crates/crunk/src/lib.rs"]
+new = ["crates/crunk/src/export.rs", "crates/crunk/tests/it/export.rs", "docs/guides/crunk.md", "crates/gob-dev/profile.toml", "crates/crunk/src/lib.rs", "crates/crunk/tests/it/export_verb.rs"]
+at = "2026-11-15T00:42:59Z"
+actor = "lognd"
+rev = 1
