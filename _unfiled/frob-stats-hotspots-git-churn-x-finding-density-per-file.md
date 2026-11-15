@@ -1,0 +1,14 @@
++++
+id = "01M7EXVA6CM1T5N8G1HWN033XT"
+title = "frob stats --hotspots: git churn x finding density per file"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-11-15T06:20:53Z"
+updated = "2026-11-15T06:20:53Z"
+idempotency_key = "static-research-k13"
+labels = ["no-story"]
++++
+
+Source: /home/logan/projects/frob-research-static-analysis.md section 6 item 12, section 2 (CodeScene lesson, [M]). Rationale: hotspots (complexity or defects times churn) point at where cleanup pays off; frob already has git (crates/gob-git) and findings. Remedy: frob stats --hotspots ranks files by commits in a window times current finding count, top N, deterministic. Crates/files: crates/gob-git (log churn), the stats verb in crates/frob.
