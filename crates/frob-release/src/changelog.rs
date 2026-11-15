@@ -82,6 +82,27 @@ pub fn newly_live(registry: &gob_rules::Registry, version: &str) -> Vec<LiveRule
         .collect()
 }
 
+/// A capability atom that becomes live in the release being written, listed in its notes.
+// frob:ticket 01M5WAN9NAK2Z228S550D6FW61
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LiveAtom {
+    /// Atom name as spelled in the capability matrix.
+    pub name: String,
+}
+
+/// The capability atoms first shipped in the minor line of `version`, in matrix column order: those that are new in this release.
+// frob:ticket 01M5WAN9NAK2Z228S550D6FW61
+#[must_use]
+pub fn newly_live_atoms(version: &str) -> Vec<LiveAtom> {
+    gob_caps::Capability::ALL
+        .iter()
+        .filter(|c| gob_rules::shipped_in(c.since(), version))
+        .map(|c| LiveAtom {
+            name: c.name().to_owned(),
+        })
+        .collect()
+}
+
 /// Render the section for `version`: the lead notice first, then with several products grouped under product headings (configured products first), then by type, entries by ULID, closed by its hash.
 ///
 /// With one product there is no product heading and every fragment is listed.
@@ -91,6 +112,7 @@ pub fn render_section(
     fragments: &[Fragment],
     products: &ProductTags,
     live: &[LiveRule],
+    atoms: &[LiveAtom],
 ) -> String {
     let mut out = format!("## {version} - {date}\n\n");
     // The lead notice (at most one, enforced when fragments are read) sits above every group.
@@ -147,6 +169,13 @@ pub fn render_section(
         write!(out, "#### Newly live rules\n\n").ok();
         for r in live {
             writeln!(out, "- {} {}: {}", r.id, r.slug, r.summary).ok();
+        }
+        out.push('\n');
+    }
+    if !atoms.is_empty() {
+        write!(out, "#### Newly live capabilities\n\n").ok();
+        for a in atoms {
+            writeln!(out, "- {}", a.name).ok();
         }
         out.push('\n');
     }

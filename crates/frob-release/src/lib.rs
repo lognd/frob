@@ -138,6 +138,7 @@ pub fn run(
         &fragments,
         &products,
         &changelog::newly_live(gob_rules::Registry::global(), &opts.version),
+        &changelog::newly_live_atoms(&opts.version),
     );
     if opts.mode != Mode::Write {
         return Ok(Outcome {

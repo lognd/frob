@@ -90,6 +90,25 @@ impl Capability {
         Self::ProjectModel,
     ];
 
+    /// The release that first shipped this capability atom, as `major.minor.patch`; the changelog lists it as newly live in that minor line.
+    // frob:ticket 01M5WAN9NAK2Z228S550D6FW61
+    pub const fn since(self) -> &'static str {
+        match self {
+            Self::ResolveRef
+            | Self::ApplyTargets
+            | Self::Visibility
+            | Self::Effects
+            | Self::TestItems
+            | Self::Imports
+            | Self::Expand
+            | Self::Order
+            | Self::ProjectModel
+            | Self::Comments
+            | Self::Style
+            | Self::Markup => "0.532.0",
+        }
+    }
+
     /// The spelling used in universal-model.md and `frob doctor --languages`.
     pub const fn name(self) -> &'static str {
         match self {
@@ -186,6 +205,20 @@ mod tests {
         assert_eq!(Precision::Manifest.cell(), "Implemented");
         assert!(!Precision::None.is_provided());
         assert!(Precision::Syntactic.is_provided());
+    }
+
+    #[test]
+    // frob:tests crates/gob-caps/src/capability.rs::Capability.since
+    fn every_capability_names_a_semver_since() {
+        for c in Capability::ALL {
+            let parts: Vec<&str> = c.since().split('.').collect();
+            assert_eq!(parts.len(), 3, "{}", c.name());
+            assert!(
+                parts.iter().all(|p| p.parse::<u32>().is_ok()),
+                "{}",
+                c.name()
+            );
+        }
     }
 
     #[test]

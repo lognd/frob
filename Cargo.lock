@@ -1621,6 +1621,7 @@ dependencies = [
  "frob-lease",
  "frob-ledger",
  "frob-pm",
+ "gob-caps",
  "gob-config",
  "gob-exec",
  "gob-fs",
