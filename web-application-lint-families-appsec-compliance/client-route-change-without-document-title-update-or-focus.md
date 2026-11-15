@@ -14,7 +14,7 @@ scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-frameworks/**", 
 
 [[acceptance]]
 text = "Given routes that render without setting the title or moving focus, when crunk check runs, then one finding per route"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a route-level title and focus handler, when checked, then clean"
