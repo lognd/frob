@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T00:50:53Z"
+digest = "ac790eca08971e4e3add9070473ee887457c0ca0077d34bbf2f1dd3e1c9e52ea"
+exit_code = 0
+head = "8f0ebf479ea6dc209d32f1cfb8a764d25b64a8bd"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.55s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d79059d9-21e4-46c5-bbfe-dff359d40d58 with nextest profile: default
+    Starting 1 test across 5 binaries (307 tests skipped)
+        PASS [   0.021s] crunk::it export_verb::export_figma_variables_prints_json_and_matches_tokens_target
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=export_verb::export_figma_variables_prints_json_and_matches_tokens_target)"
+size = 630
+status = "measured"
+test_count = 1
+tests_digest = "b8890bac9d39c307b45d02de46293d2ed0fa07a1e37c57e9171ad4457baa8d8a"
+at = "2026-11-15T00:50:53Z"
+actor = "lognd"
+rev = 1
