@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The grimble web fixture has an entry point so DEAD001 examines at least one subject, with no fail_on_unresolved override"]
+moved = []
+at = "2026-11-15T15:11:54Z"
+actor = "lognd"
+rev = 1
