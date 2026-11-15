@@ -4,9 +4,10 @@ title = "crunk check: schema-invalid component/screen/content files must fail, n
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T05:24:04Z"
+updated = "2026-11-15T05:48:01Z"
 labels = ["no-story"]
 +++
 
