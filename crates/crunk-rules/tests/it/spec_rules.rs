@@ -64,6 +64,7 @@ fn valid_files_do_not_fire() {
 }
 
 // frob:tests crates/crunk-rules/src/rules/spec001.rs::Spec001
+// frob:tests crates/crunk-rules/src/host.rs::inapplicable_without
 #[test]
 fn a_project_with_no_design_files_is_inapplicable_with_no_subjects() {
     let host = support::project("src/app.css", "a { color: red }\n", None);
