@@ -2,12 +2,12 @@
 id = "01M7FEFTHP9W1CCD39Z0Q2R7R7"
 title = "crunk: rename tests use component fixtures missing required binding node (CI red)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-15T11:11:43Z"
-updated = "2026-11-15T11:11:43Z"
+updated = "2026-11-15T11:11:53Z"
 labels = ["no-story"]
 scope = ["crates/crunk/tests/it/rename.rs"]
 
