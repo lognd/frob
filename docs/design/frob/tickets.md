@@ -709,6 +709,12 @@ security, story, incident and invariant, and `ticket close
 event; evidence verdicts
 are `Passed | Failed | Unmeasured` and Unmeasured never reads as Failed.
 
+**File evidence must be committed content** (~4HAMFBM). The `file` provider
+accepts a path only when it is tracked and unmodified at HEAD; a path that is
+untracked, ignored, or has uncommitted edits is refused with
+`E-EVIDENCE-FILE-UNCOMMITTED`. Commit the file first, then bind it, so the
+recorded digest names content a reviewer can fetch from history.
+
 **The pytest provider** (~M525Y1M). `ticket evidence add --provider pytest
 --ref '<pytest args>'` runs `pytest -o junit_family=xunit1 --junitxml=<tmp>
 <args>` through gob-exec (a `Tool` program, so `pytest` must be in
