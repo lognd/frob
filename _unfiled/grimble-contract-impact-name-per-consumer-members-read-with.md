@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:22:12Z"
-updated = "2026-11-15T06:22:12Z"
+updated = "2026-11-15T06:22:16Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXXP1YXB5DY9WKF73E4B3S"
 
 [[acceptance]]
 text = "Output lists each consumer with members and fidelity"
