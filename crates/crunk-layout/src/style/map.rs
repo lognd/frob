@@ -418,14 +418,25 @@ impl<'a> Mapper<'a> {
     }
 
     fn set_padding(&mut self, prop: &str, value: &str, s: Side, l: Len) -> Result<(), StyleError> {
-        let l = self.nonneg(prop, l);
-        *side_mut(&mut self.style.padding, s) = self.lp(prop, value, l)?;
-        Ok(())
+        self.set_box_side(prop, value, s, l, |st| &mut st.padding)
     }
 
     fn set_border(&mut self, prop: &str, value: &str, s: Side, l: Len) -> Result<(), StyleError> {
+        self.set_box_side(prop, value, s, l, |st| &mut st.border)
+    }
+
+    /// Set one side of the rect chosen by `rect`, clamping negatives first.
+    fn set_box_side(
+        &mut self,
+        prop: &str,
+        value: &str,
+        s: Side,
+        l: Len,
+        rect: fn(&mut Style) -> &mut Rect<LengthPercentage>,
+    ) -> Result<(), StyleError> {
         let l = self.nonneg(prop, l);
-        *side_mut(&mut self.style.border, s) = self.lp(prop, value, l)?;
+        let lp = self.lp(prop, value, l)?;
+        *side_mut(rect(&mut self.style), s) = lp;
         Ok(())
     }
 
@@ -623,35 +634,49 @@ impl<'a> Mapper<'a> {
     }
 
     fn align_items(&self, prop: &str, value: &str) -> Result<AlignItems, StyleError> {
-        Ok(match value {
-            "normal" => AlignItems::NORMAL,
-            "start" => AlignItems::START,
-            "end" => AlignItems::END,
-            "flex-start" => AlignItems::FLEX_START,
-            "flex-end" => AlignItems::FLEX_END,
-            "self-start" => AlignItems::SELF_START,
-            "self-end" => AlignItems::SELF_END,
-            "center" => AlignItems::CENTER,
-            "baseline" => AlignItems::BASELINE,
-            "stretch" => AlignItems::STRETCH,
-            _ => return Err(self.bad(prop, value, "unknown alignment keyword")),
-        })
+        let table = [
+            ("normal", AlignItems::NORMAL),
+            ("start", AlignItems::START),
+            ("end", AlignItems::END),
+            ("flex-start", AlignItems::FLEX_START),
+            ("flex-end", AlignItems::FLEX_END),
+            ("self-start", AlignItems::SELF_START),
+            ("self-end", AlignItems::SELF_END),
+            ("center", AlignItems::CENTER),
+            ("baseline", AlignItems::BASELINE),
+            ("stretch", AlignItems::STRETCH),
+        ];
+        self.keyword(prop, value, &table, "unknown alignment keyword")
     }
 
     fn align_content(&self, prop: &str, value: &str) -> Result<AlignContent, StyleError> {
-        Ok(match value {
-            "normal" => AlignContent::NORMAL,
-            "start" => AlignContent::START,
-            "end" => AlignContent::END,
-            "flex-start" => AlignContent::FLEX_START,
-            "flex-end" => AlignContent::FLEX_END,
-            "center" => AlignContent::CENTER,
-            "stretch" => AlignContent::STRETCH,
-            "space-between" => AlignContent::SPACE_BETWEEN,
-            "space-around" => AlignContent::SPACE_AROUND,
-            "space-evenly" => AlignContent::SPACE_EVENLY,
-            _ => return Err(self.bad(prop, value, "unknown content-distribution keyword")),
-        })
+        let table = [
+            ("normal", AlignContent::NORMAL),
+            ("start", AlignContent::START),
+            ("end", AlignContent::END),
+            ("flex-start", AlignContent::FLEX_START),
+            ("flex-end", AlignContent::FLEX_END),
+            ("center", AlignContent::CENTER),
+            ("stretch", AlignContent::STRETCH),
+            ("space-between", AlignContent::SPACE_BETWEEN),
+            ("space-around", AlignContent::SPACE_AROUND),
+            ("space-evenly", AlignContent::SPACE_EVENLY),
+        ];
+        self.keyword(prop, value, &table, "unknown content-distribution keyword")
+    }
+
+    /// Look `value` up in a keyword table, or fail with `reason`.
+    fn keyword<T: Copy>(
+        &self,
+        prop: &str,
+        value: &str,
+        table: &[(&str, T)],
+        reason: &str,
+    ) -> Result<T, StyleError> {
+        table
+            .iter()
+            .find_map(|(k, v)| (*k == value).then_some(*v))
+            .ok_or_else(|| self.bad(prop, value, reason))
     }
 
     fn aspect(&self, prop: &str, value: &str) -> Result<Option<f32>, StyleError> {
