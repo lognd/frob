@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-bind: SYS015 reports a pair once; document 'in node' for human actors"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+acceptance = ["SYS015 emits one finding per pair", "The rule page documents in node for human actors"]
+body = "Audit: /home/logan/projects/frob-audit2-grimble.md L7. SYS015 reports the same pair twice in two wordings; a human actor needs in node, undocumented."
+at = "2026-11-15T06:21:03Z"
+actor = "lognd"
+rev = 1
