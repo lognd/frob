@@ -2,12 +2,12 @@
 id = "01M626H3HBFQZ86PPTDYQ8ZG91"
 title = "crunk new component skeleton lacks CRAFT002 interaction states"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-11-03T05:56:51Z"
+updated = "2026-11-15T21:31:59Z"
 scope = ["crates/crunk/src/new/**"]
 +++
 
