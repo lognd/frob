@@ -2,7 +2,8 @@
 id = "01M4DVX1K76X876W0YPB5EX3F9"
 title = "crunk: wire the Tailwind runtime into crunk doctor and the engine choice (--static, [tailwind] engine) into check and ingest"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 5
 reporter = "lognd"
