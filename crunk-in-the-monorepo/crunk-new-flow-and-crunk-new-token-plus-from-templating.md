@@ -8,9 +8,9 @@ points = 2
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-11-15T01:32:03Z"
+updated = "2026-11-15T01:39:08Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/new.rs, crates/crunk/tests/new_flow_token.rs"]
+scope = ["crates/crunk/src/new.rs, crates/crunk/tests/new_flow_token.rs", "crates/crunk/src/new.rs"]
 
 [[acceptance]]
 text = "Given crunk new flow checkout, when run, then a valid flow file with a stable id is created and passes schema; given crunk new token color.brand --from color.base, then the new token aliases the source; given an existing name, then exit 2 and nothing is overwritten"
