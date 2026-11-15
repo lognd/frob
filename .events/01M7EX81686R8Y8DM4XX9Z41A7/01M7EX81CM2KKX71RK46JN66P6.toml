@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Override over an open blocks-lands ticket adds a note naming the override (test)", "No note is added when no blocker is open"]
+moved = []
+at = "2026-11-15T06:10:22Z"
+actor = "lognd"
+rev = 1
