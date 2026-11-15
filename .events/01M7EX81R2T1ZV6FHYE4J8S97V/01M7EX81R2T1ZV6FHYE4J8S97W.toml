@@ -1,0 +1,10 @@
+kind = "create"
+title = "evidence guard: reject records measured at a commit that does not cover the current scope"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md M6. Evidence: crates/frob-evidence/src/guard.rs and record.rs accept a record measured at any earlier commit. Remedy: require the measured commit to be an ancestor with no scoped-file changes since, else stale. Files: crates/frob-evidence/src/guard.rs, record.rs."
+at = "2026-11-15T06:10:22Z"
+actor = "lognd"
+rev = 1
