@@ -8,7 +8,7 @@ points = 2
 reporter = "lognd"
 created = "2026-11-14T23:24:46Z"
 updated = "2026-11-15T00:42:59Z"
-scope = ["crates/crunk/src/export.rs", "crates/crunk/tests/it/export.rs", "docs/guides/crunk.md", "crates/gob-dev/profile.toml", "crates/crunk/src/lib.rs", "crates/crunk/tests/it/export_verb.rs"]
+scope = ["crates/crunk/src/export.rs", "crates/crunk/tests/it/export.rs", "docs/guides/crunk.md", "crates/gob-dev/profile.toml", "crates/crunk/src/lib.rs", "crates/crunk/tests/it/export_verb.rs", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
 text = "crunk export figma-variables emits the Figma variables JSON for a spec, with a test and a profile scenario and guide row"
