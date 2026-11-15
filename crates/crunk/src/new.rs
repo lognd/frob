@@ -288,12 +288,29 @@ fn validate_name(kind: &str, name: &str) -> Result<(), NewError> {
     Ok(())
 }
 
+/// The component skeleton: the default state plus every interaction state CRAFT002 asks for.
+fn component_skeleton(name: &str) -> String {
+    tracing::debug!(name, "new: component skeleton with interaction states");
+    let states = COMPONENT_STATES.join("\"\n\n[[states]]\nid = \"");
+    format!("name = \"{name}\"\n\n[anatomy]\nnodes = [\"root\"]\n\n[[states]]\nid = \"{states}\"\n")
+}
+
+/// The states a new component declares, covering the full interaction set CRAFT002 checks.
+const COMPONENT_STATES: &[&str] = &[
+    "default",
+    "hover",
+    "active",
+    "disabled",
+    "focus-visible",
+    "loading",
+    "error",
+    "empty",
+];
+
 /// The skeleton text of `kind` named `name`.
 fn skeleton(kind: &str, name: &str) -> String {
     match kind {
-        "component" => format!(
-            "name = \"{name}\"\n\n[anatomy]\nnodes = [\"root\"]\n\n[[states]]\nid = \"default\"\n"
-        ),
+        "component" => component_skeleton(name),
         "screen" => format!("id = \"{name}\"\nentry = \"\"\n\n[[states]]\nid = \"default\"\n"),
         "flow" => format!("name = \"{name}\"\nnodes = []\nedges = []\n"),
         _ if name.contains('.') => format!("[{name}]\n"),
