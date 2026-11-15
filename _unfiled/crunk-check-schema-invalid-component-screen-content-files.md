@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T06:00:28Z"
+updated = "2026-11-15T06:00:29Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "An unparsable voice.toml yields a SPEC001 Error finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Valid design files and projects without design files produce no SPEC001 finding"

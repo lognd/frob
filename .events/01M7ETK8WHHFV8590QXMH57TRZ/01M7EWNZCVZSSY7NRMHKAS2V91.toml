@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [4]
+captured_at = "2026-11-15T06:00:29Z"
+digest = "eaebd9a87ac5609626fe49f2f041d7fc4dbf47412a1f1a6d9c486215c29efb0b"
+exit_code = 0
+head = "c3f7427fbce4cf8041d2e69fbb275fce8d27b34c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 643bf6ce-c814-41c3-a40b-c105261bfa18 with nextest profile: default
+    Starting 1 test across 2 binaries (316 tests skipped)
+        PASS [   0.020s] crunk-rules::it spec_rules::a_voice_file_whose_rules_do_not_parse_fires
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 316 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=spec_rules::a_voice_file_whose_rules_do_not_parse_fires)"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "40f19ce8af45b0dc3a4a23f0142b384fa6c99b8440c962830bc44a28676c77e5"
+at = "2026-11-15T06:00:29Z"
+actor = "lognd"
+rev = 1
