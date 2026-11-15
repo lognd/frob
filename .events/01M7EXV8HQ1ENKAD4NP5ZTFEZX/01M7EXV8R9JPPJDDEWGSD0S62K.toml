@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A Cobertura XML fixture and a JaCoCo XML fixture normalise to the same model as an equivalent lcov fixture", "[coverage] accepts a report path of either format with format auto-detected", "Docs list the supported coverage formats"]
+moved = []
+at = "2026-11-15T06:20:52Z"
+actor = "lognd"
+rev = 1
