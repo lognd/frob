@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T02:46:01Z"
-updated = "2026-11-15T08:40:23Z"
+updated = "2026-11-15T08:42:37Z"
 scope = ["docs/schemas/sibling.json", "crates/gob-product/**"]
 
 [[acceptance]]

@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T08:42:37Z"
+digest = "3e9210d9a4d1f986f9537c172f119a4483b1dc32319047073be397c0d2635345"
+exit_code = 0
+head = "ec115c2cbaaf1088c108b6a3b888decd1d518f10"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.39s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 704c9811-af2d-4182-a2ea-d9d166841a84 with nextest profile: default
+    Starting 1 test across 6 binaries (316 tests skipped)
+        PASS [   0.186s] crunk::it verbs::check_json_with_a_valid_config_is_a_valid_sibling_document
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.187s] 1 test run: 1 passed, 316 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=verbs::check_json_with_a_valid_config_is_a_valid_sibling_document)"
+size = 779
+status = "measured"
+test_count = 1
+tests_digest = "eab9ffc45366c9bf0e859eaeacc10d8447a003c64e98a1bc970dd08cd87da504"
+at = "2026-11-15T08:42:37Z"
+actor = "lognd"
+rev = 1
