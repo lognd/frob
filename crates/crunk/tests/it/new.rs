@@ -221,3 +221,69 @@ fn from_a_flow_with_a_dangling_edge_is_refused_with_code_and_location() {
     );
     assert_eq!(tree(dir.path()), before);
 }
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn new_token_from_a_token_name_creates_an_alias() {
+    let dir = project();
+    let base = design(dir.path(), "tokens", "color-base.toml");
+    std::fs::create_dir_all(base.parent().unwrap()).unwrap();
+    std::fs::write(&base, "[color.base]\nvalue = \"#112233\"\n").unwrap();
+    let (exit, out, err) = crunk(
+        dir.path(),
+        &["new", "token", "color.brand", "--from", "color.base"],
+    );
+    assert_eq!(exit, 0, "{out} {err}");
+    let text = std::fs::read_to_string(design(dir.path(), "tokens", "color-brand.toml")).unwrap();
+    assert!(text.contains("{color.base}"), "{text}");
+    let both = format!("[color.base]\nvalue = \"#112233\"\n{text}");
+    let set = crunk_tokens::dialect::parse(&both, "t").expect("alias resolves");
+    assert!(set.get("--color-brand").is_some());
+}
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn new_token_from_an_unknown_token_is_refused_and_writes_nothing() {
+    let dir = project();
+    let before = tree(dir.path());
+    let (exit, out, err) = crunk(
+        dir.path(),
+        &["new", "token", "color.brand", "--from", "color.nothing"],
+    );
+    assert_ne!(exit, 0, "{out} {err}");
+    assert!(format!("{out}{err}").contains("E-NEW-FROM"), "{out} {err}");
+    assert_eq!(tree(dir.path()), before);
+}
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn dotted_token_names_are_accepted_and_bad_segments_refused() {
+    let dir = project();
+    let (exit, out, err) = crunk(dir.path(), &["new", "token", "color.brand"]);
+    assert_eq!(exit, 0, "{out} {err}");
+    assert!(design(dir.path(), "tokens", "color-brand.toml").exists());
+    let (exit, out, err) = crunk(dir.path(), &["new", "token", "color..x"]);
+    assert_eq!(exit, 2, "{out} {err}");
+    let (exit, _, _) = crunk(dir.path(), &["new", "screen", "a.b"]);
+    assert_eq!(exit, 2);
+}
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+// frob:tests crates/crunk/src/new.rs::NewError.code
+#[test]
+fn an_existing_name_exits_2_and_writes_nothing() {
+    let dir = project();
+    assert_eq!(crunk(dir.path(), &["new", "flow", "checkout"]).0, 0);
+    let path = design(dir.path(), "flows", "checkout.flow.toml");
+    let kept = std::fs::read_to_string(&path).unwrap();
+    let before = tree(dir.path());
+    let (exit, out, err) = crunk(dir.path(), &["new", "flow", "checkout"]);
+    assert_eq!(exit, 2, "{out} {err}");
+    assert!(format!("{out}{err}").contains("E-NEW-EXISTS"));
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), kept);
+    assert_eq!(tree(dir.path()), before);
+}

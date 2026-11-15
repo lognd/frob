@@ -1,4 +1,7 @@
-//! `new component|screen|flow|token NAME [--from FILE]`: scaffold one design file.
+//! `new component|screen|flow|token NAME [--from FILE|TOKEN]`: scaffold one design file.
+//!
+//! A token NAME may be dotted (`color.brand`, stored as `color-brand.toml`); for a token,
+//! `--from` that is not a file but names an existing token (`color.base`) creates an alias to it.
 //!
 //! The skeleton (or the `--from` source with its identity key renamed) is built and validated in
 //! memory by the file kind's own parser; only then is anything touched on disk. The write refuses
@@ -56,8 +59,8 @@ struct NewArgs {
     name: String,
     #[arg(
         long,
-        value_name = "FILE",
-        help = "Copy an existing design file of the same kind, renamed to NAME, instead of the skeleton"
+        value_name = "FILE|TOKEN",
+        help = "Copy an existing design file of the same kind, renamed to NAME, instead of the skeleton; for a token, an existing token path (color.base) makes NAME an alias to it"
     )]
     from: Option<String>,
 }
@@ -139,7 +142,12 @@ impl NewError {
 impl From<NewError> for CliError {
     fn from(err: NewError) -> Self {
         tracing::info!(code = err.code(), error = %err, "new refused");
-        Refusal::new(err.code(), RefusalClass::GuardNeedsAction, err.to_string())
+        // An existing target is a bad argument (exit 2), not a guard the caller can clear by waiting.
+        let class = match err {
+            NewError::Exists(_) | NewError::Name(..) => RefusalClass::UsageError,
+            _ => RefusalClass::GuardNeedsAction,
+        };
+        Refusal::new(err.code(), class, err.to_string())
             .with_remedy("fix the name, source or target as described; nothing was written")
             .into()
     }
@@ -163,11 +171,8 @@ impl Command for New {
 
     fn run(&self, ctx: &Context) -> Outcome<NewData> {
         let root = gob_product::workspace::locate_root(PRODUCT, &ctx.cwd);
-        let from = self
-            .from
-            .as_deref()
-            .map(|f| crunk_spec::normalize_join(&ctx.cwd, f));
-        let plan = plan(&root, &self.kind, &self.name, from.as_deref())?;
+        let from = resolve_source(&root, &ctx.cwd, &self.kind, self.from.as_deref());
+        let plan = plan(&root, &self.kind, &self.name, &from)?;
         if ctx.dry_run {
             tracing::info!(kind = %self.kind, "new: dry run, nothing written");
         } else {
@@ -186,6 +191,44 @@ impl Command for New {
         let lines = data.lines();
         Ok(Payload::new(data).with_rendered(lines))
     }
+}
+
+/// Where the new file's content comes from.
+enum Source {
+    /// The kind's skeleton.
+    Skeleton,
+    /// Copy of an existing file of the same kind.
+    File(PathBuf),
+    /// A token aliasing this existing dotted token path.
+    Alias(String),
+}
+
+/// Decide what `--from` means: a token name that resolves in the spec (and is not a file) is an
+/// alias source; anything else is a file path, so a missing file keeps its `E-NEW-FROM` refusal.
+fn resolve_source(root: &Path, cwd: &Path, kind: &str, from: Option<&str>) -> Source {
+    let Some(raw) = from else {
+        return Source::Skeleton;
+    };
+    let file = crunk_spec::normalize_join(cwd, raw);
+    if kind == "token" && !file.exists() && token_exists(root, raw) {
+        tracing::debug!(token = raw, "new: --from resolved as a token name");
+        return Source::Alias(raw.to_owned());
+    }
+    Source::File(file)
+}
+
+/// The text of the authored token file that defines dotted path `path`, if any.
+fn token_source_text(root: &Path, path: &str) -> Option<String> {
+    let prop = crunk_tokens::dialect::name_of_path(path);
+    crunk_tokens::dialect::read_authored(root)
+        .into_iter()
+        .find(|(_, set)| set.as_ref().is_ok_and(|s| s.get(&prop).is_some()))
+        .and_then(|(origin, _)| std::fs::read_to_string(root.join(origin)).ok())
+}
+
+/// True when an authored token file defines dotted path `path`.
+fn token_exists(root: &Path, path: &str) -> bool {
+    token_source_text(root, path).is_some()
 }
 
 /// A validated, not yet written scaffold.
@@ -207,7 +250,25 @@ fn layout(kind: &str) -> (&'static str, &'static str, Option<&'static str>) {
 
 /// Check NAME: a lowercase identifier, so it is a safe file stem on every platform and cannot
 /// collide with another name on a case-insensitive file system or climb out of its directory.
-fn validate_name(name: &str) -> Result<(), NewError> {
+fn validate_name(kind: &str, name: &str) -> Result<(), NewError> {
+    if kind == "token" && name.contains('.') {
+        // A dotted token path: every segment is itself a valid name; the total length still counts.
+        if name.len() > MAX_NAME {
+            return Err(NewError::Name(
+                name.to_owned(),
+                "it is longer than 64 characters",
+            ));
+        }
+        return name
+            .split('.')
+            .try_for_each(|seg| validate_name("component", seg))
+            .map_err(|_| {
+                NewError::Name(
+                    name.to_owned(),
+                    "each dotted segment must be a lowercase identifier",
+                )
+            });
+    }
     let bad = |why| Err(NewError::Name(name.to_owned(), why));
     if name.is_empty() {
         return bad("it is empty");
@@ -235,6 +296,7 @@ fn skeleton(kind: &str, name: &str) -> String {
         ),
         "screen" => format!("id = \"{name}\"\nentry = \"\"\n\n[[states]]\nid = \"default\"\n"),
         "flow" => format!("name = \"{name}\"\nnodes = []\nedges = []\n"),
+        _ if name.contains('.') => format!("[{name}]\n"),
         _ => format!(
             "# Tokens: `path = \"value\"` under a group; a token table may add type, tier and modes.\n[{name}]\n"
         ),
@@ -285,11 +347,15 @@ fn rename_source(kind: &str, source: &str, name: &str) -> Result<String, String>
 }
 
 /// Read and build the text for the new file, validated; touches nothing.
-fn build(kind: &str, name: &str, from: Option<&Path>) -> Result<String, NewError> {
-    let Some(src) = from else {
-        let text = skeleton(kind, name);
-        validate(kind, &text).map_err(NewError::Schema)?;
-        return Ok(text);
+fn build(root: &Path, kind: &str, name: &str, from: &Source) -> Result<String, NewError> {
+    let src = match from {
+        Source::Skeleton => {
+            let text = skeleton(kind, name);
+            validate(kind, &text).map_err(NewError::Schema)?;
+            return Ok(text);
+        }
+        Source::Alias(target) => return build_alias(root, name, target),
+        Source::File(src) => src,
     };
     let shown = gob_path::Shown::of(src).as_str().to_owned();
     let source =
@@ -301,16 +367,27 @@ fn build(kind: &str, name: &str, from: Option<&Path>) -> Result<String, NewError
     Ok(text)
 }
 
+/// The text of a token `name` whose value aliases the existing token `target`, checked together
+/// with the file that defines `target` so the alias must resolve.
+fn build_alias(root: &Path, name: &str, target: &str) -> Result<String, NewError> {
+    let text = format!("[{name}]\nvalue = \"{{{target}}}\"\n");
+    let defining = token_source_text(root, target).unwrap_or_default();
+    crunk_tokens::dialect::parse(&format!("{defining}\n{text}"), "new")
+        .map_err(|e| NewError::Schema(e.to_string()))?;
+    Ok(text)
+}
+
 /// Validate every input and compute the target; nothing is written.
-fn plan(root: &Path, kind: &str, name: &str, from: Option<&Path>) -> Result<Plan, NewError> {
-    validate_name(name)?;
+fn plan(root: &Path, kind: &str, name: &str, from: &Source) -> Result<Plan, NewError> {
+    validate_name(kind, name)?;
     let (dir, suffix, _) = layout(kind);
+    let stem = name.replace('.', "-");
     let path = root
         .join("design")
         .join(dir)
-        .join(format!("{name}{suffix}"));
+        .join(format!("{stem}{suffix}"));
     check_target(root, &path)?;
-    let text = build(kind, name, from)?;
+    let text = build(root, kind, name, from)?;
     tracing::debug!(kind, name, bytes = text.len(), "new planned");
     Ok(Plan { path, text })
 }
