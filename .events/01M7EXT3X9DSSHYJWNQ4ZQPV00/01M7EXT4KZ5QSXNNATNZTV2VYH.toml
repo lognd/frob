@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob tool list prints every std-pack definition with category, languages and installed state", "frob tool add <name> appends a valid [[check.tool]] stanza to frob.toml that frob check accepts", "frob tool suggest lists only tools whose detect globs match and which are not configured"]
+moved = []
+at = "2026-11-15T06:20:15Z"
+actor = "lognd"
+rev = 1
