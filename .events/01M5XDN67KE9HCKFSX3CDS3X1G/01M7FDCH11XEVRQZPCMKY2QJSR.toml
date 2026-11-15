@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T10:52:24Z"
+digest = "2fb6030af55732b9dd03c17c86d0470dcbd509bf30fff00b8eb9502880a991dd"
+exit_code = 0
+head = "3e572b3ea2abacdfd66c2b05b96ad69cebb46752"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 0b1951e8-2962-43c4-9720-d00259bb7492 with nextest profile: default
+    Starting 1 test across 2 binaries (21 tests skipped)
+        PASS [   0.026s] crunk-scene::scene descendant_rule_matches_only_nested_elements
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-scene -E test(=descendant_rule_matches_only_nested_elements)"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "4c6d37855a1c6f66a7d2e86bea4859798c5e565973206abc43600fa3590528a2"
+at = "2026-11-15T10:52:24Z"
+actor = "lognd"
+rev = 1
