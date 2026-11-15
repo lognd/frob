@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-frameworks/src/route_a11y.rs", "crates/crunk-check/src/route_a11y.rs", "crates/gob-frameworks/tests/it/route_a11y.rs", "crates/gob-frameworks/src/lib.rs", "crates/crunk-check/tests/mdtest/a11y104.md", "crates/gob-frameworks/Cargo.toml", "crates/gob-dev/src/publish.rs", "docs/guides/release.md", "docs/reference/rules/A11Y104.md", "crates/gob-frameworks/tests/it/main.rs"]
+new = ["crates/gob-frameworks/src/route_a11y.rs", "crates/crunk-check/src/route_a11y.rs", "crates/gob-frameworks/tests/it/route_a11y.rs", "crates/gob-frameworks/src/lib.rs", "crates/crunk-check/tests/mdtest/a11y104.md", "crates/gob-frameworks/Cargo.toml", "crates/gob-dev/src/publish.rs", "docs/guides/release.md", "docs/reference/rules/A11Y104.md", "crates/gob-frameworks/tests/it/main.rs", "crates/crunk-check/tests/it/gx_corpus.rs"]
+at = "2026-11-15T06:52:17Z"
+actor = "lognd"
+rev = 1
