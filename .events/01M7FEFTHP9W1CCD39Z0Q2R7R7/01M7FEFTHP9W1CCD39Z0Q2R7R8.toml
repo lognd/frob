@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk: rename tests use component fixtures missing required binding node (CI red)"
+type = "bug"
+category = "todo"
+priority = "high"
+points = 1
+labels = ["no-story"]
+scope = ["crates/crunk/tests/it/rename.rs"]
+acceptance = ["Given component fixtures with node and property on each binding, when the rename tests run, then extract_token, font_stack and rename_rewrites tests pass"]
+at = "2026-11-15T11:11:43Z"
+actor = "lognd"
+rev = 1
