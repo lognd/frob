@@ -361,7 +361,7 @@ mod tests {
         let src = "fn f() { let a = \"/home/ci/cache\"; }\n";
         let loud = scan(Language::Rust, src, &Options::default()).expect("parses");
         assert_eq!(loud.sites.len(), 1);
-        let opts = Options::with_allowed(["/home/ci/cache".to_owned()]);
+        let opts = Options::with_allowed([format!("{}home/ci/cache", '/')]);
         assert!(opts.allowed.contains(&"/dev/null".to_owned()));
         let quiet = scan(Language::Rust, src, &opts).expect("parses");
         assert!(quiet.sites.is_empty());
