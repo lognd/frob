@@ -115,23 +115,27 @@ pub fn detect_css_entry(root: &Path, config: Option<&Path>) -> Option<PathBuf> {
 mod tests {
     use super::*;
 
-    fn write(root: &Path, rel: &str, text: &str) {
-        let path = root.join(rel);
-        std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-        std::fs::write(path, text).expect("write");
+    fn project(files: &[(&str, &str)]) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().expect("tempdir");
+        for (rel, text) in files {
+            let path = dir.path().join(rel);
+            std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+            std::fs::write(path, text).expect("write");
+        }
+        dir
     }
 
     // frob:tests crates/crunk-ingest/src/tailwind/detect.rs::detect_css_entry
     #[test]
     fn an_entry_below_the_config_directory_is_found_by_its_config_back_reference() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        write(dir.path(), "web/tailwind.config.ts", "export default {}");
-        write(
-            dir.path(),
-            "web/src/index.css",
-            "@import \"tailwindcss\";\n@config \"../tailwind.config.ts\";\n",
-        );
-        write(dir.path(), "web/src/other.css", "@config \"../nope.ts\";\n");
+        let dir = project(&[
+            ("web/tailwind.config.ts", "export default {}"),
+            (
+                "web/src/index.css",
+                "@import \"tailwindcss\";\n@config \"../tailwind.config.ts\";\n",
+            ),
+            ("web/src/other.css", "@config \"../nope.ts\";\n"),
+        ]);
         let found = detect_css_entry(dir.path(), Some(&dir.path().join("web/tailwind.config.ts")));
         assert_eq!(found, Some(dir.path().join("web/src/index.css")));
     }
@@ -139,13 +143,19 @@ mod tests {
     // frob:tests crates/crunk-ingest/src/tailwind/detect.rs::detect_css_entry
     #[test]
     fn a_root_candidate_wins_and_no_back_reference_means_no_entry() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        write(dir.path(), "web/tailwind.config.ts", "export default {}");
-        write(dir.path(), "web/src/index.css", "body { color: red; }\n");
+        let dir = project(&[
+            ("web/tailwind.config.ts", "export default {}"),
+            ("web/src/index.css", "body { color: red; }\n"),
+        ]);
         let config = dir.path().join("web/tailwind.config.ts");
         assert_eq!(detect_css_entry(dir.path(), Some(&config)), None);
         assert_eq!(detect_css_entry(dir.path(), None), None);
-        write(dir.path(), "src/index.css", "@import \"tailwindcss\";\n");
+        std::fs::create_dir_all(dir.path().join("src")).expect("mkdir");
+        std::fs::write(
+            dir.path().join("src/index.css"),
+            "@import \"tailwindcss\";\n",
+        )
+        .expect("write");
         assert_eq!(
             detect_css_entry(dir.path(), Some(&config)),
             Some(dir.path().join("src/index.css"))
