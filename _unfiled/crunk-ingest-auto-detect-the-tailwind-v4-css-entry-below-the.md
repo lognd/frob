@@ -7,9 +7,13 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:35Z"
-updated = "2026-11-15T05:01:56Z"
+updated = "2026-11-15T05:06:28Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-ingest/src/tailwind/**"]
+
+[[acceptance]]
+text = "A v4 CSS entry below the root whose @config names the configured Tailwind config (web/src/index.css) is detected without [tailwind] css_entry"
+bound = false
 +++
 
 Found while working ~ZZCCYHY: detection only tries root-relative candidates (src/index.css, ...), exactly as the Python crunk, so the Hullbreach platform (web/src/index.css with @config to web/tailwind.config.ts) falls back to the static v3 reader (33 entries) unless [tailwind] css_entry is set (node gives 34). Find a CSS file whose @config names the configured file, or scan the config directory and its parents.

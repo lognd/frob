@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A v4 CSS entry below the root whose @config names the configured Tailwind config (web/src/index.css) is detected without [tailwind] css_entry"]
+moved = []
+at = "2026-11-15T05:06:28Z"
+actor = "lognd"
+rev = 1
