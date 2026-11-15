@@ -4,9 +4,10 @@ title = "grimble trace: derive verified/bound from check results not syntax"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:14:13Z"
-updated = "2026-11-15T05:14:13Z"
+updated = "2026-11-15T05:15:11Z"
 labels = ["no-story"]
 +++
 
