@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:22:56Z"
-updated = "2026-11-15T06:32:58Z"
+updated = "2026-11-15T06:33:07Z"
 labels = ["no-story"]
 scope = ["crates/gob-frameworks/src/route_a11y.rs", "crates/crunk-check/src/route_a11y.rs", "crates/gob-frameworks/tests/it/route_a11y.rs", "crates/gob-frameworks/src/lib.rs", "crates/crunk-check/tests/mdtest/a11y104.md"]
 

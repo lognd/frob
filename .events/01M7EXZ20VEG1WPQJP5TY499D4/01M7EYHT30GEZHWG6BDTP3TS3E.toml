@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T06:33:07Z"
+digest = "e84841b5280b7972a2a70af9144e16e759fecc6a6816521fb10b2412ea544ca9"
+exit_code = 0
+head = "229a5855fda50de47caaf3a15f2c25958bac67a3"
+inline = '''
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17b019ee-7fde-41a0-a458-ef1bbdb9ec65 with nextest profile: default
+    Starting 1 test across 2 binaries (31 tests skipped)
+        PASS [   0.013s] gob-frameworks::it route_a11y::route_with_no_readable_source_is_unjudged_not_a_gap
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 31 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-frameworks -E test(=route_a11y::route_with_no_readable_source_is_unjudged_not_a_gap)"
+size = 645
+status = "measured"
+test_count = 1
+tests_digest = "636aa1e31483e1e3ec1b5add3315f175823c9eb3c87ae143ccfed3bdcc990df0"
+at = "2026-11-15T06:33:07Z"
+actor = "lognd"
+rev = 1
