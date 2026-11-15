@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk export figma-variables emits the Figma variables JSON for a spec, with a test and a profile scenario and guide row"]
+moved = []
+at = "2026-11-15T00:42:30Z"
+actor = "lognd"
+rev = 1
