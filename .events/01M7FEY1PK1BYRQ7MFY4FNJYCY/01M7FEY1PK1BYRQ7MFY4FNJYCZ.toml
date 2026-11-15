@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk STATE007: inapplicable check counts components but subjects count only screens (fires on component-only project)"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+scope = ["crates/crunk-rules/src/rules/state007.rs"]
+acceptance = ["Given a project with components but no screens, when STATE007 is evaluated, then it is reported inapplicable rather than firing"]
+at = "2026-11-15T11:19:29Z"
+actor = "lognd"
+rev = 1
