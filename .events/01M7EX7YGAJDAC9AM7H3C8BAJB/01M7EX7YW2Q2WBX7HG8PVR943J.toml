@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A diff with a path containing a space or non-ASCII char is parsed to the correct path (unit test)", "A failing git show yields an error, not an empty dropped-hunk set (unit test)"]
+moved = []
+at = "2026-11-15T06:10:19Z"
+actor = "lognd"
+rev = 1
