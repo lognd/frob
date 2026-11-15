@@ -2,7 +2,8 @@
 id = "01M5EF4AEM3BG06QWEX6081JS9"
 title = "crunk: stamp screen content_hash and include resolved token values"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
