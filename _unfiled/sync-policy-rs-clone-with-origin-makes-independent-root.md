@@ -2,12 +2,12 @@
 id = "01M5WFSY5XAV6VY4NVXCSTHWPN"
 title = "sync_policy.rs clone_with_origin makes independent root commits (timing flake)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T16:13:26Z"
-updated = "2026-10-28T12:55:50Z"
+updated = "2026-11-15T22:01:37Z"
 labels = ["no-story"]
 scope = ["crates/frob/tests/it/sync_policy.rs"]
 +++
