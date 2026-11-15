@@ -12,6 +12,10 @@ updated = "2026-11-15T06:20:58Z"
 idempotency_key = "crunkplan-7b866b6af1db"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXVEHMREJCTMW69H8RZ5FM"
+
 [[acceptance]]
 text = "each rule fires on its fixture and passes on a good brief"
 bound = false
