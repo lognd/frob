@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:18:26Z"
+digest = "c92863bbdc92b74509d5611c42a8a8c7edc46acab9229ea3093e2a86e5321637"
+exit_code = 0
+head = "6944a8797b3759c7ede2b03e9d9ae1bb084559c2"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.64s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9e62de18-1eb3-450a-9168-5abf89f22ab3 with nextest profile: default
+    Starting 1 test across 5 binaries (307 tests skipped)
+        PASS [   0.085s] crunk::it serve_patch::patch_returns_the_diff_and_touched_findings_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.087s] 1 test run: 1 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=serve_patch::patch_returns_the_diff_and_touched_findings_only)"
+size = 618
+status = "measured"
+test_count = 1
+tests_digest = "c899cef37251a7a20410ff2853ae4ed75e5434b82956ddda539d66b5b516c219"
+at = "2026-11-15T01:18:26Z"
+actor = "lognd"
+rev = 1
