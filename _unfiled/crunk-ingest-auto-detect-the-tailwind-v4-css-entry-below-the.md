@@ -2,7 +2,8 @@
 id = "01M4DVX3DEBN2QS1WVQACE8EHJ"
 title = "crunk-ingest: auto-detect the Tailwind v4 CSS entry below the root (web/src/index.css) by following @config back-references"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
