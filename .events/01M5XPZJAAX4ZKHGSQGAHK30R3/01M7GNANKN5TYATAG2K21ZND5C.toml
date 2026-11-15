@@ -1,0 +1,45 @@
+kind = "evidence"
+captured_at = "2026-11-15T22:30:27Z"
+digest = "9fab04fe9f94108171765b93251fdf93b60cb0d5c72a2ab4f9bc18c735f11823"
+exit_code = 0
+head = "63bc91f213571b7cffead0a39c02651c8af19a4b"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 763fd1f6-3178-4592-80e8-81a18859818b with nextest profile: default
+    Starting 22 tests across 2 binaries (231 tests skipped)
+        PASS [   0.012s] grimble-lints path::tests::configured_allowed_literal_is_quiet
+        PASS [   0.011s] grimble-lints path::tests::allowed_literal_is_quiet
+        PASS [   0.012s] grimble-lints path::tests::host_path_literal_is_found_in_each_literal_language
+        PASS [   0.012s] grimble-lints path::tests::rule_ids_follow_kinds
+        PASS [   0.012s] grimble-lints path::tests::languages_without_string_literals_yield_no_sites
+        PASS [   0.013s] grimble-lints path::tests::only_rust_and_python_have_roles
+        PASS [   0.012s] grimble-lints path::tests::test_paths_are_recognised
+        PASS [   0.013s] grimble-lints path::tests::host_path_is_advisory_in_tests
+        PASS [   0.013s] grimble-lints path::tests::path_as_data_strings_are_not_host_paths
+        PASS [   0.013s] grimble-lints path::tests::every_adapter_language_scans_without_error
+        PASS [   0.017s] grimble-lints pass::tests::tsx_host_path_is_flagged
+        PASS [   0.018s] grimble-lints path::tests::python_docstring_is_not_a_host_path
+        PASS [   0.012s] grimble-lints::it path::cwd_compare_fires_path002
+        PASS [   0.012s] grimble-lints::it path::allowlist_prefix_fires_path002
+        PASS [   0.012s] grimble-lints::it path::merge_driver_format_fires_path003
+        PASS [   0.013s] grimble-lints::it path::absolute_fixture_fires_path001
+        PASS [   0.012s] grimble-lints::it path::repo_relative_path_type_with_slash_is_quiet
+        PASS [   0.014s] grimble-lints::it neat_shape::core_paths_make_unclaimed_units_honest
+        PASS [   0.012s] grimble-lints::it rules::absolute_path_is_an_error_outside_tests_and_advisory_inside
+        PASS [   0.013s] grimble-lints::it path::python_path_str_startswith_fires_and_fix_is_quiet
+        PASS [   0.014s] grimble-lints::it path::newline_escape_in_a_message_is_not_a_separator
+        PASS [   0.014s] grimble-lints::it path::language_without_path_roles_is_unresolved_not_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.028s] 22 tests run: 22 passed, 231 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-lints path"
+size = 2424
+status = "measured"
+test_count = 22
+tests_digest = "d1cc9754fbfbab0f805485960c5d4144a0b7ccc0ca8e1280beb3bd1b7689f3ef"
+at = "2026-11-15T22:30:27Z"
+actor = "lognd"
+rev = 1
