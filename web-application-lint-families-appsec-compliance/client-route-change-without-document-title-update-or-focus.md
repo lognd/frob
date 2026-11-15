@@ -2,7 +2,8 @@
 id = "01M4D95TNEY7MCTS3A4F9HC26C"
 title = "Client route change without document.title update or focus move or announcement (crunk-web A11Y, Advisory)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
