@@ -2,7 +2,8 @@
 id = "01M626H3EHCCVMGMZRESJTGTM5"
 title = "crunk init scaffold fails its own CRAFT001/005/008/010 check"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
