@@ -1,0 +1,8 @@
+kind = "transition"
+from = "in-progress"
+to = "done"
+outcome = "done"
+reason = "implemented on experimental (3e455cac66, 4f6ae6f57f); evidence bound"
+at = "2026-11-15T01:25:06Z"
+actor = "lognd"
+rev = 1
