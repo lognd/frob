@@ -4,9 +4,10 @@ title = "crunk solver: honor or reject scene <style> rules and @media blocks"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T05:24:03Z"
+updated = "2026-11-15T05:47:50Z"
 labels = ["no-story"]
 +++
 
