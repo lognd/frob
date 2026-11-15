@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Each of the three formats has a fixture test that parses to RawFinding with path, line, column, code and message", "The CodeClimate parser and the existing ty-gitlab parser share one implementation", "tool-stages docs list the three parsers"]
+moved = []
+at = "2026-11-15T06:20:51Z"
+actor = "lognd"
+rev = 1
