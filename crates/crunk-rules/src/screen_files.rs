@@ -6,7 +6,7 @@
 use crunk_spec::table::{ScreenConfig, ScreenKind};
 use crunk_spec::{DesignSpec, parse_screen_file};
 
-use crate::file_problem::{DesignFileProblem, hash_problems};
+use crate::file_problem::{DesignFileProblem, fingerprint_files, line_offset};
 use crate::sheets::site_path;
 
 /// The project directory holding the authored screen files, relative to the root.
@@ -30,14 +30,7 @@ impl ScreenFile {
     /// Byte offset of the first line starting with `key` (a top-level key), 0 when absent.
     #[must_use]
     pub fn offset_of(&self, key: &str) -> usize {
-        let mut at = 0;
-        for line in self.text.split_inclusive('\n') {
-            if line.starts_with(key) {
-                return at;
-            }
-            at += line.len();
-        }
-        0
+        line_offset(&self.text, |line| line.starts_with(key))
     }
 
     /// The state ids this screen declares.
@@ -135,15 +128,12 @@ impl ScreenFacts {
 
     /// A stable digest of the files' paths and texts, for the repo digest.
     pub fn fingerprint(&self) -> String {
-        let mut hasher = blake3::Hasher::new();
-        for file in &self.files {
-            hasher.update(file.path.as_bytes());
-            hasher.update(b"\0");
-            hasher.update(file.text.as_bytes());
-            hasher.update(b"\0");
-        }
-        hash_problems(&mut hasher, &self.problems);
-        hasher.finalize().to_hex().to_string()
+        fingerprint_files(
+            self.files
+                .iter()
+                .map(|f| (f.path.as_str(), f.text.as_str())),
+            &self.problems,
+        )
     }
 }
 

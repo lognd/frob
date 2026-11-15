@@ -8,7 +8,7 @@ use crunk_spec::component_file::{ComponentConfig, parse_component_file};
 use crunk_spec::table::{ScreenKind, ScreenStatus};
 use crunk_tokens::model::TokenSet;
 
-use crate::file_problem::{DesignFileProblem, hash_problems};
+use crate::file_problem::{DesignFileProblem, fingerprint_files, line_offset};
 use crate::screen_files::required_states;
 use crate::sheets::site_path;
 use crate::token_files::TokenFacts;
@@ -37,14 +37,7 @@ impl ComponentFile {
     /// Byte offset of the first line containing `needle`, 0 when no line does.
     #[must_use]
     pub fn offset_of(&self, needle: &str) -> usize {
-        let mut at = 0;
-        for line in self.text.split_inclusive('\n') {
-            if line.contains(needle) {
-                return at;
-            }
-            at += line.len();
-        }
-        0
+        line_offset(&self.text, |line| line.contains(needle))
     }
 
     /// The state ids this component declares.
@@ -206,15 +199,12 @@ impl ComponentFacts {
 
     /// A stable digest of the files' paths and texts, for the repo digest.
     pub fn fingerprint(&self) -> String {
-        let mut hasher = blake3::Hasher::new();
-        for file in &self.files {
-            hasher.update(file.path.as_bytes());
-            hasher.update(b"\0");
-            hasher.update(file.text.as_bytes());
-            hasher.update(b"\0");
-        }
-        hash_problems(&mut hasher, &self.problems);
-        hasher.finalize().to_hex().to_string()
+        fingerprint_files(
+            self.files
+                .iter()
+                .map(|f| (f.path.as_str(), f.text.as_str())),
+            &self.problems,
+        )
     }
 }
 

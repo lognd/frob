@@ -176,6 +176,19 @@ pub fn scene_doc_load_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
         .map_or(0, |facts| facts.files.len() + facts.problems.len())
 }
 
+// frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
+/// Why a rule counting `subjects` cannot run on `host`: no valid spec, or zero subjects (`none`).
+pub fn inapplicable_without<H: CrunkHost + ?Sized>(
+    host: &H,
+    subjects: usize,
+    none: &str,
+) -> Option<String> {
+    if host.spec().is_none() {
+        return Some("no valid crunk.toml".to_owned());
+    }
+    (subjects == 0).then(|| none.to_owned())
+}
+
 // frob:ticket 01M4CXR96GDDX460SZZVAAWD0R
 /// Why a CONTENT rule that reads the content files cannot run on `host`, if it cannot.
 pub fn missing_content_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<String> {

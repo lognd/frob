@@ -34,3 +34,31 @@ pub fn hash_problems(hasher: &mut blake3::Hasher, problems: &[DesignFileProblem]
         hasher.update(b"\0");
     }
 }
+
+/// Byte offset of the first line of `text` that satisfies `matches`, 0 when none does.
+pub fn line_offset(text: &str, matches: impl Fn(&str) -> bool) -> usize {
+    let mut at = 0;
+    for line in text.split_inclusive('\n') {
+        if matches(line) {
+            return at;
+        }
+        at += line.len();
+    }
+    0
+}
+
+/// A stable digest of `files` (path, text pairs) and `problems`, for the repo digest.
+pub fn fingerprint_files<'a>(
+    files: impl Iterator<Item = (&'a str, &'a str)>,
+    problems: &[DesignFileProblem],
+) -> String {
+    let mut hasher = blake3::Hasher::new();
+    for (path, text) in files {
+        hasher.update(path.as_bytes());
+        hasher.update(b"\0");
+        hasher.update(text.as_bytes());
+        hasher.update(b"\0");
+    }
+    hash_problems(&mut hasher, problems);
+    hasher.finalize().to_hex().to_string()
+}

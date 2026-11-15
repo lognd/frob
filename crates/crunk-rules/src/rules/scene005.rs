@@ -4,7 +4,7 @@
 
 use gob_rules::{Measured, Out, RepoRule, rule};
 
-use crate::host::{CrunkHost, scene_doc_load_subjects};
+use crate::host::{CrunkHost, inapplicable_without, scene_doc_load_subjects};
 
 /// a scene document cannot be loaded, or its name repeats.
 #[derive(Debug, Clone, Copy, Default)]
@@ -35,13 +35,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Scene005 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        if host.spec().is_none() {
-            return Some("no valid crunk.toml".to_owned());
-        }
-        match scene_doc_load_subjects(host) {
-            0 => Some("no design/scenes/*.scene.html files".to_owned()),
-            _ => None,
-        }
+        inapplicable_without(
+            host,
+            scene_doc_load_subjects(host),
+            "no design/scenes/*.scene.html files",
+        )
     }
 }
 

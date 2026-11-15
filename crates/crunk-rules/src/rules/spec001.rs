@@ -4,7 +4,7 @@
 
 use gob_rules::{Measured, Out, RepoRule, rule};
 
-use crate::host::{CrunkHost, design_file_problems, design_file_subjects};
+use crate::host::{CrunkHost, design_file_problems, design_file_subjects, inapplicable_without};
 
 /// A design file that is skipped by every other rule because it does not load.
 #[derive(Debug, Clone, Copy, Default)]
@@ -32,13 +32,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Spec001 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        if host.spec().is_none() {
-            return Some("no valid crunk.toml".to_owned());
-        }
-        match design_file_subjects(host) {
-            0 => Some("no component, screen or content files".to_owned()),
-            _ => None,
-        }
+        inapplicable_without(
+            host,
+            design_file_subjects(host),
+            "no component, screen or content files",
+        )
     }
 }
 
