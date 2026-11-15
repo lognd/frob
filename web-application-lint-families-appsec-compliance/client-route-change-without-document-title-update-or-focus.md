@@ -2,13 +2,13 @@
 id = "01M4D95TNEY7MCTS3A4F9HC26C"
 title = "Client route change without document.title update or focus move or announcement (crunk-web A11Y, Advisory)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 parent = "01M2Y1SS0MVHB8M891RN134SE7"
 reporter = "lognd"
 created = "2026-10-08T08:13:18Z"
-updated = "2026-10-28T12:55:52Z"
+updated = "2026-11-15T05:02:00Z"
 labels = ["no-story"]
 scope = ["changelog.d/**", "crates/crunk-check/**", "crates/gob-frameworks/**"]
 
