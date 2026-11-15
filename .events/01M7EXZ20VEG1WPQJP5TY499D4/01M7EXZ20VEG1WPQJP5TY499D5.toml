@@ -1,0 +1,10 @@
+kind = "create"
+title = "Fix red CI: A11Y104 corpus unresolved case and publish gob-frameworks"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "CI run 43682380126 failed: crunk-check rule_coverage needs an unresolved case for A11Y104 in tests/mdtest/a11y104.md; gob-dev publish test fails because crunk-check now depends on gob-frameworks which is publish=false. Make gob-frameworks publishable and drop it from the skipped list."
+at = "2026-11-15T06:22:56Z"
+actor = "lognd"
+rev = 1
