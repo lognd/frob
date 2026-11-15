@@ -4,9 +4,10 @@ title = "grimble: decide bound claims from frob measurers"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:45Z"
-updated = "2026-11-15T05:23:45Z"
+updated = "2026-11-15T09:24:43Z"
 labels = ["no-story"]
 +++
 
