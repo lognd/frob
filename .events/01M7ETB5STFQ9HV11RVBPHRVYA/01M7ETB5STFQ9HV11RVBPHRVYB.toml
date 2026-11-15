@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: look verb emitting solver facts as text plus a data-id-marked screenshot"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Research rec 2. Source: /home/logan/projects/frob-research-ui.md (recommendation 2). Decompose before implementing."
+at = "2026-11-15T05:19:39Z"
+actor = "lognd"
+rev = 1
