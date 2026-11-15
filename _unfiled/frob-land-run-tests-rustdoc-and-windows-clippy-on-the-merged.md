@@ -4,9 +4,10 @@ title = "frob land: run tests, rustdoc and Windows clippy on the merged tree, or
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:27Z"
-updated = "2026-11-15T05:23:27Z"
+updated = "2026-11-15T09:24:44Z"
 labels = ["no-story"]
 +++
 
