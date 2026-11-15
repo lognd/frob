@@ -2,7 +2,8 @@
 id = "01M7GGAD1YP6669CPQPTGRG083"
 title = "crunk-spec: refresh spec.json reference dumps and palette snapshot for the durations scale"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 2
 reporter = "lognd"
