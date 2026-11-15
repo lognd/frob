@@ -2,7 +2,8 @@
 id = "01M5XCWA755KFHEMG04HPZ4WYW"
 title = "crunk new flow and crunk new token plus --from templating"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
