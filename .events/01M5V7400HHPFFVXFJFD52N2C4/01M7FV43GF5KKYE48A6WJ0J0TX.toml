@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "scope too narrow: needs model_reader.rs, example_model.rs, Cargo.toml; re-scope"
+at = "2026-11-15T14:52:30Z"
+actor = "lognd"
+rev = 1
