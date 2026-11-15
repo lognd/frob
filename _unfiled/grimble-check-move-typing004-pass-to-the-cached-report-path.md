@@ -2,7 +2,8 @@
 id = "01M7E7HY77XT967FTS81EC8WTX"
 title = "grimble-check: move TYPING004 pass to the cached report path"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 2
 reporter = "lognd"
