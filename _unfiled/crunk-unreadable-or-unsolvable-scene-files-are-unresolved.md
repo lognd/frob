@@ -8,9 +8,13 @@ points = 2
 parent = "01M7ETKAPM2000N80NA0W5NAM5"
 reporter = "lognd"
 created = "2026-11-15T06:19:54Z"
-updated = "2026-11-15T06:19:54Z"
+updated = "2026-11-15T06:19:58Z"
 idempotency_key = "crunkplan-5e146141b39d"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXSFWBE6NF7KTA3R2C2421"
 
 [[acceptance]]
 text = "a scene with a trailing comma yields an Unresolved finding for LAYOUT003-005"
