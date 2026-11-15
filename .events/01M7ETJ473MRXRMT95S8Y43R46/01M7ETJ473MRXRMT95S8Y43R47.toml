@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob: make the stale-binary guard fire in ticket worktrees and in land"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Repo audit H1. See /home/logan/projects/frob-audit2-repo.md (H1) for evidence and remedy."
+at = "2026-11-15T05:23:27Z"
+actor = "lognd"
+rev = 1
