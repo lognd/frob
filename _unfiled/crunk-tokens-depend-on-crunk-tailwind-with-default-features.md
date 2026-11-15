@@ -7,7 +7,7 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:32Z"
-updated = "2026-11-15T04:43:18Z"
+updated = "2026-11-15T04:48:03Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-tokens/Cargo.toml"]
 
