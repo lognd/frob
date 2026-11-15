@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T12:32:27Z"
+digest = "91ba355b422443beb2159d23b25807ae29dd23d7e73b92f39d383570c6a6f146"
+exit_code = 0
+head = "b187641963133892daa139a6d06fcb6119c51a0f"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 4a66a92b-7320-4314-98b6-52c8ab5578f3 with nextest profile: default
+    Starting 1 test across 2 binaries (125 tests skipped)
+        PASS [   0.006s] crunk-layout::it style_tree::named_line_places_item
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.007s] 1 test run: 1 passed, 125 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-layout -E test(=style_tree::named_line_places_item)"
+size = 544
+status = "measured"
+test_count = 1
+tests_digest = "611a38d542b379574ee50ae2523cf29c01fbbc07b201c8bc9946703ba3dba2ab"
+at = "2026-11-15T12:32:27Z"
+actor = "lognd"
+rev = 1
