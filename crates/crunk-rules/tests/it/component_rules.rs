@@ -10,6 +10,7 @@ use crunk_rules::host::{component_subjects, missing_component_inputs};
 use crunk_rules::rules::{
     comp001::Comp001, comp002::Comp002, comp003::Comp003, comp004::Comp004, comp005::Comp005,
     comp006::Comp006, comp007::Comp007, comp008::Comp008, comp009::Comp009, state001::State001,
+    state007::State007,
 };
 use gob_rules::{Finding, Measured, RepoRule};
 
@@ -323,4 +324,11 @@ fn many_unrendered_combinations_are_named_then_counted() {
             .any(|x| x.contains("1 of 16") && x.contains("and 7 more")),
         "{m:?}"
     );
+}
+
+// frob:tests crates/crunk-rules/src/rules/state007.rs::State007
+#[test]
+fn state007_is_inapplicable_on_a_component_only_project() {
+    let host = project("name = \"b\"\n");
+    assert!(State007.inapplicable(&host).is_some());
 }
