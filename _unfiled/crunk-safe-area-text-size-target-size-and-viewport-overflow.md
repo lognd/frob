@@ -4,9 +4,10 @@ title = "crunk: safe-area, text-size, target-size and viewport-overflow checks f
 type = "task"
 category = "todo"
 priority = "medium"
+points = 13
 reporter = "lognd"
 created = "2026-11-15T05:24:06Z"
-updated = "2026-11-15T05:24:06Z"
+updated = "2026-11-15T06:27:20Z"
 labels = ["no-story"]
 +++
 
