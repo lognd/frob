@@ -213,6 +213,21 @@ Solver-vs-browser parity is a separate gate: `crates/crunk-gallery/src/parity.rs
 - Authored scenes live at `design/scenes/**/*.scene.html`: nested directories are searched, the suffix matches in any case, and ignore files are honored. Each file is read as bytes and parsed through `crunk_scene::parse_scene_bytes`; results are ordered by project-relative path.
 - A file that cannot be loaded is never a crash. SCENE005 reports it as a finding at the file: unreadable, over the 4 MiB size cap, not UTF-8, no elements (empty, blank or comments only), or a name (file name without the suffix, case-insensitive) already used by an earlier file. The loadable files are still checked by the other SCENE rules.
 
+### Style mapping
+
+`crunk_layout::style` maps the inline `style` attribute of each scene element to a taffy style and builds a taffy tree keyed by `data-id`. It measures no text: nodes with text get a measure hook from the text measurer. `<style>` rules and `@media` are not applied yet, because the scene parser does not tie rules to elements.
+
+- Supported properties: `display` (block, flex, grid, none), `position` (static, relative, absolute), `top/right/bottom/left/inset`, `width/height`, `min-*`, `max-*`, `margin`, `padding`, `border` widths, `gap/row-gap/column-gap`, `flex-direction/wrap/flow/flex/grow/shrink/basis`, `align-*`, `justify-*`, `aspect-ratio`, `box-sizing`, `grid-template-columns/rows` (px, %, fr, auto, min/max-content, `minmax()`, `repeat()`), `grid-auto-*` and `grid-column/row` (lines, spans). Units are `px`, `rem` (16px), `%` and unitless `0`.
+- Not mapped yet: `grid-template-areas`, `grid-area`, `order` and `place-*` yield an `UnmappedProperty` finding. Paint and text properties are ignored.
+- Defaults: `box-sizing` is content-box (the CSS initial value) and `display` is block.
+- `var(--x, fallback)` resolves recursively; an undefined token without a fallback is a `StyleError::UndefinedToken` naming the element and line.
+- `display:none` keeps the `data-id` in `LayoutTree::hidden` and out of the tree, with its descendants.
+- A negative padding, gap or border width clamps to 0 and a negative size becomes auto, each as a `NegativeValue` finding. A `min-*` above its `max-*` raises the max to the min.
+- A percentage size is auto when the parent axis is indefinite. The width axis is definite when the parent has a length or definite percentage width, or an auto width in flow under a definite grandparent; the height axis only for a length or definite percentage height.
+- `aspect-ratio` is ignored when both width and height are set.
+- Grid spans are not clamped, so spans past the explicit tracks create implicit tracks.
+- Opposing absolute insets with no size keep the size auto, which taffy stretches.
+
 ### Text metrics
 
 There is no font engine, so the solve is identical everywhere: a character is `0.6 * font_size` wide, a line is `font_size * line_height` tall, and a run wraps at `max_width`.

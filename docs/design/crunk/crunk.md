@@ -184,6 +184,16 @@ unknown lowercase tag and SCENE004 any at-rule other than `@media`
 (`data_id_problems`, `unknown_tags`, `unsupported_at_rules`); `svg` content
 and the html, head, body, style and script tags are exempt from the first two. Rule page: `crates/crunk-scene/src/scene001.md`.
 
+Style mapping (D111, D113): `crunk_layout::style` turns each element's
+inline `style` into a taffy style (display block, flex, grid and none;
+absolute positioning; sizes, spacing, flex and grid properties) with
+tokens resolved through `var()`. It is strict where CSS is lenient: an
+undefined token is an error naming the element and line, an unmapped
+property is an `UnmappedProperty` finding, and out-of-range values clamp
+with a `NegativeValue` finding instead of passing silently. `<style>`
+rules and `@media` are not applied yet. The full property list and the
+solver rules are in docs/guides/crunk.md (Style mapping).
+
 Layout (D113): two engines with a parity test.
 
 - T1 solve: taffy (block, flexbox, grid) in-process, with text measured
