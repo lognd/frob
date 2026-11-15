@@ -250,7 +250,7 @@ fn tags_of(doc: &crunk_scene::SceneDoc, r: &crunk_scene::SceneRule) -> Vec<Strin
         .collect()
 }
 
-// frob:tests crunk_scene::parse_scene_html
+// frob:tests parse_scene_html
 #[test]
 fn class_rule_matches_its_elements() {
     let doc = parse_scene_html(SHEET).expect("parses");
@@ -260,21 +260,21 @@ fn class_rule_matches_its_elements() {
     assert_eq!(r.at_rule, None);
 }
 
-// frob:tests crunk_scene::parse_scene_html
+// frob:tests parse_scene_html
 #[test]
 fn id_rule_matches_its_element() {
     let doc = parse_scene_html(SHEET).expect("parses");
     assert_eq!(tags_of(&doc, rule(&doc, "#main", 0)), ["p2"]);
 }
 
-// frob:tests crunk_scene::parse_scene_html
+// frob:tests parse_scene_html
 #[test]
 fn descendant_rule_matches_only_nested_elements() {
     let doc = parse_scene_html(SHEET).expect("parses");
     assert_eq!(tags_of(&doc, rule(&doc, "section p", 0)), ["p1"]);
 }
 
-// frob:tests crunk_scene::parse_scene_html
+// frob:tests parse_scene_html
 #[test]
 fn unsupported_selector_is_flagged_and_matches_nothing() {
     let doc = parse_scene_html(SHEET).expect("parses");
@@ -283,7 +283,7 @@ fn unsupported_selector_is_flagged_and_matches_nothing() {
     assert!(r.matches.is_empty());
 }
 
-// frob:tests crunk_scene::parse_scene_html
+// frob:tests parse_scene_html
 #[test]
 fn media_rule_is_exposed_with_its_at_rule() {
     let doc = parse_scene_html(SHEET).expect("parses");
