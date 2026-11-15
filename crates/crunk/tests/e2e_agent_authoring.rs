@@ -11,16 +11,22 @@ const COMP_FILE: &str = "design/components/card.component.toml";
 const SCREEN_FILE: &str = "design/screens/home.screen.toml";
 const CONTENT_FILE: &str = "design/content/home.toml";
 
+/// The fixture files (not subdirectories) every project starts from.
+fn fixture_files() -> Vec<PathBuf> {
+    let fx = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent_authoring");
+    std::fs::read_dir(&fx)
+        .expect("fixture dir")
+        .map(|e| e.expect("entry").path())
+        .filter(|p| p.is_file())
+        .collect()
+}
+
 /// A fresh project dir holding the fixture `crunk.toml` and every fixture patch; the design dir is empty.
 fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
-    let fx = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent_authoring");
-    for entry in std::fs::read_dir(&fx).expect("fixture dir") {
-        let path: PathBuf = entry.expect("entry").path();
-        if path.is_file() {
-            let name = path.file_name().expect("file name");
-            std::fs::copy(&path, dir.path().join(name)).expect("copy fixture");
-        }
+    for path in fixture_files() {
+        let name = path.file_name().expect("file name");
+        std::fs::copy(&path, dir.path().join(name)).expect("copy fixture");
     }
     dir
 }
