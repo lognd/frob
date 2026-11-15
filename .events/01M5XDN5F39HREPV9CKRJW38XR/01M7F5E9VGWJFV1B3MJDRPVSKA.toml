@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The crunk guide documents the style mapping (supported properties, defaults, solver rules) and design section 3 summarizes it"]
+moved = []
+at = "2026-11-15T08:33:36Z"
+actor = "lognd"
+rev = 1
