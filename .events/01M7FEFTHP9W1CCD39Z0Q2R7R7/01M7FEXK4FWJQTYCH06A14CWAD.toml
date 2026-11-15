@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T11:19:13Z"
+digest = "7e3cf73e9c7ed9e40b9d4f6d46535685e76855f6d82be673e83d0836156d81f1"
+exit_code = 0
+head = "beded3a1c3370ab5e965f25b14a4d8e2859f1423"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f51394ff-be6b-46f7-893c-8a9f103b3051 with nextest profile: default
+    Starting 1 test across 6 binaries (322 tests skipped)
+        PASS [   0.168s] crunk::it rename::font_stack_tokens_are_renamed_through_typography_stacks
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.170s] 1 test run: 1 passed, 322 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=rename::font_stack_tokens_are_renamed_through_typography_stacks)"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "13b0f374897b0407a71737d3cec3777eebf5d2c810a37b921552ec2c69cc7e09"
+at = "2026-11-15T11:19:13Z"
+actor = "lognd"
+rev = 1
