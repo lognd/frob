@@ -2,7 +2,8 @@
 id = "01M5XDN5F39HREPV9CKRJW38XR"
 title = "Docs for crunk style mapping (scene.md, design section 3)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
