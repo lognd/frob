@@ -7,7 +7,7 @@ priority = "low"
 points = 5
 reporter = "lognd"
 created = "2026-10-08T13:40:33Z"
-updated = "2026-11-15T13:01:27Z"
+updated = "2026-11-15T13:01:29Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/doctor.rs,crates/crunk-spec/src/table.rs,crates/crunk-check/src/**", "crates/crunk/tests/it/doctor_report.rs", "crates/crunk-check/tests/it/static_tailwind.rs"]
 

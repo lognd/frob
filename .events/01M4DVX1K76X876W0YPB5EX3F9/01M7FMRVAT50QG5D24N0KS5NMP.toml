@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T13:01:29Z"
+digest = "5e49b054e5fe048b7e03e59ba0d775087c66de27bca2468235915b3a093ae136"
+exit_code = 0
+head = "cc26b9564faefdb242d38e657b2f2d73b63d30a0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ced119b7-d5ff-4223-b95d-ae176c62a285 with nextest profile: default
+    Starting 1 test across 2 binaries (87 tests skipped)
+        PASS [   0.113s] crunk-check::it static_tailwind::engine_static_in_crunk_toml_never_executes_repository_javascript
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.113s] 1 test run: 1 passed, 87 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(=static_tailwind::engine_static_in_crunk_toml_never_executes_repository_javascript)"
+size = 588
+status = "measured"
+test_count = 1
+tests_digest = "1db007ff808e2f7230bdc36a4ff1c23083cb5e7082ba6ef77b9aac50f6f26d74"
+at = "2026-11-15T13:01:29Z"
+actor = "lognd"
+rev = 1
