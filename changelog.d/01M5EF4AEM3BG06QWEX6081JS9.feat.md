@@ -1,0 +1,1 @@
+Add `crunk stamp`, which records the content hash of locked screens so STATE007 stays clean until the screen or a token it resolves changes; the screen content hash now folds in resolved token values.

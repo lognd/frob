@@ -1,10 +1,12 @@
 //! STATE007: a screen whose status is `ready` or `completed` but whose recorded `content_hash` is missing or no longer matches its content. Off when the project has no screen files.
 
 // frob:ticket 01M4CXR89ERNB60CEDG60E2DXH
+// frob:ticket 01M5EF4AEM3BG06QWEX6081JS9
 
 use crunk_spec::table::ScreenStatus;
 use gob_rules::{Measured, Out, RepoRule, rule};
 
+use crate::component_files::TokenLookup;
 use crate::host::{CrunkHost, missing_screen_inputs, screen_subjects};
 use crate::screen_files::content_hash;
 
@@ -30,6 +32,7 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for State007 {
         let Some(screens) = host.screens() else {
             return;
         };
+        let tokens = TokenLookup::new(host.spec(), host.tokens());
         for file in &screens.files {
             if !matches!(
                 file.screen.status,
@@ -37,7 +40,7 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for State007 {
             ) {
                 continue;
             }
-            let want = content_hash(&file.screen);
+            let want = content_hash(&file.screen, &tokens);
             let message = match file.screen.content_hash.as_deref() {
                 None => format!(
                     "screen '{}' is locked but records no content_hash (expected {want})",

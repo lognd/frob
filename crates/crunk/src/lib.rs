@@ -13,6 +13,7 @@
 
 // frob:ticket 01M43ARVS24254G85TMFYH8FGQ
 // frob:ticket 01M47QSGHYD2EQ4552V1B4EEQZ
+// frob:ticket 01M5EF4AEM3BG06QWEX6081JS9
 #![expect(
     clippy::disallowed_methods,
     reason = "confinement allow list: path-to-text conversion pending migration to gob-path"
@@ -44,6 +45,7 @@ pub mod rule;
 pub mod serve_patch;
 pub mod slop_report;
 pub mod snapshot;
+pub mod stamp;
 pub mod tokens;
 
 use std::path::Path;
@@ -244,6 +246,7 @@ impl Product for CrunkProduct {
             .register::<rename::Rename>()
             .register::<edit::Edit>()
             .register::<new::New>()
+            .register::<stamp::Stamp>()
             .register::<extract::ExtractToken>()
     }
 }

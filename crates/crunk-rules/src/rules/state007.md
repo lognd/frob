@@ -5,7 +5,7 @@ A screen locked as `ready` or `completed` records the hash of its content. Each 
 
 ## What it does
 
-Fires for each screen file whose `status` is `ready` or `completed` and whose `content_hash` is absent or differs from the hash of its current content (blake3 over the screen with `status` and `content_hash` left out). A `draft` or `changed` screen, and a project with no screen files, are not judged.
+Fires for each screen file whose `status` is `ready` or `completed` and whose `content_hash` is absent or differs from the hash of its current content (blake3 over the screen with `status` and `content_hash` left out, followed by the resolved value of every token, so a token change also stales it; `crunk stamp` records it). A `draft` or `changed` screen, and a project with no screen files, are not judged.
 
 ## Why it matters
 

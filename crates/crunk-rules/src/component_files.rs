@@ -98,6 +98,20 @@ impl TokenLookup {
         self.sets.iter().any(|set| set.get(name).is_some())
     }
 
+    // frob:ticket 01M5EF4AEM3BG06QWEX6081JS9
+    /// Every distinct token name any gathered set defines, sorted.
+    #[must_use]
+    pub fn names(&self) -> Vec<String> {
+        let mut names: Vec<String> = self
+            .sets
+            .iter()
+            .flat_map(|set| set.iter().map(|t| t.name.clone()))
+            .collect();
+        names.sort_unstable();
+        names.dedup();
+        names
+    }
+
     /// The JSON of the resolved default-mode value of `name`, from the first set that has it.
     #[must_use]
     pub fn resolved_json(&self, name: &str) -> Option<String> {
@@ -264,9 +278,11 @@ mod tests {
     }
 
     // frob:tests crates/crunk-rules/src/component_files.rs::TokenLookup.knows
+    // frob:tests crates/crunk-rules/src/component_files.rs::TokenLookup.names
     #[test]
     fn an_empty_lookup_is_empty_and_knows_nothing() {
         let t = TokenLookup::new(None, None);
+        assert!(t.names().is_empty());
         assert!(t.is_empty());
         assert!(!t.knows("anything"));
         assert_eq!(t.resolved_json("anything"), None);

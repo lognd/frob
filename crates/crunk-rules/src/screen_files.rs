@@ -6,6 +6,7 @@
 use crunk_spec::table::{ScreenConfig, ScreenKind};
 use crunk_spec::{DesignSpec, parse_screen_file};
 
+use crate::component_files::TokenLookup;
 use crate::file_problem::{DesignFileProblem, fingerprint_files, line_offset};
 use crate::sheets::site_path;
 
@@ -60,18 +61,31 @@ pub const fn required_states(kind: ScreenKind) -> &'static [&'static str] {
     }
 }
 
+// frob:ticket 01M5EF4AEM3BG06QWEX6081JS9
 /// The content hash of a screen: blake3 over its canonical JSON with `status` and `content_hash`
-/// cleared, so recording the hash does not change it.
+/// cleared, so recording the hash does not change it, followed by the resolved default value of
+/// every token in `tokens` (in name order), so changing a token invalidates the hash. A token
+/// that does not resolve contributes its name only.
 ///
 /// # Panics
 /// Never in practice: a `ScreenConfig` always serializes to JSON.
 #[must_use]
-pub fn content_hash(screen: &ScreenConfig) -> String {
+pub fn content_hash(screen: &ScreenConfig, tokens: &TokenLookup) -> String {
     let mut body = screen.clone();
     body.status = None;
     body.content_hash = None;
     let json = serde_json::to_string(&body).expect("a screen serializes to JSON");
-    blake3::hash(json.as_bytes()).to_hex().to_string()
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(json.as_bytes());
+    for name in tokens.names() {
+        hasher.update(b"\0");
+        hasher.update(name.as_bytes());
+        if let Some(v) = tokens.resolved_json(&name) {
+            hasher.update(b"=");
+            hasher.update(v.as_bytes());
+        }
+    }
+    hasher.finalize().to_hex().to_string()
 }
 
 /// Every authored screen file of a project that parsed, sorted by path.
@@ -175,12 +189,42 @@ mod tests {
     #[test]
     fn content_hash_ignores_status_and_the_hash_itself() {
         let mut s = file(TEXT).screen;
-        let h = content_hash(&s);
+        let none = TokenLookup::default();
+        let h = content_hash(&s, &none);
         s.status = Some(crunk_spec::table::ScreenStatus::Ready);
         s.content_hash = Some("x".into());
-        assert_eq!(content_hash(&s), h);
+        assert_eq!(content_hash(&s, &none), h);
         s.headings.push("Hi".into());
-        assert_ne!(content_hash(&s), h);
+        assert_ne!(content_hash(&s, &none), h);
+    }
+
+    // frob:tests crates/crunk-rules/src/screen_files.rs::content_hash
+    #[test]
+    fn content_hash_folds_in_resolved_token_values() {
+        let s = file(TEXT).screen;
+        let tokens = |ink: &str| {
+            let set = crunk_tokens::dialect::parse(
+                &format!("[color.ink]\nvalue = \"{ink}\"\n"),
+                "t.toml",
+            )
+            .expect("token file compiles");
+            let facts = crate::token_files::TokenFacts {
+                files: vec![crate::token_files::TokenFile {
+                    path: "t.toml".into(),
+                    text: String::new(),
+                    set: Ok(set),
+                }],
+            };
+            TokenLookup::new(None, Some(&facts))
+        };
+        let (a, b) = (tokens("#111111"), tokens("#222222"));
+        assert!(!a.names().is_empty(), "the fixture defines a token");
+        assert_eq!(content_hash(&s, &a), content_hash(&s, &tokens("#111111")));
+        assert_ne!(content_hash(&s, &a), content_hash(&s, &b));
+        assert_ne!(
+            content_hash(&s, &a),
+            content_hash(&s, &TokenLookup::default())
+        );
     }
 
     // frob:tests crates/crunk-rules/src/screen_files.rs::ScreenFacts.fingerprint

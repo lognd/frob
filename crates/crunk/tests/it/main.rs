@@ -28,5 +28,6 @@ mod review;
 mod rule_catalog;
 mod serve_patch;
 mod slop_report;
+mod stamp;
 mod tokens;
 mod verbs;

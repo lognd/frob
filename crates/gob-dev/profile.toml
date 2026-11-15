@@ -636,6 +636,9 @@ skip = "rewrites a literal into a token across sources and needs a literal argum
 [scenario."crunk new"]
 skip = "scaffolds a new component into the working directory and needs a name argument, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/new.rs"
 
+[scenario."crunk stamp"]
+skip = "rewrites locked screen files in place to record their content hash, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/it/stamp.rs"
+
 [scenario."crunk rename"]
 skip = "renames a token or class across all sources in place and needs old and new names, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/rename.rs"
 
