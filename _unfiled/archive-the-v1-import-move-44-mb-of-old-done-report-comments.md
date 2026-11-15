@@ -2,12 +2,12 @@
 id = "01M4P1YV1XW7SSAX0RGESD8FAR"
 title = "Archive the v1 import: move 44 MB of old done-report comments out of the live ledger tree"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-11T18:00:19Z"
-updated = "2026-11-12T12:36:38Z"
+updated = "2026-11-15T02:21:10Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**", "crates/frob/src/ticket/**", "crates/frob/tests/**", "docs/**", "changelog.d/**"]
 
