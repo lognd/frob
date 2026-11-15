@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
-updated = "2026-11-15T05:53:58Z"
+updated = "2026-11-15T05:53:59Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "MDL000 prints verified_by as written, not the internal evidence name"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "grimble fmt keeps verified_by after ref on a vmodel"
