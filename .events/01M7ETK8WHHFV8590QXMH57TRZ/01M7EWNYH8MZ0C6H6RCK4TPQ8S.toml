@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-15T06:00:28Z"
+digest = "c7deeba3ca3f58b19fe04aa26fd520218e4baa8cbda6a2e4d338bd6d8ffc32fc"
+exit_code = 0
+head = "c3f7427fbce4cf8041d2e69fbb275fce8d27b34c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31c9eee3-e72c-4efb-a2a1-ef62089cc685 with nextest profile: default
+    Starting 1 test across 2 binaries (316 tests skipped)
+        PASS [   0.021s] crunk-rules::it spec_rules::a_content_file_that_is_not_toml_fires
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 316 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=spec_rules::a_content_file_that_is_not_toml_fires)"
+size = 558
+status = "measured"
+test_count = 1
+tests_digest = "58f6d8e63224fb374e4de645ffcfb1cc868862e46ed66f8a41419579002f5c21"
+at = "2026-11-15T06:00:28Z"
+actor = "lognd"
+rev = 1
