@@ -2,12 +2,12 @@
 id = "01M61Y35309KEQP2SPTQHP1AT8"
 title = "CAP: judge receiver-style path calls (Path(x).read_text) against may args"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-11-03T05:56:27Z"
+updated = "2026-11-15T23:45:27Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs"]
 
