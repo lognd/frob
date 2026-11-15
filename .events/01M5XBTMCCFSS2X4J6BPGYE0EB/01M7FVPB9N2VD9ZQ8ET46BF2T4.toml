@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["The guide .gitattributes embeds the branch merge-driver patterns and LF pin"]
+moved = []
+at = "2026-11-15T15:02:28Z"
+actor = "lognd"
+rev = 1

@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T00:23:09Z"
-updated = "2026-11-15T15:01:55Z"
+updated = "2026-11-15T15:02:28Z"
 scope = ["crates/frob-ledger/templates/**", "crates/frob-ledger/src/gen/guide.rs"]
+
+[[acceptance]]
+text = "The guide .gitattributes embeds the branch merge-driver patterns and LF pin"
+bound = false
 +++
 
 found while working ~CHJYNT6: the guide generator .gitattributes differs from branch_gitattributes/pin_eol, so the first reindex after migration rewrites it.
