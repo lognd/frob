@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["crunk-tokens depends on crunk-tailwind with default-features = false and still builds and passes its tests"]
+moved = []
+at = "2026-11-15T04:43:18Z"
+actor = "lognd"
+rev = 1
