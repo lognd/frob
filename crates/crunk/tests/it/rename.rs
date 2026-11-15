@@ -37,7 +37,8 @@ globs = ["src/**/*.tsx"]
 
 const CSS: &str = "/* --color-ink stays in comments */\n.a { color: var(--color-ink); background: var(--color-ink-bg); border-color: var(--color-ink) var(--color-ink); content: \"--color-ink\"; }\n";
 const TSX: &str = "export const A = () => <div style={{ color: 'var(--color-ink)' }} className=\"x\">{'--color-ink-bg'}</div>;\n// --color-ink in a comment\n";
-const COMPONENT: &str = "[[bindings]]\ntoken = \"--color-ink\"\n";
+const SCREEN: &str = "id = \"home\"\nentry = \"/\"\n[[states]]\nid = \"default\"\n[[states]]\nid = \"hover\"\n[[states]]\nid = \"active\"\n[[states]]\nid = \"disabled\"\n[[states]]\nid = \"focus\"\n[[states]]\nid = \"loading\"\n[[states]]\nid = \"error\"\n[[states]]\nid = \"empty\"\n";
+const COMPONENT: &str = "name = \"a\"\n[[states]]\nid = \"default\"\n[[states]]\nid = \"hover\"\n[[states]]\nid = \"active\"\n[[states]]\nid = \"disabled\"\n[[states]]\nid = \"focus\"\n[[states]]\nid = \"loading\"\n[[states]]\nid = \"error\"\n[[states]]\nid = \"empty\"\n[anatomy]\nnodes = [\"root\"]\n[[bindings]]\nnode = \"root\"\nproperty = \"color\"\ntoken = \"--color-ink\"\n";
 
 fn project() -> tempfile::TempDir {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -51,6 +52,8 @@ fn project() -> tempfile::TempDir {
     std::fs::write(p.join("src/A.tsx"), TSX).unwrap();
     std::fs::create_dir_all(p.join("design/components")).unwrap();
     std::fs::write(p.join("design/components/a.component.toml"), COMPONENT).unwrap();
+    std::fs::create_dir_all(p.join("design/screens")).unwrap();
+    std::fs::write(p.join("design/screens/home.screen.toml"), SCREEN).unwrap();
     let (code, out, err) = crunk(p, &["tokens"]);
     assert_eq!(code, 0, "{out} {err}");
     dir
@@ -255,7 +258,7 @@ fn custom_project() -> tempfile::TempDir {
     std::fs::write(p.join("styles/base/brand.css"), BRAND_CSS).unwrap();
     std::fs::write(
         p.join("design/components/b.component.toml"),
-        "[[bindings]]\ntoken = \"--brand-ink\"\n",
+        "name = \"b\"\n[[states]]\nid = \"default\"\n[[states]]\nid = \"hover\"\n[[states]]\nid = \"active\"\n[[states]]\nid = \"disabled\"\n[[states]]\nid = \"focus\"\n[[states]]\nid = \"loading\"\n[[states]]\nid = \"error\"\n[[states]]\nid = \"empty\"\n[anatomy]\nnodes = [\"root\"]\n[[bindings]]\nnode = \"root\"\nproperty = \"color\"\ntoken = \"--brand-ink\"\n",
     )
     .unwrap();
     let (code, out, err) = crunk(p, &["tokens"]);
