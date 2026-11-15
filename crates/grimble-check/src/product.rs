@@ -603,7 +603,7 @@ fn res_report(
     grimble_lints::res_pass::analyze(&files)
 }
 
-/// Run TYPING004 over the TypeScript files of the walk (uncached).
+/// Run TYPING004 over the TypeScript files of the walk (cached by `reports`).
 // frob:ticket 01M4D95Q9WWPDZH86CMBMAZEDQ
 fn typing_report(
     entries: &[gob_walk::FileEntry],
@@ -968,6 +968,7 @@ fn reports(
     PathReport,
     PathReport,
     PathReport,
+    PathReport,
 ) {
     // The architecture and PATH reports are pure in the same digest plus `large_lines`, so a
     // hit skips reading and parsing every file (~SNJ3PH5).
@@ -1021,6 +1022,11 @@ fn reports(
         .cache
         .get_artifact(&res_key)
         .and_then(|b| report_cache::decode_path(&b));
+    let typing_key = report_cache::key("typing-v1", digest, &engine, table.large_lines);
+    let typing_hit = cx
+        .cache
+        .get_artifact(&typing_key)
+        .and_then(|b| report_cache::decode_path(&b));
     let unity_key = report_cache::key("unity", digest, &engine, table.large_lines);
     let unity_hit = cx
         .cache
@@ -1034,6 +1040,7 @@ fn reports(
     let pair_cached = pair_hit.is_some();
     let err_cached = err_hit.is_some();
     let res_cached = res_hit.is_some();
+    let typing_cached = typing_hit.is_some();
     let unity_cached = unity_hit.is_some();
     let (arch_cached, path_cached, time_cached, coh_cached) = (
         arch_hit.is_some(),
@@ -1041,13 +1048,14 @@ fn reports(
         time_hit.is_some(),
         coh_hit.is_some(),
     );
-    let (arch, path, time, pair, err, res, unity, coh) = if let (
+    let (arch, path, time, pair, err, res, typing, unity, coh) = if let (
         Some(arch),
         Some(path),
         Some(time),
         Some(pair),
         Some(err),
         Some(res),
+        Some(typing),
         Some(unity),
         Some(coh),
     ) = (
@@ -1057,15 +1065,16 @@ fn reports(
         pair_hit.clone(),
         err_hit.clone(),
         res_hit.clone(),
+        typing_hit.clone(),
         unity_hit.clone(),
         coh_hit.clone(),
     ) {
-        tracing::info!(digest = %digest, "architecture, path, time, pair, err, res, unity and coh reports reused from cache");
-        (arch, path, time, pair, err, res, unity, coh)
+        tracing::info!(digest = %digest, "architecture, path, time, pair, err, res, typing, unity and coh reports reused from cache");
+        (arch, path, time, pair, err, res, typing, unity, coh)
     } else {
         // One reader for both passes: `Core::text` opens the repository per call, which on
         // a 20k-file walk is the dominant cost of the run.
-        let (arch, arch_took, path, path_took, time, pair, err, res, unity, coh) =
+        let (arch, arch_took, path, path_took, time, pair, err, res, typing, unity, coh) =
             cx.core.with_content(|reader| {
                 let reader = std::cell::RefCell::new(reader);
                 let read = |p: &str| reader.borrow_mut().read_text(p).ok();
@@ -1088,10 +1097,11 @@ fn reports(
                 let pair = pair_hit.unwrap_or_else(|| pair_report(&cx.core.entries, &read));
                 let err = err_hit.unwrap_or_else(|| err_report(&cx.core.entries, &read));
                 let res = res_hit.unwrap_or_else(|| res_report(&cx.core.entries, &read));
+                let typing = typing_hit.unwrap_or_else(|| typing_report(&cx.core.entries, &read));
                 let unity = unity_hit.unwrap_or_else(|| unity_report(&cx.core.entries, &read));
                 let coh = coh_hit.unwrap_or_else(|| coh_report(&cx.core.entries, &read, coh_opts));
                 (
-                    arch, arch_took, path, path_took, time, pair, err, res, unity, coh,
+                    arch, arch_took, path, path_took, time, pair, err, res, typing, unity, coh,
                 )
             });
         if !arch_cached {
@@ -1118,6 +1128,10 @@ fn reports(
             cx.cache
                 .put_artifact(&err_key, &report_cache::encode_path(&err));
         }
+        if !typing_cached {
+            cx.cache
+                .put_artifact(&typing_key, &report_cache::encode_path(&typing));
+        }
         if !unity_cached {
             cx.cache
                 .put_artifact(&unity_key, &report_cache::encode_path(&unity));
@@ -1131,7 +1145,7 @@ fn reports(
             ?path_took,
             "architecture and path reports computed"
         );
-        (arch, path, time, pair, err, res, unity, coh)
+        (arch, path, time, pair, err, res, typing, unity, coh)
     };
     cx.timing.push("architecture", started.elapsed(), false);
     cx.timing.push("path", std::time::Duration::ZERO, false);
@@ -1141,7 +1155,7 @@ fn reports(
     cx.timing.push("res", std::time::Duration::ZERO, false);
     cx.timing.push("unity", std::time::Duration::ZERO, false);
     cx.timing.push("coh", std::time::Duration::ZERO, false);
-    (arch, path, time, pair, err, res, unity, coh)
+    (arch, path, time, pair, err, res, typing, unity, coh)
 }
 
 /// A repo group over the findings of one `grimble-lints` report (`pick` names it on the inputs).
@@ -1248,7 +1262,7 @@ impl Product for Grimble {
             model: ModelLayers::from_model(&model),
         };
         let changed = changed_files(&cx.core.root, self.base.as_deref());
-        let (arch, path, time, pair, err, res, unity, coh) =
+        let (arch, path, time, pair, err, res, typing, unity, coh) =
             reports(cx, &digest, &table, &coh_opts, &changed);
         let log_table = LogTable::load(&cx.core.root)?;
         let log_opts = crate::log::pass::LogOptions {
@@ -1266,12 +1280,6 @@ impl Product for Grimble {
         let started = std::time::Instant::now();
         let testq = cached_testq_report(cx, &digest, table.large_lines, testq_opts);
         cx.timing.push("testq", started.elapsed(), false);
-        let started = std::time::Instant::now();
-        let typing = cx.core.with_content(|reader| {
-            let reader = std::cell::RefCell::new(reader);
-            typing_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
-        });
-        cx.timing.push("typing", started.elapsed(), false);
         let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);

@@ -43,6 +43,7 @@ mod symbolic_audit;
 mod sysdesign_pack_examples;
 mod testq_rules;
 mod time_rules;
+mod typing_rules;
 mod unity_project_rules;
 mod unity_rules;
 mod vet_wiring;
