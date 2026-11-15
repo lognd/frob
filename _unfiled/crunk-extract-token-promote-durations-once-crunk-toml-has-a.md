@@ -2,12 +2,12 @@
 id = "01M5JQ4064A95JAP3BM4QDJRP8"
 title = "crunk extract-token: promote durations once crunk.toml has a duration table"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T21:08:52Z"
-updated = "2026-10-28T12:55:42Z"
+updated = "2026-11-15T14:11:33Z"
 labels = ["no-story"]
 scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs"]
 
