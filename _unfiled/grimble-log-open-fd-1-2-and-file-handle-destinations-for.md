@@ -13,7 +13,7 @@ scope = ["docs/design/grimble/output-atoms.md", "crates/grimble-check/src/log/ca
 
 [[acceptance]]
 text = "Python open(1|2, write mode) and open(sys.stdout.fileno(), write mode) are reported as py.open-fd; opening a path, or passing 1 as buffering, is not; file-handle destinations stay advisory"
-bound = false
+bound = true
 +++
 
 cut from ~KGBAD9H: open(1,'w') / open(sys.stdout.fileno()) needs a py.open fd catalogue row in docs/design/grimble/output-atoms.md (outside log/** scope); file-handle 'or file' destinations are an advisory-severity decision since data files are not logs.
