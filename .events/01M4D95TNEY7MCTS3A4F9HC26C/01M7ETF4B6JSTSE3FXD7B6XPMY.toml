@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-15T05:21:48Z"
+digest = "e658b3e8fcd79acea0416a08b27c49cea81abcbe26bf10fb043374f77c42c91b"
+exit_code = 0
+head = "76daa1e3ff4a7ededc282461278fd9d31defdab4"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.26s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 54f90a9a-dc75-4146-bb3c-c7788ffc2cf0 with nextest profile: default
+    Starting 1 test across 2 binaries (30 tests skipped)
+        PASS [   0.014s] gob-frameworks::it route_a11y::titled_and_focused_route_is_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 30 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-frameworks -E test(=route_a11y::titled_and_focused_route_is_clean)"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "883d8000c254e235a185bb4c5037fb5655de47d7c9850ed53505c297f8e42fbf"
+at = "2026-11-15T05:21:48Z"
+actor = "lognd"
+rev = 1
