@@ -19,6 +19,7 @@
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
 pub mod gx_pack;
+pub mod route_a11y;
 pub mod packs;
 mod product;
 pub mod product_rules;

@@ -36,6 +36,7 @@ mod nextjs;
 mod react_router;
 mod registry;
 mod repo;
+mod route_a11y;
 mod terms;
 mod types;
 
@@ -48,6 +49,7 @@ use tracing::info;
 pub use http::{ClientCall, HttpEdge, Library, link};
 pub use registry::{Detector, FrameworkEntry, detect, detect_with, frameworks};
 pub use repo::Repo;
+pub use route_a11y::{RouteGap, route_gaps};
 pub use types::{
     Analysis, Detection, Discovery, Entrypoint, EntrypointKind, Method, Problem, Route, Status,
 };

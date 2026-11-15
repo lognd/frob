@@ -3,4 +3,5 @@
 mod cov_http_library;
 mod http;
 mod repo;
+mod route_a11y;
 mod routes;

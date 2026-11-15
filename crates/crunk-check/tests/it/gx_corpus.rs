@@ -3,6 +3,7 @@
 
 // frob:ticket 01M4CXSD8DEYB69E5J7Q1ABGXK
 // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
+// frob:ticket 01M4D95TNEY7MCTS3A4F9HC26C
 
 use crunk_check::{CheckOptions, run};
 
@@ -23,6 +24,8 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-check/src/gx_pack.rs::Gx021
     // frob:tests crates/crunk-check/src/gx_pack.rs::group
     // frob:tests crates/crunk-check/src/gx_pack.rs::decide
+    // frob:tests crates/crunk-check/src/route_a11y.rs::A11y104
+    // frob:tests crates/crunk-check/src/route_a11y.rs::group
     let dir = tempfile::tempdir().expect("tempdir");
     let mut config = crunk_spec::presets::preset("default")
         .expect("default preset")

@@ -245,6 +245,7 @@ is read from `crunk.toml` by `crunk_spec` (`DesignSpec::packs`) and listed by `c
 | A11Y | A11Y101 | `img` elements carry an `alt` attribute |
 | A11Y | A11Y102 | the `html` element carries a `lang` attribute |
 | A11Y | A11Y103 | `iframe` elements carry a `title` attribute |
+| A11Y | A11Y104 | a client route sets a document title and moves focus or announces the change (a Rust rule over the `gob-frameworks` routes, not GRL; Next.js needs only the title) |
 | SEO | SEO101 | `a` elements carry an `href` attribute |
 | SEO | SEO102 | a `link rel="canonical"` carries an `href` attribute |
 | SEO | SEO103 | a `meta name="description"` carries a `content` attribute |

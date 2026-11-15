@@ -4,6 +4,12 @@
 
 > Generated: do not edit this page. Regenerate with `cargo dev gen rules`.
 
+## A11Y
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [A11Y104](A11Y104.md) | route-change-announced | error | manual | P+ | false | A page route changes the screen without a document title and a focus move or announcement. |
+
 ## AFFECT
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
