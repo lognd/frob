@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-15T21:07:40Z"
+digest = "a05503ba1e695e0fa42ba29add631d29265ae2071f7c809d3937874c5a252464"
+exit_code = 0
+head = "a2f356b9957a8594b4dfe25ef087f618626d8ca9"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 28df54cd-7938-45aa-8be6-137388fb98bb with nextest profile: default
+    Starting 1 test across 2 binaries (132 tests skipped)
+        PASS [   0.117s] crunk-spec::it inline::ok_cases_parse_cleanly
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.118s] 1 test run: 1 passed, 132 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec -E test(=inline::ok_cases_parse_cleanly)"
+size = 694
+status = "measured"
+test_count = 1
+tests_digest = "1b42c9025736bb38e8732200c48644ea5819101b9853de9b344b0c09e7380180"
+at = "2026-11-15T21:07:40Z"
+actor = "lognd"
+rev = 1

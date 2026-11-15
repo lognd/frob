@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T21:02:57Z"
-updated = "2026-11-15T21:07:35Z"
+updated = "2026-11-15T21:07:40Z"
 scope = ["crates/crunk-spec/tests/**"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "inline::ok_cases_parse_cleanly passes with refreshed snapshots"
-bound = false
+bound = true
 +++
 
 CI on experimental 64e2aa59f2 fails on ubuntu and windows: full_all_tables lacks scales.durations [] and tokens.duration, added by 939491c48b. Update reference dumps and insta snapshots; no src changes.
