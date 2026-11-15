@@ -1,0 +1,10 @@
+kind = "create"
+title = "ticket doable --disjoint N"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit2-repo.md F11. Remedy: list N ready tickets with disjoint scopes. Files: ticket doable verb."
+at = "2026-11-15T06:19:09Z"
+actor = "lognd"
+rev = 1
