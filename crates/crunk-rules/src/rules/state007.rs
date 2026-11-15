@@ -7,7 +7,7 @@ use crunk_spec::table::ScreenStatus;
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::component_files::TokenLookup;
-use crate::host::{CrunkHost, missing_screen_inputs, screen_subjects};
+use crate::host::{CrunkHost, inapplicable_without, screen_subjects};
 use crate::screen_files::content_hash;
 
 /// A locked screen whose content hash is missing or stale.
@@ -58,7 +58,11 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for State007 {
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {
-        missing_screen_inputs(host)
+        inapplicable_without(
+            host,
+            screen_subjects(host),
+            "design/screens/*.screen.toml files",
+        )
     }
 }
 
