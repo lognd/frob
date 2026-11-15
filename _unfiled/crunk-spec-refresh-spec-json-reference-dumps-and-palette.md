@@ -7,7 +7,7 @@ priority = "high"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T21:02:57Z"
-updated = "2026-11-15T21:05:25Z"
+updated = "2026-11-15T21:07:35Z"
 scope = ["crates/crunk-spec/tests/**"]
 
 [[acceptance]]

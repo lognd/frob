@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T21:07:35Z"
+digest = "717af23ef9ae7205ed767cc21a39f328cdb9d845eb5c9bda8de51d610f2b45b2"
+exit_code = 0
+head = "a2f356b9957a8594b4dfe25ef087f618626d8ca9"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.32s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d0230edc-2190-40e4-8eb7-958b1ec09a00 with nextest profile: default
+    Starting 1 test across 2 binaries (132 tests skipped)
+        PASS [   0.036s] crunk-spec::it parity::every_fixture_equals_the_python_spec_dump
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.037s] 1 test run: 1 passed, 132 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-spec -E test(=parity::every_fixture_equals_the_python_spec_dump)"
+size = 713
+status = "measured"
+test_count = 1
+tests_digest = "6c4fe03951f9e8216a43137430c670cc55a4cd1199a53a08ab3f3cfbe3d914b0"
+at = "2026-11-15T21:07:35Z"
+actor = "lognd"
+rev = 1
