@@ -2,7 +2,8 @@
 id = "01M61QA7EFH66FJT0092G5R8FT"
 title = "CAP: scan macro bodies (token trees) for capability uses"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
