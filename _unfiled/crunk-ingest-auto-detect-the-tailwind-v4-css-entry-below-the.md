@@ -7,7 +7,7 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:35Z"
-updated = "2026-11-15T05:06:29Z"
+updated = "2026-11-15T05:22:35Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-ingest/src/tailwind/**"]
 
