@@ -4,10 +4,19 @@ title = "base-CI gate: cancelled checks and unreadable blockers fail closed to P
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T06:10:24Z"
-updated = "2026-11-15T06:10:24Z"
+updated = "2026-11-15T06:10:25Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "Unreadable blocker list refuses the land (test)"
+bound = false
+
+[[acceptance]]
+text = "Cancelled check is Pending (test)"
+bound = false
 +++
 
 Source: frob-audit-core.md L4. Evidence: crates/frob-land/src/base_ci.rs:238-249,358-367 fail open on cancelled checks and an unreadable blocker list. Remedy: treat as Pending/refuse with a clear message. Files: base_ci.rs.

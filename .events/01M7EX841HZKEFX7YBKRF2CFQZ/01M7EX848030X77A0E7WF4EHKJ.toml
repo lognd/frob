@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Unreadable blocker list refuses the land (test)", "Cancelled check is Pending (test)"]
+moved = []
+at = "2026-11-15T06:10:25Z"
+actor = "lognd"
+rev = 1
