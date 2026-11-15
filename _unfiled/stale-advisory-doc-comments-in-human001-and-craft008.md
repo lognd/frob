@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
 updated = "2026-11-15T21:32:43Z"
-scope = ["crates/crunk-rules/src/rules/human001.rs", "crates/crunk-rules/src/rules/craft008.rs", "crates/crunk-rules/src/rules/human002.rs"]
+scope = ["crates/crunk-rules/src/rules/human001.rs", "crates/crunk-rules/src/rules/craft008.rs", "crates/crunk-rules/src/rules/human002.rs", "crates/crunk-rules/src/rules/human002.md"]
 +++
 
 found while working WJH9CR5: severity is now error, docs still say advisory
