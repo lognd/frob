@@ -4,9 +4,10 @@ title = "grimble: let a vmodel carry verified_by evidence without MDL000/MDL012"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
-updated = "2026-11-15T05:14:12Z"
+updated = "2026-11-15T05:15:10Z"
 labels = ["no-story"]
 +++
 
