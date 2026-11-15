@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given grimble-check runs twice on an unchanged tree, then TYPING004 findings come from the report cache and match the uncached run; an integration test like res_rules.rs covers it"]
+moved = []
+at = "2026-11-15T01:12:27Z"
+actor = "lognd"
+rev = 1
