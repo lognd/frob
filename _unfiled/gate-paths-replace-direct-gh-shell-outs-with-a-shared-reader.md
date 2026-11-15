@@ -1,0 +1,13 @@
++++
+id = "01M7EXR1KCB0F9WCR151BCDYP3"
+title = "gate paths: replace direct gh shell-outs with a shared reader"
+type = "task"
+category = "todo"
+priority = "medium"
+reporter = "lognd"
+created = "2026-11-15T06:19:06Z"
+updated = "2026-11-15T06:19:06Z"
+labels = ["no-story"]
++++
+
+Source: frob-audit2-repo.md M5. Evidence: base_ci.rs:86,114, release_cmd.rs:461, import_crunk.rs:89 call gh. Related ~9X8NB5R, ~MY5FAWE. Remedy: one CiReader/gh wrapper. Files: those.
