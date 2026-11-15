@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T08:45:20Z"
+digest = "a35e7b00b2aba1903e27b58f5170c56972d527705e25c4eaeb1a22bc48cf252d"
+exit_code = 0
+head = "ec115c2cbaaf1088c108b6a3b888decd1d518f10"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d88be10a-9628-44d2-9b33-d1a1e8878e9e with nextest profile: default
+    Starting 1 test across 2 binaries (317 tests skipped)
+        PASS [   0.005s] crunk-rules component_files::tests::an_empty_lookup_is_empty_and_knows_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.006s] 1 test run: 1 passed, 317 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=component_files::tests::an_empty_lookup_is_empty_and_knows_nothing)"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "ba545f8514f8e03e6633b0bb1e7e2f123c85265b1fec0cdb40e76319ca08656f"
+at = "2026-11-15T08:45:20Z"
+actor = "lognd"
+rev = 1
