@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk components: [[transitions]] table and tailwind transition keys"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+idempotency_key = "crunkplan-bef296baf403"
+labels = ["no-story"]
+acceptance = ["a component [[transitions]] entry parses and is judged by MOTION rules", "tailwind transition-colors resolves to a duration token"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M3.
+Evidence: components cannot declare transitions; tailwind transition keys unrecognised
+Remedy: add [[transitions]] to component schema and map tailwind transition-* keys
+Crates/files: crates/crunk-spec, crates/crunk-tailwind
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:24Z"
+actor = "lognd"
+rev = 1
