@@ -2,12 +2,12 @@
 id = "01M5NKGV2EM8K56HNNC4HAMFBM"
 title = "Document that file evidence must be committed content (E-EVIDENCE-FILE-UNCOMMITTED)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-24T00:03:42Z"
-updated = "2026-10-27T02:58:42Z"
+updated = "2026-11-15T14:51:48Z"
 scope = ["docs/design/tickets.md"]
 +++
 
