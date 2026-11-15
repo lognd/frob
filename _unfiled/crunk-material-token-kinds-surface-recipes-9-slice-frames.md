@@ -4,9 +4,10 @@ title = "crunk: material token kinds (surface recipes, 9-slice frames)"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 13
 reporter = "lognd"
 created = "2026-11-15T05:19:39Z"
-updated = "2026-11-15T05:19:39Z"
+updated = "2026-11-15T06:21:39Z"
 labels = ["no-story"]
 +++
 
