@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble trace: derive verified/bound from check results not syntax"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Audit2 H2 (show_cmd.rs:388-418). See /home/logan/projects/frob-audit2-grimble.md section H2 for evidence and remedy."
+at = "2026-11-15T05:14:13Z"
+actor = "lognd"
+rev = 1
