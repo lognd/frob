@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-11-15T21:32:39Z"
+updated = "2026-11-15T21:39:46Z"
 scope = ["crates/crunk/src/new/**", "crates/crunk/src/new.rs", "crates/crunk/tests/it/new.rs"]
+
+[[acceptance]]
+text = "The crunk new component skeleton passes crunk check with no CRAFT002 finding"
+bound = false
 +++
 
 found while working WJH9CR5: new.rs test filters CRAFT002 out of the skeleton validation
