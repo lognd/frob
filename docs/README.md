@@ -27,6 +27,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 |---|---|---|---|
 | [design/README.md](design/README.md) | frob v2 design | current | frob |
 | [design/crunk/crunk.md](design/crunk/crunk.md) | crunk: an agent-first design tool where every interface is batch-checkable (D108-D117) | draft | crunk |
+| [design/crunk/stylesheet-solve.md](design/crunk/stylesheet-solve.md) | Crunk solver and scene stylesheets | current | crunk |
 | [design/dup.md](design/dup.md) | Dup: duplicate-code tiers and their cost | draft | grimble |
 | [design/frob/distributed-tickets.md](design/frob/distributed-tickets.md) | Distributed tickets: many people and agents on one ledger | draft | frob |
 | [design/frob/migration.md](design/frob/migration.md) | Migration from v1 and rollout | draft | frob |
