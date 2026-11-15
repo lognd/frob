@@ -1,0 +1,10 @@
+kind = "create"
+title = "claim push uses its own timeout rather than the 2.5 s probe timeout"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit2-repo.md M2/F10. Evidence: crates/frob-worktree/src/claim.rs:50-190. Remedy: configurable push timeout with retry. Files: claim.rs."
+at = "2026-11-15T06:19:05Z"
+actor = "lognd"
+rev = 1
