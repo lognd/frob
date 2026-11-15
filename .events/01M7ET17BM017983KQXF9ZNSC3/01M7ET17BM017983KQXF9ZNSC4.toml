@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble: let a vmodel carry verified_by evidence without MDL000/MDL012"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Audit2 H1. See /home/logan/projects/frob-audit2-grimble.md section H1 for evidence and remedy."
+at = "2026-11-15T05:14:12Z"
+actor = "lognd"
+rev = 1
