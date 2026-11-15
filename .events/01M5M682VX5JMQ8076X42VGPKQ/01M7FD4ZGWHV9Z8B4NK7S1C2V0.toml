@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T10:48:18Z"
+digest = "f066c9c8251955b58421b6a3886a310ea680f154a924d990254e5a9487934761"
+exit_code = 0
+head = "fa608ff29338eb993d6206138681bdfc5351c917"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a733a5a6-331f-4c97-8340-7bb63efba3ca with nextest profile: default
+    Starting 1 test across 2 binaries (4 tests skipped)
+        PASS [   0.126s] grimble-serve::serve explore_of_an_unknown_node_is_a_tool_error
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.127s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-serve -E test(=explore_of_an_unknown_node_is_a_tool_error)"
+size = 552
+status = "measured"
+test_count = 1
+tests_digest = "a4a2239a9002b272b345fd09c054f88fc81b385fc8d3554e008693774f48544b"
+at = "2026-11-15T10:48:18Z"
+actor = "lognd"
+rev = 1
