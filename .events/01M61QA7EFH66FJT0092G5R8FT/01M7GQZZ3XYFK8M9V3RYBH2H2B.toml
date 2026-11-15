@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T23:17:03Z"
+digest = "13b11ca8b128cd36cae25dc7f3a316348092ed93b9bf470c166f9dd6489b5170"
+exit_code = 0
+head = "a400d7aebb5755d40e305d0f351506fd0fc6ba6d"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 111410bd-423b-46ae-9846-a12fdd9f505d with nextest profile: default
+    Starting 3 tests across 2 binaries (577 tests skipped)
+        PASS [   0.005s] gob-symbols canon::tests::rust_macro_argument_call_is_a_path_use
+        PASS [   0.005s] gob-symbols canon::tests::rust_macro_argument_call_resolves_through_an_import
+        PASS [   0.006s] gob-symbols::it call_edges::rust_macro_argument_calls_become_edges
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 3 tests run: 3 passed, 577 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-symbols -E 'test(rust_macro_argument_call)'"
+size = 754
+status = "measured"
+test_count = 3
+tests_digest = "dd5c980975c935cb3a2e8d05823a1f0b08e5188425736ea07dc36f3070514dff"
+at = "2026-11-15T23:17:03Z"
+actor = "lognd"
+rev = 1
