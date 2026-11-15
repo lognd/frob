@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T12:59:02Z"
+digest = "b6cbb50f38cb0352a6339e3067f810a684df0fc5eda7600f73c17e7752618a82"
+exit_code = 0
+head = "cc26b9564faefdb242d38e657b2f2d73b63d30a0"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f2b6f646-1db1-4b9e-a97e-1475b2af239e with nextest profile: default
+    Starting 1 test across 6 binaries (323 tests skipped)
+        PASS [   0.034s] crunk::it doctor_report::report_prints_the_tailwind_presence_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 323 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=doctor_report::report_prints_the_tailwind_presence_table)"
+size = 613
+status = "measured"
+test_count = 1
+tests_digest = "be34a5a09707b788c5cbdbb44b2eb4816724c656095b4eb60f06da9c6e7880d9"
+at = "2026-11-15T12:59:02Z"
+actor = "lognd"
+rev = 1
