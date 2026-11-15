@@ -13,18 +13,9 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 use super::collisions::{ThemeCollision, is_v3_default, is_v4_default, waiver_for};
+use super::detect::detect_css_entry;
 use super::v3::read_v3;
 use super::v4::{read_v4, split_namespace};
-
-/// Where V4 CSS entries are looked for, relative to the project root.
-const V4_CSS_CANDIDATES: [&str; 6] = [
-    "styles/tailwind.css",
-    "styles/main.css",
-    "styles/index.css",
-    "src/index.css",
-    "src/main.css",
-    "src/styles.css",
-];
 
 /// The Tailwind generation a config belongs to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -210,16 +201,6 @@ fn read_config_text(path: Option<&Path>, diagnostics: &mut Vec<String>) -> Strin
     })
 }
 
-/// The first existing root-relative v4 CSS entry candidate holding `@import "tailwindcss"`.
-fn detect_css_entry(root: &Path) -> Option<PathBuf> {
-    V4_CSS_CANDIDATES.iter().map(|c| root.join(c)).find(|p| {
-        std::fs::read_to_string(p)
-            .ok()
-            .and_then(|text| read_v4(&text).ok())
-            .is_some_and(|r| r.is_v4)
-    })
-}
-
 /// The Tailwind config file and the v4 CSS entry `spec` names, root-joined: `[tailwind] config`, and
 /// `css_entry` or else a detected entry or a `.css` config.
 fn locate_sources(spec: &DesignSpec) -> (Option<PathBuf>, Option<PathBuf>) {
@@ -228,7 +209,7 @@ fn locate_sources(spec: &DesignSpec) -> (Option<PathBuf>, Option<PathBuf>) {
     let config_path = (!cfg.config.is_empty()).then(|| root.join(&cfg.config));
     let mut css_entry = (!cfg.css_entry.is_empty())
         .then(|| root.join(&cfg.css_entry))
-        .or_else(|| detect_css_entry(root));
+        .or_else(|| detect_css_entry(root, config_path.as_deref()));
     if css_entry.is_none()
         && let Some(p) = &config_path
         && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("css"))

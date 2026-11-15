@@ -1,0 +1,1 @@
+crunk-ingest auto-detects a Tailwind v4 CSS entry below the project root (for example `web/src/index.css`) by following its `@config` back-reference to the configured Tailwind config, so `[tailwind] css_entry` is no longer needed for it.
