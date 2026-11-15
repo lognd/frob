@@ -20,7 +20,7 @@ bound = true
 
 [[acceptance]]
 text = "An empty <style> and inline styles still solve"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "The reject-vs-honor decision is recorded in docs/design/crunk/stylesheet-solve.md"
