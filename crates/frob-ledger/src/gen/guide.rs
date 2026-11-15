@@ -49,11 +49,18 @@ pub const TEMPLATES: &[Template] = &[
 /// The command name used in the rendered guide.
 const COMMAND: &str = "frob";
 
+/// The ledger directory name `branch_gitattributes` is rendered for, as the branch init uses.
+const BRANCH_LEDGER_DIR: &str = "tickets";
+
 /// Fill the `{{name}}` placeholders of `body`.
 fn fill(body: &str, version: &str, handle_min_len: usize) -> String {
     body.replace("{{frob}}", COMMAND)
         .replace("{{version}}", version)
         .replace("{{handle_min_len}}", &handle_min_len.to_string())
+        .replace(
+            "{{branch_attributes}}\n",
+            &crate::layout::branch_gitattributes(BRANCH_LEDGER_DIR),
+        )
 }
 
 /// The first line of an installed file: a marker comment in the file's own syntax.
@@ -85,4 +92,21 @@ pub fn render_with(input: &GenInput<'_>, templates: &[Template]) -> Vec<(String,
 #[must_use]
 pub fn render(input: &GenInput<'_>) -> Vec<(String, Vec<u8>)> {
     render_with(input, TEMPLATES)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M5XBTMCCFSS2X4J6BPGYE0EB
+    // frob:tests fill
+    #[test]
+    fn gitattributes_template_embeds_the_branch_init_attributes() {
+        let out = fill(TEMPLATES[0].body, "0.0.0", 4);
+        let branch = crate::layout::branch_gitattributes(BRANCH_LEDGER_DIR);
+        assert!(out.starts_with(&branch), "{out}");
+        assert!(crate::layout::missing_eol_pins(&out).is_empty(), "{out}");
+        assert!(out.contains("merge=frob-ledger"), "{out}");
+        assert!(!out.contains("{{"), "{out}");
+    }
 }
