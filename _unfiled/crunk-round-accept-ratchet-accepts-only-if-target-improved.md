@@ -12,6 +12,10 @@ updated = "2026-11-15T06:21:19Z"
 idempotency_key = "crunkplan-7bed367ae8f4"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXW39Y10NQ3J1F1G5QNKFZ"
+
 [[acceptance]]
 text = "a regressing round restores the last accepted state (test)"
 bound = false
