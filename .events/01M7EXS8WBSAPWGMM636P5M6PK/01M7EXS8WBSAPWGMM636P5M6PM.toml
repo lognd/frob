@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk export: EXPORT finding for composites unsupported by uss, csharp, figma"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETK8FEAC1T9J0XMDFWKG0Y"
+idempotency_key = "crunkplan-aa005d4c56f9"
+labels = ["no-story"]
+acceptance = ["exporting a composite to uss yields a finding naming token and target", "no finding for supported (target, composite) pairs"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Evidence: unsupported composites are silently omitted per target
+Remedy: one EXPORT finding per (target, composite) that cannot be represented
+Crates/files: crates/crunk-export, crates/crunk-rules export rules
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:46Z"
+actor = "lognd"
+rev = 1
