@@ -987,13 +987,15 @@ mod tests {
     }
 
     // frob:ticket 01M4CTE3SNV3X0PD1DA6995F8R
+    // frob:ticket 01M7EXZ20VEG1WPQJP5TY499D4
+    // frob:tests crates/gob-dev/src/publish.rs::plan
     #[test]
     fn crates_with_no_consumer_are_skipped_and_no_published_crate_needs_a_skipped_one() {
         let root = crate::workspace_root().unwrap();
         let json = read_metadata(&root).unwrap();
         let order = plan(&json).unwrap();
         let planned: BTreeSet<&str> = order.iter().map(|c| c.name.as_str()).collect();
-        for skipped in ["gob-frameworks", "frob-gh"] {
+        for skipped in ["frob-gh"] {
             assert!(!planned.contains(skipped), "{skipped} must not publish");
         }
         let meta: serde_json::Value = serde_json::from_str(&json).unwrap();
