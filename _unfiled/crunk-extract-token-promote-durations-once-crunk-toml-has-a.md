@@ -7,7 +7,7 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T21:08:52Z"
-updated = "2026-11-15T14:20:43Z"
+updated = "2026-11-15T14:37:58Z"
 labels = ["no-story"]
 scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-tokens/src/model.rs", "crates/crunk/tests/it/extract.rs", "docs/reference/cli/crunk.md", "docs/reference/config/crunk.md", "docs/schemas/crunk.json"]
 
