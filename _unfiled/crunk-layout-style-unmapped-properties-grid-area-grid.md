@@ -2,7 +2,7 @@
 id = "01M5XDN70VBSJRZKW1AVDERKS8"
 title = "crunk-layout style: unmapped properties (grid-area, grid-template-areas, order, place-*, named lines, min/max/fit-content, em)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
