@@ -2,12 +2,12 @@
 id = "01M4DVX1K76X876W0YPB5EX3F9"
 title = "crunk: wire the Tailwind runtime into crunk doctor and the engine choice (--static, [tailwind] engine) into check and ingest"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 5
 reporter = "lognd"
 created = "2026-10-08T13:40:33Z"
-updated = "2026-11-15T12:51:34Z"
+updated = "2026-11-15T12:51:40Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/doctor.rs,crates/crunk-spec/src/table.rs,crates/crunk-check/src/**"]
 
