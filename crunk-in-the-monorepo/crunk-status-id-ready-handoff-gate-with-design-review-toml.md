@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
 updated = "2026-11-15T12:53:08Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk/src/status.rs, crates/crunk-spec/src/handoff.rs, crates/crunk-rules/src/handoff.rs, crates/crunk/tests/status_ready.rs", "crates/gob-lock/src/file.rs", "crates/gob-lock/src/lib.rs", "crates/crunk/src/lib.rs", "crates/crunk-spec/src/lib.rs"]
+scope = ["crates/crunk/src/status.rs, crates/crunk-spec/src/handoff.rs, crates/crunk-rules/src/handoff.rs, crates/crunk/tests/status_ready.rs", "crates/gob-lock/src/file.rs", "crates/gob-lock/src/lib.rs", "crates/crunk/src/lib.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/lib.rs"]
 
 [[acceptance]]
 text = "Given a screen with open blocking comments, a stale export, a missing code mapping or red lints at its tier, when crunk status ID ready runs, then it refuses naming each reason and records nothing; given all green, then the content hash is recorded in crunk.lock; given a later change to the screen, then it is marked changed. Edge cases: unknown id exits 2; a comment anchored to a deleted node is reported as orphaned and does not block; running ready twice is idempotent; human acks are never written by this verb"
