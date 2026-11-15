@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A skipped PM037 yields Unresolved (test)", "design.rs uses sibling_timeout_secs (test)"]
+moved = []
+at = "2026-11-15T06:18:59Z"
+actor = "lognd"
+rev = 1
