@@ -2,12 +2,12 @@
 id = "01M4DVX3DEBN2QS1WVQACE8EHJ"
 title = "crunk-ingest: auto-detect the Tailwind v4 CSS entry below the root (web/src/index.css) by following @config back-references"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-08T13:40:35Z"
-updated = "2026-10-28T12:55:48Z"
+updated = "2026-11-15T05:01:56Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-ingest/src/tailwind/**"]
 +++
