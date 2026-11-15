@@ -148,11 +148,42 @@ fn solve_scene_font_outside_the_bundle_is_a_typed_error() {
 
 // frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
 #[test]
-fn solve_scene_style_rules_are_refused() {
-    let err = solve(r#"<style>.a { padding: 32px }</style><div data-id="r" class="a"></div>"#)
+fn solve_scene_unsupported_selector_is_refused() {
+    let err = solve(r#"<style>.a > .b { padding: 32px }</style><div data-id="r" class="a"></div>"#)
         .unwrap_err();
     assert!(matches!(err, SolveError::StylesheetNotApplied(_)));
     assert!(err.to_string().contains("STYLESHEET"));
+}
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_supported_rule_applies_to_matching_element() {
+    let s = solve(
+        r#"<style>.a { width: 40px; height: 10px }</style><div data-id="r" class="a"></div>"#,
+    )
+    .unwrap();
+    let n = &s.doc.nodes[0];
+    assert_eq!((n.width, n.height), (40.0, 10.0));
+}
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_inline_style_overrides_rule() {
+    let s = solve(
+        r#"<style>.a { width: 40px; height: 10px }</style><div data-id="r" class="a" style="width:7px"></div>"#,
+    )
+    .unwrap();
+    assert_eq!(s.doc.nodes[0].width, 7.0);
+}
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_rule_does_not_touch_other_elements() {
+    let s = solve(
+        r#"<style>.a { width: 40px }</style><div data-id="r"><p data-id="o" style="height:5px"></p></div>"#,
+    )
+    .unwrap();
+    assert!(s.doc.nodes.iter().all(|n| n.width != 40.0));
 }
 
 // frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html

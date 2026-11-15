@@ -5,8 +5,9 @@
 //! not solved), maps inline styles, builds the taffy tree with text leaves measured by the
 //! bundled-font [`TextMeasurer`], computes it at the viewport and normalizes the result.
 //!
-//! - A `<style>` body with rules (or `@media`) is refused with [`SolveError::StylesheetNotApplied`]:
-//!   the solver reads inline styles only and must not judge an unstyled layout as if it were final.
+//! - Supported `<style>` rules apply to the elements they match (inline styles win). A `<style>`
+//!   holding unsupported selectors or `@media` is refused with [`SolveError::StylesheetNotApplied`]:
+//!   the solver must not judge a partly styled layout as if it were final.
 //! - Text properties (`font-family`, `font-size`, `letter-spacing`, `line-height`, `white-space`)
 //!   inherit; the default is Lato 16px, line-height 1.2.
 //! - An element with direct text and no layout children is a `text` node; with children, its text
@@ -49,7 +50,7 @@ pub struct Solved {
 ///
 /// # Errors
 /// [`SolveError::Refused`] on a duplicate or missing `data-id`, [`SolveError::StylesheetNotApplied`]
-/// on a `<style>` with rules or `@media`, [`SolveError::Style`] on an
+/// on a `<style>` with unsupported selectors or `@media`, [`SolveError::Style`] on an
 /// unmappable style, [`SolveError::Text`] on a font outside the bundle, and engine or output
 /// errors for internal inconsistencies or non-finite values.
 pub fn solve_scene_html(

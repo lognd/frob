@@ -9,7 +9,7 @@ use crunk_scene::{ElementKind, SceneDoc, SceneElement};
 use super::SolveError;
 use super::textstyle::{root_text_style, text_style_for};
 use super::tokens::token_bindings;
-use crate::style::{ElementRef, StyledNode, StyledScene, TokenMap, inline_decls};
+use crate::style::{ElementRef, StyledNode, StyledScene, TokenMap, element_decls};
 use crate::text::TextStyle;
 
 /// The text a leaf measures and the style it measures under.
@@ -41,19 +41,20 @@ pub(crate) fn prepare(
     styled: &StyledScene,
     tokens: &TokenMap,
 ) -> Result<Vec<Prepared>, SolveError> {
-    let by_id: BTreeMap<&str, &SceneElement> = doc
+    let by_id: BTreeMap<&str, usize> = doc
         .elements
         .iter()
-        .filter_map(|e| e.data_id.as_deref().map(|id| (id, e)))
+        .enumerate()
+        .filter_map(|(i, e)| e.data_id.as_deref().map(|id| (id, i)))
         .collect();
     let mut text_styles: Vec<TextStyle> = Vec::with_capacity(styled.nodes.len());
     let mut out = Vec::with_capacity(styled.nodes.len());
     for node in &styled.nodes {
-        let el = by_id[node.data_id.as_str()];
+        let idx = by_id[node.data_id.as_str()];
         let parent_style = node
             .parent
             .map_or_else(root_text_style, |p| text_styles[p].clone());
-        let p = prepare_one(node, el, tokens, &parent_style)?;
+        let p = prepare_one(doc, idx, node, tokens, &parent_style)?;
         text_styles.push(p.1);
         out.push(p.0);
     }
@@ -62,13 +63,14 @@ pub(crate) fn prepare(
 }
 
 fn prepare_one(
+    doc: &SceneDoc,
+    idx: usize,
     node: &StyledNode,
-    el: &SceneElement,
     tokens: &TokenMap,
     parent_style: &TextStyle,
 ) -> Result<(Prepared, TextStyle), SolveError> {
-    let attr = el.attributes.iter().find(|(k, _)| k == "style");
-    let decls = inline_decls(attr.map(|(_, v)| v.as_str()));
+    let el = &doc.elements[idx];
+    let decls = element_decls(doc, idx);
     let eref = ElementRef {
         data_id: &node.data_id,
         line: node.line,

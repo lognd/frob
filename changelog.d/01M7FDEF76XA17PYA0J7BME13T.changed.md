@@ -1,0 +1,1 @@
+crunk-layout applies supported `<style>` rules (type, class, id, descendant selectors) to matching elements, with inline styles winning; the stylesheet-not-applied refusal now covers only unsupported selectors and at-rules.

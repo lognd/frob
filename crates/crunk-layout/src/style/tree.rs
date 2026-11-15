@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use crunk_scene::SceneDoc;
+use crunk_scene::{SceneDoc, SceneRule};
 use taffy::{NodeId, Style, TaffyTree};
 
 use super::error::{FindingKind, StyleError, StyleFinding};
@@ -44,9 +44,11 @@ pub struct StyledScene {
 
 /// Map every element of `doc` to a taffy style, resolving tokens.
 ///
-/// Only inline `style` attributes are mapped; `<style>` rules and `@media` blocks are not applied,
-/// and each non-empty `<style>` adds a [`FindingKind::StylesheetNotApplied`] finding (the solver
-/// refuses on it; see docs/design/crunk/stylesheet-solve.md).
+/// Supported `<style>` rules (see [`SceneDoc::rules`]) apply to the elements they match in source
+/// order, then inline `style` attributes override them. Each `<style>` holding anything not
+/// applied (an unsupported selector, `@media` or another at-rule) adds a
+/// [`FindingKind::StylesheetNotApplied`] finding (the solver refuses on it; see
+/// docs/design/crunk/stylesheet-solve.md).
 ///
 /// # Errors
 /// Every [`StyleError`] found (one per offending element or declaration), not just the first.
@@ -63,7 +65,7 @@ pub fn style_scene(
     for (i, el) in doc.elements.iter().enumerate() {
         let up = el.parent.filter(|p| *p < i).and_then(|p| anchor[p]);
         let line = el.line;
-        if el.tag == "style" && stylesheet_has_rules(doc, i) {
+        if el.tag == "style" && stylesheet_has_unapplied(doc, i) {
             tracing::warn!(line, "`<style>` rules found; the solver cannot apply them");
             out.findings.push(StyleFinding {
                 kind: FindingKind::StylesheetNotApplied,
@@ -101,12 +103,7 @@ pub fn style_scene(
             anchor.push(up);
             continue;
         }
-        let decls = inline_decls(
-            el.attributes
-                .iter()
-                .find(|(k, _)| k == "style")
-                .map(|(_, v)| v.as_str()),
-        );
+        let decls = element_decls(doc, i);
         let parent_ctx = up.map_or(viewport, |p| ctxs[p]);
         match map_declarations(ElementRef { data_id: id, line }, &decls, tokens, parent_ctx) {
             Ok(m) => {
@@ -144,7 +141,7 @@ pub fn style_scene(
 }
 
 /// Split an inline `style` attribute into `(property, value)` pairs, skipping custom properties.
-pub(crate) fn inline_decls(attr: Option<&str>) -> Vec<(String, String)> {
+fn inline_decls(attr: Option<&str>) -> Vec<(String, String)> {
     let Some(attr) = attr else { return Vec::new() };
     let mut parts = Vec::new();
     let (mut depth, mut start) = (0usize, 0usize);
@@ -217,9 +214,57 @@ pub fn build_taffy(scene: &StyledScene) -> Result<LayoutTree, StyleError> {
     })
 }
 
-/// Whether the `<style>` element at `idx` holds any rule: a declaration or at-rule between its
-/// start tag and the next element's start tag (a `<style>` has no element children).
-fn stylesheet_has_rules(doc: &SceneDoc, idx: usize) -> bool {
+/// The `(property, value)` pairs that style element `idx`: matching supported rules in source
+/// order, then its inline `style` attribute (so inline wins).
+pub(crate) fn element_decls(doc: &SceneDoc, idx: usize) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    for rule in applied_rules(doc).filter(|r| r.matches.binary_search(&idx).is_ok()) {
+        out.extend(rule_decl_offsets(doc, rule).into_iter().map(|d| {
+            (
+                doc.declarations[d].property.clone(),
+                doc.declarations[d].value.clone(),
+            )
+        }));
+    }
+    let inline = doc.elements[idx]
+        .attributes
+        .iter()
+        .find(|(k, _)| k == "style")
+        .map(|(_, v)| v.as_str());
+    out.extend(inline_decls(inline));
+    out
+}
+
+/// The rules the solver applies: supported selector, not inside an at-rule.
+fn applied_rules(doc: &SceneDoc) -> impl Iterator<Item = &SceneRule> {
+    doc.rules
+        .iter()
+        .filter(|r| r.supported && r.at_rule.is_none())
+}
+
+/// Indices into `doc.declarations` of the plain declarations of `rule`: those from its start up to
+/// the next rule, at-rule or element start.
+fn rule_decl_offsets(doc: &SceneDoc, rule: &SceneRule) -> Vec<usize> {
+    let end = doc
+        .rules
+        .iter()
+        .map(|r| r.offset)
+        .chain(doc.at_rule_sites.iter().map(|a| a.offset))
+        .chain(doc.elements.iter().map(|e| e.offset))
+        .filter(|o| *o > rule.offset)
+        .min()
+        .unwrap_or(usize::MAX);
+    doc.declarations
+        .iter()
+        .enumerate()
+        .filter(|(_, d)| d.at_rule.is_none() && d.offset >= rule.offset && d.offset < end)
+        .map(|(i, _)| i)
+        .collect()
+}
+
+/// Whether the `<style>` element at `idx` holds anything the solver does not apply: an at-rule, or
+/// a declaration outside every applied rule (an unsupported selector's body, a bare declaration).
+fn stylesheet_has_unapplied(doc: &SceneDoc, idx: usize) -> bool {
     let start = doc.elements[idx].offset;
     let end = doc
         .elements
@@ -229,6 +274,14 @@ fn stylesheet_has_rules(doc: &SceneDoc, idx: usize) -> bool {
         .min()
         .unwrap_or(usize::MAX);
     let inside = |o: usize| o > start && o < end;
-    doc.declarations.iter().any(|d| inside(d.offset))
-        || doc.at_rule_sites.iter().any(|a| inside(a.offset))
+    if doc.at_rule_sites.iter().any(|a| inside(a.offset)) {
+        return true;
+    }
+    let applied: std::collections::BTreeSet<usize> = applied_rules(doc)
+        .flat_map(|r| rule_decl_offsets(doc, r))
+        .collect();
+    doc.declarations
+        .iter()
+        .enumerate()
+        .any(|(i, d)| inside(d.offset) && !applied.contains(&i))
 }
