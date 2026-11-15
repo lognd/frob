@@ -12,6 +12,10 @@ updated = "2026-11-15T06:19:48Z"
 idempotency_key = "crunkplan-554fbe88d92c"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXS9F60CP83A9BK9W5FC9P"
+
 [[acceptance]]
 text = "tailwind and json exports carry every declared mode (snapshot)"
 bound = false
