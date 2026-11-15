@@ -1,0 +1,10 @@
+kind = "create"
+title = "release status: per-rule Unresolved ratios"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M7. Evidence: release status shows only a global Unresolved count. Remedy: print per-rule ratio and flag high ones. Files: crates/frob-release*."
+at = "2026-11-15T06:19:00Z"
+actor = "lognd"
+rev = 1
