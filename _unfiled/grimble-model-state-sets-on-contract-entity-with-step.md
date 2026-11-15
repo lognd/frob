@@ -15,6 +15,10 @@ labels = ["no-story"]
 kind = "blocked-by"
 target = "01M7EXWG336G71CXW56E0NX9NP"
 
+[[links]]
+kind = "relates"
+target = "01M1T07NY7WADPN0G6N1M6NZ7K"
+
 [[acceptance]]
 text = "state set parses; a step may reference a transition"
 bound = false
