@@ -1,0 +1,4 @@
+[
+  {"op":"add","path":"/props","value":[{"name":"size","kind":"enum","values":["sm","lg"],"default":"sm","axis":true}]},
+  {"op":"add","path":"/variants","value":[{"axes":{"size":"sm"}}]}
+]

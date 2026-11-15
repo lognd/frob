@@ -1,0 +1,6 @@
+[
+  {"op":"add","path":"/states/-","value":{"id":"loading"}},
+  {"op":"add","path":"/states/-","value":{"id":"empty"}},
+  {"op":"add","path":"/states/-","value":{"id":"error"}},
+  {"op":"add","path":"/states/-","value":{"id":"partial"}}
+]
