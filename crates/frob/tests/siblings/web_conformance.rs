@@ -24,6 +24,9 @@ fn write(root: &Path, rel: &str, text: &str) {
     std::fs::write(path, text).expect("write");
 }
 
+/// A script entry point: a private function (a DEAD001 subject) that the top-level call reaches.
+const ENTRY: &str = "import { fetchUser } from \"./client\";\n\nfunction bootstrap(): void {\n  fetchUser(1);\n}\n\nbootstrap();\n";
+
 /// The fixture copied into a fresh git repository; `siblings` adds crunk's and grimble's config and the model.
 fn repo(siblings: Option<&str>) -> tempfile::TempDir {
     let dir = common::git_repo();
@@ -34,9 +37,12 @@ fn repo(siblings: Option<&str>) -> tempfile::TempDir {
         write(
             dir.path(),
             "grimble.toml",
-            "[grimble]\nmodels = [\"design/web.grmb\"]\n\n[check]\n# DEAD001 is must-measure and the fixture has no entry points; the gate is not under test.\nfail_on_unresolved = \"never\"\n",
+            "[grimble]\nmodels = [\"design/web.grmb\"]\n",
         );
         write(dir.path(), "design/web.grmb", model);
+        // DEAD001 is must-measure and the shared fixture exports everything, so give it a private
+        // function (a subject) reached from a top-level entry call.
+        write(dir.path(), "src/api/entry.ts", ENTRY);
     }
     dir
 }
@@ -111,6 +117,17 @@ fn grimble_check_binds_the_tsx_components_and_reports_the_web_languages_it_read(
     let dir = repo(Some(NODES));
     let doc = product(&grimble::cli(), dir.path());
     assert_eq!(doc["product"], "grimble");
+    // The entry-point script gives the must-measure DEAD001 a subject, so no override is needed.
+    let dead = doc["rules"]
+        .as_array()
+        .expect("rules")
+        .iter()
+        .find(|r| r["rule"] == "DEAD001")
+        .unwrap_or_else(|| panic!("DEAD001 missing from {doc}"));
+    assert!(
+        dead["subjects_examined"].as_u64().expect("subjects") >= 1,
+        "{dead}"
+    );
     let bound = |identity: &str, entity: &str| {
         doc["bindings"]
             .as_array()
