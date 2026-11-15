@@ -2,7 +2,8 @@
 id = "01M61QA7BRC843EJ1QNAG8HHEC"
 title = "CAP: follow glob imports in import-resolved capability uses"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
