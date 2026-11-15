@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:20:52Z"
-updated = "2026-11-15T06:20:52Z"
+updated = "2026-11-15T06:21:17Z"
 idempotency_key = "static-research-k10"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXV8HQ1ENKAD4NP5ZTFEZX"
 
 [[acceptance]]
 text = "A diff with fewer changed lines than min_changed_lines skips the threshold and says so"
