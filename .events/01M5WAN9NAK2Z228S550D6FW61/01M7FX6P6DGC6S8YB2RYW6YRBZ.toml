@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T15:28:51Z"
+digest = "cd94795dc38d963f6b1e3435a8c0ebff4952f85fee73d6662f53a389448905b2"
+exit_code = 0
+head = "1bfcd392ab081e50f36cff5aa5bc7c791ae2da58"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f998d795-15c3-4af6-a3e2-ebbab507ec17 with nextest profile: default
+    Starting 1 test across 2 binaries (9 tests skipped)
+        PASS [   0.004s] gob-caps capability::tests::every_capability_names_a_semver_since
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.005s] 1 test run: 1 passed, 9 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-caps -E test(=capability::tests::every_capability_names_a_semver_since)"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "1b12045d925e191ffd51520dd995b48e933da1d3a69074d7b62e982d3114fd75"
+at = "2026-11-15T15:28:51Z"
+actor = "lognd"
+rev = 1
