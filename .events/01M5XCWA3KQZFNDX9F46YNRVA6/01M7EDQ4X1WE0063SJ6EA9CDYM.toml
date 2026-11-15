@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk/tests/e2e_agent_authoring.rs, crates/crunk/tests/fixtures/agent_authoring/**", "crates/crunk/tests/e2e_agent_authoring.rs"]
+new = ["crates/crunk/tests/e2e_agent_authoring.rs, crates/crunk/tests/fixtures/agent_authoring/**", "crates/crunk/tests/e2e_agent_authoring.rs", "crates/crunk/tests/fixtures/agent_authoring/**"]
+at = "2026-11-15T01:38:59Z"
+actor = "lognd"
+rev = 1
