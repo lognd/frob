@@ -12,6 +12,10 @@ pub enum SolveError {
     /// SCENE002 holds (duplicate or missing `data-id`): the context is not solved.
     #[error("SCENE002: context not solved: {}", .0.join("; "))]
     Refused(Vec<String>),
+    /// The scene has `<style>` rules or `@media` blocks, which the solver cannot apply; solving
+    /// would silently judge the unstyled layout.
+    #[error("STYLESHEET: scene not solved, its `<style>` rules are not applied: {}", .0.join("; "))]
+    StylesheetNotApplied(Vec<String>),
     /// One or more elements' styles could not be mapped.
     #[error("{} style error(s); first: {}", .0.len(), .0[0])]
     Style(Vec<StyleError>),
