@@ -7,9 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:20:16Z"
-updated = "2026-11-15T06:20:17Z"
+updated = "2026-11-15T06:21:16Z"
 idempotency_key = "static-research-k6"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXT3X9DSSHYJWNQ4ZQPV00"
 
 [[acceptance]]
 text = "TOOL003 fires on a fixture repo with a python stack and no ruff stage and is silent once the stage is added"
