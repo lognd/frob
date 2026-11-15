@@ -9,6 +9,10 @@ use crunk_tokens::export::plan_overruns;
 /// One message per Figma collection that exceeds the configured plan limits.
 ///
 /// Empty when the spec has no `[figma]` table (nothing to check against) or the export fits.
+///
+/// # Errors
+///
+/// Returns the [`crunk_tokens::TokenError`] when the spec's tokens cannot be resolved.
 pub fn plan_findings(spec: &DesignSpec) -> Result<Vec<String>, crunk_tokens::TokenError> {
     let Some(figma) = spec.figma.as_ref() else {
         tracing::debug!("figma plan check skipped: no [figma] table");

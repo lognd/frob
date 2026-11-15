@@ -1010,13 +1010,30 @@ fn decisions_table_declares_known_decisions_with_reasons() {
 // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
 // frob:tests crates/crunk-spec/src/table.rs::FigmaConfig
 #[test]
-fn figma_table_loads_resolves_plan_limits_and_rejects_bad_values() {
+fn figma_table_is_absent_by_default() {
     assert!(ok(full()).figma.is_none());
+}
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-spec/src/table.rs::FigmaConfig
+#[test]
+fn figma_plan_sets_the_modes_limit() {
     let spec = ok(&with("[figma]\nplan = \"professional\"\n"));
-    let figma = spec.figma.expect("figma");
-    assert_eq!(figma.modes_limit(), Some(10));
+    assert_eq!(spec.figma.expect("figma").modes_limit(), Some(10));
+}
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-spec/src/table.rs::FigmaConfig
+#[test]
+fn figma_max_modes_overrides_the_plan() {
     let custom = ok(&with("[figma]\nmax_modes = 4\n")).figma.expect("figma");
     assert_eq!(custom.modes_limit(), Some(4));
+}
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-spec/src/table.rs::FigmaConfig
+#[test]
+fn figma_table_rejects_unknown_plans_and_zero_limits() {
     let unknown = err(&with("[figma]\nplan = \"bogus\"\n"));
     assert!(detail(&unknown).contains("bogus"));
     let zero = err(&with("[figma]\nmax_modes = 0\n"));

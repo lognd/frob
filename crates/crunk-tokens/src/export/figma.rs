@@ -56,7 +56,12 @@ impl fmt::Display for FigmaWarning {
             WarningKind::AliasCycle => "its alias chain is cyclic or dangling",
             WarningKind::NoFigmaType => "it has no Figma variable type",
         };
-        write!(f, "{}: skipped `{}` because {why}", self.kind.name(), self.token)
+        write!(
+            f,
+            "{}: skipped `{}` because {why}",
+            self.kind.name(),
+            self.token
+        )
     }
 }
 
@@ -132,7 +137,9 @@ fn figma_type(value: &TokenValue) -> Option<&'static str> {
 fn figma_value(value: &TokenValue) -> Value {
     match value {
         TokenValue::Color(c) => json!({"r": c.r, "g": c.g, "b": c.b, "a": c.a}),
-        TokenValue::Dimension { value, .. } | TokenValue::Float(value) | TokenValue::Duration(value) => {
+        TokenValue::Dimension { value, .. }
+        | TokenValue::Float(value)
+        | TokenValue::Duration(value) => {
             json!(value)
         }
         TokenValue::Number(n) => json!(*n as f64),
@@ -228,7 +235,10 @@ pub fn export(tokens: &TokenSet) -> FigmaExport {
         let ty = match token_type(token, tokens) {
             Ok(ty) => ty,
             Err(kind) => {
-                let w = FigmaWarning { token: token.name.clone(), kind };
+                let w = FigmaWarning {
+                    token: token.name.clone(),
+                    kind,
+                };
                 tracing::warn!(token = %w.token, warning = kind.name(), "figma export skips a token");
                 warnings.push(w);
                 continue;
@@ -263,7 +273,11 @@ pub fn export(tokens: &TokenSet) -> FigmaExport {
         .map(|c| {
             let list: Vec<Value> = modes
                 .get(c)
-                .map(|ms| ms.iter().map(|m| json!({"modeId": format!("mode:{m}"), "name": m})).collect())
+                .map(|ms| {
+                    ms.iter()
+                        .map(|m| json!({"modeId": format!("mode:{m}"), "name": m}))
+                        .collect()
+                })
                 .unwrap_or_default();
             json!({
                 "id": format!("collection:{c}"),
@@ -367,7 +381,10 @@ mod tests {
             origin: "test".to_owned(),
             tier: Tier::Primitive,
             value,
-            modes: modes.iter().map(|(k, v)| ((*k).to_owned(), v.clone())).collect::<IndexMap<_, _>>(),
+            modes: modes
+                .iter()
+                .map(|(k, v)| ((*k).to_owned(), v.clone()))
+                .collect::<IndexMap<_, _>>(),
             scopes: vec![],
             description: None,
             deprecated: None,
@@ -375,7 +392,10 @@ mod tests {
     }
 
     fn dim(v: f64) -> TokenValue {
-        TokenValue::Dimension { value: v, unit: Unit::Px }
+        TokenValue::Dimension {
+            value: v,
+            unit: Unit::Px,
+        }
     }
 
     fn set(tokens: Vec<Token>) -> TokenSet {
@@ -388,14 +408,30 @@ mod tests {
         let t = set(vec![tok(
             "--space-1",
             dim(1.0),
-            &[("a", dim(2.0)), ("b", dim(3.0)), ("c", dim(4.0)), ("d", dim(5.0))],
+            &[
+                ("a", dim(2.0)),
+                ("b", dim(3.0)),
+                ("c", dim(4.0)),
+                ("d", dim(5.0)),
+            ],
         )]);
-        let cfg = FigmaConfig { plan: Some("professional".into()), max_modes: Some(4), max_variables: None };
+        let cfg = FigmaConfig {
+            plan: Some("professional".into()),
+            max_modes: Some(4),
+            max_variables: None,
+        };
         let found = plan_overruns(&cfg, &t);
         assert_eq!(found.len(), 1);
         let msg = found[0].to_string();
-        assert!(msg.contains("professional") && msg.contains("allows 4") && msg.contains("5 modes"), "{msg}");
-        let ok = FigmaConfig { plan: Some("professional".into()), max_modes: None, max_variables: None };
+        assert!(
+            msg.contains("professional") && msg.contains("allows 4") && msg.contains("5 modes"),
+            "{msg}"
+        );
+        let ok = FigmaConfig {
+            plan: Some("professional".into()),
+            max_modes: None,
+            max_variables: None,
+        };
         assert!(plan_overruns(&ok, &t).is_empty());
     }
 
@@ -405,7 +441,16 @@ mod tests {
         let build = || {
             set(vec![
                 tok("--space-1", dim(4.0), &[("dark", dim(8.0))]),
-                tok("--color-ink", TokenValue::Color(Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }), &[]),
+                tok(
+                    "--color-ink",
+                    TokenValue::Color(Color {
+                        r: 0.0,
+                        g: 0.0,
+                        b: 0.0,
+                        a: 1.0,
+                    }),
+                    &[],
+                ),
                 tok("--space-alias", TokenValue::Alias("--space-1".into()), &[]),
             ])
         };
@@ -435,12 +480,19 @@ mod tests {
         let t = set(vec![
             tok("--a-x", TokenValue::Alias("--a-y".into()), &[]),
             tok("--a-y", TokenValue::Alias("--a-x".into()), &[]),
-            tok("--ease-out", TokenValue::CubicBezier([0.0, 0.0, 1.0, 1.0]), &[]),
+            tok(
+                "--ease-out",
+                TokenValue::CubicBezier([0.0, 0.0, 1.0, 1.0]),
+                &[],
+            ),
             tok("--space-1", dim(1.0), &[]),
         ]);
         let out = export(&t);
-        let kinds: Vec<(&str, WarningKind)> =
-            out.warnings.iter().map(|w| (w.token.as_str(), w.kind)).collect();
+        let kinds: Vec<(&str, WarningKind)> = out
+            .warnings
+            .iter()
+            .map(|w| (w.token.as_str(), w.kind))
+            .collect();
         assert_eq!(
             kinds,
             vec![

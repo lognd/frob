@@ -616,7 +616,10 @@ impl FigmaConfig {
     pub fn modes_limit(&self) -> Option<u32> {
         self.max_modes.or_else(|| {
             let plan = self.plan.as_deref()?;
-            FIGMA_PLANS.iter().find(|(n, _)| *n == plan).and_then(|(_, m)| *m)
+            FIGMA_PLANS
+                .iter()
+                .find(|(n, _)| *n == plan)
+                .and_then(|(_, m)| *m)
         })
     }
 

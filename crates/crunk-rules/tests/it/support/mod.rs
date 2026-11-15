@@ -307,6 +307,16 @@ fn write_generated_tokens(spec: &DesignSpec, root: &Path, config: Option<&str>) 
     }
 }
 
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+/// The `config=figma-tiny` and `config=figma-professional` cases append a `[figma]` table.
+fn apply_figma_config(spec_text: &mut String, config: Option<&str>) {
+    match config {
+        Some("figma-tiny") => spec_text.push_str("\n[figma]\nmax_variables = 1\n"),
+        Some("figma-professional") => spec_text.push_str("\n[figma]\nplan = \"professional\"\n"),
+        _ => {}
+    }
+}
+
 fn build(
     mut spec_text: String,
     file: &str,
@@ -351,12 +361,7 @@ fn build(
     {
         spec_text.push_str("\n[jsx]\nglobs = [\"src/**/*\"]\n");
     }
-    // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
-    match config {
-        Some("figma-tiny") => spec_text.push_str("\n[figma]\nmax_variables = 1\n"),
-        Some("figma-professional") => spec_text.push_str("\n[figma]\nplan = \"professional\"\n"),
-        _ => {}
-    }
+    apply_figma_config(&mut spec_text, config);
     // frob:ticket 01M5XCVZBYWA5WCATMF9QYZAS8
     if config == Some("max-duration") {
         spec_text.push_str("\n[tokens]\nmax_duration_ms = 1000\n");

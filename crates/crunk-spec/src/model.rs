@@ -11,9 +11,9 @@ use serde::{Serialize, Serializer};
 
 use crate::catalog::{Severity, default_severity};
 use crate::table::{
-    Engine, FigmaConfig, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig, PacksConfig,
-    ProjectConfig, ReviewConfig, RosterEntry, ScalesConfig, ScreenConfig, TailwindConfig,
-    TypographyConfig, Viewport,
+    Engine, FigmaConfig, GameConfig, JsxConfig, MediaFeatures, NetworkThrottle, OrgConfig,
+    PacksConfig, ProjectConfig, ReviewConfig, RosterEntry, ScalesConfig, ScreenConfig,
+    TailwindConfig, TypographyConfig, Viewport,
 };
 
 /// One `[palette.roles]` entry: a foreground and background palette name plus a contrast floor.

@@ -14,22 +14,22 @@ use crunk_rules::rules::{
     craft002::Craft002, craft003::Craft003, craft004::Craft004, craft005::Craft005,
     craft006::Craft006, craft007::Craft007, craft008::Craft008, craft009::Craft009,
     craft010::Craft010, craft011::Craft011, craft012::Craft012, craft013::Craft013,
-    export001::Export001, export002::Export002, export003::Export003, gx001::Gx001, gx002::Gx002, gx003::Gx003,
-    gx004::Gx004, gx005::Gx005, human001::Human001, human002::Human002, i18n001::I18n001,
-    i18n002::I18n002, layer001::Layer001, layout001::Layout001, layout002::Layout002,
-    layout003::Layout003, layout004::Layout004, layout005::Layout005, org001::Org001,
-    org002::Org002, org003::Org003, org004::Org004, org005::Org005, radius001::Radius001,
-    resp001::Resp001, scene001::Scene001, scene002::Scene002, scene003::Scene003,
-    scene004::Scene004, scene005::Scene005, size001::Size001, slop001::Slop001, slop003::Slop003,
-    slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014, slop020::Slop020,
-    slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027, slop028::Slop028,
-    slop029::Slop029, slop040::Slop040, slop060::Slop060, space001::Space001, state001::State001,
-    state002::State002, state003::State003, state004::State004, state005::State005,
-    state006::State006, state007::State007, token002::Token002, token003::Token003,
-    token004::Token004, token005::Token005, token006::Token006, token007::Token007,
-    token008::Token008, token009::Token009, token010::Token010, tokens001::Tokens001, tw001::Tw001,
-    tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002,
-    type003::Type003, waive001::Waive001,
+    export001::Export001, export002::Export002, export003::Export003, gx001::Gx001, gx002::Gx002,
+    gx003::Gx003, gx004::Gx004, gx005::Gx005, human001::Human001, human002::Human002,
+    i18n001::I18n001, i18n002::I18n002, layer001::Layer001, layout001::Layout001,
+    layout002::Layout002, layout003::Layout003, layout004::Layout004, layout005::Layout005,
+    org001::Org001, org002::Org002, org003::Org003, org004::Org004, org005::Org005,
+    radius001::Radius001, resp001::Resp001, scene001::Scene001, scene002::Scene002,
+    scene003::Scene003, scene004::Scene004, scene005::Scene005, size001::Size001, slop001::Slop001,
+    slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014,
+    slop020::Slop020, slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027,
+    slop028::Slop028, slop029::Slop029, slop040::Slop040, slop060::Slop060, space001::Space001,
+    state001::State001, state002::State002, state003::State003, state004::State004,
+    state005::State005, state006::State006, state007::State007, token002::Token002,
+    token003::Token003, token004::Token004, token005::Token005, token006::Token006,
+    token007::Token007, token008::Token008, token009::Token009, token010::Token010,
+    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
+    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -668,4 +668,29 @@ fn a_part_appends_only_its_own_rules() {
     Part0::push_all(&mut rules);
     assert!(!rules.is_empty());
     assert!(rules.len() < 100);
+}
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-rules/src/export_figma.rs::plan_findings
+#[test]
+fn figma_plan_findings_are_empty_without_a_figma_table() {
+    use crunk_rules::CrunkHost;
+    let none = support::project("css/a.css", "a { color: red; }", None);
+    let spec = none.spec().expect("spec");
+    assert!(
+        crunk_rules::export_figma::plan_findings(spec)
+            .expect("tokens")
+            .is_empty()
+    );
+}
+
+// frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
+// frob:tests crates/crunk-rules/src/export_figma.rs::plan_findings
+#[test]
+fn figma_plan_findings_name_the_limit_when_exceeded() {
+    use crunk_rules::CrunkHost;
+    let tiny = support::project("css/a.css", "a { color: red; }", Some("figma-tiny"));
+    let spec = tiny.spec().expect("spec");
+    let found = crunk_rules::export_figma::plan_findings(spec).expect("tokens");
+    assert!(found.iter().any(|m| m.contains('1')));
 }

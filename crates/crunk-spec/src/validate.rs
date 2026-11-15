@@ -916,10 +916,16 @@ pub(crate) fn figma(raw: &crate::table::FigmaConfig) -> Res<()> {
         let known: Vec<&str> = crate::table::FIGMA_PLANS.iter().map(|(n, _)| *n).collect();
         return Err(fail(
             vec![key("figma"), key("plan")],
-            format!("unknown Figma plan `{plan}` (expected one of {})", known.join(", ")),
+            format!(
+                "unknown Figma plan `{plan}` (expected one of {})",
+                known.join(", ")
+            ),
         ));
     }
-    for (name, v) in [("max_modes", raw.max_modes), ("max_variables", raw.max_variables)] {
+    for (name, v) in [
+        ("max_modes", raw.max_modes),
+        ("max_variables", raw.max_variables),
+    ] {
         if v == Some(0) {
             return Err(fail(
                 vec![key("figma"), key(name)],
