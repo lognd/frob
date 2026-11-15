@@ -155,12 +155,28 @@ pub(super) fn decode(source: &str) -> Option<String> {
 /// Directories whose absolute form is a host path.
 const HOST_PREFIXES: &[&str] = &["/home/", "/Users/", "/root/", "/tmp/"];
 
+/// Regex or glob syntax that never appears in a plain host path.
+const REGEX_MARKERS: &[char] = &['(', ')', '[', ']', '{', '}', '|', '^', '$', '+', '?'];
+
+/// True when `value` is text that merely starts like a path: multi-line text (YAML, a
+/// backslash-newline continuation), a regex pattern, or a `key: value` string.
+fn is_path_as_data(value: &str) -> bool {
+    value.contains(['\n', '\r'])
+        || value.contains(REGEX_MARKERS)
+        || value.contains(".*")
+        || value.contains(": ")
+}
+
 /// True when the decoded literal `value` is an absolute host path not exempted by `allowed`.
 pub(super) fn is_absolute_host_path(value: &str, allowed: &[String]) -> bool {
     if value == "/" || value.contains("://") || value.starts_with("#!") {
         return false;
     }
     if allowed.iter().any(|a| a == value) {
+        return false;
+    }
+    if is_path_as_data(value) {
+        tracing::debug!("path literal is data, not a host path");
         return false;
     }
     if HOST_PREFIXES.iter().any(|p| {
