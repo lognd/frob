@@ -2,12 +2,12 @@
 id = "01M626H3N3DDCT2Z4876YPT1ED"
 title = "Stale Advisory doc comments in human001 and craft008"
 type = "chore"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-11-03T05:56:38Z"
+updated = "2026-11-15T21:32:11Z"
 scope = ["crates/crunk-rules/src/rules/human001.rs", "crates/crunk-rules/src/rules/craft008.rs"]
 +++
 
