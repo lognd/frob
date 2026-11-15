@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A SARIF log from a tool with no id_map yields findings with rule id ext.<tool>.<ruleId> and level-derived severity, covered by a fixture test", "A configured id_map entry still wins over the namespaced default", "tool-stages docs describe the ext. namespace and per-rule override"]
+moved = []
+at = "2026-11-15T06:19:49Z"
+actor = "lognd"
+rev = 1
