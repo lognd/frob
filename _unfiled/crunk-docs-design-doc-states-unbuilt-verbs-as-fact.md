@@ -1,0 +1,23 @@
++++
+id = "01M7EXTG9C8Z4D72Z9TGPGEHYN"
+title = "crunk docs: design doc states unbuilt verbs as fact"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+reporter = "lognd"
+created = "2026-11-15T06:20:27Z"
+updated = "2026-11-15T06:20:27Z"
+idempotency_key = "crunkplan-704107eaacd1"
+labels = ["no-story"]
+
+[[acceptance]]
+text = "every verb in the doc is built or marked planned"
+bound = false
++++
+
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L1.
+Evidence: crunk.md describes verbs not built
+Remedy: mark unbuilt verbs as planned
+Crates/files: docs/design/crunk/crunk.md
+Verify against HEAD first; the audit ran on a stale binary.
