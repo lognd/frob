@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:20:44Z"
-updated = "2026-11-15T06:20:44Z"
+updated = "2026-11-15T06:21:53Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXV0GGRFVK94Z0XS720HNE"
 
 [[acceptance]]
 text = "A fixture with TESTQ001 evidence reports bound, not covered"
