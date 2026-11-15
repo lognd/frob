@@ -4,9 +4,10 @@ title = "frob: make the stale-binary guard fire in ticket worktrees and in land"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:27Z"
-updated = "2026-11-15T05:23:27Z"
+updated = "2026-11-15T09:24:43Z"
 labels = ["no-story"]
 +++
 
