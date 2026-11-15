@@ -1,0 +1,18 @@
++++
+id = "01M7EXW63RFTEY227CN0DAXBQ8"
+title = "grimble-bind: let a store node bind code (SYS004 on an api -> db flow)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+reporter = "lognd"
+created = "2026-11-15T06:21:22Z"
+updated = "2026-11-15T06:21:22Z"
+labels = ["no-story"]
+
+[[acceptance]]
+text = "An api -> db flow with a store node raises no SYS004"
+bound = false
++++
+
+Audit: /home/logan/projects/frob-audit2-grimble.md friction log. A store node cannot bind code so an api -> db flow gives SYS004. Decide and implement: store accepts a binding or SYS004 is not raised for store endpoints.
