@@ -327,6 +327,11 @@ impl Atom {
                 .any(|(k, v)| k == "capture_output" && v.truthy);
         }
         let all = || args.pos.iter().chain(args.kw.iter().map(|(_, v)| v));
+        if self.via.iter().any(|v| v == "open-fd") {
+            return open_target(args).is_some_and(|a| {
+                matches!(a.int, Some(1 | 2)) || a.path.as_ref().is_some_and(|p| is_std_fd_path(p))
+            });
+        }
         if self.via.iter().any(|v| v == "fd-literal") {
             return all().any(|a| {
                 matches!(a.int, Some(1 | 2)) || a.path.as_ref().is_some_and(|p| is_std_fd_path(p))
@@ -344,6 +349,13 @@ impl Atom {
         }
         false
     }
+}
+
+/// The file or descriptor argument of an `open` call: the first positional or the `file=` keyword.
+fn open_target(args: &Args) -> Option<&ArgInfo> {
+    args.pos
+        .first()
+        .or_else(|| args.kw.iter().find(|(k, _)| k == "file").map(|(_, v)| v))
 }
 
 /// True when `path` is a std stream handle value (`sys.stdout`, `process.stderr`, `Console.Out`,

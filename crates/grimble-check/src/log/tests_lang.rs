@@ -381,3 +381,32 @@ fn rust_written_lock_handle_is_reported_but_a_query_is_not() {
     );
     assert!(rs("fn f() { let o = std::io::stdout().lock(); }").is_empty());
 }
+
+// frob:ticket 01M7DZCFW0YB0PH3WDFWR5Q961
+// frob:tests crates/grimble-check/src/log/catalogue.rs::conditions_hold
+#[test]
+fn python_open_on_a_std_fd_is_reported_and_file_opens_are_not() {
+    let py = |t: &str| atoms("a.py", Language::Python, t);
+    assert_eq!(py("open(1, 'w').write('x')\n"), ["py.open-fd"]);
+    assert_eq!(py("f = open(2, 'w')\n"), ["py.open-fd"]);
+    assert_eq!(
+        py("import sys\nopen(sys.stdout.fileno(), 'w').write('x')\n"),
+        ["py.open-fd"]
+    );
+    assert_eq!(py("open(file=1, mode='w')\n"), ["py.open-fd"]);
+    assert!(py("open('x.txt', 'w', 1)\n").is_empty());
+    assert!(py("open(1)\n").is_empty());
+    assert!(py("open('x.txt', 'w')\n").is_empty());
+}
+
+// frob:ticket 01M7DZCFW0YB0PH3WDFWR5Q961
+// frob:tests crates/grimble-check/src/log/catalogue.rs::conditions_hold
+#[test]
+fn python_file_handle_destinations_are_advisory_and_std_ones_report() {
+    let py = |t: &str| atoms("a.py", Language::Python, t);
+    assert!(py("import json\nwith open('d.json', 'w') as f:\n    json.dump({}, f)\n").is_empty());
+    assert_eq!(
+        py("import json, sys\njson.dump({}, sys.stdout)\n"),
+        ["py.json-dump"]
+    );
+}

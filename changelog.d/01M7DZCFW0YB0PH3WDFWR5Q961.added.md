@@ -1,0 +1,1 @@
+Grimble LOG001 now reports Python open() on a std descriptor (open(1, 'w'), open(sys.stdout.fileno(), 'w')) as py.open-fd; file-handle destinations of json.dump, csv and shutil are documented as advisory.
