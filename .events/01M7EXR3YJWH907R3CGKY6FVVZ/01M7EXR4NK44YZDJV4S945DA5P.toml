@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Returns N scope-disjoint tickets (test)"]
+moved = []
+at = "2026-11-15T06:19:09Z"
+actor = "lognd"
+rev = 1
