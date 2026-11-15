@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: N candidate directions picked by a seeded roll outside the model"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Research rec 5. Source: /home/logan/projects/frob-research-ui.md (recommendation 5). Decompose before implementing."
+at = "2026-11-15T05:19:39Z"
+actor = "lognd"
+rev = 1
