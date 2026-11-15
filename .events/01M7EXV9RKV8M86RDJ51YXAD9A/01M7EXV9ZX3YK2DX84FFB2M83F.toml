@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Rule metadata accepts effort_minutes and rules without one use a documented default", "frob stats --debt reports total, per-kLOC and delta vs base on a fixture repo", "Output labels debt as an estimate"]
+moved = []
+at = "2026-11-15T06:20:53Z"
+actor = "lognd"
+rev = 1
