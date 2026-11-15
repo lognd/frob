@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ['No direct Command::new("gh") outside the wrapper']
+moved = []
+at = "2026-11-15T06:19:06Z"
+actor = "lognd"
+rev = 1
