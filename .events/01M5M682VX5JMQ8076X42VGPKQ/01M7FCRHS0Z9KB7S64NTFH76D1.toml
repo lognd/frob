@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a grimble-serve client, when it calls the explore tool with a node id, then it returns that node and its neighbours as structured data"]
+moved = []
+at = "2026-11-15T10:41:31Z"
+actor = "lognd"
+rev = 1
