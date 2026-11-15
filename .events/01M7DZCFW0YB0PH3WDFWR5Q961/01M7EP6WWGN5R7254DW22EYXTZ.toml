@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Python open(1|2, write mode) and open(sys.stdout.fileno(), write mode) are reported as py.open-fd; opening a path, or passing 1 as buffering, is not; file-handle destinations stay advisory"]
+moved = []
+at = "2026-11-15T04:07:24Z"
+actor = "lognd"
+rev = 1
