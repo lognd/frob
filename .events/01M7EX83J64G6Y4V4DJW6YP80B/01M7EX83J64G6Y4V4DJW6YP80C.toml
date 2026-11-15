@@ -1,0 +1,10 @@
+kind = "create"
+title = "land train: do not record the raw override reason on every member"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md L3. Evidence: crates/frob-land/src/train_close.rs:428-440. Remedy: record it once on the train head and reference it from members. Files: train_close.rs."
+at = "2026-11-15T06:10:24Z"
+actor = "lognd"
+rev = 1
