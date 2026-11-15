@@ -4,10 +4,15 @@ title = "land train: do not record the raw override reason on every member"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 1
 reporter = "lognd"
 created = "2026-11-15T06:10:24Z"
 updated = "2026-11-15T06:10:24Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "Members carry a reference, not the raw reason (test)"
+bound = false
 +++
 
 Source: frob-audit-core.md L3. Evidence: crates/frob-land/src/train_close.rs:428-440. Remedy: record it once on the train head and reference it from members. Files: train_close.rs.
