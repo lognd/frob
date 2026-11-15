@@ -7,8 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:22:56Z"
-updated = "2026-11-15T06:30:15Z"
+updated = "2026-11-15T06:30:36Z"
 labels = ["no-story"]
+scope = ["crates/gob-frameworks/src/route_a11y.rs"]
 
 [[acceptance]]
 text = "A11Y104 corpus has an unresolved case and every_crunk_rule_has_a_corpus passes"

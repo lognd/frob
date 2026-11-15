@@ -1,0 +1,6 @@
+kind = "field"
+field = "scope"
+new = ["crates/gob-frameworks/src/route_a11y.rs"]
+at = "2026-11-15T06:30:36Z"
+actor = "lognd"
+rev = 1
