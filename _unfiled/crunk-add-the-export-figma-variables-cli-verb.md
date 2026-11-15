@@ -4,9 +4,10 @@ title = "crunk: add the export figma-variables CLI verb"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-14T23:24:46Z"
-updated = "2026-11-14T23:24:46Z"
+updated = "2026-11-15T00:42:30Z"
 +++
 
 found while working YC5VP5X: Target::FigmaVariables and its exporter exist; crates/crunk/src/export.rs needs an ExportFigmaVariables export_command!, plus the generated CLI docs
