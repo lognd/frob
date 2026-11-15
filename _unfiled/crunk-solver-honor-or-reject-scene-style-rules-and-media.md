@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T05:52:53Z"
+updated = "2026-11-15T05:55:01Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -24,7 +24,7 @@ bound = true
 
 [[acceptance]]
 text = "The reject-vs-honor decision is recorded in docs/design/crunk/stylesheet-solve.md"
-bound = false
+bound = true
 +++
 
 Crunk audit2 H2. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
