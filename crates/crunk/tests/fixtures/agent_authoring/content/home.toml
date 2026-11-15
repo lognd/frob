@@ -1,0 +1,11 @@
+locale = "en"
+
+[[key]]
+id = "home.title"
+text = "Hello"
+max_chars = 10
+
+[[key]]
+id = "home.sub"
+text = "A very long subtitle indeed"
+max_chars = 5
