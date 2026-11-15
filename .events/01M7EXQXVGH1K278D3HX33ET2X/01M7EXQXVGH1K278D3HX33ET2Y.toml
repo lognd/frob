@@ -1,0 +1,10 @@
+kind = "create"
+title = "ci-job evidence provider with a pending state"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M13. Evidence: no provider reads a CI job as evidence. Remedy: add provider returning Pending until the job completes. Files: crates/frob-evidence/**."
+at = "2026-11-15T06:19:02Z"
+actor = "lognd"
+rev = 1
