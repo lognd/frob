@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["PATH001 ignores multi-line, regex and key: value strings; Options::with_allowed adds configured [path] allowed literals"]
+moved = []
+at = "2026-11-15T22:30:23Z"
+actor = "lognd"
+rev = 1
