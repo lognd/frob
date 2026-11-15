@@ -16,7 +16,7 @@ the `crunk-check` crate with the rule set listed in [the rules index](../referen
 | `crunk check` | yes | Runs the rule set and prints the `gob.sibling/1` document with `product = "crunk"` (`--json`), or a count summary. `--only`, `--fail-on`, `--base`, `--ticket-scope` as for `grimble check`. `--json` data carries `schema_version: "gob.sibling/1"`. `--report markdown` adds `report_markdown`, `--report json` adds the v2 machine report under `report` (`version: 2`, counts, findings), `--report slop` the slop evidence vector, and `--contrast` a `contrast` table of every role pair in every mode. |
 | `crunk cache ls`, `crunk cache prune [--all]` | yes | Lists the shared check cache (path, size, row counts) or deletes rows no run of this build can hit (`--all`: every row); `--dry-run` reports only. |
 | `crunk doctor` | no | Reports the crunk version, the repository root and the state of `crunk.toml`. |
-| `crunk tokens` | yes | Writes, previews (`--target` css, json or tailwind) or drift-checks (`--check`) the generated token files. |
+| `crunk tokens` | yes | Writes, previews (`--target`, see [Token exports](#token-exports)) or drift-checks (`--check`) the generated token files. |
 | `crunk query KIND [ARG]` | yes | Read-only questions: `find NAME` (exact, then prefix, then substring, with use counts), `component NAME` (BEM structure; unknown is exit 2), `dupes [--threshold 0.6]` (sheet pairs repeating declarations), `unused` (tokens nothing references), `uses TOKEN` (`var()` sites), `color HEX` (every palette color by redmean distance), `violations [--rule ID] [--path GLOB]` (check findings, always exit 0). `--no-cache` is accepted and a no-op: queries always ingest fresh. |
 | `crunk import dtcg INPUT [--store PATH]` | no | Validates a W3C DTCG token file (names, a resolvable `$type` per token, value shapes, `{a.b}` references without cycles) and stores it losslessly (default `design/tokens.dtcg.json`); `--dry-run` validates only. A bad file is a refusal (`E-DTCG`). |
 | `crunk export css [--out PATH]` | no | Prints the CSS custom-property export, or writes it to `--out`. Same render as `crunk tokens --target css`; an unknown target exits 2 naming the valid ones. |
@@ -54,6 +54,57 @@ or `{results}` (`explain`); the Python `version` field is dropped, rows are othe
 `query violations` omits unresolved findings (rules that could not run), reports line 0 for a
 finding anchored at the start of a file, and words its messages as the Rust rules do. `dupes`
 scores whole sheets by shared `(property, value)` declarations over the smaller sheet.
+
+## Token exports
+
+`crunk tokens` renders the token set of `crunk.toml` through one exporter per target (the
+`Exporter` trait in `crunk_tokens::export`). `--target` takes `css`, `tailwind`, `json`, `uss`,
+`csharp`, `dtcg` or `figma-variables`; it replaces the Python crunk's `--format`, which is the
+global output format here. Without `--target` or `--check`, `crunk tokens` writes the configured
+files.
+
+| Target | File (from `crunk.toml`) | Drift compare |
+|---|---|---|
+| `css` | `[project] tokens_file`, resolved against `css_root`; always written | byte for byte |
+| `tailwind` | `[tailwind] tokens_file`, resolved against the project root; skipped when unset | parsed JSON |
+| `json` | `[tokens] json_file`, resolved against the project root; skipped when unset | parsed JSON |
+
+- Output is byte-identical to the Python crunk (same header passthrough, banner, `-rgb` companions,
+  sorted two-space JSON with ASCII escapes).
+- Writes are atomic (temp file, fsync, rename). `--dry-run` lists the files without writing.
+- `--check` compares the files on disk with the render, writes nothing and exits 1 on drift. It
+  reads files with universal newlines, so a checkout that converts to CRLF is clean.
+- A `crunk.toml` that does not load as a design spec is refused with `E-SPEC` (exit 3).
+- Bare scale keys that collide with Tailwind v3 default theme keys are reported as warnings (and in
+  `data.collisions`) unless `[tailwind] namespace_keys` is on.
+- `TOKENS001` takes its input from `crunk_tokens::export::check` (`DriftReport`), or from
+  `render_managed` plus `compare` over text it read itself.
+
+## Tailwind runtime
+
+Tailwind's truth (which class compiles to which CSS, what the merged theme holds) exists only in
+Tailwind, so the `runtime` feature of `crunk-tailwind` runs the project's own `tailwindcss` (v3) or
+`@tailwindcss/node` (v4) through `node` and a shipped helper. Node is a runtime dependency of this
+bridge and nowhere else.
+
+- Safety: the helper executes project code (the Tailwind config and its plugins). Every spawn goes
+  through `gob-exec` with a scrubbed environment (`PATH`, `HOME`, `NODE_PATH`, `NODE_ENV`; never a
+  secret-shaped variable), the project root as working directory, a 20 s timeout and an 8 MiB output
+  cap. A helper over either limit is killed and the error names the limit.
+- First-run notice: before a given config first runs for a project on this machine, a notice names
+  the config, the node binary and the opt-outs (`--static`, `[tailwind] engine = "static"`). The
+  acknowledgement is recorded under `$XDG_STATE_HOME/crunk/exec-notice/`, never in the repository,
+  and replays only when the resolved config path changes. `CRUNK_QUIET_EXEC_NOTICE=1` hides the
+  text, not the record.
+- Unresolved, never clean: no node on `PATH`, no `node_modules/tailwindcss`, static mode, an
+  unsupported version or a missing v4 CSS entry yield `unresolved-by-tailwind`. Nothing crashes and
+  nothing is skipped silently.
+- Caching: results are cached per (Tailwind version, config content) in one universe entry that
+  merges candidates across runs; the key also covers the relative files the config and CSS entry
+  import, so regenerating a theme JSON invalidates the entry.
+- Tests run the real helper under real node against stub Tailwind modules, so they need `node` but
+  no npm install; without node they skip loudly unless `CRUNK_REQUIRE_NODE=1`.
+  `CRUNK_REAL_TAILWIND_PROJECT` and `CRUNK_REAL_TAILWIND_CSS` point one test at a real project.
 
 Global flags (`--json`, `--text`, `--format`, `--color`, `-v`, `--version`) come from
 `gob-cli`; `--version` prints the workspace lockstep version.
