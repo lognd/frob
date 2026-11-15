@@ -2,12 +2,12 @@
 id = "01M5XM07CDFXTTENEEQ156HM4A"
 title = "Add not_run to the gob.sibling/1 schema (crunk verbs test fails)"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-27T02:46:01Z"
-updated = "2026-10-27T02:58:43Z"
+updated = "2026-11-15T08:31:37Z"
 scope = ["docs/schemas/sibling.json", "crates/gob-product/**"]
 +++
 
