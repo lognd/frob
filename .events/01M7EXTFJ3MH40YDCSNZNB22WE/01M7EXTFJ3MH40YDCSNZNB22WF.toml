@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk schema: JSON schemas for component, screen, flow, content, tokens and voice files"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+idempotency_key = "crunkplan-f0a553a2fa2f"
+labels = ["no-story"]
+acceptance = ["crunk schema --kind screen prints a valid JSON schema", "fixture files validate against their schema"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M11.
+Evidence: no schemas for authoring files
+Remedy: ship JSON schemas and a crunk schema --kind verb
+Crates/files: crates/crunk, crates/crunk-spec
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:26Z"
+actor = "lognd"
+rev = 1
