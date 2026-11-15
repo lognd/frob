@@ -2,7 +2,8 @@
 id = "01M5WAN9NAK2Z228S550D6FW61"
 title = "gob-caps capabilities (atoms) need a since field so the changelog lists newly live atoms"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
