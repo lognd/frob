@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-15T05:32:01Z"
+digest = "04752b23b531dcb51f6215ba41bcc34f89b51c14480d3e075178901eb0ceba84"
+exit_code = 0
+head = "7dd58e17b86d976e6df71abaa68f4aad1b5968a4"
+inline = '''
+   Compiling crunk-ingest v0.532.0 (<worktree>/crates/crunk-ingest)
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling gob-mdtest v0.532.0 (<worktree>/crates/gob-mdtest)
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a29d62cf-ef04-4000-ba9f-17dbb7862411 with nextest profile: default
+    Starting 1 test across 2 binaries (86 tests skipped)
+        PASS [   1.551s] crunk-check::it gx_corpus::mdtest_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   1.551s] 1 test run: 1 passed, 86 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(=gx_corpus::mdtest_corpus)"
+size = 858
+status = "measured"
+test_count = 1
+tests_digest = "a055f0a18378c5db6bbbe1d5c9c3dda4b817d743d39637d70380d03751f6bad4"
+at = "2026-11-15T05:32:01Z"
+actor = "lognd"
+rev = 1
