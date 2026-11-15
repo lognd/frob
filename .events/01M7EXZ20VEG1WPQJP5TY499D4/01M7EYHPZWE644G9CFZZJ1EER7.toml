@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T06:32:58Z"
+digest = "c583e22701fa975e1d7f7f8c8e04ce838ec50ca914077d0d6b30d2e6a54331fa"
+exit_code = 0
+head = "229a5855fda50de47caaf3a15f2c25958bac67a3"
+inline = '''
+   Compiling gob-frameworks v0.532.0 (<worktree>/crates/gob-frameworks)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b9a72357-e88c-42fa-87f0-8fcad9dfa714 with nextest profile: default
+    Starting 1 test across 2 binaries (86 tests skipped)
+        PASS [   0.258s] crunk-check::it rule_coverage::every_crunk_rule_has_a_corpus
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.259s] 1 test run: 1 passed, 86 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(=rule_coverage::every_crunk_rule_has_a_corpus)"
+size = 689
+status = "measured"
+test_count = 1
+tests_digest = "7c68e9a737e570723bf2307c1047ad5f3d3e84b3bbcd0e3604d1883d8904a896"
+at = "2026-11-15T06:32:58Z"
+actor = "lognd"
+rev = 1
