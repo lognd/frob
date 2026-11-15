@@ -1,0 +1,12 @@
+kind = "create"
+title = "docs/reference/languages.md: reconcile with effects.rs and go.rs; name duplicate effects impls"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+labels = ["no-story"]
+acceptance = ["languages.md cells match the code", "gob-dev gen all --check passes"]
+body = "Audit: /home/logan/projects/frob-audit-grimble-crunk.md L6. languages.md lists rust/python/typescript effects Gap though crates/grimble-check/src/effects.rs:113-123 implements them; go visibility Gap though go.rs:9 implements it. Two effects implementations exist (grimble-check/effects.rs and grimble-lints/neat/effects.rs). Likely generated: fix the source table."
+at = "2026-11-15T06:21:21Z"
+actor = "lognd"
+rev = 1
