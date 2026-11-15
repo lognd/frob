@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A ticket closed or reopened while waiting for the lock is re-evaluated (test)"]
+moved = []
+at = "2026-11-15T06:10:25Z"
+actor = "lognd"
+rev = 1
