@@ -2,7 +2,8 @@
 id = "01M5XCVZFESE41V1GVEYC5VP5X"
 title = "crunk export figma-variables plus the Figma plan-limit check"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXQTERP5YASZGVEAH6KG4H"
