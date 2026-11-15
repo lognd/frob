@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T15:40:12Z"
+digest = "0ef0e77760bd2bbd7afba0fb2aa8dab983177ca97a22ec7bd05d0f1f4f94e588"
+exit_code = 0
+head = "64e2aa59f29c6bacefb2874aec722491fe7ded49"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 17b0a444-e5e4-4afd-ae8b-ca3dbec0f150 with nextest profile: default
+    Starting 1 test across 7 binaries (332 tests skipped)
+        PASS [   0.120s] crunk::it init::raw_scaffold_does_not_trip_craft_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.121s] 1 test run: 1 passed, 332 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=init::raw_scaffold_does_not_trip_craft_rules)"
+size = 601
+status = "measured"
+test_count = 1
+tests_digest = "6cfd55ee2d53eb817d344645d78de4669dfdccbdb119e05f0de6219540a814c2"
+at = "2026-11-15T15:40:12Z"
+actor = "lognd"
+rev = 1
