@@ -1,0 +1,10 @@
+kind = "create"
+title = "land: re-read the ticket after taking the land lock"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md L5. Evidence: crates/frob-land/src/land.rs:86,343-385 use ticket state read before the lock. Remedy: re-read status/criteria after lock acquisition. Files: land.rs."
+at = "2026-11-15T06:10:25Z"
+actor = "lognd"
+rev = 1
