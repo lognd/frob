@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:18:37Z"
+digest = "25bb2e7030e8b027bb566065de2dd8aaba661821865b5dc4cc51e61a6c9e0d67"
+exit_code = 0
+head = "6944a8797b3759c7ede2b03e9d9ae1bb084559c2"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 32397281-0940-4552-b3d8-020be8bc2046 with nextest profile: default
+    Starting 1 test across 5 binaries (307 tests skipped)
+        PASS [   0.007s] crunk::it serve_patch::malformed_arguments_are_invalid_params
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 307 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=serve_patch::malformed_arguments_are_invalid_params)"
+size = 554
+status = "measured"
+test_count = 1
+tests_digest = "d29e1a211060df681edfc4b0a69278427fab60ebe76b7e2452ed6b3ef789e878"
+at = "2026-11-15T01:18:37Z"
+actor = "lognd"
+rev = 1
