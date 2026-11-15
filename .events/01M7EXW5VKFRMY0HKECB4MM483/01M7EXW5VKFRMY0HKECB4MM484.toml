@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-capabilities: match literal URL fetch() to net.connect grants (CAP001)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["A literal localhost URL is covered by the host:port grant", "A non-matching host still raises CAP001"]
+body = 'Audit: /home/logan/projects/frob-audit2-grimble.md friction log. fetch("http://localhost:8000/...") is not matched to net.connect("localhost:8000").'
+at = "2026-11-15T06:21:22Z"
+actor = "lognd"
+rev = 1
