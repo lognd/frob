@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Concurrent ticket new with the same idempotency key yields one ticket (test)"]
+moved = []
+at = "2026-11-15T06:10:21Z"
+actor = "lognd"
+rev = 1

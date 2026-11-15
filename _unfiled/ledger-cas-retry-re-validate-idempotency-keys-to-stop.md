@@ -4,10 +4,15 @@ title = "ledger CAS retry: re-validate idempotency keys to stop duplicate ticket
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-15T06:10:21Z"
 updated = "2026-11-15T06:10:21Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "Concurrent ticket new with the same idempotency key yields one ticket (test)"
+bound = false
 +++
 
 Source: frob-audit-core.md M4. Evidence: crates/frob-ledger/src/ops.rs:465-472 and crates/gob-git/src/ledger.rs:209-225; on a CAS conflict the retry reapplies the op without re-checking its idempotency key against the new tip. Remedy: re-run the idempotency lookup after each refetch. Files: those two files.
