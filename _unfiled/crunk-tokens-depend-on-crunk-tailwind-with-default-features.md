@@ -2,7 +2,8 @@
 id = "01M4DVX0SRX3HW57XKGEHFB7JE"
 title = "crunk-tokens: depend on crunk-tailwind with default-features = false so the token crate does not pull the node runtime stack"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
