@@ -10,6 +10,8 @@
 // frob:ticket 01M4D95TNEY7MCTS3A4F9HC26C
 // frob:ticket 01M7EXZ20VEG1WPQJP5TY499D4
 
+use std::collections::BTreeSet;
+
 use tracing::{debug, trace};
 
 use crate::repo::Repo;
@@ -153,10 +155,14 @@ pub fn route_gaps(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteGap> {
 ///
 /// One entry per route, sorted; the rule cannot decide these, so it reports them Unresolved.
 pub fn route_unjudged(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteUnjudged> {
-    collect(repo, routes, "unjudged", |v| match v {
-        Verdict::Unjudged(u) => Some(u),
-        _ => None,
-    })
+    let mut out = BTreeSet::new();
+    for route in routes {
+        if let Some(Verdict::Unjudged(u)) = judge(repo, route) {
+            out.insert(u);
+        }
+    }
+    debug!(unjudged = out.len(), "route a11y unjudged routes found");
+    out.into_iter().collect()
 }
 
 /// Judge every route, keep the verdicts `pick` selects, and return them sorted and de-duplicated.
