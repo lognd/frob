@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T13:08:52Z"
+digest = "5f42b9b0253573d35c0dcb610fe0f3bd083142c3c17afda1f6cedab8c925c0d5"
+exit_code = 0
+head = "cc26b9564faefdb242d38e657b2f2d73b63d30a0"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 650fe27e-37b8-41cc-8e37-e3fc5c21443d with nextest profile: default
+    Starting 1 test across 7 binaries (329 tests skipped)
+        PASS [   0.116s] crunk::status_ready green_records_the_hash_and_a_later_change_marks_it_changed
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.117s] 1 test run: 1 passed, 329 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=green_records_the_hash_and_a_later_change_marks_it_changed)"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "915dd8e18e3ab8786ca363bd10de662ea6fa2de1fc6f4c68c958ca3ffe4b476c"
+at = "2026-11-15T13:08:52Z"
+actor = "lognd"
+rev = 1
