@@ -7,9 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:20:15Z"
-updated = "2026-11-15T06:20:16Z"
+updated = "2026-11-15T06:21:16Z"
 idempotency_key = "static-research-k5"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXT3X9DSSHYJWNQ4ZQPV00"
 
 [[acceptance]]
 text = "frob init output for an eslint, a dotnet and a ruff repo is byte-identical to today (golden test) while sourced from definitions"
