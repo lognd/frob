@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:22:56Z"
-updated = "2026-11-15T06:23:06Z"
+updated = "2026-11-15T06:30:15Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -16,7 +16,7 @@ bound = false
 
 [[acceptance]]
 text = "gob-frameworks is publishable and the publish skip test passes"
-bound = false
+bound = true
 +++
 
 CI run 43682380126 failed: crunk-check rule_coverage needs an unresolved case for A11Y104 in tests/mdtest/a11y104.md; gob-dev publish test fails because crunk-check now depends on gob-frameworks which is publish=false. Make gob-frameworks publishable and drop it from the skipped list.

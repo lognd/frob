@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-15T06:30:15Z"
+digest = "c2e755b0ffdd5e570c2d719da5111065d9d3a4d64a4cba2a49d879f6ef7c5280"
+exit_code = 0
+head = "c3f7427fbce4cf8041d2e69fbb275fce8d27b34c"
+inline = '''
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 951535f0-11e2-45f0-ada7-91454fcb30f4 with nextest profile: default
+    Starting 1 test across 3 binaries (226 tests skipped)
+        PASS [   0.167s] gob-dev publish::tests::crates_with_no_consumer_are_skipped_and_no_published_crate_needs_a_skipped_one
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.168s] 1 test run: 1 passed, 226 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-dev -E test(=publish::tests::crates_with_no_consumer_are_skipped_and_no_published_crate_needs_a_skipped_one)"
+size = 653
+status = "measured"
+test_count = 1
+tests_digest = "c168fc5c3a6fbff0f4a6c3c511ca87298afee5bb433392d38de6320d151e60c9"
+at = "2026-11-15T06:30:15Z"
+actor = "lognd"
+rev = 1
