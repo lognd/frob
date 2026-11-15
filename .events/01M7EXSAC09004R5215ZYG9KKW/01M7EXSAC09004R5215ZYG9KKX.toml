@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk EXPORT rule: declared mode absent from a target"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETK97Q5VJ027ZV8AFBJWRQ"
+idempotency_key = "crunkplan-d8996c079670"
+labels = ["no-story"]
+acceptance = ["a target missing a declared mode raises a finding", "targets carrying all modes raise none"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Evidence: no check that a target carries every mode
+Remedy: EXPORT rule flags a declared mode a target omits
+Crates/files: crates/crunk-rules export
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:48Z"
+actor = "lognd"
+rev = 1
