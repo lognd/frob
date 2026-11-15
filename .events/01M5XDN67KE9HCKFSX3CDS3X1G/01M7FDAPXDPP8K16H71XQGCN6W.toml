@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T10:51:25Z"
+digest = "16f07ecebe06971ee21fc0bbd2426068b3f110e9cb6ae2ab4ada58e7800aef17"
+exit_code = 0
+head = "fa608ff29338eb993d6206138681bdfc5351c917"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3868585e-0e4a-4894-b3ba-ff7a79adcf88 with nextest profile: default
+    Starting 1 test across 2 binaries (21 tests skipped)
+        PASS [   0.008s] crunk-scene::scene media_rule_is_exposed_with_its_at_rule
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-scene -E test(=media_rule_is_exposed_with_its_at_rule)"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "57de2b0c26afa71fc5b3d66527545b2d7b688150f8f931b36864644d76bf28a8"
+at = "2026-11-15T10:51:25Z"
+actor = "lognd"
+rev = 1
