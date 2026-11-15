@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a stylesheet using grid-area, grid-template-areas, order, place-* or min/max/fit-content/em values, when layout styles are mapped, then each supported property is mapped to the solver and no UnmappedProperty or BadValue finding is raised for it"]
+moved = []
+at = "2026-11-15T12:21:30Z"
+actor = "lognd"
+rev = 1

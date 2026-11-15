@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-27T00:55:09Z"
-updated = "2026-10-28T12:56:02Z"
+updated = "2026-11-15T12:21:30Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/src/style/**"]
+
+[[acceptance]]
+text = "Given a stylesheet using grid-area, grid-template-areas, order, place-* or min/max/fit-content/em values, when layout styles are mapped, then each supported property is mapped to the solver and no UnmappedProperty or BadValue finding is raised for it"
+bound = false
 +++
 
 Currently reported as UnmappedProperty findings or BadValue. Found while working QPY31M6.
