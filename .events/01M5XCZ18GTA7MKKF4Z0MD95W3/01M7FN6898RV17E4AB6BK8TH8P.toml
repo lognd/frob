@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T13:08:40Z"
+digest = "4bfa652a3ca2f5cd34d05aaf00638ae44963808cd66ea5b724c6f3e9136cb7ec"
+exit_code = 0
+head = "cc26b9564faefdb242d38e657b2f2d73b63d30a0"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.30s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5b452be7-c7b0-4d69-b027-ef8a80f4ee64 with nextest profile: default
+    Starting 1 test across 7 binaries (329 tests skipped)
+        PASS [   0.119s] crunk::status_ready an_open_blocking_comment_refuses_and_records_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.120s] 1 test run: 1 passed, 329 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=an_open_blocking_comment_refuses_and_records_nothing)"
+size = 619
+status = "measured"
+test_count = 1
+tests_digest = "24900fe5b878b66c5f24b0e55e81f1bcaee02badeeaefb259ab7ed6d41951585"
+at = "2026-11-15T13:08:40Z"
+actor = "lognd"
+rev = 1
