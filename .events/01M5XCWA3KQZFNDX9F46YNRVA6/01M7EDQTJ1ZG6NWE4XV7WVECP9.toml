@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:39:21Z"
+digest = "0434d28027f75c399cfdb139dfaddf368eaf98d4f885f644800850807ab2dc16"
+exit_code = 0
+head = "08376d5840f0ab2ef2623ef5b81d43571aa49b0e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.31s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 311ab63c-0d4b-4dbc-b0d0-a4cd5596f588 with nextest profile: default
+    Starting 1 test across 6 binaries (311 tests skipped)
+        PASS [   0.012s] crunk::e2e_agent_authoring edit_patch_to_a_missing_id_is_refused_naming_the_id_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.013s] 1 test run: 1 passed, 311 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=edit_patch_to_a_missing_id_is_refused_naming_the_id_and_writes_nothing)"
+size = 590
+status = "measured"
+test_count = 1
+tests_digest = "5c84781a22cb7dcac5cb2d1e57af6cea08e4f8b5e99ccb521b6da6b8de8ffd48"
+at = "2026-11-15T01:39:21Z"
+actor = "lognd"
+rev = 1
