@@ -49,6 +49,9 @@ fn clone_with_origin() -> (tempfile::TempDir, tempfile::TempDir) {
     let url = gob_path::Shown::of(origin.path()).to_string();
     let target = gob_path::Shown::of(clone.path()).to_string();
     git(origin.path(), &["clone", "-q", &url, &target]);
+    // CI has no global git identity; the clone needs one for `ticket new`.
+    git(clone.path(), &["config", "user.name", "t"]);
+    git(clone.path(), &["config", "user.email", "t@t"]);
     std::fs::write(
         clone.path().join("frob.toml"),
         "[tickets]\nref = \"main\"\n",
