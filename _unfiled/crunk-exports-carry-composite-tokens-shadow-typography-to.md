@@ -4,9 +4,10 @@ title = "crunk exports: carry composite tokens (shadow, typography) to all targe
 type = "task"
 category = "todo"
 priority = "medium"
+points = 13
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T05:24:04Z"
+updated = "2026-11-15T06:27:19Z"
 labels = ["no-story"]
 +++
 
