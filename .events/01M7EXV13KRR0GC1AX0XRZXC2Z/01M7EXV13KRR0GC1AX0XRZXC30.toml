@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-model: decide bound claims from declared flow/step quantities; fix CLAIM003 message"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["The example yields REFUTED", "A passing bound yields PROVED", "A claim with no quantity gives a correct Unresolved message"]
+body = "Audit: /home/logan/projects/frob-audit2-grimble.md M6. Evidence: flow f { age 2 s; } claim c { bound age f <= 1 s; } gives CLAIM003 Unresolved with the wrong text 'declares no measured age'. Files: crates/grimble-model/src/claim.rs, SPEC 4.4 line 579. Remedy: compare against the declared quantity (REFUTED or PROVED at L1) and fix the message."
+at = "2026-11-15T06:20:44Z"
+actor = "lognd"
+rev = 1
