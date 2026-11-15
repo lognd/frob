@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T06:07:05Z"
+updated = "2026-11-15T06:07:06Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**"]
+scope = ["crates/crunk-rules/**", "crates/crunk/tests/it/common/mod.rs"]
 
 [[acceptance]]
 text = "An unparsable component file yields a SPEC001 Error finding"
