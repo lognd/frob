@@ -24,4 +24,5 @@ mod spec_citations;
 mod stability;
 mod tracked_paths;
 mod vmodel_ref;
+mod vmodel_verified_by;
 mod vmodel_runnables;

@@ -22,7 +22,7 @@ use crate::keywords::is_table_word;
 use crate::model::{EntityRec, Index, LoadedRoot, ModelFiles, Via, load_roots, root_list};
 use crate::refspec::malformed_ref;
 use crate::span::Span;
-use crate::text::{canonical_level, clause_key, clause_text, selector_text};
+use crate::text::{canonical_level, clause_key, clause_text, clause_written_key, selector_text};
 
 /// Core node kinds (grmb-spec 4.1); a pack may add more.
 const NODE_KINDS: [&str; 6] = [
@@ -242,8 +242,10 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
             "noflow" | "reach" | "never" | "bound" | "proof" | "assumed" | "evidence"
         ),
         EntityKind::Vmodel => {
-            matches!(key, "kind" | "level" | "ref" | "runnable" | "manual")
-                || LinkKind::ALL.iter().any(|l| l.keyword() == key)
+            matches!(
+                key,
+                "kind" | "level" | "ref" | "runnable" | "manual" | "evidence"
+            ) || LinkKind::ALL.iter().any(|l| l.keyword() == key)
         }
         EntityKind::Boundary => false,
         EntityKind::Pack => matches!(key, "ref" | "version" | "digest"),
@@ -1083,7 +1085,11 @@ impl<'a> Checker<'a> {
                     None,
                     rec.file,
                     c.span,
-                    format!("clause `{key}` is not valid in a {}", e.kind.keyword()),
+                    format!(
+                        "clause `{}` is not valid in a {}",
+                        clause_written_key(&c.kind),
+                        e.kind.keyword()
+                    ),
                     anchor,
                 );
                 continue;
