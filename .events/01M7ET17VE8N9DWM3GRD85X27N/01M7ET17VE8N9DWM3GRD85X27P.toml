@@ -1,0 +1,10 @@
+kind = "create"
+title = "grimble: implement V-model closure rules for vmodel entities"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Audit2 H4; untested requirement and ref to missing file are silent. See /home/logan/projects/frob-audit2-grimble.md section H4 for evidence and remedy."
+at = "2026-11-15T05:14:13Z"
+actor = "lognd"
+rev = 1
