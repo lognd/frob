@@ -2,13 +2,13 @@
 id = "01M5XCWA755KFHEMG04HPZ4WYW"
 title = "crunk new flow and crunk new token plus --from templating"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 parent = "01M4CXR6ER06SRMEJGSZ20JD5Q"
 reporter = "lognd"
 created = "2026-10-27T00:41:33Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-11-15T01:32:03Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/new.rs, crates/crunk/tests/new_flow_token.rs"]
 
