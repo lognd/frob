@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: identity brief (design/brief.toml) as a precondition with BRIEF001-003 rules"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Research rec 1. Source: /home/logan/projects/frob-research-ui.md (recommendation 1). Decompose before implementing."
+at = "2026-11-15T05:19:37Z"
+actor = "lognd"
+rev = 1
