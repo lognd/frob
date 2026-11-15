@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["frob test emits well-formed JUnit XML with one testcase per test and failures with messages", "frob check emits a GitLab code-quality JSON array with fingerprint equal to the frob fingerprint", "Docs list both output formats"]
+moved = []
+at = "2026-11-15T06:20:53Z"
+actor = "lognd"
+rev = 1
