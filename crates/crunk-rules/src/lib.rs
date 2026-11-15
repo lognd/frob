@@ -47,6 +47,7 @@ pub mod file_attrs;
 pub mod file_problem;
 pub mod fixes;
 pub mod grl_rules;
+pub mod handoff;
 pub mod host;
 pub mod i18n;
 pub mod lint;

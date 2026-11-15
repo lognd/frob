@@ -1,0 +1,1 @@
+Added `crunk status ID ready`, the handoff gate: it refuses, naming every reason, while a screen has an open blocking comment, a stale export, no code mapping or red lints, and otherwise records the screen content hash in `crunk.lock`; a later change reports it as `changed`. It never writes human acks.

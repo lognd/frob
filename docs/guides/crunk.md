@@ -47,6 +47,7 @@ the `crunk-check` crate with the rule set listed in [the rules index](../referen
 | `crunk fix [--dry-run]` | yes | Applies the machine-applicable (Tier A) fixes of `crunk check` to stylesheets; `--dry-run` prints the diff and writes nothing. |
 | `crunk review` | yes | Lists the screen states that need a human review and what changed since the last ack. |
 | `crunk ack [SUBJECT]...` | yes | Records a human review of screen states (`screen/<id>/<state>` or a screen id) into `crunk.lock`; needs a terminal unless `--non-interactive`; `--dry-run` reports only. |
+| `crunk status ID [ready]` | yes | Without a target reports `draft`, `ready` or `changed` and marks a handed-off screen whose content moved as `changed`. `ready` refuses, naming every reason, while the screen has an open blocking comment (`design/review/*.toml`), a stale export, no code mapping (`sources`) or red lints; otherwise it records the content hash as a `[[ready]]` row in `crunk.lock` and locks the screen file. Comments anchored to a deleted state are reported as orphaned and never block. Never writes a human ack. `--dry-run` previews. |
 | `crunk rule catalog` | yes | Lists the std pack rules that `[packs]` in `crunk.toml` switches on. |
 | `crunk schema` | no | Built-in: the JSON Schema of a verb's output. |
 

@@ -639,6 +639,10 @@ skip = "scaffolds a new component into the working directory and needs a name ar
 [scenario."crunk stamp"]
 skip = "rewrites locked screen files in place to record their content hash, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/it/stamp.rs"
 
+# frob:ticket 01M5XCZ18GTA7MKKF4Z0MD95W3
+[scenario."crunk status"]
+skip = "ready records a content hash in crunk.lock and rewrites the screen file, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/status_ready.rs"
+
 [scenario."crunk rename"]
 skip = "renames a token or class across all sources in place and needs old and new names, so it is not safe to time against the repo fixture; covered by crates/crunk/tests/rename.rs"
 

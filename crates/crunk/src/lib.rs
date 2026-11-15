@@ -46,6 +46,7 @@ pub mod serve_patch;
 pub mod slop_report;
 pub mod snapshot;
 pub mod stamp;
+pub mod status;
 pub mod tokens;
 
 use std::path::Path;
@@ -220,6 +221,7 @@ impl Product for CrunkProduct {
             .register::<cache::CachePrune>()
             .register::<review::Review>()
             .register::<review::Ack>()
+            .register::<status::Status>()
             .register::<query::Query>()
             .register::<map::Map>()
             .register::<outline::Outline>()

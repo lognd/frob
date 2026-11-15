@@ -203,6 +203,26 @@ pub struct ReviewEntry {
     pub inputs: BTreeMap<String, String>,
 }
 
+// frob:ticket 01M5XCZ18GTA7MKKF4Z0MD95W3
+/// A recorded handoff: the content hash a subject had when it was marked ready (`[[ready]]`).
+///
+/// This is a tool-written record, never a human ack; its map key in [`LockFile::ready`] is the subject.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReadyEntry {
+    /// The content hash the subject had when marked ready.
+    pub hash: String,
+    /// When (RFC 3339, UTC).
+    pub at: String,
+}
+
+/// The on-disk `[[ready]]` row: the subject key then the entry.
+#[derive(Serialize, Deserialize)]
+struct ReadyRow {
+    subject: String,
+    #[serde(flatten)]
+    entry: ReadyEntry,
+}
+
 /// The on-disk `[[review]]` row: the subject key then the entry.
 #[derive(Serialize, Deserialize)]
 struct ReviewRow {
@@ -286,6 +306,9 @@ pub struct LockFile {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// Human review entries (`[[review]]`) in subject order.
     pub reviews: BTreeMap<String, ReviewEntry>,
+    // frob:ticket 01M5XCZ18GTA7MKKF4Z0MD95W3
+    /// Handoff records (`[[ready]]`) in subject order.
+    pub ready: BTreeMap<String, ReadyEntry>,
 }
 
 impl Default for LockFile {
@@ -298,6 +321,7 @@ impl Default for LockFile {
             renamed: BTreeMap::new(),
             ack_log: Vec::new(),
             reviews: BTreeMap::new(),
+            ready: BTreeMap::new(),
         }
     }
 }
@@ -380,6 +404,8 @@ struct FileV2 {
     ack_log: Vec<AckLogEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     review: Vec<ReviewRow>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    ready: Vec<ReadyRow>,
 }
 
 impl LockFile {
@@ -402,6 +428,7 @@ impl LockFile {
             renamed: BTreeMap::new(),
             ack_log: Vec::new(),
             reviews: BTreeMap::new(),
+            ready: BTreeMap::new(),
         }
     }
 
@@ -418,10 +445,16 @@ impl LockFile {
             renamed: v2.renamed,
             ack_log: v2.ack_log,
             reviews: BTreeMap::new(),
+            ready: BTreeMap::new(),
         };
         for r in v2.review {
             if lock.reviews.insert(r.subject.clone(), r.entry).is_some() {
                 return Err(dup("review", &r.subject));
+            }
+        }
+        for r in v2.ready {
+            if lock.ready.insert(r.subject.clone(), r.entry).is_some() {
+                return Err(dup("ready", &r.subject));
             }
         }
         for r in v2.symbol {
@@ -495,6 +528,14 @@ impl LockFile {
                 .reviews
                 .iter()
                 .map(|(k, e)| ReviewRow {
+                    subject: k.clone(),
+                    entry: e.clone(),
+                })
+                .collect(),
+            ready: self
+                .ready
+                .iter()
+                .map(|(k, e)| ReadyRow {
                     subject: k.clone(),
                     entry: e.clone(),
                 })
