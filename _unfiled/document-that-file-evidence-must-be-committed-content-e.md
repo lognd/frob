@@ -2,7 +2,8 @@
 id = "01M5NKGV2EM8K56HNNC4HAMFBM"
 title = "Document that file evidence must be committed content (E-EVIDENCE-FILE-UNCOMMITTED)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
