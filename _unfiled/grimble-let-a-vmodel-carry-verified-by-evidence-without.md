@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-11-15T05:14:12Z"
 updated = "2026-11-15T06:41:25Z"
 labels = ["no-story"]
-scope = ["crates/grimble-model/src/check.rs", "crates/grimble-model/src/text.rs"]
+scope = ["crates/grimble-model/src/check.rs", "crates/grimble-model/src/text.rs", "crates/grimble-model/tests/it/main.rs"]
 
 [[acceptance]]
 text = "A vmodel accepts verified_by SEL; without MDL000 or MDL012"
