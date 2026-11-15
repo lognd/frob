@@ -8,9 +8,13 @@ points = 2
 parent = "01M7ETK97Q5VJ027ZV8AFBJWRQ"
 reporter = "lognd"
 created = "2026-11-15T06:19:48Z"
-updated = "2026-11-15T06:19:48Z"
+updated = "2026-11-15T06:19:49Z"
 idempotency_key = "crunkplan-d8996c079670"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXS9R6SHNQ9SH8NN87B0DN"
 
 [[acceptance]]
 text = "a target missing a declared mode raises a finding"
