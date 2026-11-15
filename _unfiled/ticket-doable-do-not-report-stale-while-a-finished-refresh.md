@@ -4,10 +4,15 @@ title = "ticket doable: do not report STALE while a finished refresh holds the l
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T06:19:04Z"
 updated = "2026-11-15T06:19:04Z"
 labels = ["no-story"]
+
+[[acceptance]]
+text = "doable shows no STALE after refresh completes (test)"
+bound = false
 +++
 
 Source: frob-audit-meta.md L2. Evidence: crates/frob/tests/it/sync_policy.rs flake class. Remedy: treat a lock held by a finished refresh as fresh. Files: sync policy code.
