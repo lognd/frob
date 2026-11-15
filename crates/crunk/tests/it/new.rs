@@ -222,10 +222,8 @@ fn from_a_flow_with_a_dangling_edge_is_refused_with_code_and_location() {
     assert_eq!(tree(dir.path()), before);
 }
 
-// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
-// frob:tests crates/crunk/src/new.rs::New.run
-#[test]
-fn new_token_from_a_token_name_creates_an_alias() {
+/// Scaffold `color.brand` as an alias of an existing `color.base`; returns the new file's text.
+fn alias_text() -> String {
     let dir = project();
     let base = design(dir.path(), "tokens", "color-base.toml");
     std::fs::create_dir_all(base.parent().unwrap()).unwrap();
@@ -235,9 +233,21 @@ fn new_token_from_a_token_name_creates_an_alias() {
         &["new", "token", "color.brand", "--from", "color.base"],
     );
     assert_eq!(exit, 0, "{out} {err}");
-    let text = std::fs::read_to_string(design(dir.path(), "tokens", "color-brand.toml")).unwrap();
-    assert!(text.contains("{color.base}"), "{text}");
-    let both = format!("[color.base]\nvalue = \"#112233\"\n{text}");
+    std::fs::read_to_string(design(dir.path(), "tokens", "color-brand.toml")).unwrap()
+}
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn new_token_from_a_token_name_writes_a_reference_to_it() {
+    assert!(alias_text().contains("{color.base}"));
+}
+
+// frob:ticket 01M5XCWA755KFHEMG04HPZ4WYW
+// frob:tests crates/crunk/src/new.rs::New.run
+#[test]
+fn new_token_alias_resolves_to_the_source_token() {
+    let both = format!("[color.base]\nvalue = \"#112233\"\n{}", alias_text());
     let set = crunk_tokens::dialect::parse(&both, "t").expect("alias resolves");
     assert!(set.get("--color-brand").is_some());
 }
