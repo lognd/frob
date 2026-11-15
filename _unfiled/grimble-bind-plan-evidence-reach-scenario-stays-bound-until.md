@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:22:12Z"
-updated = "2026-11-15T06:22:12Z"
+updated = "2026-11-15T06:22:16Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "relates"
+target = "01M7ETJNFPNSE3GJ2V5QM53HZE"
 
 [[acceptance]]
 text = "A scenario with unreaching evidence stays bound"
