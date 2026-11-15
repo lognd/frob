@@ -1,0 +1,10 @@
+kind = "create"
+title = "PM037 and DOC007 skips should be Unresolved; design.rs honors sibling_timeout_secs"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M6. Evidence: skipped checks report clean; crates/frob-ledger/src/design.rs:243 ignores sibling_timeout_secs. Remedy: emit Unresolved on skip and pass the configured timeout. Files: PM037/DOC007 rule crates, design.rs."
+at = "2026-11-15T06:18:59Z"
+actor = "lognd"
+rev = 1
