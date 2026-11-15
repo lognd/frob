@@ -660,9 +660,19 @@ fn arg_scope_constants_fold_and_a_non_literal_argument_is_unresolved_never_clean
         "from pathlib import Path\n\ndef go():\n    Path(\"config/a\").read_text()\n",
         grant,
     );
-    let f = of(&recv, "CAP001");
-    assert_eq!(f.len(), 1, "{:?}", recv.findings);
-    assert!(f[0].reason.is_some(), "{f:?}");
+    assert!(of(&recv, "CAP001").is_empty(), "{:?}", recv.findings);
+}
+
+// frob:ticket 01M61Y35309KEQP2SPTQHP1AT8
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn path_receiver_call_is_judged_against_an_argument_grant() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let src = "from pathlib import Path\n\ndef go():\n    Path(\"secret/a\").read_text()\n";
+    let out = bind_py(src, grant);
+    let f = of(&out, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", out.findings);
+    assert!(f[0].reason.is_none(), "an Error, not Unresolved: {f:?}");
 }
 
 // frob:ticket 01M5XNNH61Z437EDDB05X9CAQE

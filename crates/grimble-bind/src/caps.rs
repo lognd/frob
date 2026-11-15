@@ -112,9 +112,10 @@
 //! `may` arguments (ticket 5X9CAQE): a grant `may fs.read("config/**")` covers a use only when the
 //! use's argument is statically known and `grimble_model::args::judge` matches it against a grant
 //! argument. The argument is folded by `gob_symbols::call_args` (literals, concatenations,
-//! single-assignment constants, tuples, path wrappers). A known argument outside every covering
+//! single-assignment constants, tuples, path wrappers); a `Path("a").read_text()` receiver call is judged on the
+//! constructor's literal argument (ticket QHP1AT8). A known argument outside every covering
 //! grant argument is CAP001 (Error) naming both. An argument that cannot be folded, a use through
-//! a receiver (`Path(..).read_text()`), or an atom a pack declares is Unresolved with reason
+//! another receiver form, or an atom a pack declares is Unresolved with reason
 //! `unresolved-edge`, never clean. Paths are compared lexically (symlinks are not followed).
 //!
 //! Grant scope (ticket M64HENY): a grant's `at` selector is judged against the unit of the use
@@ -2128,6 +2129,37 @@ fn attach_args(cx: &Cx<'_>, uses: &mut Uses) {
     }
 }
 
+/// The folded path of a `Path("a").method()` receiver call on `line`: the one `method` call whose
+/// callee is exactly a flat `Path(..)` / `pathlib.Path(..)` constructor, and that constructor's only
+/// argument. Anything else (chained steps, `/` joins, several calls) is `None`, never guessed.
+fn path_receiver_arg(
+    calls: &BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>,
+    line: u32,
+    method: &str,
+) -> Option<String> {
+    let [outer] = calls.get(&(line, method.to_owned()))?.as_slice() else {
+        return None;
+    };
+    let tail = format!(").{method}");
+    let inner_text = ["Path(", "pathlib.Path("]
+        .iter()
+        .find_map(|p| outer.callee.strip_prefix(p))?
+        .strip_suffix(tail.as_str())?;
+    if inner_text.contains(['(', ')']) {
+        return None;
+    }
+    let [ctor] = calls.get(&(line, "Path".to_owned()))?.as_slice() else {
+        return None;
+    };
+    if ctor.offset != outer.offset || ctor.splat || !ctor.kwargs.is_empty() {
+        return None;
+    }
+    match ctor.args.as_slice() {
+        [Some(gob_symbols::ArgValue::Str(s))] => Some(s.clone()),
+        _ => None,
+    }
+}
+
 /// Parse each used file once and attach the folded argument of the one call matching each use.
 fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
     let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
@@ -2138,7 +2170,11 @@ fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
             continue;
         };
         let Some(line) = u.line else { continue };
-        if kind != ArgKind::Host && receiver_entry(&u.callee) {
+        let ctor_call = ["Path(", "pathlib.Path("]
+            .iter()
+            .any(|p| u.callee.starts_with(p));
+        let receiver = kind != ArgKind::Host && (ctor_call || receiver_entry(&u.callee));
+        if receiver && !(kind == ArgKind::Path && (ctor_call || u.callee.starts_with("Path."))) {
             unknown += 1;
             continue;
         }
@@ -2156,6 +2192,21 @@ fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
             }
             m
         });
+        if receiver {
+            // `Path("a").read_text()`: the path is the constructor's argument (ticket 01M61Y35309KEQP2SPTQHP1AT8)
+            u.arg = if code.language == "python" {
+                path_receiver_arg(calls, line, last_segment(&u.callee))
+            } else {
+                None
+            };
+            tracing::debug!(file = %u.file, line, callee = %u.callee, folded = u.arg.is_some(), "receiver path argument");
+            if u.arg.is_some() {
+                known += 1;
+            } else {
+                unknown += 1;
+            }
+            continue;
+        }
         let Some(cands) = calls.get(&(line, last_segment(&u.callee).to_owned())) else {
             unknown += 1;
             continue;
