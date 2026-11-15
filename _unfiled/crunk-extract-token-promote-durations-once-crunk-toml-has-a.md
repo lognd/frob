@@ -7,9 +7,9 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T21:08:52Z"
-updated = "2026-11-15T14:12:40Z"
+updated = "2026-11-15T14:20:42Z"
 labels = ["no-story"]
-scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-tokens/src/model.rs", "crates/crunk/tests/it/extract.rs"]
+scope = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-tokens/src/model.rs", "crates/crunk/tests/it/extract.rs", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
 text = "Given a duration literal such as 200ms, when crunk extract-token runs, then it is promoted to a duration token and references are rewritten"
