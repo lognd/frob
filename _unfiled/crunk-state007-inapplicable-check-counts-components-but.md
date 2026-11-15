@@ -2,7 +2,8 @@
 id = "01M7FEY1PK1BYRQ7MFY4FNJYCY"
 title = "crunk STATE007: inapplicable check counts components but subjects count only screens (fires on component-only project)"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
