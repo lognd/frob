@@ -2,7 +2,8 @@
 id = "01M5XDN67KE9HCKFSX3CDS3X1G"
 title = "crunk-scene: expose selector-to-element association for style rules and @media"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
