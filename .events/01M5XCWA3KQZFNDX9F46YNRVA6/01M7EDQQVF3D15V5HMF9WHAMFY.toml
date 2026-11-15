@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T01:39:04Z"
+digest = "91ab91278d0185f0edafedb97cd9007edd19d4458868bc2e60f2a18cb5034a38"
+exit_code = 0
+head = "08376d5840f0ab2ef2623ef5b81d43571aa49b0e"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f750ae6f-4612-48e9-9f2d-c7b7ceff36a0 with nextest profile: default
+    Starting 1 test across 6 binaries (311 tests skipped)
+        PASS [   0.241s] crunk::e2e_agent_authoring new_component_then_edit_variants_reports_comp_findings_for_touched_nodes_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.242s] 1 test run: 1 passed, 311 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=new_component_then_edit_variants_reports_comp_findings_for_touched_nodes_only)"
+size = 908
+status = "measured"
+test_count = 1
+tests_digest = "8803e88b787e40f10663b05cc12e480f6d679bd0a17163010df7bfc11d126750"
+at = "2026-11-15T01:39:04Z"
+actor = "lognd"
+rev = 1
