@@ -7,13 +7,14 @@
 // frob:ticket 01M43ATBY4CHA4FYVC7BWK6MXR
 
 use std::collections::BTreeSet;
+use std::path::Path;
 
 use crunk_ingest::ProjectStyles;
 use crunk_ingest::tailwind::{Engine, ingest_tailwind, runtime_sources};
 use crunk_rules::tailwind::TailwindFacts;
 use crunk_spec::DesignSpec;
 use crunk_spec::table::TailwindEngine;
-use crunk_tailwind::runtime::{Evaluation, Options, Runtime};
+use crunk_tailwind::runtime::{DoctorReport, Evaluation, Options, Runtime, Sources};
 use gob_cache::Cache;
 
 /// The Tailwind facts of the project: the theme (node-resolved, else static) and the compiled
@@ -73,4 +74,32 @@ pub fn collect(
         "tailwind facts collected"
     );
     TailwindFacts::new(spec, theme.entries, results, unresolved)
+}
+
+/// The Tailwind runtime presence table for the project at `root` (what `crunk doctor` prints).
+///
+/// A project without a loadable `crunk.toml` is probed with no sources, so node and the project's
+/// tailwindcss are still reported. The probe never evaluates utilities.
+// frob:ticket 01M4DVX1K76X876W0YPB5EX3F9
+pub fn doctor(root: &Path) -> DoctorReport {
+    let sources = match crunk_spec::load_spec(root) {
+        Ok(spec) => runtime_sources(&spec),
+        Err(err) => {
+            tracing::debug!(%err, "tailwind doctor: no usable spec; probing without sources");
+            Sources::default()
+        }
+    };
+    let state_dir = format!(".{}", crate::PRODUCT);
+    let runtime = Runtime::new(
+        root,
+        Options::default(),
+        Cache::open_shared(root, &state_dir),
+    );
+    let report = runtime.doctor(&sources);
+    tracing::info!(
+        rows = report.rows.len(),
+        issues = report.issues.len(),
+        "tailwind doctor finished"
+    );
+    report
 }

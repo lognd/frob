@@ -13,3 +13,18 @@ fn report_marks_a_repository_without_crunk_toml_absent() {
     );
     assert_eq!(payload.data.version, env!("CARGO_PKG_VERSION"));
 }
+
+// frob:tests crates/crunk/src/doctor.rs::report
+#[test]
+fn report_prints_the_tailwind_presence_table() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let payload = crunk::doctor::report(dir.path());
+    let items: Vec<&str> = payload
+        .data
+        .tailwind
+        .rows
+        .iter()
+        .map(|r| r.item.as_str())
+        .collect();
+    assert_eq!(items, ["node", "tailwindcss", "helper"]);
+}

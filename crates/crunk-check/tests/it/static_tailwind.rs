@@ -74,3 +74,12 @@ fn engine_static_in_crunk_toml_never_executes_repository_javascript() {
         "repository JavaScript ran under engine = static"
     );
 }
+
+// frob:tests crates/crunk-check/src/tailwind.rs::doctor
+#[test]
+fn doctor_never_executes_repository_javascript_and_lists_three_rows() {
+    let (dir, marker) = booby_trapped("");
+    let report = crunk_check::tailwind_doctor(dir.path());
+    assert!(!marker.exists(), "doctor executed repository JavaScript");
+    assert_eq!(report.rows.len(), 3);
+}
