@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-bind: PLAN-PAGE-OUTCOME, each non-ok variant of a step on page P needs a ui waypoint or outcome-map entry (G07)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["A missing page outcome raises the rule", "An outcome-map entry clears it"]
+body = "Research: /home/logan/projects/frob-research-lifecycle.md rec 4. Rule ids PLAN041/042/044 tickets ~ZAP2ZD4 and ~8QFFM4A overlap: coordinate."
+at = "2026-11-15T06:22:12Z"
+actor = "lognd"
+rev = 1
