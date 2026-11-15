@@ -1,7 +1,7 @@
 [package]
 name = "grimble-serve"
 version.workspace = true
-description = "grimble's read-only MCP tools (check, graph) on gob-serve, behind a per-launch token."
+description = "grimble's read-only MCP tools (check, graph, explore) on gob-serve, behind a per-launch token."
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
