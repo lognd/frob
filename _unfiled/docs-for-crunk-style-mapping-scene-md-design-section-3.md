@@ -2,12 +2,12 @@
 id = "01M5XDN5F39HREPV9CKRJW38XR"
 title = "Docs for crunk style mapping (scene.md, design section 3)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-27T00:55:07Z"
-updated = "2026-10-27T02:58:43Z"
+updated = "2026-11-15T08:32:02Z"
 scope = ["docs/crunk/**", "docs/design/crunk.md"]
 +++
 
