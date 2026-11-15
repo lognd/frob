@@ -12,6 +12,10 @@ updated = "2026-11-15T06:28:41Z"
 idempotency_key = "crunkplan-dcc5f4507ec8"
 labels = ["no-story"]
 
+[[links]]
+kind = "blocked-by"
+target = "01M7EXVF8ERPYCR1Z2S55Q8XSB"
+
 [[acceptance]]
 text = "the marks option writes a PNG whose boxes match the solve ids"
 bound = false
