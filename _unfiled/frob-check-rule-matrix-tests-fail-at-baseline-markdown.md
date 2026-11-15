@@ -4,10 +4,10 @@ title = "frob-check rule_matrix tests fail at baseline (markdown COV001/DOC001 c
 type = "bug"
 category = "todo"
 priority = "medium"
-points = 2
+points = 3
 reporter = "lognd"
 created = "2026-10-23T23:26:32Z"
-updated = "2026-10-27T02:58:42Z"
+updated = "2026-11-15T15:21:37Z"
 scope = ["crates/frob-check/tests/**"]
 
 [[acceptance]]
