@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["outdated lists stages whose pinned version is behind latest, using an injectable version source in tests", "Without the explicit command no network access happens"]
+moved = []
+at = "2026-11-15T06:21:12Z"
+actor = "lognd"
+rev = 1
