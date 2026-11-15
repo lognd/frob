@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T17:00:53Z"
-updated = "2026-11-15T23:29:35Z"
+updated = "2026-11-15T23:36:08Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 
 [[acceptance]]
 text = "A non-literal getattr name is reported as a computed (Unresolved) use of its known prefix"
-bound = false
+bound = true
 +++
 
 Found while working D36SRKP; documented limit of import resolution.

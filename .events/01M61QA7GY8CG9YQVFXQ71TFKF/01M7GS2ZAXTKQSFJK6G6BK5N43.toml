@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T23:36:08Z"
+digest = "3ca220a37d139b114a741c67a9216d757cdbfc16083f5ddc9c84c520dd67fb0a"
+exit_code = 0
+head = "13f919f2e93f330beb0ad6cc8f973b940b2fd52c"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.90s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 67f9d9fb-ec1a-4d12-9b1c-3b70027e20ed with nextest profile: default
+    Starting 1 test across 164 binaries (8085 tests skipped)
+        PASS [   0.005s] gob-symbols canon::tests::python_computed_getattr_is_an_unresolved_use
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 1 test run: 1 passed, 8085 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "python_computed_getattr"
+size = 567
+status = "measured"
+test_count = 1
+tests_digest = "9d93267884a05308b1c8cede6f02228ad0c753e90988a2029add469b52dcb127"
+at = "2026-11-15T23:36:08Z"
+actor = "lognd"
+rev = 1
