@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T04:26:51Z"
+digest = "67aec4d2bebba6e82c54dfb1c55d3163f8fcc7110425d8e469b089450076b9d1"
+exit_code = 0
+head = "0b7868df1439d38eb3ed271e5d7c3e30e6ade88e"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.23s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 79e8c23c-1e9f-478c-a49a-28079ae17e5d with nextest profile: default
+    Starting 1 test across 6 binaries (316 tests skipped)
+        PASS [   0.007s] crunk::it docs::every_crunk_verb_is_in_the_readme_verb_table
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.008s] 1 test run: 1 passed, 316 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=docs::every_crunk_verb_is_in_the_readme_verb_table)"
+size = 553
+status = "measured"
+test_count = 1
+tests_digest = "2daae7a1d969f330bbae5115ed80b6505da8f0c8c3d047408e5e55140dd401a0"
+at = "2026-11-15T04:26:51Z"
+actor = "lognd"
+rev = 1
