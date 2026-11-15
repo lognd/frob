@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T21:44:28Z"
+digest = "8771c9ff5b2e7400325e4a72d3cca0e1b5f2ed0009cf4ff4bdb368ddf2004f0d"
+exit_code = 0
+head = "8e8fa67fa87411b2066d849c8c1ef57747ac78b7"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.84s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID aa4d7000-643d-496b-855d-3ac4ab455c0f with nextest profile: default
+    Starting 1 test across 2 binaries (323 tests skipped)
+        PASS [   0.039s] crunk-rules::it craft008_rules::rule_docs_match_error_severity
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.041s] 1 test run: 1 passed, 323 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=craft008_rules::rule_docs_match_error_severity)"
+size = 555
+status = "measured"
+test_count = 1
+tests_digest = "50e6844fdb45782adb62c4e600fc79fae8c1eb0574064fe748d99ca6039f8041"
+at = "2026-11-15T21:44:28Z"
+actor = "lognd"
+rev = 1
