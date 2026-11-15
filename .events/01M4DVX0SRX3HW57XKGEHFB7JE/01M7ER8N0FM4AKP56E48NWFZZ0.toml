@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T04:43:18Z"
+digest = "6d28d9029c9fffa42e42b53fe9b689d4db753a553b753d6252080502ab066688"
+exit_code = 0
+head = "7f56eab19a666ff01d5d30a628fe83a8d030afba"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a3d53d27-3132-4e79-824b-8894cb39610b with nextest profile: default
+    Starting 1 test across 2 binaries (70 tests skipped)
+        PASS [   0.003s] crunk-tokens export::json::tests::matches_python_dumps_for_nesting_escapes_and_empties
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.004s] 1 test run: 1 passed, 70 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-tokens -E test(=export::json::tests::matches_python_dumps_for_nesting_escapes_and_empties)"
+size = 577
+status = "measured"
+test_count = 1
+tests_digest = "e52f95d217989fb603cff5c7d923c664a2f5b51c1847f2df521a099bb9a7a352"
+at = "2026-11-15T04:43:18Z"
+actor = "lognd"
+rev = 1

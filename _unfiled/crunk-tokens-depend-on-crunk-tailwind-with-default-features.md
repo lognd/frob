@@ -13,7 +13,7 @@ scope = ["crates/crunk-tokens/Cargo.toml"]
 
 [[acceptance]]
 text = "crunk-tokens depends on crunk-tailwind with default-features = false and still builds and passes its tests"
-bound = false
+bound = true
 +++
 
 Found while working ~1WS0DQ4: crunk-tailwind gained a default-on runtime feature (gob-exec, gob-cache, gob-symbols, ...). crunk-tokens only needs the default-theme tables; set default-features = false there. Blocked by neither; do after ~1WS0DQ4 lands.
