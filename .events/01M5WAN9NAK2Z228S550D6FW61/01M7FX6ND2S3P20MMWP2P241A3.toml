@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T15:28:50Z"
+digest = "cea292dbae0860b57b1181fddad9c0f7dedf1202bff9de91dadbb844d2f16428"
+exit_code = 0
+head = "1bfcd392ab081e50f36cff5aa5bc7c791ae2da58"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.43s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7ceba275-9283-4a3c-adf3-a535e6a1baf6 with nextest profile: default
+    Starting 1 test across 2 binaries (175 tests skipped)
+        PASS [   0.007s] frob-release::it changelog::capability_atoms_first_shipped_in_a_release_are_listed_in_its_notes_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 175 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-release -E test(=changelog::capability_atoms_first_shipped_in_a_release_are_listed_in_its_notes_only)"
+size = 593
+status = "measured"
+test_count = 1
+tests_digest = "168e4e111d4436ba7083c3e3cec2acb42a4b7efb744aee2eaecea3434a49d044"
+at = "2026-11-15T15:28:50Z"
+actor = "lognd"
+rev = 1

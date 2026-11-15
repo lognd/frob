@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T14:43:32Z"
-updated = "2026-11-15T15:22:36Z"
+updated = "2026-11-15T15:28:50Z"
 labels = ["no-story"]
 scope = ["crates/gob-caps/**", "crates/frob-release/**"]
 
 [[acceptance]]
 text = "A capability atom carries a since version, and frob release changelog lists atoms newly live in the release alongside rules"
-bound = false
+bound = true
 +++
 
 Follow-up of VGQ66DC acceptance 2: only rules are covered today.
