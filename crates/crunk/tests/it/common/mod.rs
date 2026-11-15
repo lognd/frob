@@ -171,6 +171,7 @@ fn css_root_of(root: &Path) -> String {
 pub const RUST_ONLY_RULES: &[&str] = &[
     "EXPORT001",
     "EXPORT002",
+    "SPEC001",
     "TOKEN002",
     "TOKEN003",
     "TOKEN004",

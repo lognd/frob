@@ -8,6 +8,7 @@ use crunk_spec::component_file::{ComponentConfig, parse_component_file};
 use crunk_spec::table::{ScreenKind, ScreenStatus};
 use crunk_tokens::model::TokenSet;
 
+use crate::file_problem::{DesignFileProblem, hash_problems};
 use crate::screen_files::required_states;
 use crate::sheets::site_path;
 use crate::token_files::TokenFacts;
@@ -152,11 +153,13 @@ pub fn component_hash(component: &ComponentConfig, tokens: &TokenLookup) -> Stri
 pub struct ComponentFacts {
     /// The files, in path order.
     pub files: Vec<ComponentFile>,
+    /// The files that could not be read or parsed, in path order (SPEC001).
+    pub problems: Vec<DesignFileProblem>,
 }
 
 impl ComponentFacts {
     /// Read and parse `<root>/design/components/*.component.toml`; a missing directory gives no
-    /// files, and an unreadable or invalid file is skipped with a warning.
+    /// files, and an unreadable or invalid file becomes a [`DesignFileProblem`].
     pub fn load(spec: &DesignSpec) -> Self {
         let dir = spec.root.join(COMPONENTS_DIR);
         let mut paths: Vec<_> = match std::fs::read_dir(&dir) {
@@ -171,17 +174,24 @@ impl ComponentFacts {
             Err(_) => Vec::new(),
         };
         paths.sort();
+        let mut problems = Vec::new();
         let files: Vec<ComponentFile> = paths
             .into_iter()
             .filter_map(|path| {
+                let rel = site_path(spec, &path);
                 let text = std::fs::read_to_string(&path)
-                    .inspect_err(|err| {
-                        tracing::warn!(path = %path.display(), %err, "component file unreadable; skipped");
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(
+                            &rel,
+                            "component file unreadable",
+                            &err,
+                        ));
                     })
                     .ok()?;
-                let rel = site_path(spec, &path);
                 let component = parse_component_file(&text)
-                    .inspect_err(|err| tracing::warn!(path = %rel, %err, "component file invalid; skipped"))
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(&rel, "component file invalid", &err));
+                    })
                     .ok()?;
                 tracing::debug!(path = %rel, name = %component.name, "component file loaded");
                 Some(ComponentFile {
@@ -191,7 +201,7 @@ impl ComponentFacts {
                 })
             })
             .collect();
-        Self { files }
+        Self { files, problems }
     }
 
     /// A stable digest of the files' paths and texts, for the repo digest.
@@ -203,6 +213,7 @@ impl ComponentFacts {
             hasher.update(file.text.as_bytes());
             hasher.update(b"\0");
         }
+        hash_problems(&mut hasher, &self.problems);
         hasher.finalize().to_hex().to_string()
     }
 }
@@ -276,9 +287,11 @@ mod tests {
     fn fingerprint_changes_with_the_text() {
         let a = ComponentFacts {
             files: vec![file(TEXT)],
+            ..Default::default()
         };
         let b = ComponentFacts {
             files: vec![file(&format!("{TEXT}# x\n"))],
+            ..Default::default()
         };
         assert_ne!(a.fingerprint(), b.fingerprint());
         assert_eq!(

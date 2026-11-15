@@ -141,6 +141,12 @@ pub const FAMILIES: &[FamilyMeta] = &[
         true,
     ),
     fam(
+        "SPEC",
+        "design files (components, screens, content) that cannot be read or parsed",
+        &[T0],
+        false,
+    ),
+    fam(
         "STATE",
         "required component states present",
         &[T0, T1],

@@ -24,12 +24,13 @@ use crunk_rules::rules::{
     slop003::Slop003, slop004::Slop004, slop010::Slop010, slop011::Slop011, slop014::Slop014,
     slop020::Slop020, slop021::Slop021, slop022::Slop022, slop026::Slop026, slop027::Slop027,
     slop028::Slop028, slop029::Slop029, slop040::Slop040, slop060::Slop060, space001::Space001,
-    state001::State001, state002::State002, state003::State003, state004::State004,
-    state005::State005, state006::State006, state007::State007, token002::Token002,
-    token003::Token003, token004::Token004, token005::Token005, token006::Token006,
-    token007::Token007, token008::Token008, token009::Token009, token010::Token010,
-    tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003, tw004::Tw004, tw005::Tw005,
-    type001::Type001, type002::Type002, type003::Type003, waive001::Waive001,
+    spec001::Spec001, state001::State001, state002::State002, state003::State003,
+    state004::State004, state005::State005, state006::State006, state007::State007,
+    token002::Token002, token003::Token003, token004::Token004, token005::Token005,
+    token006::Token006, token007::Token007, token008::Token008, token009::Token009,
+    token010::Token010, tokens001::Tokens001, tw001::Tw001, tw002::Tw002, tw003::Tw003,
+    tw004::Tw004, tw005::Tw005, type001::Type001, type002::Type002, type003::Type003,
+    waive001::Waive001,
 };
 use gob_rules::{RuleDecl, Severity, run_file};
 use gob_text::FileInterner;
@@ -97,6 +98,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-rules/src/rules/layout003.rs::Layout003
     // frob:tests crates/crunk-rules/src/rules/layout004.rs::Layout004
     // frob:tests crates/crunk-rules/src/rules/layout005.rs::Layout005
+    // frob:tests crates/crunk-rules/src/rules/spec001.rs::Spec001
     // frob:tests crates/crunk-rules/src/rules/state001.rs::State001
     // frob:tests crates/crunk-rules/src/rules/state002.rs::State002
     // frob:tests crates/crunk-rules/src/rules/state003.rs::State003
@@ -180,6 +182,7 @@ fn project_runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
         "COMP007" => support::run_case::<Comp007>(&host, case),
         "COMP008" => support::run_case::<Comp008>(&host, case),
         "COMP009" => support::run_case::<Comp009>(&host, case),
+        "SPEC001" => support::run_case::<Spec001>(&host, case),
         "CONTRAST001" => support::run_case::<Contrast001>(&host, case),
         "CRAFT001" => support::run_case::<Craft001>(&host, case),
         "CRAFT002" => support::run_case::<Craft002>(&host, case),
@@ -383,6 +386,7 @@ fn the_registry_lists_id_family_severity_fixable_and_doc() {
             "SLOP040",
             "SLOP060",
             "SPACE001",
+            "SPEC001",
             "STATE001",
             "STATE002",
             "STATE003",
@@ -548,7 +552,7 @@ fn lint_levels_map_onto_pipeline_severities() {
 fn bind_yields_one_bound_rule_per_declaration() {
     let bound = crunk_rules::rules::bind::<dyn crunk_rules::CrunkHost>();
     let ids: Vec<&str> = bound.iter().map(|b| b.def.id).collect();
-    assert_eq!(ids.len(), 108);
+    assert_eq!(ids.len(), 109);
     assert!(ids.contains(&"SPACE001"));
 }
 

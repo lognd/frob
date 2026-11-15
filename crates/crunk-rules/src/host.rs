@@ -238,3 +238,25 @@ pub fn missing_component_inputs<H: CrunkHost + ?Sized>(host: &H) -> Option<Strin
 pub fn component_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
     host.components().map_or(0, |facts| facts.files.len())
 }
+
+// frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
+/// Every design file of `host` that did not load (components, screens, content), in that order.
+pub fn design_file_problems<H: CrunkHost + ?Sized>(
+    host: &H,
+) -> Vec<&crate::file_problem::DesignFileProblem> {
+    let components = host.components().map(|f| &f.problems);
+    let screens = host.screens().map(|f| &f.problems);
+    let content = host.content().map(|f| &f.problems);
+    [components, screens, content]
+        .into_iter()
+        .flatten()
+        .flatten()
+        .collect()
+}
+
+// frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
+/// How many component, screen and content files `host` carries, loaded or not (SPEC001's subjects).
+pub fn design_file_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
+    let loaded = component_subjects(host) + screen_subjects(host) + content_subjects(host);
+    loaded + design_file_problems(host).len()
+}

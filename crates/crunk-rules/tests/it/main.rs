@@ -22,6 +22,7 @@ mod scales_rules;
 mod scene_rules;
 mod slop_layout_rules;
 mod slop_support;
+mod spec_rules;
 mod support;
 mod tailwind_rules;
 mod token_host;

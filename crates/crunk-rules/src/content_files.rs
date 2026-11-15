@@ -11,6 +11,7 @@ use crunk_scene::ElementKind;
 use crunk_spec::voice_file::{VoiceRules, parse_voice_rules};
 use crunk_spec::{ContentFile, DesignSpec, parse_content_file};
 
+use crate::file_problem::{DesignFileProblem, hash_problems};
 use crate::scene_docs::{SCENE_DOC_SUFFIX, SceneDocFile};
 use crate::sheets::site_path;
 
@@ -94,25 +95,27 @@ impl VoiceFile {
         if live { Self::Present } else { Self::Blank }
     }
 
-    /// Read the voice file under `spec`'s root, with the glossary and tone rules it carries; an
-    /// unreadable file counts as present with no rules, and so does one whose rules do not parse.
+    /// Read the voice file under `spec`'s root, with the glossary and tone rules it carries and the
+    /// problem (if any) that kept them out: an unreadable file counts as present with no rules, and
+    /// so does one whose rules do not parse.
     #[must_use]
-    pub fn load(spec: &DesignSpec) -> (Self, VoiceRules) {
+    pub fn load(spec: &DesignSpec) -> (Self, VoiceRules, Option<DesignFileProblem>) {
         let path = spec.root.join(CONTENT_DIR).join(VOICE_FILE);
         if !path.is_file() {
-            return (Self::Missing, VoiceRules::default());
+            return (Self::Missing, VoiceRules::default(), None);
         }
+        let rel = site_path(spec, &path);
         match std::fs::read_to_string(&path) {
-            Ok(text) => {
-                let rules = parse_voice_rules(&text).unwrap_or_else(|err| {
-                    tracing::warn!(%err, "voice rules invalid; glossary and tone rules skipped");
-                    VoiceRules::default()
-                });
-                (Self::of_text(&text), rules)
-            }
+            Ok(text) => match parse_voice_rules(&text) {
+                Ok(rules) => (Self::of_text(&text), rules, None),
+                Err(err) => {
+                    let problem = DesignFileProblem::new(&rel, "voice file invalid", &err);
+                    (Self::of_text(&text), VoiceRules::default(), Some(problem))
+                }
+            },
             Err(err) => {
-                tracing::warn!(%err, "voice file unreadable; counted as present");
-                (Self::Present, VoiceRules::default())
+                let problem = DesignFileProblem::new(&rel, "voice file unreadable", &err);
+                (Self::Present, VoiceRules::default(), Some(problem))
             }
         }
     }
@@ -127,11 +130,13 @@ pub struct ContentFacts {
     pub voice: VoiceFile,
     /// The glossary and banned words `design/content/voice.toml` declares.
     pub rules: VoiceRules,
+    /// The files that could not be read or parsed, the voice file included, in path order (SPEC001).
+    pub problems: Vec<DesignFileProblem>,
 }
 
 impl ContentFacts {
     /// Read and parse `<root>/design/content/*.toml`; a missing directory gives no files, and an
-    /// unreadable or invalid file is skipped with a warning.
+    /// unreadable or invalid file becomes a [`DesignFileProblem`].
     pub fn load(spec: &DesignSpec) -> Self {
         let dir = spec.root.join(CONTENT_DIR);
         let mut paths: Vec<_> = match std::fs::read_dir(&dir) {
@@ -144,19 +149,24 @@ impl ContentFacts {
             Err(_) => Vec::new(),
         };
         paths.sort();
+        let mut problems = Vec::new();
         let files: Vec<ContentDocFile> = paths
             .into_iter()
             .filter_map(|path| {
                 let rel = site_path(spec, &path);
                 let text = std::fs::read_to_string(&path)
-                    .inspect_err(|err| {
-                        tracing::warn!(path = %rel, %err, "content file unreadable; skipped");
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(
+                            &rel,
+                            "content file unreadable",
+                            &err,
+                        ));
                     })
                     .ok()?;
                 let content = parse_content_file(&text)
-                    .inspect_err(
-                        |err| tracing::warn!(path = %rel, %err, "content file invalid; skipped"),
-                    )
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(&rel, "content file invalid", &err));
+                    })
                     .ok()?;
                 tracing::debug!(path = %rel, keys = content.keys.len(), "content file loaded");
                 Some(ContentDocFile {
@@ -166,7 +176,8 @@ impl ContentFacts {
                 })
             })
             .collect();
-        let (voice, rules) = VoiceFile::load(spec);
+        let (voice, rules, voice_problem) = VoiceFile::load(spec);
+        problems.extend(voice_problem);
         tracing::debug!(
             ?voice,
             banned = rules.banned.len(),
@@ -177,6 +188,7 @@ impl ContentFacts {
             files,
             voice,
             rules,
+            problems,
         }
     }
 
@@ -204,6 +216,7 @@ impl ContentFacts {
             hasher.update(file.text.as_bytes());
             hasher.update(b"\0");
         }
+        hash_problems(&mut hasher, &self.problems);
         hasher.update(format!("voice:{:?}", self.voice).as_bytes());
         hasher.update(format!("{:?}", self.rules).as_bytes());
         hasher.finalize().to_hex().to_string()

@@ -16,7 +16,7 @@ use crunk_spec::{DesignSpec, Phase, ResolvedPhase};
 
 /// Families whose lints check structure and so run in every phase.
 pub const STRUCTURE_FAMILIES: &[&str] = &[
-    "TOKEN", "TOKENS", "ORG", "WAIVE", "SCENE", "COMP", "STATE", "UX", "PORT",
+    "TOKEN", "TOKENS", "ORG", "WAIVE", "SCENE", "COMP", "SPEC", "STATE", "UX", "PORT",
 ];
 
 /// Families that only run once a project is `live`: post-launch metrics and experiments.

@@ -6,6 +6,7 @@
 use crunk_spec::table::{ScreenConfig, ScreenKind};
 use crunk_spec::{DesignSpec, parse_screen_file};
 
+use crate::file_problem::{DesignFileProblem, hash_problems};
 use crate::sheets::site_path;
 
 /// The project directory holding the authored screen files, relative to the root.
@@ -85,11 +86,13 @@ pub fn content_hash(screen: &ScreenConfig) -> String {
 pub struct ScreenFacts {
     /// The files, in path order.
     pub files: Vec<ScreenFile>,
+    /// The files that could not be read or parsed, in path order (SPEC001).
+    pub problems: Vec<DesignFileProblem>,
 }
 
 impl ScreenFacts {
     /// Read and parse `<root>/design/screens/*.screen.toml`; a missing directory gives no files,
-    /// and an unreadable or invalid file is skipped with a warning.
+    /// and an unreadable or invalid file becomes a [`DesignFileProblem`].
     pub fn load(spec: &DesignSpec) -> Self {
         let dir = spec.root.join(SCREENS_DIR);
         let mut paths: Vec<_> = match std::fs::read_dir(&dir) {
@@ -104,17 +107,20 @@ impl ScreenFacts {
             Err(_) => Vec::new(),
         };
         paths.sort();
+        let mut problems = Vec::new();
         let files: Vec<ScreenFile> = paths
             .into_iter()
             .filter_map(|path| {
+                let rel = site_path(spec, &path);
                 let text = std::fs::read_to_string(&path)
-                    .inspect_err(|err| {
-                        tracing::warn!(path = %path.display(), %err, "screen file unreadable; skipped");
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(&rel, "screen file unreadable", &err));
                     })
                     .ok()?;
-                let rel = site_path(spec, &path);
                 let screen = parse_screen_file(&text)
-                    .inspect_err(|err| tracing::warn!(path = %rel, %err, "screen file invalid; skipped"))
+                    .map_err(|err| {
+                        problems.push(DesignFileProblem::new(&rel, "screen file invalid", &err));
+                    })
                     .ok()?;
                 tracing::debug!(path = %rel, states = screen.states.len(), "screen file loaded");
                 Some(ScreenFile {
@@ -124,7 +130,7 @@ impl ScreenFacts {
                 })
             })
             .collect();
-        Self { files }
+        Self { files, problems }
     }
 
     /// A stable digest of the files' paths and texts, for the repo digest.
@@ -136,6 +142,7 @@ impl ScreenFacts {
             hasher.update(file.text.as_bytes());
             hasher.update(b"\0");
         }
+        hash_problems(&mut hasher, &self.problems);
         hasher.finalize().to_hex().to_string()
     }
 }
@@ -191,9 +198,11 @@ mod tests {
     fn fingerprint_changes_with_the_text() {
         let a = ScreenFacts {
             files: vec![file(TEXT)],
+            ..Default::default()
         };
         let b = ScreenFacts {
             files: vec![file(&format!("{TEXT}# x\n"))],
+            ..Default::default()
         };
         assert_ne!(a.fingerprint(), b.fingerprint());
     }

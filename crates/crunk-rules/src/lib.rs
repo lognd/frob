@@ -44,6 +44,7 @@ pub mod craft;
 pub mod export_figma;
 pub mod family;
 pub mod file_attrs;
+pub mod file_problem;
 pub mod fixes;
 pub mod grl_rules;
 pub mod host;

@@ -74,6 +74,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("SIZE", "crunk-rules"),
     ("SLOP", "crunk-rules"),
     ("SPACE", "crunk-rules"),
+    ("SPEC", "crunk-rules"),
     ("STATE", "crunk-rules"),
     ("SYS", "grimble-bind"),
     ("TEST", "frob-tests"),

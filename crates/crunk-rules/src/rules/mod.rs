@@ -165,6 +165,8 @@ pub mod slop040;
 pub mod slop060;
 /// Rule `SPACE001`.
 pub mod space001;
+/// Rule `SPEC001`.
+pub mod spec001;
 /// Rule `STATE001`.
 pub mod state001;
 /// Rule `STATE002`.
@@ -303,6 +305,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <slop040::Slop040 as gob_rules::RuleDecl>::DEF,
     <slop060::Slop060 as gob_rules::RuleDecl>::DEF,
     <space001::Space001 as gob_rules::RuleDecl>::DEF,
+    <spec001::Spec001 as gob_rules::RuleDecl>::DEF,
     <state001::State001 as gob_rules::RuleDecl>::DEF,
     <state002::State002 as gob_rules::RuleDecl>::DEF,
     <state003::State003 as gob_rules::RuleDecl>::DEF,
@@ -536,6 +539,7 @@ impl<P: ?Sized + 'static> BindPart<P> for Part2
 where
     slop060::Slop060: gob_rules::RepoRule<P>,
     space001::Space001: gob_rules::Measured<P>,
+    spec001::Spec001: gob_rules::Measured<P>,
     state001::State001: gob_rules::Measured<P>,
     state002::State002: gob_rules::Measured<P>,
     state003::State003: gob_rules::Measured<P>,
@@ -567,6 +571,7 @@ where
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
         rules.push(gob_rules::BoundRule::repo(slop060::Slop060));
         rules.push(gob_rules::BoundRule::measured(space001::Space001));
+        rules.push(gob_rules::BoundRule::measured(spec001::Spec001));
         rules.push(gob_rules::BoundRule::measured(state001::State001));
         rules.push(gob_rules::BoundRule::measured(state002::State002));
         rules.push(gob_rules::BoundRule::measured(state003::State003));
