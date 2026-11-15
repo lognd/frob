@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T06:00:23Z"
+digest = "2fab14ed6a165d0c2f7b3e5127de75fe493b6b4975d28246d831672685cb4b5e"
+exit_code = 0
+head = "c3f7427fbce4cf8041d2e69fbb275fce8d27b34c"
+inline = '''
+   Compiling crunk-rules v0.532.0 (<worktree>/crates/crunk-rules)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7078bf92-ce7b-4bac-93f4-98f853ef319d with nextest profile: default
+    Starting 1 test across 2 binaries (316 tests skipped)
+        PASS [   0.020s] crunk-rules::it spec_rules::a_component_with_an_unknown_key_fires_and_names_the_file
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 316 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-rules -E test(=spec_rules::a_component_with_an_unknown_key_fires_and_names_the_file)"
+size = 643
+status = "measured"
+test_count = 1
+tests_digest = "425b4ce2e550ae568d12d76cb0848ad436dfa056adbe1696b0dab82ab5958b3e"
+at = "2026-11-15T06:00:23Z"
+actor = "lognd"
+rev = 1

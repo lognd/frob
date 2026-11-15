@@ -12,7 +12,7 @@ labels = ["no-story"]
 
 [[acceptance]]
 text = "An unparsable component file yields a SPEC001 Error finding"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "An unparsable screen file yields a SPEC001 Error finding"
