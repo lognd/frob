@@ -1085,6 +1085,7 @@ mod rust {
             };
             let spelled: String = text(self.src, m).split_whitespace().collect();
             let name = spelled.rsplit("::").next().unwrap_or("").to_owned();
+            self.argument_calls(n);
             if name == "include" {
                 if literal_include(self.src, n).is_none() {
                     tracing::debug!(line = line(n), "canon: include! target is computed");
@@ -1094,6 +1095,27 @@ mod rust {
                 self.expand(&name, n);
             } else {
                 self.emit(m, true);
+            }
+        }
+
+        /// Emits the path calls spelled inside the argument token tree of the invocation `n`
+        /// (`println!("{:?}", std::fs::read("x"))`), resolved where the invocation stands.
+        fn argument_calls(&mut self, n: Node<'_>) {
+            let mut c = n.walk();
+            let trees: Vec<_> = n
+                .children(&mut c)
+                .filter(|k| k.kind() == "token_tree")
+                .collect();
+            for tt in trees {
+                let mut calls = Vec::new();
+                body_calls(self.src, tt, &mut calls);
+                for call in calls {
+                    if let BodyCall::Path(segs) = call {
+                        tracing::debug!(line = line(n), path = %segs.join("::"), "canon: call in macro argument");
+                        let written = segs.join("::");
+                        self.expanded_call(&segs, n, n, &written, false);
+                    }
+                }
             }
         }
 
@@ -2169,6 +2191,28 @@ mod tests {
             paths("rust", src)
                 .iter()
                 .any(|(p, call, _)| p == "extern::system" && *call)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_macro_argument_call_is_a_path_use() {
+        let src = "fn f() { println!(\"{:?}\", std::fs::read(\"x\")); }\n";
+        assert!(
+            paths("rust", src)
+                .iter()
+                .any(|(p, call, _)| p == "std::fs::read" && *call)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_macro_argument_call_resolves_through_an_import() {
+        let src = "use std::fs::read as slurp;\nfn f() { vec![slurp(\"x\")]; }\n";
+        assert!(
+            paths("rust", src)
+                .iter()
+                .any(|(p, call, _)| p == "std::fs::read" && *call)
         );
     }
 
