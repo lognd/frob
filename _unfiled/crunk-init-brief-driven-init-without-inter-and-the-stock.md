@@ -2,12 +2,13 @@
 id = "01M7EXW3VARW0MYWY0X68KMJYT"
 title = "crunk init: brief-driven init without Inter and the stock blue"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:21:20Z"
-updated = "2026-11-15T06:21:20Z"
+updated = "2026-11-15T06:21:24Z"
 idempotency_key = "crunkplan-c0d71bc0ad66"
 labels = ["no-story"]
 
