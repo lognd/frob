@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk CRAFT: allow waiver via [decisions]; CRAFT012 skips value kinds with no token type"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-618c5eb3cbb1"
+labels = ["no-story"]
+acceptance = ["a [decisions] waiver silences a CRAFT finding", "CRAFT012 ignores kinds with no token type"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L6.
+Evidence: CRAFT rules cannot be waived through [decisions]
+Remedy: wire CRAFT into decisions; exclude untokenised value kinds from CRAFT012
+Crates/files: crates/crunk-rules craft
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:28Z"
+actor = "lognd"
+rev = 1
