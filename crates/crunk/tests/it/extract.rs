@@ -163,7 +163,10 @@ fn extract_token_promotes_a_duration_and_rewrites_both_spellings() {
     assert!(read(p, "styles/tokens.css").contains("--duration-200: 200ms;"));
     let css = read(p, "styles/base/m.css");
     assert!(css.contains("opacity var(--duration-200);"), "{css}");
-    assert!(css.contains("animation-duration: var(--duration-200);"), "{css}");
+    assert!(
+        css.contains("animation-duration: var(--duration-200);"),
+        "{css}"
+    );
     assert!(css.contains("delay: 2000ms;"), "near miss kept: {css}");
     let (code, out, err) = crunk(p, &["tokens", "--check"]);
     assert_eq!(code, 0, "{out} {err}");

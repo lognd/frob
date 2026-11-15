@@ -13,8 +13,8 @@ use std::collections::BTreeSet;
 
 use crunk_spec::DesignSpec;
 use crunk_spec::naming::{
-    color_token, font_family_stack_token, font_family_token, font_size_token, format_step,
-    duration_token, layer_token, radius_token, size_token, space_token,
+    color_token, duration_token, font_family_stack_token, font_family_token, font_size_token,
+    format_step, layer_token, radius_token, size_token, space_token,
 };
 use crunk_tailwind::defaults::{
     V3_BORDER_RADIUS_KEYS, V3_FONT_SIZE_KEYS, V3_SPACING_KEYS, V3_Z_INDEX_KEYS, has_key,
