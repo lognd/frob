@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T06:21:12Z"
-updated = "2026-11-15T06:21:12Z"
+updated = "2026-11-15T06:21:17Z"
 idempotency_key = "static-research-k15"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXT3X9DSSHYJWNQ4ZQPV00"
 
 [[acceptance]]
 text = "outdated lists stages whose pinned version is behind latest, using an injectable version source in tests"
