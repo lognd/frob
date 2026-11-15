@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk ack: refuse when no render artifact exists"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETK9M5AFFP3X5K1G8D4F4K"
+idempotency_key = "crunkplan-7d4ec455acd9"
+labels = ["no-story"]
+acceptance = ["ack on an unrendered subject exits with a typed error", "ack after render succeeds"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H6.
+Evidence: a screen can be acked without ever having been rendered
+Remedy: refuse ack when no render artifact for the subject exists
+Crates/files: crates/crunk/src/review.rs
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:49Z"
+actor = "lognd"
+rev = 1
