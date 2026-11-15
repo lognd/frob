@@ -136,7 +136,7 @@ system s {
 "#;
 
 /// Serve `EXPLORE_MODEL` and call `tool` with `arguments`, returning the reply.
-fn call_on_model(tool: &str, arguments: Value) -> Value {
+fn call_on_model(tool: &str, arguments: &Value) -> Value {
     let root = tempfile::tempdir().expect("tempdir");
     std::fs::write(
         root.path().join("grimble.toml"),
@@ -168,7 +168,7 @@ fn payload(reply: &Value) -> Value {
 // frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
 #[test]
 fn explore_returns_the_node_and_its_neighbours_as_structured_data() {
-    let doc = payload(&call_on_model("explore", json!({ "id": "scenario/s.sc" })));
+    let doc = payload(&call_on_model("explore", &json!({ "id": "scenario/s.sc" })));
     assert_eq!(doc["node"]["anchor"], "scenario/s.sc");
     let neighbours: Vec<&Value> = doc["neighbours"]
         .as_array()
@@ -183,6 +183,6 @@ fn explore_returns_the_node_and_its_neighbours_as_structured_data() {
 // frob:tests crates/grimble-serve/src/lib.rs::GrimbleTools.call
 #[test]
 fn explore_of_an_unknown_node_is_a_tool_error() {
-    let reply = call_on_model("explore", json!({ "id": "goal/nope" }));
+    let reply = call_on_model("explore", &json!({ "id": "goal/nope" }));
     assert_eq!(reply["result"]["isError"], true, "{reply}");
 }
