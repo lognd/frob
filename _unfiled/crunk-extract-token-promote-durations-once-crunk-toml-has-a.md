@@ -2,7 +2,8 @@
 id = "01M5JQ4064A95JAP3BM4QDJRP8"
 title = "crunk extract-token: promote durations once crunk.toml has a duration table"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
