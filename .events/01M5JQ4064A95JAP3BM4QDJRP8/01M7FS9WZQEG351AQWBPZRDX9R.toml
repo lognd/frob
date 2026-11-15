@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-tokens/src/model.rs", "crates/crunk/tests/it/extract.rs", "docs/reference/cli/crunk.md", "docs/reference/config/crunk.md"]
+new = ["crates/crunk-spec/**", "crates/crunk/src/extract.rs", "crates/crunk-tokens/src/model.rs", "crates/crunk/tests/it/extract.rs", "docs/reference/cli/crunk.md", "docs/reference/config/crunk.md", "docs/schemas/crunk.json"]
+at = "2026-11-15T14:20:43Z"
+actor = "lognd"
+rev = 1
