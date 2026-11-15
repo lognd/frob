@@ -2,12 +2,12 @@
 id = "01M5XDN67KE9HCKFSX3CDS3X1G"
 title = "crunk-scene: expose selector-to-element association for style rules and @media"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-27T00:55:08Z"
-updated = "2026-11-15T10:41:32Z"
+updated = "2026-11-15T10:41:59Z"
 labels = ["no-story"]
 scope = ["crates/crunk-scene/**"]
 
