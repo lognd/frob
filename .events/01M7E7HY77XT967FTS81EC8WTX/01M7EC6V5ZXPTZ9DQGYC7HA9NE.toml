@@ -1,0 +1,9 @@
+kind = "lease"
+op = "take"
+holder = "lognd"
+observed = "6944a8797b3759c7ede2b03e9d9ae1bb084559c2"
+clone_id = "01M7BDFSGWNGBSA7HWFVA5B549"
+branch = "ticket/1EC8WTX"
+at = "2026-11-15T01:12:33Z"
+actor = "lognd"
+rev = 1
