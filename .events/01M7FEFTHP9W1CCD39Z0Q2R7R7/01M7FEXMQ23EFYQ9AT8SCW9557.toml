@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T11:19:14Z"
+digest = "09a550f6c110514971f96128a6e85881788c15cad5f958da294d287e975622f6"
+exit_code = 0
+head = "beded3a1c3370ab5e965f25b14a4d8e2859f1423"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c272b1c7-d69d-482b-ba0c-d306b9aefbdd with nextest profile: default
+    Starting 1 test across 6 binaries (322 tests skipped)
+        PASS [   0.269s] crunk::it rename::rename_rewrites_css_tsx_and_specs_and_stays_clean
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.271s] 1 test run: 1 passed, 322 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(=rename::rename_rewrites_css_tsx_and_specs_and_stays_clean)"
+size = 560
+status = "measured"
+test_count = 1
+tests_digest = "36d86e26d31bb9ac111133c9086936558db481d5abcfc841a13af2996fc09c99"
+at = "2026-11-15T11:19:14Z"
+actor = "lognd"
+rev = 1
