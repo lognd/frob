@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk nits: tokens -q envelope, gob_walk WARN, outline font case"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+idempotency_key = "crunkplan-a0fb1c9fa1f6"
+labels = ["no-story"]
+acceptance = ["tokens -q prints nothing", "missing design/scenes emits no WARN", "outline preserves font family case"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L8.
+Evidence: tokens -q prints the envelope; gob_walk WARN on missing design/scenes; outline lowercases font families
+Remedy: fix all three
+Crates/files: crates/crunk tokens/outline
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:28Z"
+actor = "lognd"
+rev = 1
