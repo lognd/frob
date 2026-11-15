@@ -1,13 +1,15 @@
 //! A11Y104: a client route that renders without setting the document title or moving focus or
 //! announcing the change (WCAG 2.4.2 and the client-routing guidance). Opt-in through
 //! `[packs] crunk_web = true`; the routes come from `gob-frameworks` and the judgement from
-//! [`gob_frameworks::route_gaps`], so this module only wires the result into findings.
+//! [`gob_frameworks::route_gaps`], so this module only wires the result into findings. A route whose
+//! sources cannot be read is Unresolved (`route-source-unreadable`), never guessed.
 
 // frob:ticket 01M4D95TNEY7MCTS3A4F9HC26C
+// frob:ticket 01M7EXZ20VEG1WPQJP5TY499D4
 
 use gob_check::{RepoGroup, Snapshot};
-use gob_frameworks::{Repo, RouteGap, analyze, route_gaps};
-use gob_rules::{Finding, Rule, Severity};
+use gob_frameworks::{Repo, RouteGap, RouteUnjudged, analyze, route_gaps, route_unjudged};
+use gob_rules::{Finding, Rule, Severity, UnresolvedReason};
 use gob_symbols::{SymbolGraph, extract_file};
 use gob_text::{FileInterner, Span, TextRange, TextSize};
 use tracing::debug;
@@ -64,12 +66,15 @@ fn graph_of(snap: &Snapshot<Crunk>) -> SymbolGraph {
     SymbolGraph::from_files(symbols)
 }
 
-/// The gaps of every page route of the project.
-fn gaps_of(snap: &Snapshot<Crunk>) -> Vec<RouteGap> {
+/// The gaps and the unjudgeable routes of every page route of the project.
+fn gaps_of(snap: &Snapshot<Crunk>) -> (Vec<RouteGap>, Vec<RouteUnjudged>) {
     let graph = graph_of(snap);
     let analysis = analyze(&snap.core.root, &snap.core.entries, &graph);
     let repo = Repo::load(&snap.core.root, &snap.core.entries, &graph);
-    route_gaps(&repo, &analysis.routes)
+    (
+        route_gaps(&repo, &analysis.routes),
+        route_unjudged(&repo, &analysis.routes),
+    )
 }
 
 /// What a gap lacks, in words.
@@ -112,6 +117,30 @@ fn to_finding(snap: &Snapshot<Crunk>, files: &mut FileInterner, gap: &RouteGap) 
     ))
 }
 
+/// The Unresolved finding of a route whose sources could not be read.
+fn to_unresolved(
+    snap: &Snapshot<Crunk>,
+    files: &mut FileInterner,
+    route: &RouteUnjudged,
+) -> Option<Finding> {
+    let id = A11y104.meta().rule_id().ok()?;
+    let text = snap.core.text(&route.file).unwrap_or_default();
+    let at = TextSize::from(line_start(&text, route.line));
+    let span = Span::new(
+        files.intern(&route.file),
+        TextRange::at(at, TextSize::from(0)),
+    );
+    let name = route.pattern.as_deref().unwrap_or("(dynamic)");
+    let message = format!(
+        "route `{name}` has no readable component or layout source; A11Y104 cannot tell whether it sets a title or moves focus"
+    );
+    debug!(route = name, file = %route.file, "A11Y104 unresolved: route source unreadable");
+    Some(
+        Finding::new(id, Severity::Unresolved, Some(span), message, &route.file)
+            .with_reason(UnresolvedReason::from_code("route-source-unreadable")),
+    )
+}
+
 /// The repo group that emits A11Y104.
 pub fn group() -> RepoGroup<Crunk> {
     RepoGroup::new(
@@ -122,12 +151,22 @@ pub fn group() -> RepoGroup<Crunk> {
             if !on {
                 return Vec::new();
             }
-            let found = gaps_of(snap);
-            debug!(gaps = found.len(), "A11Y104 route gaps");
-            found
+            let (found, unjudged) = gaps_of(snap);
+            debug!(
+                gaps = found.len(),
+                unjudged = unjudged.len(),
+                "A11Y104 route gaps"
+            );
+            let mut out: Vec<Finding> = found
                 .iter()
                 .filter_map(|g| to_finding(snap, files, g))
-                .collect()
+                .collect();
+            out.extend(
+                unjudged
+                    .iter()
+                    .filter_map(|u| to_unresolved(snap, files, u)),
+            );
+            out
         },
     )
 }

@@ -5,6 +5,8 @@
 //! not solved), maps inline styles, builds the taffy tree with text leaves measured by the
 //! bundled-font [`TextMeasurer`], computes it at the viewport and normalizes the result.
 //!
+//! - A `<style>` body with rules (or `@media`) is refused with [`SolveError::StylesheetNotApplied`]:
+//!   the solver reads inline styles only and must not judge an unstyled layout as if it were final.
 //! - Text properties (`font-family`, `font-size`, `letter-spacing`, `line-height`, `white-space`)
 //!   inherit; the default is Lato 16px, line-height 1.2.
 //! - An element with direct text and no layout children is a `text` node; with children, its text
@@ -46,7 +48,8 @@ pub struct Solved {
 /// Solve `doc` at `viewport` (width, height in px) with `tokens`, measuring text with `fonts`.
 ///
 /// # Errors
-/// [`SolveError::Refused`] on a duplicate or missing `data-id`, [`SolveError::Style`] on an
+/// [`SolveError::Refused`] on a duplicate or missing `data-id`, [`SolveError::StylesheetNotApplied`]
+/// on a `<style>` with rules or `@media`, [`SolveError::Style`] on an
 /// unmappable style, [`SolveError::Text`] on a font outside the bundle, and engine or output
 /// errors for internal inconsistencies or non-finite values.
 pub fn solve_scene_html(
@@ -105,6 +108,19 @@ fn style_or_refuse(doc: &SceneDoc, tokens: &TokenMap) -> Result<StyledScene, Sol
         Ok(s) => s,
         Err(errors) => return Err(refuse_or_style(errors)),
     };
+    let sheets: Vec<String> = styled
+        .findings
+        .iter()
+        .filter(|f| f.kind == FindingKind::StylesheetNotApplied)
+        .map(ToString::to_string)
+        .collect();
+    if !sheets.is_empty() {
+        tracing::warn!(
+            count = sheets.len(),
+            "stylesheet rules not applied: refusing"
+        );
+        return Err(SolveError::StylesheetNotApplied(sheets));
+    }
     let missing: Vec<String> = styled
         .findings
         .iter()

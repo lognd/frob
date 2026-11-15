@@ -1,10 +1,11 @@
 //! Route a11y gaps: pages that change the route without a title or a focus move or announcement.
 
 // frob:ticket 01M4D95TNEY7MCTS3A4F9HC26C
+// frob:ticket 01M7EXZ20VEG1WPQJP5TY499D4
 
 use std::path::{Path, PathBuf};
 
-use gob_frameworks::{Repo, RouteGap, analyze, route_gaps};
+use gob_frameworks::{Repo, RouteGap, analyze, route_gaps, route_unjudged};
 use gob_symbols::{SymbolGraph, extract_file};
 use gob_walk::{Digest, FileEntry, LanguageHint};
 
@@ -70,4 +71,34 @@ fn silent_routes_get_one_gap_each() {
 fn titled_and_focused_route_is_clean() {
     // frob:tests crates/gob-frameworks/src/route_a11y.rs::route_gaps
     assert!(gaps().iter().all(|g| g.pattern.as_deref() != Some("/")));
+}
+
+#[test]
+fn route_with_no_readable_source_is_unjudged_not_a_gap() {
+    // frob:tests crates/gob-frameworks/src/route_a11y.rs::route_unjudged
+    let root = fixture();
+    let missing = "app/routes/silent.tsx";
+    let files: Vec<FileEntry> = FILES
+        .iter()
+        .filter(|rel| **rel != missing)
+        .map(|rel| entry(&root, rel))
+        .collect();
+    let symbols = files
+        .iter()
+        .map(|f| {
+            let text = std::fs::read_to_string(root.join(&f.path)).expect("read");
+            extract_file(f, &text)
+        })
+        .collect();
+    let graph = SymbolGraph::from_files(symbols);
+    let analysis = analyze(&root, &files, &graph);
+    let repo = Repo::load(&root, &files, &graph);
+    let unjudged = route_unjudged(&repo, &analysis.routes);
+    let seen: Vec<Option<&str>> = unjudged.iter().map(|u| u.pattern.as_deref()).collect();
+    assert_eq!(seen, vec![Some("/silent")]);
+    assert!(
+        route_gaps(&repo, &analysis.routes)
+            .iter()
+            .all(|g| g.pattern.as_deref() != Some("/silent"))
+    );
 }

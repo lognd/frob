@@ -705,9 +705,11 @@ Status: implemented for the deprecated form (ticket ~P7APFVH): `runnable`
 repeats, the singleton predicate is per clause, `manual because=` parses
 and is exposed as `Binding.manual_tests`, MDL014 covers neither, both and
 an empty reason, two identically spelled clauses are MDL017. The
-`verified_by` spelling on vmodel and claim entities, MDL012 on the old
-spellings and the `grimble status` listing follow in the parser ticket of
-cycle 1 (see notes/research/grmb-evidence/cycles.md).
+`verified_by` spelling (selector and `manual because=`) is accepted on a
+vmodel without MDL000 or MDL012 (ticket ~F9ZNSC3); MDL000 names the
+keyword as written. The claim spelling and the `grimble status` listing
+follow in the parser ticket of cycle 1 (see
+notes/research/grmb-evidence/cycles.md).
 
 #### 4.5.3 Runner ids and the selectors that name them
 

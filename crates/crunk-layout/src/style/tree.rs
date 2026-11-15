@@ -44,7 +44,9 @@ pub struct StyledScene {
 
 /// Map every element of `doc` to a taffy style, resolving tokens.
 ///
-/// Only inline `style` attributes are mapped; `@media` and `<style>` rules are not applied.
+/// Only inline `style` attributes are mapped; `<style>` rules and `@media` blocks are not applied,
+/// and each non-empty `<style>` adds a [`FindingKind::StylesheetNotApplied`] finding (the solver
+/// refuses on it; see docs/design/crunk/stylesheet-solve.md).
 ///
 /// # Errors
 /// Every [`StyleError`] found (one per offending element or declaration), not just the first.
@@ -61,13 +63,15 @@ pub fn style_scene(
     for (i, el) in doc.elements.iter().enumerate() {
         let up = el.parent.filter(|p| *p < i).and_then(|p| anchor[p]);
         let line = el.line;
-        if el.tag == "style" {
+        if el.tag == "style" && stylesheet_has_rules(doc, i) {
+            tracing::warn!(line, "`<style>` rules found; the solver cannot apply them");
             out.findings.push(StyleFinding {
                 kind: FindingKind::StylesheetNotApplied,
                 element: String::new(),
                 line,
                 property: String::new(),
-                message: "`<style>` rules are not applied; only inline style attributes are mapped"
+                message: "`<style>` rules and `@media` blocks are not applied by the solver; \
+                          move the declarations to inline `style` attributes"
                     .to_owned(),
             });
         }
@@ -211,4 +215,20 @@ pub fn build_taffy(scene: &StyledScene) -> Result<LayoutTree, StyleError> {
         roots,
         hidden,
     })
+}
+
+/// Whether the `<style>` element at `idx` holds any rule: a declaration or at-rule between its
+/// start tag and the next element's start tag (a `<style>` has no element children).
+fn stylesheet_has_rules(doc: &SceneDoc, idx: usize) -> bool {
+    let start = doc.elements[idx].offset;
+    let end = doc
+        .elements
+        .iter()
+        .map(|e| e.offset)
+        .filter(|o| *o > start)
+        .min()
+        .unwrap_or(usize::MAX);
+    let inside = |o: usize| o > start && o < end;
+    doc.declarations.iter().any(|d| inside(d.offset))
+        || doc.at_rule_sites.iter().any(|a| inside(a.offset))
 }

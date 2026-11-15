@@ -194,6 +194,14 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
     }
 }
 
+/// The clause keyword as the author wrote it (`verified_by` rather than the internal `evidence`).
+pub fn clause_written_key(k: &ClauseKind) -> &'static str {
+    match k {
+        ClauseKind::Evidence(Evidence::VerifiedBy(_)) => "verified_by",
+        other => clause_key(other),
+    }
+}
+
 /// The canonical order rank of a clause (grmb-spec 9.3 item 3, extended to every clause).
 pub fn clause_rank(k: &ClauseKind) -> u8 {
     match k {
@@ -217,10 +225,12 @@ pub fn clause_rank(k: &ClauseKind) -> u8 {
         ClauseKind::What(_) => 17,
         ClauseKind::Proof(_) => 18,
         ClauseKind::Assumed(_) => 19,
-        ClauseKind::Evidence(_) => 20,
+        ClauseKind::Evidence(Evidence::Tests(_) | Evidence::Ref(_)) => 20,
         ClauseKind::Level(_) => 21,
         ClauseKind::Ref(_) => 22,
-        ClauseKind::Runnable(_) | ClauseKind::Manual(_) => 23,
+        ClauseKind::Evidence(Evidence::VerifiedBy(_))
+        | ClauseKind::Runnable(_)
+        | ClauseKind::Manual(_) => 23,
         ClauseKind::Version(_) => 24,
         ClauseKind::Digest(_) => 25,
         ClauseKind::Link(_) => 26,

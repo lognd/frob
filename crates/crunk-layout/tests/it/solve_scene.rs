@@ -145,3 +145,29 @@ fn solve_scene_font_outside_the_bundle_is_a_typed_error() {
     let err = solve(r#"<p data-id="t" style="font-family:'Comic Sans'">x</p>"#).unwrap_err();
     assert!(matches!(err, SolveError::Text(_)));
 }
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_style_rules_are_refused() {
+    let err = solve(r#"<style>.a { padding: 32px }</style><div data-id="r" class="a"></div>"#)
+        .unwrap_err();
+    assert!(matches!(err, SolveError::StylesheetNotApplied(_)));
+    assert!(err.to_string().contains("STYLESHEET"));
+}
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_media_block_is_refused() {
+    let err = solve(
+        r#"<style>@media (min-width: 500px) { .g { width: 10px } }</style><div data-id="r"></div>"#,
+    )
+    .unwrap_err();
+    assert!(matches!(err, SolveError::StylesheetNotApplied(_)));
+}
+
+// frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
+#[test]
+fn solve_scene_empty_style_and_inline_styles_still_solve() {
+    let s = solve(r#"<style></style><div data-id="r" style="padding:8px"></div>"#).unwrap();
+    assert_eq!(s.doc.nodes.len(), 1);
+}
