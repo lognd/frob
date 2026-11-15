@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A download recipe with a wrong sha256 is refused with a named error and nothing is executed", "A correct recipe installs to a trust-bound path and the stage runs from it", "Non-install steps run with network denied by default"]
+moved = []
+at = "2026-11-15T06:21:12Z"
+actor = "lognd"
+rev = 1
