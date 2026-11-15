@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob.toml cycle_days matches its comment; cycle goals name a criterion"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md L3. Evidence: frob.toml:178 cycle_days = 2 vs comment. Remedy: fix the comment or value and require a criterion in cycle goals. Files: frob.toml."
+at = "2026-11-15T06:19:04Z"
+actor = "lognd"
+rev = 1
