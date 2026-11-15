@@ -2,11 +2,12 @@
 id = "01M7E59NHR0FE608ZE2QAQ4RK9"
 title = "crunk-spec: refresh snapshots and parity dumps for tokens.max_duration_ms"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 reporter = "lognd"
 created = "2026-11-14T23:11:49Z"
-updated = "2026-11-15T01:11:43Z"
+updated = "2026-11-15T01:12:10Z"
 
 [[acceptance]]
 text = "crunk-spec tests pass with max_duration_ms in snapshots"
