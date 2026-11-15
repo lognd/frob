@@ -1,0 +1,13 @@
+kind = "create"
+title = "crunk A11Y: sample"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+idempotency_key = "crunkplan-349f0c1f556c"
+labels = ["no-story"]
+acceptance = ["a one", "b two"]
+body = "test body"
+at = "2026-11-15T06:19:02Z"
+actor = "lognd"
+rev = 1
