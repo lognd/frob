@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk STATE rules: cover crunk.toml [[screen]] entries"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-26f7429a64b2"
+labels = ["no-story"]
+acceptance = ["a [[screen]] missing a required state raises a finding"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Evidence: STATE rules skip [[screen]] entries
+Remedy: extend STATE rules to screens
+Crates/files: crates/crunk-rules state
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:23Z"
+actor = "lognd"
+rev = 1
