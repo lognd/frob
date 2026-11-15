@@ -4,9 +4,10 @@ title = "Fix red CI: A11Y104 corpus unresolved case and publish gob-frameworks"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T06:22:56Z"
-updated = "2026-11-15T06:22:56Z"
+updated = "2026-11-15T06:22:59Z"
 labels = ["no-story"]
 +++
 
