@@ -138,3 +138,17 @@ fn detected_jsx_and_tailwind_become_toml_sections() {
     assert!(toml.contains("[jsx]\nglobs = [\"src/**/*.tsx\"]"));
     assert!(toml.contains("[tailwind]\nconfig = \"tailwind.config.js\""));
 }
+
+// frob:tests crates/crunk/src/init/scaffold.rs::scaffold
+#[test]
+fn raw_scaffold_does_not_trip_craft_rules() {
+    let dir = vite_project();
+    assert_eq!(crunk(dir.path(), &["init"]).0, 0);
+    let (_, out, err) = crunk(dir.path(), &["check"]);
+    for rule in ["CRAFT001", "CRAFT005", "CRAFT008", "CRAFT010"] {
+        assert!(
+            !out.contains(rule),
+            "{rule} fired on raw scaffold: {out} {err}"
+        );
+    }
+}
