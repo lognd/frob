@@ -19,4 +19,4 @@ text = "grimble check on the repo stays green"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M9. Evidence: design/model.grmb has 6 nodes and 6 flows only. Remedy: model one real frob flow as a scenario with impls and evidence. Files: design/model.grmb.
+Audit: ~/projects/frob-audit2-grimble.md M9. Evidence: design/model.grmb has 6 nodes and 6 flows only. Remedy: model one real frob flow as a scenario with impls and evidence. Files: design/model.grmb.

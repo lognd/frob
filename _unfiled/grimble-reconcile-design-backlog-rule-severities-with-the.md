@@ -11,4 +11,4 @@ updated = "2026-11-15T05:15:11Z"
 labels = ["no-story"]
 +++
 
-Audit2 H3; spec says Advisory never fails default gate, rules are Error. See /home/logan/projects/frob-audit2-grimble.md section H3 for evidence and remedy.
+Audit2 H3; spec says Advisory never fails default gate, rules are Error. See ~/projects/frob-audit2-grimble.md section H3 for evidence and remedy.

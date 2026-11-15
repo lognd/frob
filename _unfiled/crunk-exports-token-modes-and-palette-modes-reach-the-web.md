@@ -11,4 +11,4 @@ updated = "2026-11-15T06:27:19Z"
 labels = ["no-story"]
 +++
 
-Crunk audit2 H5. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
+Crunk audit2 H5. See ~/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).

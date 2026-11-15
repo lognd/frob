@@ -19,4 +19,4 @@ text = "Missing measurement is Unresolved"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 8. verified_by on a bound claim naming a frob measurer; attrs stimulus and environment; verdict from recorded value as in PM022/PM025; SYS-LIMIT for size/arity (G14).
+Research: ~/projects/frob-research-lifecycle.md rec 8. verified_by on a bound claim naming a frob measurer; attrs stimulus and environment; verdict from recorded value as in PM022/PM025; SYS-LIMIT for size/arity (G14).

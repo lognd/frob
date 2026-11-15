@@ -19,4 +19,4 @@ text = "A fixture with TESTQ001 evidence reports bound, not covered"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M4 (optional part). Remedy: an entity whose evidence carries TESTQ001 cannot rise above bound. Crates: crates/grimble-bind/src/plan.rs.
+Audit: ~/projects/frob-audit2-grimble.md M4 (optional part). Remedy: an entity whose evidence carries TESTQ001 cannot rise above bound. Crates: crates/grimble-bind/src/plan.rs.

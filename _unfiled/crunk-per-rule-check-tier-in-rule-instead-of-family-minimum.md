@@ -20,7 +20,7 @@ text = "STATE005 tier reflects its measured input"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L2.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L2.
 Evidence: tier is family min plus hard-coded T1_RULES
 Remedy: optional tier field on #[rule], falling back to family min
 Crates/files: crates/crunk-check/src/tier.rs:117-136, rule macro

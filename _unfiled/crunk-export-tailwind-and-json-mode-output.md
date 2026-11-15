@@ -21,7 +21,7 @@ text = "tailwind and json exports carry every declared mode (snapshot)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: tailwind and json exports lose modes
 Remedy: emit modes in tailwind theme and json output
 Crates/files: crates/crunk-export tailwind/json

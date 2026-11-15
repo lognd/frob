@@ -16,7 +16,7 @@ text = "a motion without a reduced counterpart raises MOTION002"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M3.
+Source: ~/projects/frob-audit2-crunk.md, finding M3.
 Evidence: no reduced-motion pairing check
 Remedy: require a prefers-reduced-motion counterpart
 Crates/files: crates/crunk-rules motion

@@ -23,4 +23,4 @@ text = "Reaching evidence lifts it"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 6. Overlaps ~QM53HZE (scenario evidence must reach the entry waypoint) and ~TZ11GQA: link and reconcile; first verify how PLAN050 derives its scope.
+Research: ~/projects/frob-research-lifecycle.md rec 6. Overlaps ~QM53HZE (scenario evidence must reach the entry waypoint) and ~TZ11GQA: link and reconcile; first verify how PLAN050 derives its scope.

@@ -16,7 +16,7 @@ text = "a write through a symlinked dir outside root is refused (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L10.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L10.
 Evidence: lexical confinement lets a symlinked dir escape root
 Remedy: canonicalize parent and re-check under canonical root
 Crates/files: crates/crunk/src/edit.rs:283-289, serve_patch.rs:84

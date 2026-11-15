@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-709eaea88440"
 labels = ["no-story"]
 acceptance = ["skipped heading level raises a finding", "missing landmark raises a finding", "unnamed button raises a finding"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M4.
+Source: ~/projects/frob-audit2-crunk.md, finding M4.
 Evidence: no T0/T1 A11Y rules exist
 Remedy: add A11Y rules over ingested html/scenes
 Crates/files: crates/crunk-rules a11y

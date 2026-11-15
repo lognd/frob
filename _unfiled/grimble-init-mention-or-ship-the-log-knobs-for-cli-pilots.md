@@ -15,4 +15,4 @@ text = "grimble init output or generated config mentions [log] sink settings"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L11. LOG001/LOG002 error on println! in a CLI pilot. Remedy: init output names the [log] knobs.
+Audit: ~/projects/frob-audit2-grimble.md L11. LOG001/LOG002 error on println! in a CLI pilot. Remedy: init output names the [log] knobs.

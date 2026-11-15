@@ -19,4 +19,4 @@ text = "The rule page documents in node for human actors"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L7. SYS015 reports the same pair twice in two wordings; a human actor needs in node, undocumented.
+Audit: ~/projects/frob-audit2-grimble.md L7. SYS015 reports the same pair twice in two wordings; a human actor needs in node, undocumented.

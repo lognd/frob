@@ -16,7 +16,7 @@ text = "a family with zero rules appears in not_run (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M4.
+Source: ~/projects/frob-audit2-crunk.md, finding M4.
 Evidence: not_run is empty because families with zero rules never register
 Remedy: list families with no rules as not run, or add placeholder rules
 Crates/files: crates/crunk-check, crates/gob-check

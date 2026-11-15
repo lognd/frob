@@ -23,4 +23,4 @@ text = "frob graph consumer test passes with the new key"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M4. Evidence: tool emits verified where planning-semantics 12.8 says covered, for never-run tests; rollup key verified; SPEC 17.1 line 1893 inconsistent. Remedy: rename the rung to covered, fix SPEC 17.1; the grimble.graph/1 consumer in frob must follow. Crates: grimble-bind, grimble-verdict, frob graph consumer.
+Audit: ~/projects/frob-audit2-grimble.md M4. Evidence: tool emits verified where planning-semantics 12.8 says covered, for never-run tests; rollup key verified; SPEC 17.1 line 1893 inconsistent. Remedy: rename the rung to covered, fix SPEC 17.1; the grimble.graph/1 consumer in frob must follow. Crates: grimble-bind, grimble-verdict, frob graph consumer.

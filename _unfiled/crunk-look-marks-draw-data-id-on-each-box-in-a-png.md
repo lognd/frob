@@ -21,7 +21,7 @@ text = "the marks option writes a PNG whose boxes match the solve ids"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T4.
+Source: ~/projects/frob-research-ui.md, section T4.
 Remedy: draw each data-id on its box over the render so the model answers by id; depends on a rasteriser (~WNQ6NF3 child)
 Crates/files: crates/crunk look
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

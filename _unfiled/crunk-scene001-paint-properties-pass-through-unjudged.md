@@ -21,7 +21,7 @@ text = "a token-backed paint passes"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: paint properties (background, filter, shadow) are not validated against tokens in scenes
 Remedy: judge paint properties in SCENE001 against token kinds
 Crates/files: crates/crunk-rules scene rules

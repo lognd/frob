@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ET17BM017983KQXF9ZNSC3/01M7ET17BM017983KQXF9ZNSC4.toml", "_unfiled/grimble-let-a-vmodel-carry-verified-by-evidence-without.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

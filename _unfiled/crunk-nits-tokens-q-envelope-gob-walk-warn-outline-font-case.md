@@ -24,7 +24,7 @@ text = "outline preserves font family case"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L8.
+Source: ~/projects/frob-audit2-crunk.md, finding L8.
 Evidence: tokens -q prints the envelope; gob_walk WARN on missing design/scenes; outline lowercases font families
 Remedy: fix all three
 Crates/files: crates/crunk tokens/outline

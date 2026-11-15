@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-9388ec55731a"
 labels = ["no-story"]
 acceptance = ["a scene with inline svg solves (test)"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M9.
+Source: ~/projects/frob-audit2-crunk.md, finding M9.
 Evidence: inline svg makes a scene unsolvable
 Remedy: treat svg as a replaced leaf with intrinsic size
 Crates/files: crates/crunk-layout/src/style/tree.rs:74-90

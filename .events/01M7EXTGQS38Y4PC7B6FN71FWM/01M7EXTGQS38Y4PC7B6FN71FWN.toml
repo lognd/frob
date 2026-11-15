@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-2f1ac565aaa5"
 labels = ["no-story"]
 acceptance = ["render of a project with one scene-less screen renders the rest"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L4.
+Source: ~/projects/frob-audit2-crunk.md, finding L4.
 Evidence: render aborts all cells when one screen lacks a scene
 Remedy: skip with a per-cell Unresolved
 Crates/files: crates/crunk/src/render.rs

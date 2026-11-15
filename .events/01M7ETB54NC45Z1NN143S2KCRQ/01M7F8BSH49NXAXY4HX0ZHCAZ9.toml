@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ETB54NC45Z1NN143S2KCRQ/01M7ETB54PK9J0MDBQ33B08Y2X.toml", "_unfiled/crunk-identity-brief-design-brief-toml-as-a-precondition.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

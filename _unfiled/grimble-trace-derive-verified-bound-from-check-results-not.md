@@ -11,4 +11,4 @@ updated = "2026-11-15T05:15:11Z"
 labels = ["no-story"]
 +++
 
-Audit2 H2 (show_cmd.rs:388-418). See /home/logan/projects/frob-audit2-grimble.md section H2 for evidence and remedy.
+Audit2 H2 (show_cmd.rs:388-418). See ~/projects/frob-audit2-grimble.md section H2 for evidence and remedy.

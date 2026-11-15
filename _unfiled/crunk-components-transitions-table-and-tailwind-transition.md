@@ -20,7 +20,7 @@ text = "tailwind transition-colors resolves to a duration token"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M3.
+Source: ~/projects/frob-audit2-crunk.md, finding M3.
 Evidence: components cannot declare transitions; tailwind transition keys unrecognised
 Remedy: add [[transitions]] to component schema and map tailwind transition-* keys
 Crates/files: crates/crunk-spec, crates/crunk-tailwind

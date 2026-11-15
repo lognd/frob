@@ -6,7 +6,7 @@ priority = "medium"
 points = 2
 labels = ["no-story"]
 acceptance = ["fmt round-trips owner as ident", "fmt idempotent on the sorry example"]
-body = 'Audit: /home/logan/projects/frob-audit2-grimble.md L9. fmt turns owner=logan into owner = "logan" though debt_key says owner = ident. Crate: grimble-model printer.'
+body = 'Audit: ~/projects/frob-audit2-grimble.md L9. fmt turns owner=logan into owner = "logan" though debt_key says owner = ident. Crate: grimble-model printer.'
 at = "2026-11-15T06:21:03Z"
 actor = "lognd"
 rev = 1

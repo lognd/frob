@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVKWWGF5CJJ9QFXN14A1R/01M7EXVKWWGF5CJJ9QFXN14A1S.toml", "_unfiled/grimble-suppress-internal-warns-at-default-verbosity-init-q.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

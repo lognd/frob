@@ -15,4 +15,4 @@ text = "A SYS004 on a near-miss symbol names the closest identity"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L6. SYS004 gives no hint (the identity is Shell[Plugin].run). Remedy: print nearest identities or add a doctor section.
+Audit: ~/projects/frob-audit2-grimble.md L6. SYS004 gives no hint (the identity is Shell[Plugin].run). Remedy: print nearest identities or add a doctor section.

@@ -21,7 +21,7 @@ text = "an invalid angle is a typed error"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: no token type for gradients, angles or strings
 Remedy: add the three types to crunk-tokens with exporters
 Crates/files: crates/crunk-tokens, crates/crunk-export

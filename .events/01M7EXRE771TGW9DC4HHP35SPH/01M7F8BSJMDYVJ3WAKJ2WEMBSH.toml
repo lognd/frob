@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXRE771TGW9DC4HHP35SPH/01M7EXRE771TGW9DC4HHP35SPJ.toml", "_unfiled/crunk-diff-visual-compare-two-renders-via-visual-compare.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

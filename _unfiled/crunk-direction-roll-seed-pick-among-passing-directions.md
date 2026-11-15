@@ -25,7 +25,7 @@ text = "failing directions are never picked"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T6a.
+Source: ~/projects/frob-research-ui.md, section T6a.
 Remedy: seeded deterministic selection among directions that pass checks
 Crates/files: crates/crunk new verb
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

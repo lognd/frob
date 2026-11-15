@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXV84N7ZTK1CXSF7H6MA78/01M7EXV84N7ZTK1CXSF7H6MA79.toml", "_unfiled/ingest-rdjson-rdjsonl-checkstyle-xml-and-codeclimate-json-as.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXW4PYJBEFCRK06K9MYF4Z/01M7EXW4PYJBEFCRK06K9MYF50.toml", "_unfiled/grimble-check-ci-config-table-is-loaded-dk002-can-fire-fix.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

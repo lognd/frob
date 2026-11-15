@@ -19,4 +19,4 @@ text = "PATH/ERR/TIME gates confirmed to use script_family"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md H5 residue. script_family exists at HEAD (coh_pass.rs:20,45) so the TS/JS family is fixed, but Go, Java, C, C#, C++ still emit no Unresolved (reason Fidelity). Verify the other passes (PATH, ERR, TIME) use script_family too.
+Audit: ~/projects/frob-audit-grimble-crunk.md H5 residue. script_family exists at HEAD (coh_pass.rs:20,45) so the TS/JS family is fixed, but Go, Java, C, C#, C++ still emit no Unresolved (reason Fidelity). Verify the other passes (PATH, ERR, TIME) use script_family too.

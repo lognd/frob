@@ -19,4 +19,4 @@ text = "No fs.* CAP002 for it"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md friction log. sqlite3 triggers CAP002 on fs.* because no database atom exists. Files: packs/core-effects/atoms.toml and detectors.
+Audit: ~/projects/frob-audit2-grimble.md friction log. sqlite3 triggers CAP002 on fs.* because no database atom exists. Files: packs/core-effects/atoms.toml and detectors.

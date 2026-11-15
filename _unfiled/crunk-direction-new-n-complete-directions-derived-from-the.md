@@ -21,7 +21,7 @@ text = "each direction passes check before it is rollable"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T6a.
+Source: ~/projects/frob-research-ui.md, section T6a.
 Remedy: require N (default 5) directions: palette, type pairing, layout concept, signature
 Crates/files: crates/crunk new verb, crates/crunk-spec
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

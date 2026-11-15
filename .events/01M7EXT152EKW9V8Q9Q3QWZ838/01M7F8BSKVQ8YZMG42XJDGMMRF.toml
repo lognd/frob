@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXT152EKW9V8Q9Q3QWZ838/01M7EXT152EKW9V8Q9Q3QWZ839.toml", "_unfiled/gob-diagnostics-sarif-2-1-0-emit-renderer-with.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

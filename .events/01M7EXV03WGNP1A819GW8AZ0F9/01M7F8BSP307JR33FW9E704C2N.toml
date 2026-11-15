@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXV03WGNP1A819GW8AZ0F9/01M7EXV03WGNP1A819GW8AZ0FA.toml", "_unfiled/grimble-bind-impl-waypoint-chains-count-as-realizations-for.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

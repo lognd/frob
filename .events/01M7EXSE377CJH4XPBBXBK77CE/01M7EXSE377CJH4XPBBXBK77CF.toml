@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-8ecde7103618"
 labels = ["no-story"]
 acceptance = ["a missing asset path produces a finding", "an existing asset resolves"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: images, icons and fonts cannot be tokens
 Remedy: add an asset token type with existence check
 Crates/files: crates/crunk-tokens, crates/crunk-spec

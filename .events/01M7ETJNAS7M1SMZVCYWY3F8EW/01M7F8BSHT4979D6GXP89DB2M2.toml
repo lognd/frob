@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ETJNAS7M1SMZVCYWY3F8EW/01M7ETJNAS7M1SMZVCYWY3F8EX.toml", "_unfiled/frob-plan-from-design-plan-in-waves-contract-skeleton.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

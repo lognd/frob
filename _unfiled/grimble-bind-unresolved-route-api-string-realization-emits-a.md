@@ -23,4 +23,4 @@ text = "planning-semantics.md lists supported route matcher frameworks"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M2. Evidence: a route/api string realization silently demotes an impl to declared (status and status_hi), no finding, no binding row. Files: crates/grimble-bind/src/plan.rs, planning-semantics.md 12.8 lines 188-192. Remedy: emit an Unresolved finding, keep status_hi, document the matcher frameworks.
+Audit: ~/projects/frob-audit2-grimble.md M2. Evidence: a route/api string realization silently demotes an impl to declared (status and status_hi), no finding, no binding row. Files: crates/grimble-bind/src/plan.rs, planning-semantics.md 12.8 lines 188-192. Remedy: emit an Unresolved finding, keep status_hi, document the matcher frameworks.

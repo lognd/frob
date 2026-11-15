@@ -23,4 +23,4 @@ text = "A readiness pack is documented"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 9. Expired gate and a flag bound to two scenarios are Errors. Log and metric atoms count as observable effects on end err paths (open question 23).
+Research: ~/projects/frob-research-lifecycle.md rec 9. Expired gate and a flag bound to two scenarios are Errors. Log and metric atoms count as observable effects on end err paths (open question 23).

@@ -16,7 +16,7 @@ text = "a string missing a declared placeholder raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Source: ~/projects/frob-audit2-crunk.md, finding M8.
 Evidence: keys have no description or placeholder metadata
 Remedy: add fields and validate placeholder use
 Crates/files: crates/crunk-spec content

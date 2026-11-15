@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXV0P0YXPDKZA9KYWBF32Y/01M7EXV0P0YXPDKZA9KYWBF32Z.toml", "_unfiled/grimble-bind-cap-an-entity-at-bound-when-its-evidence.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

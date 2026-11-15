@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXV13KRR0GC1AX0XRZXC2Z/01M7EXV13KRR0GC1AX0XRZXC30.toml", "_unfiled/grimble-model-decide-bound-claims-from-declared-flow-step.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVM8745D3GF4AD1HH47GP/01M7EXVM8745D3GF4AD1HH47GQ.toml", "_unfiled/grimble-lints-collapse-path002-path003-time001-time002.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVHQ2B6GFWWHAV87S71NW/01M7EXVHQ2B6GFWWHAV87S71NX.toml", "_unfiled/grimble-status-design-section-with-goal-tree-rollup-and.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

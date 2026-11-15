@@ -17,7 +17,7 @@ text = "a 2000px root at 1280 viewport raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: overflowing root is not reported
 Remedy: emit a finding when the root box exceeds the viewport
 Crates/files: crates/crunk-rules layout

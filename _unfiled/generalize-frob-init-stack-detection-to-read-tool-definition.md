@@ -24,4 +24,4 @@ text = "Adding a new definition with detect globs makes init suggest it with no 
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-static-analysis.md section 6 item 5. Rationale: frob init hard-codes eslint/dotnet/ruff stanzas (crates/frob/src, eslint stanza near line 52 of the init module). Remedy: drive detection from the [meta] detect field of std-pack tool definitions and emit stanzas from the definition, removing the hard-coded stanzas. Blocked by the frob tool verb ticket that introduces [meta] detect.
+Source: ~/projects/frob-research-static-analysis.md section 6 item 5. Rationale: frob init hard-codes eslint/dotnet/ruff stanzas (crates/frob/src, eslint stanza near line 52 of the init module). Remedy: drive detection from the [meta] detect field of std-pack tool definitions and emit stanzas from the definition, removing the hard-coded stanzas. Blocked by the frob tool verb ticket that introduces [meta] detect.

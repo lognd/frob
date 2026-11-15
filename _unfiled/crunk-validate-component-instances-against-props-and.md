@@ -20,7 +20,7 @@ text = "a declared one passes"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Source: ~/projects/frob-audit2-crunk.md, finding M2.
 Evidence: instances can name props/variants the component does not declare
 Remedy: validate instance attributes against the component file
 Crates/files: crates/crunk-spec, crates/crunk-rules component rules

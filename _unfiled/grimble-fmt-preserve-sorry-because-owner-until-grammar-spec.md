@@ -19,4 +19,4 @@ text = "fmt idempotent on the sorry example"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L9. fmt turns owner=logan into owner = "logan" though debt_key says owner = ident. Crate: grimble-model printer.
+Audit: ~/projects/frob-audit2-grimble.md L9. fmt turns owner=logan into owner = "logan" though debt_key says owner = ident. Crate: grimble-model printer.

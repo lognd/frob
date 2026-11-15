@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-7bed367ae8f4"
 labels = ["no-story"]
 acceptance = ["a regressing round restores the last accepted state (test)", "an improving round is appended to rounds.jsonl"]
 body = """
-Source: /home/logan/projects/frob-research-ui.md, section T5.
+Source: ~/projects/frob-research-ui.md, section T5.
 Remedy: record rounds in .crunk/rounds.jsonl; restore last accepted state otherwise; cap about 6 rounds, keep best
 Crates/files: crates/crunk new verb
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality."""

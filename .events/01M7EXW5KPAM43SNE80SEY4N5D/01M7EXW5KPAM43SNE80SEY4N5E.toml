@@ -6,7 +6,7 @@ priority = "medium"
 points = 1
 labels = ["no-story"]
 acceptance = ["A fixture with an Unknown edge to a target yields Unresolved, not dead"]
-body = "Audit: /home/logan/projects/frob-audit-grimble-crunk.md L11. crates/grimble-arch/src/dead.rs:156 'Status::Unknown => {}'. Remedy: treat as May (Unresolved, EdgeUnknown)."
+body = "Audit: ~/projects/frob-audit-grimble-crunk.md L11. crates/grimble-arch/src/dead.rs:156 'Status::Unknown => {}'. Remedy: treat as May (Unresolved, EdgeUnknown)."
 at = "2026-11-15T06:21:21Z"
 actor = "lognd"
 rev = 1

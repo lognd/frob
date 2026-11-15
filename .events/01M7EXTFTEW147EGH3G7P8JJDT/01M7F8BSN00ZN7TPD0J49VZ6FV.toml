@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXTFTEW147EGH3G7P8JJDT/01M7EXTFTEW147EGH3G7P8JJDV.toml", "_unfiled/crunk-new-emit-commented-skeletons.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

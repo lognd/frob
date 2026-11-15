@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ETK9M5AFFP3X5K1G8D4F4K/01M7ETK9M5AFFP3X5K1G8D4F4M.toml", "_unfiled/crunk-human-review-lock-covers-the-scene-agents-cannot.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

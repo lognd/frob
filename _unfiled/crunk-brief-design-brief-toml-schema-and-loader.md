@@ -21,7 +21,7 @@ text = "unknown or malformed fields give a typed error"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T1.
+Source: ~/projects/frob-research-ui.md, section T1.
 Remedy: add Brief model (subject, audience, job, world, [[reference]] with take/leave, [[anti_reference]], category_default, predictable_opposite, signature, register, voice) and loader
 Crates/files: crates/crunk-spec
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

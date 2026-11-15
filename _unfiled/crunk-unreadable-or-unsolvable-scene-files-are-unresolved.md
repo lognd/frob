@@ -25,7 +25,7 @@ text = "the check does not pass green"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding M2.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding M2.
 Evidence: parse_scene/solve_scene errors become warn! and skip; all-failed reports inapplicable
 Remedy: count bad files as subjects and emit a file-level Unresolved per geometry rule
 Crates/files: crates/crunk-rules/src/scene_files.rs:80-110, host.rs:136-152

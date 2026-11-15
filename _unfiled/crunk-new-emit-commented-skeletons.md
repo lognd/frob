@@ -16,7 +16,7 @@ text = "crunk new screen output passes crunk check"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M11.
+Source: ~/projects/frob-audit2-crunk.md, finding M11.
 Evidence: crunk new emits bare files
 Remedy: emit commented skeletons that pass check
 Crates/files: crates/crunk new verb

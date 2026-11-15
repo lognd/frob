@@ -16,7 +16,7 @@ text = "guide lists each file kind with its schema command"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M11.
+Source: ~/projects/frob-audit2-crunk.md, finding M11.
 Evidence: guide does not document file schemas
 Remedy: add a section linking the schemas
 Crates/files: docs/guides/crunk.md

@@ -19,4 +19,4 @@ text = "gob-dev gen all --check passes"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md L6. languages.md lists rust/python/typescript effects Gap though crates/grimble-check/src/effects.rs:113-123 implements them; go visibility Gap though go.rs:9 implements it. Two effects implementations exist (grimble-check/effects.rs and grimble-lints/neat/effects.rs). Likely generated: fix the source table.
+Audit: ~/projects/frob-audit-grimble-crunk.md L6. languages.md lists rust/python/typescript effects Gap though crates/grimble-check/src/effects.rs:113-123 implements them; go visibility Gap though go.rs:9 implements it. Two effects implementations exist (grimble-check/effects.rs and grimble-lints/neat/effects.rs). Likely generated: fix the source table.

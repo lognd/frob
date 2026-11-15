@@ -23,4 +23,4 @@ text = "init scaffolds from design/brief.toml"
 bound = false
 +++
 
-Research rec 4; default.toml ships Inter and #2f6fed. Source: /home/logan/projects/frob-research-ui.md (recommendation 4). Decompose before implementing.
+Research rec 4; default.toml ships Inter and #2f6fed. Source: ~/projects/frob-research-ui.md (recommendation 4). Decompose before implementing.

@@ -19,4 +19,4 @@ text = "crunk diff --visual compares two renders"
 bound = false
 +++
 
-Crunk audit2 H1. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
+Crunk audit2 H1. See ~/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).

@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ETJ4HXMJ8VEZF5RKW2H3XC/01M7ETJ4HXMJ8VEZF5RKW2H3XD.toml", "_unfiled/frob-land-run-tests-rustdoc-and-windows-clippy-on-the-merged.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

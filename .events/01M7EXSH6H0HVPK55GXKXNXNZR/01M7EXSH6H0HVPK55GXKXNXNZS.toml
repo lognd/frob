@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-7c5816816eb4"
 labels = ["no-story"]
 acceptance = ["GX015 flags an html scene element outside the safe area", "GX016 flags undersized text in an html scene"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: GX015 safe area and GX016 text size do not use the html solve
 Remedy: feed them solve boxes
 Crates/files: crates/crunk-rules gx rules

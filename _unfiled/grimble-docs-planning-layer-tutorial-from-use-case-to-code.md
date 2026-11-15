@@ -19,4 +19,4 @@ text = "doc_commands.rs executes its commands in CI"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M8 (tutorial). Evidence: no guide mentions scenario. Files: docs/guides/grimble.md, crates doc_commands.rs. Remedy: second tutorial executed by the doc command test.
+Audit: ~/projects/frob-audit2-grimble.md M8 (tutorial). Evidence: no guide mentions scenario. Files: docs/guides/grimble.md, crates doc_commands.rs. Remedy: second tutorial executed by the doc command test.

@@ -23,4 +23,4 @@ text = "Insta test covers it"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 5 part 2. Progress as a hill chart per scenario.
+Research: ~/projects/frob-research-lifecycle.md rec 5 part 2. Progress as a hill chart per scenario.

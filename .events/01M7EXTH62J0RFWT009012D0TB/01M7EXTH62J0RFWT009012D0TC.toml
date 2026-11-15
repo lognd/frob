@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-618c5eb3cbb1"
 labels = ["no-story"]
 acceptance = ["a [decisions] waiver silences a CRAFT finding", "CRAFT012 ignores kinds with no token type"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L6.
+Source: ~/projects/frob-audit2-crunk.md, finding L6.
 Evidence: CRAFT rules cannot be waived through [decisions]
 Remedy: wire CRAFT into decisions; exclude untokenised value kinds from CRAFT012
 Crates/files: crates/crunk-rules craft

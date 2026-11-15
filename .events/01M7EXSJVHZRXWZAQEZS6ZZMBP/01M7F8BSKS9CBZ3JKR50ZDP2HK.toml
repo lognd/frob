@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXSJVHZRXWZAQEZS6ZZMBP/01M7EXSJVHZRXWZAQEZS6ZZMBQ.toml", "_unfiled/crunk-scene-flag-literal-px-in-scene-styles.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

@@ -16,7 +16,7 @@ text = "a file edited between check and fix is refused (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L1.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L1.
 Evidence: snapshot read after the check, so edits in between apply at stale offsets
 Remedy: snapshot from the check file bytes or compare digests
 Crates/files: crates/crunk-fix/src/run.rs:36-59

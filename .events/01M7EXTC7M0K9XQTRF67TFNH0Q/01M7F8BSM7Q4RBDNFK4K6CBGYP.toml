@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXTC7M0K9XQTRF67TFNH0Q/01M7EXTC7M0K9XQTRF67TFNH0R.toml", "_unfiled/crunk-validate-component-instances-against-props-and.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

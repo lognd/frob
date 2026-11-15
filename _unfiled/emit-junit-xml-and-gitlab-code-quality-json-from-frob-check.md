@@ -28,4 +28,4 @@ text = "Docs list both output formats"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-static-analysis.md section 6 item 10, section 3. Rationale: CI UIs and GitLab MR widgets consume JUnit and the CodeClimate-shaped code-quality report. The report says gob-diagnostics should carry these renderers and that none were verified beyond the plan: confirm first (crates/gob-diagnostics/src has no junit/gitlab module at HEAD). Remedy: two output renderers fed by the same finding/test records as the SARIF renderer. Crates/files: crates/gob-diagnostics/src, crates/frob output selection.
+Source: ~/projects/frob-research-static-analysis.md section 6 item 10, section 3. Rationale: CI UIs and GitLab MR widgets consume JUnit and the CodeClimate-shaped code-quality report. The report says gob-diagnostics should carry these renderers and that none were verified beyond the plan: confirm first (crates/gob-diagnostics/src has no junit/gitlab module at HEAD). Remedy: two output renderers fed by the same finding/test records as the SARIF renderer. Crates/files: crates/gob-diagnostics/src, crates/frob output selection.

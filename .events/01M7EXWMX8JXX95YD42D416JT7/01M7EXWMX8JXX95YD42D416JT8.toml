@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-065bcad29363"
 labels = ["no-story"]
 acceptance = ["the same seed gives the same direction (test)", "failing directions are never picked"]
 body = """
-Source: /home/logan/projects/frob-research-ui.md, section T6a.
+Source: ~/projects/frob-research-ui.md, section T6a.
 Remedy: seeded deterministic selection among directions that pass checks
 Crates/files: crates/crunk new verb
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality."""

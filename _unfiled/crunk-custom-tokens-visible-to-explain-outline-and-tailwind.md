@@ -16,7 +16,7 @@ text = "a custom token appears in explain, outline and the tailwind export"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M10.
+Source: ~/projects/frob-audit2-crunk.md, finding M10.
 Evidence: custom tokens are invisible to explain/outline/tailwind
 Remedy: include custom tokens in all three paths; re-test on a fresh build first
 Crates/files: crates/crunk explain/outline, crates/crunk-export tailwind

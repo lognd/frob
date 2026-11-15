@@ -20,7 +20,7 @@ text = "module doc no longer mentions a CI job"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding H3.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding H3.
 Evidence: no local parity verb; parity.rs line 5 still says The CI parity
 Remedy: add a verb running the gallery parity check; correct the doc
 Crates/files: crates/crunk/src, crates/crunk-gallery/src/parity.rs:5

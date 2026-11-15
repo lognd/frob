@@ -24,4 +24,4 @@ text = "Without the explicit command no network access happens"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-static-analysis.md section 6 item 13 (split off), section 4.2. Rationale: version drift between pinned_version and upstream is invisible. Remedy: frob tool outdated compares each stage's pinned_version/range with the latest published version, network only when invoked explicitly. Blocked by the frob tool verb ticket. Latest-version sources per ecosystem are [M]: verify first. Crates/files: crates/frob (tool verb), crates/gob-check/src/tool_def.rs.
+Source: ~/projects/frob-research-static-analysis.md section 6 item 13 (split off), section 4.2. Rationale: version drift between pinned_version and upstream is invisible. Remedy: frob tool outdated compares each stage's pinned_version/range with the latest published version, network only when invoked explicitly. Blocked by the frob tool verb ticket. Latest-version sources per ecosystem are [M]: verify first. Crates/files: crates/frob (tool verb), crates/gob-check/src/tool_def.rs.

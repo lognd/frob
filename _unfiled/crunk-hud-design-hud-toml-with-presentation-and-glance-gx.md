@@ -21,7 +21,7 @@ text = "a peripheral text longer than two glyphs raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T10.
+Source: ~/projects/frob-research-ui.md, section T10.
 Remedy: parse hud files (presentation, glance, priority); GX rules for peripheral text length, hue-only state and luminance delta
 Crates/files: crates/crunk-spec, crates/crunk-rules gx
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

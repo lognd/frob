@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-c062b6579a93"
 labels = ["no-story"]
 acceptance = ["a rule with tier=T2 is not run at --tier T0", "STATE005 tier reflects its measured input"]
 body = """
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L2.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L2.
 Evidence: tier is family min plus hard-coded T1_RULES
 Remedy: optional tier field on #[rule], falling back to family min
 Crates/files: crates/crunk-check/src/tier.rs:117-136, rule macro

@@ -16,7 +16,7 @@ text = "a suffix of a listed fingerprint does not match"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L8.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L8.
 Evidence: ends_with both ways accepts short key ids
 Remedy: compare full fingerprints; long id only when %GF empty and >=16 hex
 Crates/files: crates/crunk-rules/src/review.rs:108-111

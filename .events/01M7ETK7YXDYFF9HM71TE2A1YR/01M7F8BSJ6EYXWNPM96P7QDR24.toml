@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7ETK7YXDYFF9HM71TE2A1YR/01M7ETK7YXDYFF9HM71TE2A1YS.toml", "_unfiled/crunk-solver-honor-or-reject-scene-style-rules-and-media.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

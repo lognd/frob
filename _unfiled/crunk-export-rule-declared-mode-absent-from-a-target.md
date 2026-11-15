@@ -25,7 +25,7 @@ text = "targets carrying all modes raise none"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: no check that a target carries every mode
 Remedy: EXPORT rule flags a declared mode a target omits
 Crates/files: crates/crunk-rules export

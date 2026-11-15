@@ -21,7 +21,7 @@ text = "no finding for supported (target, composite) pairs"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Source: ~/projects/frob-audit2-crunk.md, finding H3.
 Evidence: unsupported composites are silently omitted per target
 Remedy: one EXPORT finding per (target, composite) that cannot be represented
 Crates/files: crates/crunk-export, crates/crunk-rules export rules

@@ -29,4 +29,4 @@ text = "The reject-vs-honor decision is recorded in docs/design/crunk/stylesheet
 bound = true
 +++
 
-Crunk audit2 H2. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
+Crunk audit2 H2. See ~/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).

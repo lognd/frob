@@ -19,4 +19,4 @@ text = "A non-matching host still raises CAP001"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md friction log. fetch("http://localhost:8000/...") is not matched to net.connect("localhost:8000").
+Audit: ~/projects/frob-audit2-grimble.md friction log. fetch("http://localhost:8000/...") is not matched to net.connect("localhost:8000").

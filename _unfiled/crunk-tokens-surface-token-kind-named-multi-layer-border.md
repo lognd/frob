@@ -21,7 +21,7 @@ text = "invalid layer is a typed error"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T3.
+Source: ~/projects/frob-research-ui.md, section T3.
 Remedy: add TokenKind::Surface with css export to box-shadow and border layers
 Crates/files: crates/crunk-tokens, crates/crunk-export, crates/crunk-spec
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

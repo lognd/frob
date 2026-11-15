@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-97b2b7425fdf"
 labels = ["no-story"]
 acceptance = ["a spec with dark mode yields tokens whose modes map is populated (unit test)", "unknown mode names produce a typed error"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: palette modes are parsed but never reach Token::modes, so exports ignore them
 Remedy: populate Token::modes from [palette.modes] in the spec loader
 Crates/files: crates/crunk-spec, crates/crunk-tokens

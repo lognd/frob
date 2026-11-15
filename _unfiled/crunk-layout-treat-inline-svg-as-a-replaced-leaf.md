@@ -16,7 +16,7 @@ text = "a scene with inline svg solves (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M9.
+Source: ~/projects/frob-audit2-crunk.md, finding M9.
 Evidence: inline svg makes a scene unsolvable
 Remedy: treat svg as a replaced leaf with intrinsic size
 Crates/files: crates/crunk-layout/src/style/tree.rs:74-90

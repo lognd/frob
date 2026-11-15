@@ -21,7 +21,7 @@ text = "DIVERGE001 fires within threshold of a default and not otherwise"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T6b.
+Source: ~/projects/frob-research-ui.md, section T6b.
 Remedy: reduce a project to a vector (accent hue band, type class, radius profile, density, motion) and compare against dated category defaults and sibling projects; advisory only
 Crates/files: crates/crunk new verb, crates/crunk-rules
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

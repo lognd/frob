@@ -19,4 +19,4 @@ text = "gob-dev gen all --check passes"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M8 (stale lines). GUIDE line 67 --fail-on error|warn|advisory|none; line 173 strict=true (docs/reference/config/frob.md:242 says deprecated no-op); lines 161-163 gate in fail_on terms; line 215 link text/target mismatch ../design/grmb-spec.md; line 65 'An empty model passes' is false. Verify each against HEAD before editing.
+Audit: ~/projects/frob-audit2-grimble.md M8 (stale lines). GUIDE line 67 --fail-on error|warn|advisory|none; line 173 strict=true (docs/reference/config/frob.md:242 says deprecated no-op); lines 161-163 gate in fail_on terms; line 215 link text/target mismatch ../design/grmb-spec.md; line 65 'An empty model passes' is false. Verify each against HEAD before editing.

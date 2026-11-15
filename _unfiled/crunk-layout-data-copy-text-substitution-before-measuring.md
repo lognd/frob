@@ -17,7 +17,7 @@ text = "a long copy string in data-copy makes the solved box wider than placehol
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: placeholder text is measured, not the real copy
 Remedy: substitute data-copy content before text measurement
 Crates/files: crates/crunk-layout, crates/crunk-ingest scene

@@ -21,7 +21,7 @@ text = "output is deterministic (snapshot)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T4.
+Source: ~/projects/frob-research-ui.md, section T4.
 Remedy: crunk look SUBJECT prints box table by data-id, alignment edges, spacing histogram, type sizes, radius set, contrast table, area shares, whitespace ratio
 Crates/files: crates/crunk new verb, crates/crunk-layout
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

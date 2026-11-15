@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVJVC1J2PKK9233G1ARNS/01M7EXVJVC1J2PKK9233G1ARNT.toml", "_unfiled/grimble-fmt-keep-ok-arm-first-or-author-order-state-rule-in.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

@@ -19,4 +19,4 @@ text = "4.10 EBNF matches 4.5"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L12. All docs Status: draft while SPEC claims normative; SPEC 4.10 EBNF line 879 lists only runnable/manual for vmodel while 4.5 shows verified_by. Note overlaps ticket for H4 (F9ZNSC3).
+Audit: ~/projects/frob-audit2-grimble.md L12. All docs Status: draft while SPEC claims normative; SPEC 4.10 EBNF line 879 lists only runnable/manual for vmodel while 4.5 shows verified_by. Note overlaps ticket for H4 (F9ZNSC3).

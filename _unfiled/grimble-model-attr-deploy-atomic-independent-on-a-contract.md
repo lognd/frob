@@ -23,4 +23,4 @@ text = "Rule pages note the effect on the diff"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 2 (G05). Gates how strictly the diff treats consumers.
+Research: ~/projects/frob-research-lifecycle.md rec 2 (G05). Gates how strictly the diff treats consumers.

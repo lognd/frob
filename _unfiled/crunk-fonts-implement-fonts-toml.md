@@ -16,7 +16,7 @@ text = "a face listed in fonts.toml is used by the solve"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L7.
+Source: ~/projects/frob-audit2-crunk.md, finding L7.
 Evidence: fonts.toml is specified but not implemented
 Remedy: load fonts.toml and register faces with the solver
 Crates/files: crates/crunk-layout, crates/crunk-spec

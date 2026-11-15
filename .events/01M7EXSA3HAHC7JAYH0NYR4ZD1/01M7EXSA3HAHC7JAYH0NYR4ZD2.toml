@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-554fbe88d92c"
 labels = ["no-story"]
 acceptance = ["tailwind and json exports carry every declared mode (snapshot)"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: tailwind and json exports lose modes
 Remedy: emit modes in tailwind theme and json output
 Crates/files: crates/crunk-export tailwind/json

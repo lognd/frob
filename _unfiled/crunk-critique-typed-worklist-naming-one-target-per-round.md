@@ -17,7 +17,7 @@ text = "output names exactly one target and ids for each item"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T5.
+Source: ~/projects/frob-research-ui.md, section T5.
 Remedy: emit worklist items (hierarchy, rhythm, type, colour, material, motion, copy, brief fit) bound to ids and measurables, naming ONE target
 Crates/files: crates/crunk new verb
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

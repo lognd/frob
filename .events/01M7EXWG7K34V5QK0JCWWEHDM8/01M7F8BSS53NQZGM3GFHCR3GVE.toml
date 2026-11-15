@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXWG7K34V5QK0JCWWEHDM8/01M7EXWG7K34V5QK0JCWWEHDM9.toml", "_unfiled/grimble-model-state-sets-on-contract-entity-with-step.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

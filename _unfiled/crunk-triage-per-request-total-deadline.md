@@ -16,7 +16,7 @@ text = "a client trickling bytes is dropped after the deadline (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L7.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L7.
 Evidence: slow client holds the single-threaded accept loop
 Remedy: check an Instant deadline between reads
 Crates/files: crates/crunk-gallery/src/triage/server.rs:230-270,330-341

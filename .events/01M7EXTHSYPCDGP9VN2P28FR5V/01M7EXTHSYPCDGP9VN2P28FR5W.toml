@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-a0fb1c9fa1f6"
 labels = ["no-story"]
 acceptance = ["tokens -q prints nothing", "missing design/scenes emits no WARN", "outline preserves font family case"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L8.
+Source: ~/projects/frob-audit2-crunk.md, finding L8.
 Evidence: tokens -q prints the envelope; gob_walk WARN on missing design/scenes; outline lowercases font families
 Remedy: fix all three
 Crates/files: crates/crunk tokens/outline

@@ -19,4 +19,4 @@ text = "gob-dev gen all --check passes"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M3 (docs part). Rows PLAN030-034, PLAN011, PLAN040 have no generated rule pages. Files: docs/design/grimble/grmb-spec.md, planning-semantics.md. Note: crates tickets ~7HABQ01 and ~4TP3HYX implement some rules; mark until they land.
+Audit: ~/projects/frob-audit2-grimble.md M3 (docs part). Rows PLAN030-034, PLAN011, PLAN040 have no generated rule pages. Files: docs/design/grimble/grmb-spec.md, planning-semantics.md. Note: crates tickets ~7HABQ01 and ~4TP3HYX implement some rules; mark until they land.

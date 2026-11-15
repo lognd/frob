@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXTYSR2H8GJDRW2FQDF1R7/01M7EXTYSR2H8GJDRW2FQDF1R8.toml", "_unfiled/crunk-parity-compare-python-rule-id-multiset-per-e2e-step.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

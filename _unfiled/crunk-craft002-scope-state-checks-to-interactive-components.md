@@ -16,7 +16,7 @@ text = "a static component with no states passes CRAFT002; ~YQ8ZG91 related"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Source: ~/projects/frob-audit2-crunk.md, finding M2.
 Evidence: CRAFT002 demands states on non-interactive components
 Remedy: apply only to components declared interactive
 Crates/files: crates/crunk-rules craft

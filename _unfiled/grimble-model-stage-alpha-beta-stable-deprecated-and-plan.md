@@ -19,4 +19,4 @@ text = "A stable scenario below threshold raises a finding"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 7.
+Research: ~/projects/frob-research-lifecycle.md rec 7.

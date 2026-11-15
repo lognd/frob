@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-f66737cc01f4"
 labels = ["no-story"]
 acceptance = ["literal text in an error state raises a finding"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Source: ~/projects/frob-audit2-crunk.md, finding M8.
 Evidence: error/empty states may hold literal text
 Remedy: rule requires a copy key reference
 Crates/files: crates/crunk-rules content

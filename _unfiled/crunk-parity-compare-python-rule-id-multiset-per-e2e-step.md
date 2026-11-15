@@ -16,7 +16,7 @@ text = "firing the wrong rule at a step fails the replay"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding M3.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding M3.
 Evidence: e2e_04 passes if any rule exits 1
 Remedy: record Python check --json rule ids per step and compare without messages
 Crates/files: crates/crunk/tests/e2e/replay.rs, tests/crunk-parity

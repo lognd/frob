@@ -16,7 +16,7 @@ text = "a solve with a substituted face sets font_substituted and layout rules a
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L7.
+Source: ~/projects/frob-audit2-crunk.md, finding L7.
 Evidence: unbundled display faces silently fall back
 Remedy: record font_substituted in the solve; LAYOUT rules return Unresolved
 Crates/files: crates/crunk-layout fonts, crates/crunk-rules layout

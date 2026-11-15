@@ -16,7 +16,7 @@ text = "a tampered helper with the expected name is rewritten or rejected (test)
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L12.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L12.
 Evidence: existing helper-<hash>.mjs is trusted by name
 Remedy: verify digest on reuse or rewrite atomically
 Crates/files: crates/crunk-tailwind/src/runtime/exec.rs:105-113

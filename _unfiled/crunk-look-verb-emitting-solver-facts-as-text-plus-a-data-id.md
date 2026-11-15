@@ -11,4 +11,4 @@ updated = "2026-11-15T06:27:20Z"
 labels = ["no-story"]
 +++
 
-Research rec 2. Source: /home/logan/projects/frob-research-ui.md (recommendation 2). Decompose before implementing.
+Research rec 2. Source: ~/projects/frob-research-ui.md (recommendation 2). Decompose before implementing.

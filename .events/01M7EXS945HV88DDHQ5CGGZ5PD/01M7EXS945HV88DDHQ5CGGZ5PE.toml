@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-90737333c989"
 labels = ["no-story"]
 acceptance = ["a var() pointing at an unexported token produces a finding", "a var() to an exported token produces none"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Source: ~/projects/frob-audit2-crunk.md, finding H3.
 Evidence: var(--x) may reference a token the css export omits
 Remedy: cross-check var() uses against exported custom properties
 Crates/files: crates/crunk-export, crates/crunk-rules

@@ -23,4 +23,4 @@ text = "Syntax documented in SPEC"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 2 (G03). Removal of a never-deprecated member, removal while a consumer reads it, and deprecation past until with readers are Errors. Depends on member diff.
+Research: ~/projects/frob-research-lifecycle.md rec 2 (G03). Removal of a never-deprecated member, removal while a consumer reads it, and deprecation past until with readers are Errors. Depends on member diff.

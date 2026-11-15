@@ -33,4 +33,4 @@ text = "Valid design files and projects without design files produce no SPEC001 
 bound = true
 +++
 
-Crunk audit2 H4. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
+Crunk audit2 H4. See ~/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).

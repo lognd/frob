@@ -10,4 +10,4 @@ updated = "2026-11-15T05:23:27Z"
 labels = ["no-story"]
 +++
 
-Repo audit H3. See /home/logan/projects/frob-audit2-repo.md (H3) for evidence and remedy.
+Repo audit H3. See ~/projects/frob-audit2-repo.md (H3) for evidence and remedy.

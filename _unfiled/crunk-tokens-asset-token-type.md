@@ -21,7 +21,7 @@ text = "an existing asset resolves"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: images, icons and fonts cannot be tokens
 Remedy: add an asset token type with existence check
 Crates/files: crates/crunk-tokens, crates/crunk-spec

@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXT5474HCVF33F341E29JC/01M7EXT5474HCVF33F341E29JD.toml", "_unfiled/generalize-frob-init-stack-detection-to-read-tool-definition.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

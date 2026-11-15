@@ -19,4 +19,4 @@ text = "PLAN005 fires for both place_order and browse in a fixture test"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M1 (part 2). Evidence: PLAN006 never fires, subjects_examined 0; crates/grimble-bind/src/plan.rs:710-733,879 leaves n.collected empty for scenarios whose pairs are consumed by arms; PLAN005 reported for place_order but not browse. Remedy: feed arm-matched pairs into collected.
+Audit: ~/projects/frob-audit2-grimble.md M1 (part 2). Evidence: PLAN006 never fires, subjects_examined 0; crates/grimble-bind/src/plan.rs:710-733,879 leaves n.collected empty for scenarios whose pairs are consumed by arms; PLAN005 reported for place_order but not browse. Remedy: feed arm-matched pairs into collected.

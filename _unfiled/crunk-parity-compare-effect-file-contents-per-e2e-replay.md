@@ -16,7 +16,7 @@ text = "a fix step writing wrong bytes fails the replay (mutation test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding M3.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding M3.
 Evidence: replay checks only that effect files exist
 Remedy: compare bytes with LF normalisation; per-entry divergence field effects-content
 Crates/files: crates/crunk/tests/e2e/replay.rs:205-235, tests/crunk-parity/divergences.toml

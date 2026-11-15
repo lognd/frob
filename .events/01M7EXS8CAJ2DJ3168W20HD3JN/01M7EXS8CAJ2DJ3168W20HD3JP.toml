@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-a79a77e8868f"
 labels = ["no-story"]
 acceptance = ["a project with a shadow and a typography composite exports both in css and tailwind (snapshot test)", "round trip: exported css parses with crunk-ingest"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Source: ~/projects/frob-audit2-crunk.md, finding H3.
 Evidence: composite tokens (shadow, typography, border) are dropped from css/tailwind exports
 Remedy: emit composites as css custom properties / tailwind theme keys
 Crates/files: crates/crunk-export (css, tailwind)

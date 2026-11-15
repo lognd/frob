@@ -19,4 +19,4 @@ text = "A violating one is not"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md M6. crates/grimble-check/src/unit_role.rs:75-98 always sets verified: false; see coh002.rs:418-421 and crates/grimble-lints/src/neat/effects.rs:201.
+Audit: ~/projects/frob-audit-grimble-crunk.md M6. crates/grimble-check/src/unit_role.rs:75-98 always sets verified: false; see coh002.rs:418-421 and crates/grimble-lints/src/neat/effects.rs:201.

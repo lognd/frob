@@ -19,4 +19,4 @@ text = "init -q piped prints nothing but the exit code"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L8. gob_check::required DEAD001, gob_check::repo SYS015 and CODEOWNERS x3 WARNs leak at default verbosity; init -q still prints the full JSON envelope when piped.
+Audit: ~/projects/frob-audit2-grimble.md L8. gob_check::required DEAD001, gob_check::repo SYS015 and CODEOWNERS x3 WARNs leak at default verbosity; init -q still prints the full JSON envelope when piped.

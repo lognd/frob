@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXRF3QCRR8SRZWK8J1ABWG/01M7EXRF3QCRR8SRZWK8J1ABWH.toml", "_unfiled/crunk-render-fix-e-gallery-not-built-remedy-text-and-exit.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

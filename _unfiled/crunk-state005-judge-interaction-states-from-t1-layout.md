@@ -20,7 +20,7 @@ text = "missing per-state scene is Unresolved with a reason"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Source: ~/projects/frob-audit2-crunk.md, finding M2.
 Evidence: interaction states are only names; STATE is Unresolved with no per-state scene
 Remedy: solve a scene per state and compare boxes/tokens in STATE005
 Crates/files: crates/crunk-rules state rules, crates/crunk-layout

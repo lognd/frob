@@ -21,7 +21,7 @@ text = "with allow_non_interactive = true it is satisfied"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding M8.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding M8.
 Evidence: crunk ack --all-stale --non-interactive clears every HUMAN001; non_interactive is stored but never read; overlaps ~G8D4F4K
 Remedy: treat non_interactive=true entries as unacked unless [review] allow_non_interactive = true; document reviewers + require_signed as the control
 Crates/files: crates/crunk/src/review.rs:160-235, crates/crunk-rules/src/review.rs:103-228

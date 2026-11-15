@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-f0a553a2fa2f"
 labels = ["no-story"]
 acceptance = ["crunk schema --kind screen prints a valid JSON schema", "fixture files validate against their schema"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M11.
+Source: ~/projects/frob-audit2-crunk.md, finding M11.
 Evidence: no schemas for authoring files
 Remedy: ship JSON schemas and a crunk schema --kind verb
 Crates/files: crates/crunk, crates/crunk-spec

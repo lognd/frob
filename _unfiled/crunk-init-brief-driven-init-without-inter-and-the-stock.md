@@ -21,7 +21,7 @@ text = "init without a brief asks for or scaffolds a brief"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section G1 / Recommendation 4.
+Source: ~/projects/frob-research-ui.md, section G1 / Recommendation 4.
 Remedy: remove the generic default preset; scaffold from brief.toml; no Inter, no stock blue default
 Crates/files: crates/crunk init
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

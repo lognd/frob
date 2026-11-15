@@ -15,4 +15,4 @@ text = "A syntactically broken source file yields Unresolved for each COH rule"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md M7. coh_pass.rs:125-139,401-433 silently drops unparsable files. Remedy: return failures and emit one Unresolved per failed file per COH rule.
+Audit: ~/projects/frob-audit-grimble-crunk.md M7. coh_pass.rs:125-139,401-433 silently drops unparsable files. Remedy: return failures and emit one Unresolved per failed file per COH rule.

@@ -19,4 +19,4 @@ text = "An outcome-map entry clears it"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 4. Rule ids PLAN041/042/044 tickets ~ZAP2ZD4 and ~8QFFM4A overlap: coordinate.
+Research: ~/projects/frob-research-lifecycle.md rec 4. Rule ids PLAN041/042/044 tickets ~ZAP2ZD4 and ~8QFFM4A overlap: coordinate.

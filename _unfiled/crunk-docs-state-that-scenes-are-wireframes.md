@@ -17,7 +17,7 @@ text = "the guide states scenes are layout wireframes and lists unjudged propert
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: guide implies scenes carry visual design
 Remedy: add a note to the guide scene section
 Crates/files: docs/guides/crunk.md

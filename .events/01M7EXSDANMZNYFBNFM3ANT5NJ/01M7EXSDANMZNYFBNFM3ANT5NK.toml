@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-605a5c4096b7"
 labels = ["no-story"]
 acceptance = ["a scene with a literal background colour is flagged", "a token-backed paint passes"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: paint properties (background, filter, shadow) are not validated against tokens in scenes
 Remedy: judge paint properties in SCENE001 against token kinds
 Crates/files: crates/crunk-rules scene rules

@@ -6,7 +6,7 @@ priority = "medium"
 points = 5
 labels = ["no-story"]
 acceptance = ["Removing a member under compat= raises an Error", "Adding an optional member is clean", "Unknown fidelity stays Unresolved"]
-body = "Research: /home/logan/projects/frob-research-lifecycle.md rec 1 (G01,G02), part 1 of 3. SYS006 detects digest inequality only. Add member-level diff of the Contract facet: removed, renamed, retyped or newly required member is an Error; added optional member is clean. Crates: grimble-bind, grimble-model. Note: the ticket list had no pre-filed lifecycle ticket for this."
+body = "Research: ~/projects/frob-research-lifecycle.md rec 1 (G01,G02), part 1 of 3. SYS006 detects digest inequality only. Add member-level diff of the Contract facet: removed, renamed, retyped or newly required member is an Error; added optional member is clean. Crates: grimble-bind, grimble-model. Note: the ticket list had no pre-filed lifecycle ticket for this."
 at = "2026-11-15T06:22:11Z"
 actor = "lognd"
 rev = 1

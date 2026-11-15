@@ -21,7 +21,7 @@ text = "digest of unchanged tree is stable"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H6.
+Source: ~/projects/frob-audit2-crunk.md, finding H6.
 Evidence: ack digest omits scene, component and content files so edits stay acked
 Remedy: include them in the digest so any change makes HUMAN001 stale
 Crates/files: crates/crunk-check/src/review.rs, crates/crunk-rules/src/review.rs

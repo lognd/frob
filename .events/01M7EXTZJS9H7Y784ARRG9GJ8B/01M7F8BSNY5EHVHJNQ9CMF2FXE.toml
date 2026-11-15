@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXTZJS9H7Y784ARRG9GJ8B/01M7EXTZJS9H7Y784ARRG9GJ8C.toml", "_unfiled/grimble-make-conf-18-2-an-insta-snapshot-test-of-check-text.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

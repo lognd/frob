@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-cfcaa9a27339"
 labels = ["no-story"]
 acceptance = ["crunk render --image writes a PNG and an SVG for a scene in the default build", "output is deterministic: two runs give identical bytes (test)", "a scene with no solve yields an Unresolved finding, not a blank image"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H1.
+Source: ~/projects/frob-audit2-crunk.md, finding H1.
 Evidence: render emits no pixels in the default build
 Remedy: rasterise the T1 layout solve (boxes, text) to PNG and SVG behind crunk render --image
 Crates/files: crates/crunk/src/render.rs, crates/crunk-gallery

@@ -23,4 +23,4 @@ text = "Unknown readers are shown, never dropped"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 3. Unknown stays Unresolved. Crate: crates/grimble.
+Research: ~/projects/frob-research-lifecycle.md rec 3. Unknown stays Unresolved. Crate: crates/grimble.

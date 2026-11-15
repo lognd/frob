@@ -16,7 +16,7 @@ text = "a longer German string overflows and is reported (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Source: ~/projects/frob-audit2-crunk.md, finding M8.
 Evidence: solve uses one string per key
 Remedy: solve per locale and report overflow
 Crates/files: crates/crunk-layout, crates/crunk-spec content

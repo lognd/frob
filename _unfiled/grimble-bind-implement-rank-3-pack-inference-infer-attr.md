@@ -19,4 +19,4 @@ text = "inference-unavailable is only raised when the pack lacks the rule"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md L4. crates/grimble-bind/src/lib.rs:9,17-26; crates/grimble-check/src/packs.rs:1-7; binding.md:282-325. Every attr infer entity gets SYS004 inference-unavailable. Remedy: implement [[infer]].
+Audit: ~/projects/frob-audit-grimble-crunk.md L4. crates/grimble-bind/src/lib.rs:9,17-26; crates/grimble-check/src/packs.rs:1-7; binding.md:282-325. Every attr infer entity gets SYS004 inference-unavailable. Remedy: implement [[infer]].

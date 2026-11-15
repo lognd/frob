@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXTYA7ESJ364WAPZCDMJZG/01M7EXTYA7ESJ364WAPZCDMJZH.toml", "_unfiled/crunk-check-ingest-failure-must-refuse-or-yield-unresolved.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

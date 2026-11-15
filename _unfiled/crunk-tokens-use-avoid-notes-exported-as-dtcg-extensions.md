@@ -17,7 +17,7 @@ text = "use/avoid appear in explain and the DTCG export"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T8.
+Source: ~/projects/frob-research-ui.md, section T8.
 Remedy: use and avoid lines per token, in DTCG extensions, printed by explain and outline --node
 Crates/files: crates/crunk-spec, crates/crunk-export, crates/crunk explain
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

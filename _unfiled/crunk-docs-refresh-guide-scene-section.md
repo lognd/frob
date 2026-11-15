@@ -16,7 +16,7 @@ text = "the section matches the current scene dialect and verbs"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L2.
+Source: ~/projects/frob-audit2-crunk.md, finding L2.
 Evidence: guide scene section is stale
 Remedy: rewrite to the html dialect
 Crates/files: docs/guides/crunk.md:188-225

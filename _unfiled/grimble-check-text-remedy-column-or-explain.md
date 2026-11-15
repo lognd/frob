@@ -15,4 +15,4 @@ text = "check --text --explain prints the rule remedy under each finding"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md friction log. check --text prints no remedy per finding. Remedy: a remedy line or --explain flag. Crate: crates/grimble.
+Audit: ~/projects/frob-audit2-grimble.md friction log. check --text prints no remedy per finding. Remedy: a remedy line or --explain flag. Crate: crates/grimble.

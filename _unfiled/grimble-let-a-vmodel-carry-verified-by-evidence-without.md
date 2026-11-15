@@ -29,4 +29,4 @@ text = "grimble fmt keeps verified_by after ref on a vmodel"
 bound = true
 +++
 
-Audit2 H1. See /home/logan/projects/frob-audit2-grimble.md section H1 for evidence and remedy.
+Audit2 H1. See ~/projects/frob-audit2-grimble.md section H1 for evidence and remedy.

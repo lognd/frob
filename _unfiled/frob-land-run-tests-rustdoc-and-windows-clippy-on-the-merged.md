@@ -10,4 +10,4 @@ updated = "2026-11-15T05:23:27Z"
 labels = ["no-story"]
 +++
 
-Repo audit H2; source of CI-only regressions. See /home/logan/projects/frob-audit2-repo.md (H2) for evidence and remedy.
+Repo audit H2; source of CI-only regressions. See ~/projects/frob-audit2-repo.md (H2) for evidence and remedy.

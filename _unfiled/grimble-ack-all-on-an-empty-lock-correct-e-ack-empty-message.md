@@ -15,4 +15,4 @@ text = "ack --all on an empty lock prints a message that does not ask for --all"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L3. crates/grimble/src/ack.rs:283-287 and crates/gob-lock/src/plan.rs:11 print 'name a symref or path, or pass --all' even when --all was passed.
+Audit: ~/projects/frob-audit2-grimble.md L3. crates/grimble/src/ack.rs:283-287 and crates/gob-lock/src/plan.rs:11 print 'name a symref or path, or pass --all' even when --all was passed.

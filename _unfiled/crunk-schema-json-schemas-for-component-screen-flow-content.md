@@ -20,7 +20,7 @@ text = "fixture files validate against their schema"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M11.
+Source: ~/projects/frob-audit2-crunk.md, finding M11.
 Evidence: no schemas for authoring files
 Remedy: ship JSON schemas and a crunk schema --kind verb
 Crates/files: crates/crunk, crates/crunk-spec

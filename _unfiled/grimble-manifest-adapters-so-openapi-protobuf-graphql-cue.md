@@ -23,4 +23,4 @@ text = "Adapter failure is Unresolved"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 1, part 2 of 3. Blocked by the member diff ticket. Start with OpenAPI plus one more; others follow.
+Research: ~/projects/frob-research-lifecycle.md rec 1, part 2 of 3. Blocked by the member diff ticket. Start with OpenAPI plus one more; others follow.

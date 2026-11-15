@@ -19,4 +19,4 @@ text = "The guide explains the capability rule and goal evidence"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md friction log. COH002 asks the user to edit an unknown [coh] table; the caller-must-hold rule is unexplained in the guide; goals needing their own verified_by is not obvious. Files: crates/grimble-check/src/coh002.rs, docs/guides/grimble.md.
+Audit: ~/projects/frob-audit2-grimble.md friction log. COH002 asks the user to edit an unknown [coh] table; the caller-must-hold rule is unexplained in the guide; goals needing their own verified_by is not obvious. Files: crates/grimble-check/src/coh002.rs, docs/guides/grimble.md.

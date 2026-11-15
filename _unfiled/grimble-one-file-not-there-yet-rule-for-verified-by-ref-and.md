@@ -19,4 +19,4 @@ text = "SPEC 8.3 states the rule and a test per construct passes"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M5. Evidence: verified_by on a scenario is planned, on a claim MDL005; vmodel ref to a missing file silent; contract shape to a missing file MDL005. Remedy: one rule per SPEC 8.3 line 1318 and decide ref and shape. Crates: grimble-model, grimble-check.
+Audit: ~/projects/frob-audit2-grimble.md M5. Evidence: verified_by on a scenario is planned, on a claim MDL005; vmodel ref to a missing file silent; contract shape to a missing file MDL005. Remedy: one rule per SPEC 8.3 line 1318 and decide ref and shape. Crates: grimble-model, grimble-check.

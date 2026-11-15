@@ -10,4 +10,4 @@ updated = "2026-11-15T05:23:44Z"
 labels = ["no-story"]
 +++
 
-Lifecycle research rec 2. See /home/logan/projects/frob-research-lifecycle.md section 5 for sketch and evidence. Verify the spec/impl state first; decompose before implementing.
+Lifecycle research rec 2. See ~/projects/frob-research-lifecycle.md section 5 for sketch and evidence. Verify the spec/impl state first; decompose before implementing.

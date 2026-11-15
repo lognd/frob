@@ -21,7 +21,7 @@ text = "token-backed values do not"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: literal px in scene styles bypass tokens
 Remedy: SCENE rule flags literal lengths
 Crates/files: crates/crunk-rules scene

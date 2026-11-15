@@ -24,7 +24,7 @@ text = "unnamed button raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M4.
+Source: ~/projects/frob-audit2-crunk.md, finding M4.
 Evidence: no T0/T1 A11Y rules exist
 Remedy: add A11Y rules over ingested html/scenes
 Crates/files: crates/crunk-rules a11y

@@ -20,7 +20,7 @@ text = "CRAFT012 ignores kinds with no token type"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L6.
+Source: ~/projects/frob-audit2-crunk.md, finding L6.
 Evidence: CRAFT rules cannot be waived through [decisions]
 Remedy: wire CRAFT into decisions; exclude untokenised value kinds from CRAFT012
 Crates/files: crates/crunk-rules craft

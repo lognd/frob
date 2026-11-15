@@ -17,7 +17,7 @@ text = "a keyframes composite exports to css @keyframes (snapshot)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H7.
+Source: ~/projects/frob-audit2-crunk.md, finding H7.
 Evidence: no composite for multi-step animations
 Remedy: add a keyframes composite
 Crates/files: crates/crunk-tokens, crates/crunk-export

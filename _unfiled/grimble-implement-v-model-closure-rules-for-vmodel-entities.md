@@ -11,4 +11,4 @@ updated = "2026-11-15T05:15:11Z"
 labels = ["no-story"]
 +++
 
-Audit2 H4; untested requirement and ref to missing file are silent. See /home/logan/projects/frob-audit2-grimble.md section H4 for evidence and remedy.
+Audit2 H4; untested requirement and ref to missing file are silent. See ~/projects/frob-audit2-grimble.md section H4 for evidence and remedy.

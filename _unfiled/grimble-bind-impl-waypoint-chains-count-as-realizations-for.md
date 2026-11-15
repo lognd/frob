@@ -19,4 +19,4 @@ text = "Its status rises above declared in a test"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M3 (small part). Evidence: chain-only impl gets PLAN004 and stays declared. Crates: crates/grimble-bind/src/plan.rs.
+Audit: ~/projects/frob-audit2-grimble.md M3 (small part). Evidence: chain-only impl gets PLAN004 and stays declared. Crates: crates/grimble-bind/src/plan.rs.

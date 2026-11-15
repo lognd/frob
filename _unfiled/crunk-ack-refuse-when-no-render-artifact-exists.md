@@ -21,7 +21,7 @@ text = "ack after render succeeds"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H6.
+Source: ~/projects/frob-audit2-crunk.md, finding H6.
 Evidence: a screen can be acked without ever having been rendered
 Remedy: refuse ack when no render artifact for the subject exists
 Crates/files: crates/crunk/src/review.rs

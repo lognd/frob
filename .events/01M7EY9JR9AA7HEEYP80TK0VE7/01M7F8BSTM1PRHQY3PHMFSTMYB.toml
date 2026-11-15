@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EY9JR9AA7HEEYP80TK0VE7/01M7EY9JR9AA7HEEYP80TK0VE8.toml", "_unfiled/crunk-render-frames-filmstrip-per-flow-edge-and-state-change.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

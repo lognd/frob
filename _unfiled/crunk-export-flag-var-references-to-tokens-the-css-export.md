@@ -21,7 +21,7 @@ text = "a var() to an exported token produces none"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Source: ~/projects/frob-audit2-crunk.md, finding H3.
 Evidence: var(--x) may reference a token the css export omits
 Remedy: cross-check var() uses against exported custom properties
 Crates/files: crates/crunk-export, crates/crunk-rules

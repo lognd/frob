@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-b20f8b772261"
 labels = ["no-story"]
 acceptance = ["crunk diff --visual A B prints a pixel-difference verdict and exits non-zero above threshold", "missing input image yields a typed error, not a panic"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H1.
+Source: ~/projects/frob-audit2-crunk.md, finding H1.
 Evidence: visual::compare exists with no verb exposing it
 Remedy: add crunk diff --visual A B over visual::compare; overlaps ~CFF3C0J (VIS001 wiring), coordinate scope
 Crates/files: crates/crunk/src, crates/crunk-check visual module

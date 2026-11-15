@@ -20,7 +20,7 @@ text = "a token reference passes"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M3.
+Source: ~/projects/frob-audit2-crunk.md, finding M3.
 Evidence: literal durations and easings pass MOTION001
 Remedy: require motion tokens
 Crates/files: crates/crunk-rules motion

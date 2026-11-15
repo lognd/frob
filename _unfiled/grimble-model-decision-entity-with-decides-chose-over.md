@@ -19,4 +19,4 @@ text = "Stale and unconfirmed DEC rules fire in fixtures"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 10, closes open question 24. DEC rules for stale and unconfirmed.
+Research: ~/projects/frob-research-lifecycle.md rec 10, closes open question 24. DEC rules for stale and unconfirmed.

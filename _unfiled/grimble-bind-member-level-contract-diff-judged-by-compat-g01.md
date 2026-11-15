@@ -23,4 +23,4 @@ text = "Unknown fidelity stays Unresolved"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 1 (G01,G02), part 1 of 3. SYS006 detects digest inequality only. Add member-level diff of the Contract facet: removed, renamed, retyped or newly required member is an Error; added optional member is clean. Crates: grimble-bind, grimble-model. Note: the ticket list had no pre-filed lifecycle ticket for this.
+Research: ~/projects/frob-research-lifecycle.md rec 1 (G01,G02), part 1 of 3. SYS006 detects digest inequality only. Add member-level diff of the Contract facet: removed, renamed, retyped or newly required member is an Error; added optional member is clean. Crates: grimble-bind, grimble-model. Note: the ticket list had no pre-filed lifecycle ticket for this.

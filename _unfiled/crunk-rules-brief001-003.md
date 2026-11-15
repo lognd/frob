@@ -25,7 +25,7 @@ text = "BRIEF rules apply only to agent-provenance screens"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T1.
+Source: ~/projects/frob-research-ui.md, section T1.
 Remedy: BRIEF001 brief missing or field empty; BRIEF002 no reference with both take and leave; BRIEF003 signature not bound to a data-moment in any scene
 Crates/files: crates/crunk-rules
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

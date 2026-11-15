@@ -20,4 +20,4 @@ text = "A model using them checks clean"
 bound = false
 +++
 
-Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 7. risk and glossary give MDL000.
+Child of H5 (~AGD0PHX), ~/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 7. risk and glossary give MDL000.

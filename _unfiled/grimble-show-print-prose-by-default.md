@@ -15,4 +15,4 @@ text = "grimble show NAME prints numbered prose without --prose"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L1. grimble show requires --prose; make it the default. File: crates/grimble/src/show_cmd.rs.
+Audit: ~/projects/frob-audit2-grimble.md L1. grimble show requires --prose; make it the default. File: crates/grimble/src/show_cmd.rs.

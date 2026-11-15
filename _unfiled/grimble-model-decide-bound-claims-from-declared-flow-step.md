@@ -23,4 +23,4 @@ text = "A claim with no quantity gives a correct Unresolved message"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M6. Evidence: flow f { age 2 s; } claim c { bound age f <= 1 s; } gives CLAIM003 Unresolved with the wrong text 'declares no measured age'. Files: crates/grimble-model/src/claim.rs, SPEC 4.4 line 579. Remedy: compare against the declared quantity (REFUTED or PROVED at L1) and fix the message.
+Audit: ~/projects/frob-audit2-grimble.md M6. Evidence: flow f { age 2 s; } claim c { bound age f <= 1 s; } gives CLAIM003 Unresolved with the wrong text 'declares no measured age'. Files: crates/grimble-model/src/claim.rs, SPEC 4.4 line 579. Remedy: compare against the declared quantity (REFUTED or PROVED at L1) and fix the message.

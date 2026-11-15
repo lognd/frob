@@ -25,7 +25,7 @@ text = "a scene with no solve yields an Unresolved finding, not a blank image"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H1.
+Source: ~/projects/frob-audit2-crunk.md, finding H1.
 Evidence: render emits no pixels in the default build
 Remedy: rasterise the T1 layout solve (boxes, text) to PNG and SVG behind crunk render --image
 Crates/files: crates/crunk/src/render.rs, crates/crunk-gallery

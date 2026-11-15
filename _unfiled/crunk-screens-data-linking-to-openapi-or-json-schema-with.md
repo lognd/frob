@@ -20,7 +20,7 @@ text = "a valid one passes"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M7.
+Source: ~/projects/frob-audit2-crunk.md, finding M7.
 Evidence: screens cannot declare their data shape
 Remedy: add [[data]] to screen files with a schema link and a rule that the link resolves
 Crates/files: crates/crunk-spec, crates/crunk-rules

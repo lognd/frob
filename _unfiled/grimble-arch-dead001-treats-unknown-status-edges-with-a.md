@@ -15,4 +15,4 @@ text = "A fixture with an Unknown edge to a target yields Unresolved, not dead"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md L11. crates/grimble-arch/src/dead.rs:156 'Status::Unknown => {}'. Remedy: treat as May (Unresolved, EdgeUnknown).
+Audit: ~/projects/frob-audit-grimble-crunk.md L11. crates/grimble-arch/src/dead.rs:156 'Status::Unknown => {}'. Remedy: treat as May (Unresolved, EdgeUnknown).

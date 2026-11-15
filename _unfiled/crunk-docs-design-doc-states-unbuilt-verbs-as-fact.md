@@ -16,7 +16,7 @@ text = "every verb in the doc is built or marked planned"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L1.
+Source: ~/projects/frob-audit2-crunk.md, finding L1.
 Evidence: crunk.md describes verbs not built
 Remedy: mark unbuilt verbs as planned
 Crates/files: docs/design/crunk/crunk.md

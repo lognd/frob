@@ -21,7 +21,7 @@ text = "unknown mode names produce a typed error"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: palette modes are parsed but never reach Token::modes, so exports ignore them
 Remedy: populate Token::modes from [palette.modes] in the spec loader
 Crates/files: crates/crunk-spec, crates/crunk-tokens

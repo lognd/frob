@@ -16,7 +16,7 @@ text = "each listed family has at least one expected violation compared with Pyt
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding M3.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding M3.
 Evidence: only CONTRAST001 and TOKENS001 appear in the matrix
 Remedy: extend fixtures so COLOR, SPACE, TYPE, RADIUS, SIZE, LAYER, ORG, TW, BP each fire once
 Crates/files: tests/crunk-parity/expected/matrix, crates/crunk/tests/it/query_parity.rs

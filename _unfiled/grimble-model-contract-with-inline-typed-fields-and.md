@@ -28,4 +28,4 @@ text = "fmt round-trips"
 bound = false
 +++
 
-Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 2. Design-first data model: field id : int; inside contract, plus a structural comparison of both ends of a flow. Crates: grimble-model, grimble-bind.
+Child of H5 (~AGD0PHX), ~/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 2. Design-first data model: field id : int; inside contract, plus a structural comparison of both ends of a flow. Crates: grimble-model, grimble-bind.

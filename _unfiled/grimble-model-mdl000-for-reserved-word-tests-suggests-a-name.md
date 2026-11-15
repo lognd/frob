@@ -19,4 +19,4 @@ text = "SPEC 2.6 matches"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L4. node tests gives MDL000 reserved word (SPEC 2.6 line 244). Remedy: suggest an alternate name or un-reserve in entity-name position.
+Audit: ~/projects/frob-audit2-grimble.md L4. node tests gives MDL000 reserved word (SPEC 2.6 line 244). Remedy: suggest an alternate name or un-reserve in entity-name position.

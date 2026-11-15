@@ -15,4 +15,4 @@ text = "A repo of N ts files yields one Unresolved per rule"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L10. Four Unresolved lines per .ts/.tsx file. Crates: grimble-lints path.rs, time_pass.rs.
+Audit: ~/projects/frob-audit2-grimble.md L10. Four Unresolved lines per .ts/.tsx file. Crates: grimble-lints path.rs, time_pass.rs.

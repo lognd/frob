@@ -16,7 +16,7 @@ text = "literal text in an error state raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Source: ~/projects/frob-audit2-crunk.md, finding M8.
 Evidence: error/empty states may hold literal text
 Remedy: rule requires a copy key reference
 Crates/files: crates/crunk-rules content

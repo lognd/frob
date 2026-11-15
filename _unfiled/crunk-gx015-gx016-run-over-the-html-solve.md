@@ -25,7 +25,7 @@ text = "GX016 flags undersized text in an html scene"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: GX015 safe area and GX016 text size do not use the html solve
 Remedy: feed them solve boxes
 Crates/files: crates/crunk-rules gx rules

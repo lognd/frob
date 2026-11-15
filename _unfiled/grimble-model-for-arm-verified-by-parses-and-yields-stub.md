@@ -19,4 +19,4 @@ text = "~NTVM2T5 gets a note correcting its claim"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md L5. verified_by ... for arms parse (crates/grimble-model/src/plan.rs:74-99) but are not judged; UNMODELED_FAILURE_RULE PLAN011 in crates/grimble-bind/src/outcome.rs:19-20 is test-only; ticket NTVM2T5 wrongly claims PLAN011 done. Other unimplemented rules already ticketed: ~ZGWF0B3, ~7HABQ01, ~ZAP2ZD4, ~TZ11GQA, ~4TP3HYX; PM046-049 not yet.
+Audit: ~/projects/frob-audit-grimble-crunk.md L5. verified_by ... for arms parse (crates/grimble-model/src/plan.rs:74-99) but are not judged; UNMODELED_FAILURE_RULE PLAN011 in crates/grimble-bind/src/outcome.rs:19-20 is test-only; ticket NTVM2T5 wrongly claims PLAN011 done. Other unimplemented rules already ticketed: ~ZGWF0B3, ~7HABQ01, ~ZAP2ZD4, ~TZ11GQA, ~4TP3HYX; PM046-049 not yet.

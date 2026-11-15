@@ -24,4 +24,4 @@ text = "An unverified requirement raises a closure finding"
 bound = false
 +++
 
-Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 5, links to H4 (~F9ZNSC3). requirement r1 gives MDL000.
+Child of H5 (~AGD0PHX), ~/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 5, links to H4 (~F9ZNSC3). requirement r1 gives MDL000.

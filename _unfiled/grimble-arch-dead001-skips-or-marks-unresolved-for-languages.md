@@ -19,4 +19,4 @@ text = "Unresolved EdgeUnknown is reported instead"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit-grimble-crunk.md H6. DEAD001 errors on every unexported Go function; Go adapter crates/gob-symbols/src/go.rs:1-12,81-103 emits no call sites. Files: crates/grimble-arch/src/dead.rs:83-110,150-215, lib.rs:153-155. Remedy: skip or Unresolved (EdgeUnknown) for languages without apply_targets; add Go fixture (main.go with helper(); verify before fixing).
+Audit: ~/projects/frob-audit-grimble-crunk.md H6. DEAD001 errors on every unexported Go function; Go adapter crates/gob-symbols/src/go.rs:1-12,81-103 emits no call sites. Files: crates/grimble-arch/src/dead.rs:83-110,150-215, lib.rs:153-155. Remedy: skip or Unresolved (EdgeUnknown) for languages without apply_targets; add Go fixture (main.go with helper(); verify before fixing).

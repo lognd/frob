@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-f7c6e6b1ad54"
 labels = ["no-story"]
 acceptance = ["LAYOUT003-005 fire on a .scene.html fixture (tests)", "the legacy solver has no remaining caller"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: LAYOUT003-005 read the legacy .scene.json mini-solver (fixed CHAR_WIDTH_EM) rather than the html solve
 Remedy: port them to the html (taffy+parley) solve; retire crunk-ingest::scene::solve_scene. Grimble M2 overlap.
 Crates/files: crates/crunk-rules/src/scene_files.rs, crates/crunk-ingest/src/scene/solve.rs

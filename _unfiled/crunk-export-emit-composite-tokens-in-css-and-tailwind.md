@@ -21,7 +21,7 @@ text = "round trip: exported css parses with crunk-ingest"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H3.
+Source: ~/projects/frob-audit2-crunk.md, finding H3.
 Evidence: composite tokens (shadow, typography, border) are dropped from css/tailwind exports
 Remedy: emit composites as css custom properties / tailwind theme keys
 Crates/files: crates/crunk-export (css, tailwind)

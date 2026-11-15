@@ -21,7 +21,7 @@ text = "exit code matches the documented refusal class (test)"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L3.
+Source: ~/projects/frob-audit2-crunk.md, finding L3.
 Evidence: E-GALLERY-NOT-BUILT exits 3 and prints a remedy that cannot work in the default build
 Remedy: print a remedy that works (feature flag or alternative verb) and use a usage-class exit code
 Crates/files: crates/crunk/src/render.rs:387, crates/crunk/tests/it/render_solve.rs:95

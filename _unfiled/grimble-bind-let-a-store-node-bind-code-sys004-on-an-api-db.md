@@ -15,4 +15,4 @@ text = "An api -> db flow with a store node raises no SYS004"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md friction log. A store node cannot bind code so an api -> db flow gives SYS004. Decide and implement: store accepts a binding or SYS004 is not raised for store endpoints.
+Audit: ~/projects/frob-audit2-grimble.md friction log. A store node cannot bind code so an api -> db flow gives SYS004. Decide and implement: store accepts a binding or SYS004 is not raised for store endpoints.

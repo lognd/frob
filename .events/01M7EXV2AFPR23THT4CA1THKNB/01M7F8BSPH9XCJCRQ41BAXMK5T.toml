@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXV2AFPR23THT4CA1THKNB/01M7EXV2AFPR23THT4CA1THKNC.toml", "_unfiled/crunk-edit-canonical-path-confinement.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

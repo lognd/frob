@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXXPQ3W64WFA1GGK3DCHRZ/01M7EXXPQ3W64WFA1GGK3DCHS0.toml", "_unfiled/grimble-bind-plan-page-outcome-each-non-ok-variant-of-a-step.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

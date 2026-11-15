@@ -16,7 +16,7 @@ text = "a [[screen]] missing a required state raises a finding"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Source: ~/projects/frob-audit2-crunk.md, finding M2.
 Evidence: STATE rules skip [[screen]] entries
 Remedy: extend STATE rules to screens
 Crates/files: crates/crunk-rules state

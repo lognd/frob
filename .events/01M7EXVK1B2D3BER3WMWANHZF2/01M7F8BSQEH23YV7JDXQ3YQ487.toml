@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVK1B2D3BER3WMWANHZF2/01M7EXVK1CZE5GXG0BGJ1H1AX8.toml", "_unfiled/grimble-ack-all-on-an-empty-lock-correct-e-ack-empty-message.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

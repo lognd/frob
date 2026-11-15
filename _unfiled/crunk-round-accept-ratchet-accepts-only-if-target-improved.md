@@ -25,7 +25,7 @@ text = "an improving round is appended to rounds.jsonl"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T5.
+Source: ~/projects/frob-research-ui.md, section T5.
 Remedy: record rounds in .crunk/rounds.jsonl; restore last accepted state otherwise; cap about 6 rounds, keep best
 Crates/files: crates/crunk new verb
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

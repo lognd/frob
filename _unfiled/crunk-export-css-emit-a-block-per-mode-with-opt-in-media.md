@@ -25,7 +25,7 @@ text = "with the media option off, no @media rule is emitted"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Source: ~/projects/frob-audit2-crunk.md, finding H5.
 Evidence: css export has one value per token
 Remedy: emit [data-theme] or :root blocks per mode; opt-in prefers-color-scheme mapping
 Crates/files: crates/crunk-export css

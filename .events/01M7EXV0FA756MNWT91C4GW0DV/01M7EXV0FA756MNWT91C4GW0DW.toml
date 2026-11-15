@@ -8,7 +8,7 @@ idempotency_key = "crunkplan-93812eb31043"
 labels = ["no-story"]
 acceptance = ["a client trickling bytes is dropped after the deadline (test)"]
 body = """
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L7.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L7.
 Evidence: slow client holds the single-threaded accept loop
 Remedy: check an Instant deadline between reads
 Crates/files: crates/crunk-gallery/src/triage/server.rs:230-270,330-341

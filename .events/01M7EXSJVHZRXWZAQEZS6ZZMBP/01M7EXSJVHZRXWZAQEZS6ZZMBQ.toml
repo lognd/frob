@@ -9,7 +9,7 @@ idempotency_key = "crunkplan-a8eafeb476d5"
 labels = ["no-story"]
 acceptance = ["literal px in a scene style raises a finding", "token-backed values do not"]
 body = """
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H8.
+Source: ~/projects/frob-audit2-crunk.md, finding H8.
 Evidence: literal px in scene styles bypass tokens
 Remedy: SCENE rule flags literal lengths
 Crates/files: crates/crunk-rules scene

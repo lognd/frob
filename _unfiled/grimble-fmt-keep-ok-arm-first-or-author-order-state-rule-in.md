@@ -19,4 +19,4 @@ text = "fmt is idempotent in a test"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L2. fmt sorts arms alphabetically so the error arm precedes ok. Remedy: sort ok first or keep author order and document in SPEC 9.6. Crate: grimble-model printer.
+Audit: ~/projects/frob-audit2-grimble.md L2. fmt sorts arms alphabetically so the error arm precedes ok. Remedy: sort ok first or keep author order and document in SPEC 9.6. Crate: grimble-model printer.

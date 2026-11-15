@@ -23,4 +23,4 @@ text = "Order follows sorry count"
 bound = false
 +++
 
-Research: /home/logan/projects/frob-research-lifecycle.md rec 5. Contract ticket first, then grimble skeleton, then waves with disjoint node owns ordered by sorry/unknown count. Split follow-up: grimble status --hill.
+Research: ~/projects/frob-research-lifecycle.md rec 5. Contract ticket first, then grimble skeleton, then waves with disjoint node owns ordered by sorry/unknown count. Split follow-up: grimble status --hill.

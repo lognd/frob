@@ -17,7 +17,7 @@ text = "a 9-slice frame exports to css border-image and USS slice properties (sn
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T3.
+Source: ~/projects/frob-research-ui.md, section T3.
 Remedy: add TokenKind::Frame; css border-image/mask and USS -unity-slice-* export
 Crates/files: crates/crunk-tokens, crates/crunk-export
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

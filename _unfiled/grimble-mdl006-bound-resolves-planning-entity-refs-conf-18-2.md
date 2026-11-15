@@ -19,4 +19,4 @@ text = "A model test covers the web_app.checkout ref"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M1 (part 1). Evidence: conformance.md 18.2 sample gives MDL006 because bound cannot target a planning entity such as web_app.checkout. Remedy: resolve planning refs in bound. Crates: crates/grimble-model, crates/grimble-check.
+Audit: ~/projects/frob-audit2-grimble.md M1 (part 1). Evidence: conformance.md 18.2 sample gives MDL006 because bound cannot target a planning entity such as web_app.checkout. Remedy: resolve planning refs in bound. Crates: crates/grimble-model, crates/grimble-check.

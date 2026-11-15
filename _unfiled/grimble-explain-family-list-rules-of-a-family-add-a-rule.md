@@ -19,4 +19,4 @@ text = "unknown name still errors with a hint"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md L5. G explain PLAN errors and G rule list is unrecognized. Remedy: explain accepts a family prefix and lists its rules. Crate: crates/grimble.
+Audit: ~/projects/frob-audit2-grimble.md L5. G explain PLAN errors and G rule list is unrecognized. Remedy: explain accepts a family prefix and lists its rules. Crate: crates/grimble.

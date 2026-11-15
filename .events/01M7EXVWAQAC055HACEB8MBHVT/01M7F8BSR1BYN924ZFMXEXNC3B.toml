@@ -1,0 +1,6 @@
+kind = "scrub"
+reason = "TICK004: absolute home paths replaced by placeholders (forward commit, history untouched)"
+files = [".events/01M7EXVWAQAC055HACEB8MBHVT/01M7EXVWAQAC055HACEB8MBHVV.toml", "_unfiled/frob-tool-outdated-report-pinned-vs-latest-tool-versions-opt.md"]
+at = "2026-11-15T09:24:38Z"
+actor = "lognd"
+rev = 1

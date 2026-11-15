@@ -21,7 +21,7 @@ text = "FEEL003 is not enabled until a sourced threshold is recorded"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-research-ui.md, section T10.
+Source: ~/projects/frob-research-ui.md, section T10.
 Remedy: parse feedback.toml (channels, latency budget, reduced variant); FEEL001 single channel, FEEL002 no reduced variant, FEEL003 latency over budget (needs a sourced number first)
 Crates/files: crates/crunk-spec, crates/crunk-rules
 Keep any new heuristic advisory and dated; a clean run means no known defect, not quality.

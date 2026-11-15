@@ -20,7 +20,7 @@ text = "patch tool is absent without --write"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding L5.
+Source: ~/projects/frob-audit2-crunk.md, finding L5.
 Evidence: serve patch tool is dead code with no serve verb; also grimble-crunk L3. Related epic ~Z20JD5Q
 Remedy: register crunk serve reusing gob-serve; --write enables patch; expose render, snapshot, explain read tools
 Crates/files: crates/crunk/src/serve_patch.rs, crates/crunk/src

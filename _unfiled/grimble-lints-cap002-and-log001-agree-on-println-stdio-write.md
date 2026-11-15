@@ -19,4 +19,4 @@ text = "A partial-detector atom yields Unresolved instead of a denial"
 bound = false
 +++
 
-Audit: /home/logan/projects/frob-audit2-grimble.md M10. Evidence: CAP002 denies a use that LOG001 reports on the same line; println! is a stdio.write detector only in packs/core-effects/atoms.toml:351 while [packs] enabled = []; std::env::args is not env.read. Remedy: detect print macros in the built-in registry, or CAP002 reports Unresolved for atoms whose detectors are partial. Crates: grimble-capabilities, grimble-check.
+Audit: ~/projects/frob-audit2-grimble.md M10. Evidence: CAP002 denies a use that LOG001 reports on the same line; println! is a stdio.write detector only in packs/core-effects/atoms.toml:351 while [packs] enabled = []; std::env::args is not env.read. Remedy: detect print macros in the built-in registry, or CAP002 reports Unresolved for atoms whose detectors are partial. Crates: grimble-capabilities, grimble-check.

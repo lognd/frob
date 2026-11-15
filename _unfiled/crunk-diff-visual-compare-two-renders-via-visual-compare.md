@@ -25,7 +25,7 @@ text = "missing input image yields a typed error, not a panic"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit2-crunk.md, finding H1.
+Source: ~/projects/frob-audit2-crunk.md, finding H1.
 Evidence: visual::compare exists with no verb exposing it
 Remedy: add crunk diff --visual A B over visual::compare; overlaps ~CFF3C0J (VIS001 wiring), coordinate scope
 Crates/files: crates/crunk/src, crates/crunk-check visual module

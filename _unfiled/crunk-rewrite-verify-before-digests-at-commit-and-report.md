@@ -20,7 +20,7 @@ text = "unreadable dir is reported"
 bound = false
 +++
 
-Source: /home/logan/projects/frob-audit-grimble-crunk.md, finding L9.
+Source: ~/projects/frob-audit-grimble-crunk.md, finding L9.
 Evidence: rollback overwrites concurrent edits; unreadable dirs hide references
 Remedy: digest check before write/rollback; report unreadable dirs
 Crates/files: crates/crunk/src/rewrite.rs:405-438,481-500
