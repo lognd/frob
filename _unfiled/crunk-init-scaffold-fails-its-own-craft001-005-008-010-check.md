@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:46Z"
-updated = "2026-11-15T15:32:08Z"
-scope = ["crates/crunk/src/init/**"]
+updated = "2026-11-15T15:40:04Z"
+scope = ["crates/crunk/src/init/**", "crates/crunk/tests/it/init.rs"]
 +++
 
 found while working WJH9CR5: tests patch the fresh scaffold with satisfy_craft; fix RESET_CSS and roles in scaffold.rs so init output passes check
