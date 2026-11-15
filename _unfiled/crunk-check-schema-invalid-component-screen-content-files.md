@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T06:00:29Z"
+updated = "2026-11-15T06:00:30Z"
 labels = ["no-story"]
 
 [[acceptance]]
@@ -28,7 +28,7 @@ bound = true
 
 [[acceptance]]
 text = "Valid design files and projects without design files produce no SPEC001 finding"
-bound = false
+bound = true
 +++
 
 Crunk audit2 H4. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale).
