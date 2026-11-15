@@ -621,6 +621,9 @@ skip = "prints or writes a design-token export that needs a configured token sou
 [scenario."crunk export uss"]
 skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
 
+[scenario."crunk export figma-variables"]
+skip = "prints or writes a design-token export that needs a configured token source and optional output path, which the repo fixture does not provide; covered by crates/crunk/tests/export_verb.rs"
+
 [scenario."crunk export dtcg"]
 skip = "needs a design-token source and an output path to write the exported file, which the repo fixture does not provide; covered by crates/crunk/tests/dtcg.rs"
 

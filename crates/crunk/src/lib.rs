@@ -240,6 +240,7 @@ impl Product for CrunkProduct {
             .register::<export::ExportTailwind>()
             .register::<export::ExportUss>()
             .register::<export::ExportCsharp>()
+            .register::<export::ExportFigmaVariables>()
             .register::<rename::Rename>()
             .register::<edit::Edit>()
             .register::<new::New>()

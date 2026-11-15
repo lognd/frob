@@ -1,4 +1,4 @@
-//! `crunk export css|tailwind|uss|csharp` end to end: print, `--out`, and the unknown target.
+//! `crunk export css|tailwind|uss|csharp|figma-variables` end to end: print, `--out`, and the unknown target.
 
 // frob:ticket 01M5XCVMQBQWARH7HT8RYHA0KY
 
@@ -65,6 +65,30 @@ fn every_target_verb_renders_and_out_writes_the_file() {
     let (code, out, _) = crunk(dir.path(), &["export", "uss", "--out", "t.uss", "--json"]);
     assert_eq!(code, 0, "{out}");
     assert!(dir.path().join("t.uss").is_file());
+}
+
+// frob:tests crates/crunk/src/export.rs::ExportFigmaVariables
+#[test]
+fn export_figma_variables_prints_json_and_matches_tokens_target() {
+    let dir = project();
+    let (code, out, err) = crunk(dir.path(), &["export", "figma-variables", "--json"]);
+    assert_eq!(code, 0, "{out} {err}");
+    let env: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(env["data"]["target"], "figma-variables");
+    let content = env["data"]["content"].as_str().unwrap();
+    serde_json::from_str::<Value>(content).expect("figma export is JSON");
+    let (_, via_tokens, _) = crunk(
+        dir.path(),
+        &["tokens", "--target", "figma-variables", "--json"],
+    );
+    let via: Value = serde_json::from_str(&via_tokens).unwrap();
+    assert_eq!(via["data"]["content"], env["data"]["content"]);
+    let (code, out, _) = crunk(
+        dir.path(),
+        &["export", "figma-variables", "--out", "f.json", "--json"],
+    );
+    assert_eq!(code, 0, "{out}");
+    assert!(dir.path().join("f.json").is_file());
 }
 
 // frob:tests crates/crunk/src/export.rs::ExportUss

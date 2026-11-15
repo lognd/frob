@@ -1,4 +1,4 @@
-//! `export css|tailwind|uss|csharp`: print one token export, or write it to `--out`.
+//! `export css|tailwind|uss|csharp|figma-variables`: print one token export, or write it to `--out`.
 //!
 //! A thin verb over [`crunk_tokens::export`]: it renders through the same code path as
 //! `tokens --target` (see `tokens::preview`) and adds only `--out`. `export dtcg` is the
@@ -135,3 +135,17 @@ pub struct ExportCsharp {
     out: Option<PathBuf>,
 }
 export_command!(ExportCsharp, Target::Csharp);
+
+/// Print the Figma variables JSON export, or write it to `--out`.
+#[derive(Debug, Clone, Default, gob_cli::Command)]
+#[command(
+    verb = "export figma-variables",
+    product = "crunk",
+    idempotent = true,
+    dry_run,
+    exits(ok, refused, usage, internal)
+)]
+pub struct ExportFigmaVariables {
+    out: Option<PathBuf>,
+}
+export_command!(ExportFigmaVariables, Target::FigmaVariables);
