@@ -21,9 +21,10 @@
 //! - A spread of a same-file constant (`...base`) and a member access (`palette.brand`) are
 //!   evaluated; Python dropped the spread.
 //! - `[tailwind] config` naming a `.css` file is the v4 entry when `css_entry` is unset (Python
-//!   passed it on as the entry too); the root-relative auto-detection of the entry is unchanged
-//!   (`src/index.css`, `src/main.css`, ...), so an entry in a subdirectory (`web/src/index.css`)
-//!   needs `[tailwind] css_entry`.
+//!   passed it on as the entry too); root-relative candidates
+//!   (`src/index.css`, `src/main.css`, ...) are tried first, then a CSS file below the config's
+//!   directory (or its parents) whose `@config` names the config, so `web/src/index.css` with
+//!   `@config "../tailwind.config.ts"` is found without `[tailwind] css_entry`.
 //! - Collisions with a Tailwind default key are facts of the result with their waivers
 //!   ([`ThemeCollision`]); Python only logged a warning (v1 T-0179: it could not be silenced
 //!   short of renaming every class).
@@ -32,6 +33,7 @@
 // frob:ticket 01M43ARZ3VCNDX20C9BZZCCYHY
 
 mod collisions;
+mod detect;
 mod ingest;
 mod v3;
 mod v4;
