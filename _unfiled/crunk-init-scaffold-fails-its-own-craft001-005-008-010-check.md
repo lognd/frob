@@ -2,12 +2,12 @@
 id = "01M626H3EHCCVMGMZRESJTGTM5"
 title = "crunk init scaffold fails its own CRAFT001/005/008/010 check"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:46Z"
-updated = "2026-11-03T05:56:47Z"
+updated = "2026-11-15T15:32:08Z"
 scope = ["crates/crunk/src/init/**"]
 +++
 
