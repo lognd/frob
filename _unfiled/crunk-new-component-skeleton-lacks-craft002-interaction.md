@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T21:26:47Z"
-updated = "2026-11-15T21:42:12Z"
+updated = "2026-11-15T21:42:25Z"
 scope = ["crates/crunk/src/new/**", "crates/crunk/src/new.rs", "crates/crunk/tests/it/new.rs"]
 
 [[acceptance]]
