@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble packs: deployment node kinds and attrs as a pack"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["A pack declares host/deployment kinds that pass MDL009", "Docs describe enabling the pack"]
+body = "Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 6. deployment gives MDL000 and kind host MDL009. Deliver as a pack (compare existing ~5NR79CM packs epic and ~BSEV8PW compute-shape axis), not grammar."
+at = "2026-11-15T06:21:33Z"
+actor = "lognd"
+rev = 1
