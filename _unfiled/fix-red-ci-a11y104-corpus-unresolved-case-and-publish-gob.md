@@ -2,7 +2,8 @@
 id = "01M7EXZ20VEG1WPQJP5TY499D4"
 title = "Fix red CI: A11Y104 corpus unresolved case and publish gob-frameworks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
