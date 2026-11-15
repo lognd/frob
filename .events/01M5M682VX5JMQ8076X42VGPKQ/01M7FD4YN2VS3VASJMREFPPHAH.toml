@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T10:48:05Z"
+digest = "34b23db7cd3c546ee86c9f1f114dd52ef5d8a456e38b51529dd2d135627f6158"
+exit_code = 0
+head = "fa608ff29338eb993d6206138681bdfc5351c917"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 21b6b997-c535-4578-b743-7bcb4d5f7e9c with nextest profile: default
+    Starting 1 test across 2 binaries (4 tests skipped)
+        PASS [   0.114s] grimble-serve::serve explore_returns_the_node_and_its_neighbours_as_structured_data
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.114s] 1 test run: 1 passed, 4 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-serve -E test(=explore_returns_the_node_and_its_neighbours_as_structured_data)"
+size = 572
+status = "measured"
+test_count = 1
+tests_digest = "cbca1c390934d5f6c4b9eafa95b023ee8174ac16503d572890f2e78eb4e13cfc"
+at = "2026-11-15T10:48:05Z"
+actor = "lognd"
+rev = 1
