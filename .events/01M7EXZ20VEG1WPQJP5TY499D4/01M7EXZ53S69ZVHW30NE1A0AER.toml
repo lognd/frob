@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["A11Y104 corpus has an unresolved case and every_crunk_rule_has_a_corpus passes"]
+new = ["A11Y104 corpus has an unresolved case and every_crunk_rule_has_a_corpus passes", "gob-frameworks is publishable and the publish skip test passes"]
+moved = [1]
+at = "2026-11-15T06:22:59Z"
+actor = "lognd"
+rev = 1
