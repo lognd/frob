@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk CRAFT002: scope state checks to interactive components"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 1
+idempotency_key = "crunkplan-93fa74ab877f"
+labels = ["no-story"]
+acceptance = ["a static component with no states passes CRAFT002; ~YQ8ZG91 related"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M2.
+Evidence: CRAFT002 demands states on non-interactive components
+Remedy: apply only to components declared interactive
+Crates/files: crates/crunk-rules craft
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:23Z"
+actor = "lognd"
+rev = 1
