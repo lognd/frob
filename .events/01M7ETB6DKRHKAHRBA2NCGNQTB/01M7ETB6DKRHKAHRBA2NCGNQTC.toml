@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk: material token kinds (surface recipes, 9-slice frames)"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Research rec 6. Source: /home/logan/projects/frob-research-ui.md (recommendation 6). Decompose before implementing."
+at = "2026-11-15T05:19:39Z"
+actor = "lognd"
+rev = 1
