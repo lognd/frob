@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk serve: host serve_patch with --write and read tools"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+idempotency_key = "crunkplan-dd295a36dbf2"
+labels = ["no-story"]
+acceptance = ["crunk serve lists render, snapshot and explain tools", "patch tool is absent without --write"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L5.
+Evidence: serve patch tool is dead code with no serve verb; also grimble-crunk L3. Related epic ~Z20JD5Q
+Remedy: register crunk serve reusing gob-serve; --write enables patch; expose render, snapshot, explain read tools
+Crates/files: crates/crunk/src/serve_patch.rs, crates/crunk/src
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:27Z"
+actor = "lognd"
+rev = 1
