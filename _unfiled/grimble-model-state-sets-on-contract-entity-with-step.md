@@ -8,8 +8,12 @@ points = 5
 parent = "01M7ET180AEP11G148VAGD0PHX"
 reporter = "lognd"
 created = "2026-11-15T06:21:32Z"
-updated = "2026-11-15T06:21:40Z"
+updated = "2026-11-15T06:21:53Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXWG336G71CXW56E0NX9NP"
 
 [[acceptance]]
 text = "state set parses; a step may reference a transition"
