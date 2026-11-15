@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["init writes no Inter or stock blue token (test)", "init scaffolds from design/brief.toml"]
+moved = []
+at = "2026-11-15T06:21:24Z"
+actor = "lognd"
+rev = 1
