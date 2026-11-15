@@ -4,9 +4,10 @@ title = "crunk: scene dialect and token types carry visual identity (gradients, 
 type = "task"
 category = "todo"
 priority = "medium"
+points = 13
 reporter = "lognd"
 created = "2026-11-15T05:24:05Z"
-updated = "2026-11-15T05:24:05Z"
+updated = "2026-11-15T06:19:53Z"
 labels = ["no-story"]
 +++
 
