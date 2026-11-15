@@ -7,8 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T06:20:42Z"
-updated = "2026-11-15T06:20:42Z"
+updated = "2026-11-15T06:21:53Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXTJ88WR479046W9D3NAYY"
 
 [[acceptance]]
 text = "A snapshot test runs check --text on the CONF 18.2 model and fails on drift"
