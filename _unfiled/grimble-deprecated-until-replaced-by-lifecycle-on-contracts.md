@@ -4,9 +4,10 @@ title = "grimble: deprecated/until/replaced_by lifecycle on contracts"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:44Z"
-updated = "2026-11-15T05:23:44Z"
+updated = "2026-11-15T09:24:44Z"
 labels = ["no-story"]
 +++
 
