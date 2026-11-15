@@ -2,12 +2,12 @@
 id = "01M5XPZJAAX4ZKHGSQGAHK30R3"
 title = "PATH001: distinguish path-as-data fixtures, make [path] allowed configurable"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-27T03:38:06Z"
-updated = "2026-11-03T05:56:41Z"
+updated = "2026-11-15T22:27:07Z"
 scope = ["crates/grimble-lints/**"]
 +++
 
