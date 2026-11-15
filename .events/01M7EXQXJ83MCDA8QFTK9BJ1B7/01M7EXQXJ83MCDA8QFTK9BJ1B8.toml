@@ -1,0 +1,10 @@
+kind = "create"
+title = "record agent vs human on every exception and refuse identical-reason bulk acks"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M12. Evidence: exceptions carry no actor kind. Remedy: store actor kind; refuse N acks with one reason. Related ~R8NFWKA. Files: crates/frob-obligations/src/exc.rs, frob-ack."
+at = "2026-11-15T06:19:02Z"
+actor = "lognd"
+rev = 1
