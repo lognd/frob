@@ -100,6 +100,11 @@ fn dry_run_and_draft_screens_write_nothing() {
         std::fs::read_to_string(dir.path().join(SCREEN_PATH)).unwrap(),
         draft
     );
+}
+
+// frob:tests crates/crunk/src/stamp.rs::Stamp.run
+#[test]
+fn dry_run_writes_nothing() {
     let dir = project(SCREEN);
     let (code, _, _) = crunk(dir.path(), &["stamp", "--dry-run"]);
     assert_eq!(code, 0);
