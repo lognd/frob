@@ -4,9 +4,10 @@ title = "crunk: human-review lock covers the scene; agents cannot record the ack
 type = "task"
 category = "todo"
 priority = "medium"
+points = 8
 reporter = "lognd"
 created = "2026-11-15T05:24:05Z"
-updated = "2026-11-15T05:24:05Z"
+updated = "2026-11-15T06:19:50Z"
 labels = ["no-story"]
 +++
 
