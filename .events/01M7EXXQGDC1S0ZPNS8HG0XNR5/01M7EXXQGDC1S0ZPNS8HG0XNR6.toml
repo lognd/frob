@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-model: decision entity with decides, chose over, because, verified_by, supersedes and DEC rules (G15)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+acceptance = ["decision parses and fmt round-trips", "Stale and unconfirmed DEC rules fire in fixtures"]
+body = "Research: /home/logan/projects/frob-research-lifecycle.md rec 10, closes open question 24. DEC rules for stale and unconfirmed."
+at = "2026-11-15T06:22:12Z"
+actor = "lognd"
+rev = 1
