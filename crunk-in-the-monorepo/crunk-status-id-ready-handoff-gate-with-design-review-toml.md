@@ -2,13 +2,13 @@
 id = "01M5XCZ18GTA7MKKF4Z0MD95W3"
 title = "crunk status ID ready: handoff gate with design/review/*.toml anchored comments and changed marking"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-10-28T12:55:39Z"
+updated = "2026-11-15T12:51:58Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/status.rs, crates/crunk-spec/src/handoff.rs, crates/crunk-rules/src/handoff.rs, crates/crunk/tests/status_ready.rs"]
 
