@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T17:00:53Z"
-updated = "2026-11-15T23:36:08Z"
+updated = "2026-11-15T23:36:22Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 
