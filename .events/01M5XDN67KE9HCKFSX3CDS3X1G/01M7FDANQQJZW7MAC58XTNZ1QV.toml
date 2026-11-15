@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-15T10:51:24Z"
+digest = "036c92fc0dafe42845426624daec83c5ffcad3de9c06ace2118282939e3b8b46"
+exit_code = 0
+head = "fa608ff29338eb993d6206138681bdfc5351c917"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d106428c-5b7f-410b-a301-1c7925721694 with nextest profile: default
+    Starting 1 test across 2 binaries (21 tests skipped)
+        PASS [   0.008s] crunk-scene::scene unsupported_selector_is_flagged_and_matches_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.009s] 1 test run: 1 passed, 21 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-scene -E test(=unsupported_selector_is_flagged_and_matches_nothing)"
+size = 561
+status = "measured"
+test_count = 1
+tests_digest = "3a5b7672b9fa57cbc2275498a728da925e59ea13eb11b9ab2262d90747d09d62"
+at = "2026-11-15T10:51:24Z"
+actor = "lognd"
+rev = 1
