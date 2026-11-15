@@ -1,0 +1,10 @@
+kind = "create"
+title = "frob land: run tests, rustdoc and Windows clippy on the merged tree, or document the gap"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Repo audit H2; source of CI-only regressions. See /home/logan/projects/frob-audit2-repo.md (H2) for evidence and remedy."
+at = "2026-11-15T05:23:27Z"
+actor = "lognd"
+rev = 1
