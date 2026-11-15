@@ -60,9 +60,14 @@
 //!
 //! [`typing::scan`] finds `TYPING001` sites: a tsconfig with `strict` off, a csproj without
 //! `<Nullable>enable</Nullable>`, or a lax mypy or pyright table, each naming the key to set.
+//!
+//! [`cast::scan`] finds `TYPING004` sites: `res.json() as User` and `JSON.parse(x) as T` casts of
+//! network or file data to a declared type with no validator call, in TypeScript and TSX.
 
 // frob:ticket 01M4D956T20WN96P7A3K4B9CKF
+// frob:ticket 01M4D95Q9WWPDZH86CMBMAZEDQ
 
+pub mod cast;
 pub mod effect;
 pub mod err;
 pub mod err_pass;
@@ -81,6 +86,7 @@ pub mod testq;
 pub mod time;
 pub mod time_pass;
 pub mod typing;
+pub mod typing_pass;
 pub mod unity;
 pub mod unity_common;
 pub mod unity_hot;

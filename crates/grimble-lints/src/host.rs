@@ -1,4 +1,4 @@
-//! The host traits the PATH, TIME, PAIR, ERR, RES and UNITY `#[rule]` declarations evaluate against.
+//! The host traits the PATH, TIME, PAIR, ERR, RES, TYPING and UNITY `#[rule]` declarations evaluate against.
 
 // frob:ticket 01M59A2N1QCS2E5GPGD09V34R1
 // frob:ticket 01M44R5W4WJEXFM000S8KVQQN5
@@ -6,6 +6,7 @@
 // frob:ticket 01M5HPSP14N3NCX5TNA9XDR1GY
 // frob:ticket 01M4MBJ35HGM0P2MH4B7YMB3EQ
 // frob:ticket 01M4MGE2XKGBNJEV1AECPBVHQF
+// frob:ticket 01M4D95Q9WWPDZH86CMBMAZEDQ
 
 /// What a PATH rule may ask of its product: how many files the scan examined.
 ///
@@ -54,4 +55,12 @@ pub trait ResHost {
 pub trait UnityHost {
     /// Files the UNITY pass examined for rule `id` on this run (0 when it examined none).
     fn unity_subjects_of(&self, id: &str) -> usize;
+}
+
+/// What a TYPING rule may ask of its product: how many files the scan examined.
+///
+/// `TYPING004` is evaluated in one pass over the walk, like the RES rules.
+pub trait TypingHost {
+    /// Files the TYPING pass examined for rule `id` on this run (0 when it examined none).
+    fn typing_subjects_of(&self, id: &str) -> usize;
 }

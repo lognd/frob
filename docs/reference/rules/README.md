@@ -679,6 +679,12 @@
 | [TYPE002](TYPE002.md) | font-family-off-stack | error | manual | P+ | true | Font families must come from the declared stacks. Each block is one source file in a project whose |
 | [TYPE003](TYPE003.md) | font-weight-off-scale | error | manual | P+ | true | Font weights must be declared weights. Each block is one source file in a project whose `crunk.toml` |
 
+## TYPING
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [TYPING004](TYPING004.md) | unvalidated-boundary-cast | error | manual | P- | true | Network or file data cast to a declared type without validation. |
+
 ## UNITY
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

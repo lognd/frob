@@ -1892,13 +1892,13 @@ acked_at = "2026-11-06T17:31:10.870352364Z"
 [[symbol]]
 identity = "crates/grimble-lints/src/rules/mod.rs::bind"
 symref = "crates/grimble-lints/src/rules/mod.rs::bind"
-sig = "bea48a9e0e7207811c031ef0dbde92bdafb6c8c128a29e4de42a746862738d94"
-body = "beefa56c34079d1af7f28fa2eb0a8077deab03d7c38761506ae1b501dcf98477"
+sig = "7ef54b082e88558898a4985245a094ffa8684908e41f3d8484cf48888bf37b74"
+body = "709e9fac83d1591fed18ed3b6a371b5e29d9d83ff00af8e6c3180e1dd6420f91"
 doc = "5009ce70476fde9e8ed235a33ed671fa3f52f1ac4b9320dc0f5e133f4c8af22b"
 attr = "5c089e455a1004c5d29ce299a4abdedda8a31b118af42ea784926cfbc1b4a954"
-contract = "478543eab76707c67f203511ad132192fa2c41eda9f87eb8ac0b3a5353df650b"
+contract = "fc4fb6f20974c131fa50c5077d0d82e0e20acd5574132ed5847b2784ba154f66"
 acked_by = "lognd <logan@logandapp.com>"
-acked_at = "2026-11-06T17:31:10.870352364Z"
+acked_at = "2026-11-14T23:23:06.547818009Z"
 
 [[symbol]]
 identity = "crates/grimble-lints/src/time/flow.rs::Flow.visit_time"

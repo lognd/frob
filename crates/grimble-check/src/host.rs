@@ -5,11 +5,12 @@
 // frob:ticket 01M5HDAS62G7H4YY9FVG59GJ01
 // frob:ticket 01M5HPSP14N3NCX5TNA9XDR1GY
 // frob:ticket 01M4MGE2XKGBNJEV1AECPBVHQF
+// frob:ticket 01M4D95Q9WWPDZH86CMBMAZEDQ
 use grimble_arch::host::ArchHost;
 use grimble_bind::host::BindHost;
 use grimble_capabilities::pack_rules::PackHost;
 use grimble_ci::host::CiHost;
-use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, UnityHost};
+use grimble_lints::host::{ErrHost, PairHost, PathHost, ResHost, TimeHost, TypingHost, UnityHost};
 use grimble_model::host::MdlHost;
 use grimble_vet::host::VetHost;
 
@@ -49,6 +50,7 @@ pub trait GrimbleHost:
     + PairHost
     + ErrHost
     + ResHost
+    + TypingHost
     + UnityHost
     + CohHost
     + LogHost
@@ -68,6 +70,8 @@ impl<
         + PairHost
         + ErrHost
         + ResHost
+        + TypingHost
+        + TypingHost
         + UnityHost
         + CohHost
         + LogHost
@@ -121,6 +125,12 @@ impl ErrHost for GrimbleInputs {
 impl ResHost for GrimbleInputs {
     fn res_subjects_of(&self, id: &str) -> usize {
         self.res.subjects.get(id).copied().unwrap_or(0)
+    }
+}
+
+impl TypingHost for GrimbleInputs {
+    fn typing_subjects_of(&self, id: &str) -> usize {
+        self.typing.subjects.get(id).copied().unwrap_or(0)
     }
 }
 

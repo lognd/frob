@@ -65,6 +65,8 @@ pub struct GrimbleInputs {
     pub err: PathReport,
     /// The RES001 verdicts (grimble-lints), cached like the ERR report.
     pub res: PathReport,
+    /// The TYPING004 verdicts (grimble-lints), recomputed each run.
+    pub typing: PathReport,
     /// The UNITY201 and UNITY202 verdicts (grimble-lints), cached like the PAIR report.
     pub unity: PathReport,
     /// The COH report (COH002 and COH003 verdicts under the `[coh]` table and the model's layers).
@@ -205,14 +207,14 @@ fn path_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
         .filter(|m| {
-            !["TIME", "PAIR", "ERR", "RES", "UNITY"]
+            !["TIME", "PAIR", "ERR", "RES", "UNITY", "TYPING"]
                 .iter()
                 .any(|f| m.id.starts_with(f))
         })
         .collect()
 }
 
-/// Every rule `grimble-lints` declares (the PATH, TIME, PAIR, ERR, RES and UNITY families).
+/// Every rule `grimble-lints` declares (the PATH, TIME, PAIR, ERR, RES, UNITY and TYPING families).
 fn lint_metas() -> Vec<&'static RuleMeta> {
     static CELL: OnceLock<Vec<&'static RuleMeta>> = OnceLock::new();
     legacy_metas(&CELL, grimble_lints::rules::METAS)
@@ -257,6 +259,14 @@ fn res_metas() -> Vec<&'static RuleMeta> {
     lint_metas()
         .into_iter()
         .filter(|m| m.id.starts_with("RES"))
+        .collect()
+}
+
+/// The unvalidated-boundary-cast rules (the TYPING family `grimble-lints` declares).
+fn typing_metas() -> Vec<&'static RuleMeta> {
+    lint_metas()
+        .into_iter()
+        .filter(|m| m.id.starts_with("TYPING"))
         .collect()
 }
 
@@ -371,6 +381,7 @@ fn inapplicable(_: &Grimble, snap: &Snapshot<Grimble>, def: &'static RuleDef) ->
         .or_else(|| snap.inputs.pair.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.err.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.res.not_applicable.get(def.id).cloned())
+        .or_else(|| snap.inputs.typing.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.unity.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.coh.not_applicable.get(def.id).cloned())
         .or_else(|| snap.inputs.log.not_applicable.get(def.id).cloned())
@@ -590,6 +601,30 @@ fn res_report(
         })
         .collect();
     grimble_lints::res_pass::analyze(&files)
+}
+
+/// Run TYPING004 over the TypeScript files of the walk (uncached).
+// frob:ticket 01M4D95Q9WWPDZH86CMBMAZEDQ
+fn typing_report(
+    entries: &[gob_walk::FileEntry],
+    read: &dyn Fn(&str) -> Option<String>,
+) -> PathReport {
+    let texts: Vec<(&str, gob_languages::Language, String)> = entries
+        .iter()
+        .filter_map(|e| {
+            let language = gob_languages::Language::detect(&e.path)?;
+            read(&e.path).map(|text| (e.path.as_str(), language, text))
+        })
+        .collect();
+    let files: Vec<PathFile<'_>> = texts
+        .iter()
+        .map(|(path, language, text)| PathFile {
+            path,
+            language: *language,
+            text,
+        })
+        .collect();
+    grimble_lints::typing_pass::analyze(&files)
 }
 
 /// Run UNITY201, UNITY202, UNITY301 and UNITY302 over the walk (uncached).
@@ -1232,6 +1267,12 @@ impl Product for Grimble {
         let testq = cached_testq_report(cx, &digest, table.large_lines, testq_opts);
         cx.timing.push("testq", started.elapsed(), false);
         let started = std::time::Instant::now();
+        let typing = cx.core.with_content(|reader| {
+            let reader = std::cell::RefCell::new(reader);
+            typing_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
+        });
+        cx.timing.push("typing", started.elapsed(), false);
+        let started = std::time::Instant::now();
         let ci = cx.core.with_content(|reader| {
             let reader = std::cell::RefCell::new(reader);
             ci_report(&cx.core.entries, &|p| reader.borrow_mut().read_text(p).ok())
@@ -1266,6 +1307,7 @@ impl Product for Grimble {
                 .chain(&pair.not_applicable)
                 .chain(&err.not_applicable)
                 .chain(&res.not_applicable)
+                .chain(&typing.not_applicable)
                 .chain(&unity.not_applicable)
                 .chain(&coh.not_applicable)
                 .chain(&log.not_applicable)
@@ -1289,6 +1331,7 @@ impl Product for Grimble {
                 pair,
                 err,
                 res,
+                typing,
                 unity,
                 coh,
                 log,
@@ -1432,6 +1475,7 @@ impl Product for Grimble {
             report_group("repo:pair", pair_metas(), |i| &i.pair),
             report_group("repo:err", err_metas(), |i| &i.err),
             report_group("repo:res", res_metas(), |i| &i.res),
+            report_group("repo:typing", typing_metas(), |i| &i.typing),
             report_group("repo:unity", unity_metas(), |i| &i.unity),
             report_group("repo:coh", coh_metas(), |i| &i.coh),
             report_group("repo:log", log_metas(), |i| &i.log),
@@ -1450,6 +1494,7 @@ impl Product for Grimble {
             && !snap.inputs.pair.not_applicable.contains_key(meta.id)
             && !snap.inputs.err.not_applicable.contains_key(meta.id)
             && !snap.inputs.res.not_applicable.contains_key(meta.id)
+            && !snap.inputs.typing.not_applicable.contains_key(meta.id)
             && !snap.inputs.unity.not_applicable.contains_key(meta.id)
             && !snap.inputs.coh.not_applicable.contains_key(meta.id)
             && !snap.inputs.log.not_applicable.contains_key(meta.id)
