@@ -2,13 +2,13 @@
 id = "01M5EF4AEM3BG06QWEX6081JS9"
 title = "crunk: stamp screen content_hash and include resolved token values"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-11-12T05:14:30Z"
+updated = "2026-11-15T08:31:50Z"
 labels = ["no-story"]
 scope = ["crates/crunk-cli/**"]
 
