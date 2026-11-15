@@ -4,9 +4,10 @@ title = "crunk: cross-project fingerprint check, per-token use/avoid notes, film
 type = "task"
 category = "todo"
 priority = "medium"
+points = 13
 reporter = "lognd"
 created = "2026-11-15T05:19:40Z"
-updated = "2026-11-15T05:19:40Z"
+updated = "2026-11-15T06:27:20Z"
 labels = ["no-story"]
 +++
 
