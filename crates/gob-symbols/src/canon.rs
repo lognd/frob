@@ -10,8 +10,9 @@
 //! nodes are read, so strings and comments never match. Scoping is lexical and per file; a Rust type
 //! alias, an inline `mod` and the body of a same-file `macro_rules!` macro resolve (a path rooted
 //! at `crate` / `self` / `super` is kept for the consumer to follow across files; see
-//! [`rust_module`] and [`rust_includes`]); a Rust glob
-//! import and a computed attribute name are not resolved (a literal `getattr` and
+//! [`rust_module`] and [`rust_includes`]); a name no
+//! Rust scope binds while a glob import (`use m::*`) is in force is emitted bare with the
+//! candidate modules in [`PathUse::wildcards`] (ticket AG8HHEC); a computed attribute name are not resolved (a literal `getattr` and
 //! `importlib.import_module` argument is, flagged `dynamic`). A Python name that no scope binds
 //! while `from m import *` is in force (ticket G68NRS1) is emitted bare, with the candidate
 //! modules in [`PathUse::wildcards`] for the consumer to resolve; [`python_all`] reads a module's
@@ -21,6 +22,7 @@
 // frob:ticket 01M6422Z8JGE789ZHW4G68NRS1
 // frob:ticket 01M64230AR8DHJZY9QQS3EC85S
 // frob:ticket 01M64230DV9KGPE0JH2D37NDVN
+// frob:ticket 01M61QA7BRC843EJ1QNAG8HHEC
 
 use std::collections::BTreeMap;
 
@@ -352,7 +354,9 @@ mod rust {
             macros: macro_defs(src, root),
             expanding: Vec::new(),
             out: Vec::new(),
+            globs: Vec::new(),
         };
+        cx.globs = cx.file_globs(root);
         cx.visit(root);
         cx.out
     }
@@ -366,6 +370,9 @@ mod rust {
         /// Macros being expanded, outermost first: a recursive macro is not followed again.
         expanding: Vec<String>,
         out: Vec<PathUse>,
+        /// Modules of every glob import in the file, canonical, for names no scope binds
+        /// (ticket 01M61QA7BRC843EJ1QNAG8HHEC).
+        globs: Vec<String>,
     }
 
     /// Every `macro_rules!` definition in the tree, by macro name.
@@ -867,6 +874,46 @@ mod rust {
             }
         }
 
+        /// The canonical module of every glob import in the file (`use std::fs::*` -> `std::fs`).
+        fn file_globs(&mut self, root: Node<'_>) -> Vec<String> {
+            let mut found = Vec::new();
+            let mut stack = vec![root];
+            while let Some(n) = stack.pop() {
+                if n.kind() == "use_declaration" {
+                    if let Some(arg) = n.child_by_field_name("argument") {
+                        use_globs(self.src, arg, "", &mut found);
+                    }
+                    continue;
+                }
+                let mut c = n.walk();
+                stack.extend(n.children(&mut c));
+            }
+            let mut out = Vec::new();
+            for g in found.into_iter().filter(|g| !g.is_empty()) {
+                if let Some((p, _)) = self.canonical(&g, root, 0)
+                    && !out.contains(&p)
+                {
+                    out.push(p);
+                }
+            }
+            out.sort();
+            out
+        }
+
+        /// True when the first segment of `spelled` is bound by no scope, item or explicit root,
+        /// so only a glob import can supply it.
+        fn unbound_root(&mut self, spelled: &str, at: Node<'_>) -> bool {
+            let first = spelled
+                .trim_start_matches("::")
+                .split("::")
+                .next()
+                .unwrap_or("");
+            !spelled.starts_with("::")
+                && !matches!(first, "crate" | "self" | "super" | "Self")
+                && !EXTERNAL_ROOTS.contains(&first)
+                && self.lookup(first, at, 0).is_none()
+        }
+
         fn items_of(&mut self, container: Node<'_>) -> &BTreeMap<String, Binding> {
             let src = self.src;
             self.items
@@ -1148,6 +1195,22 @@ mod rust {
             let root = path.split("::").next().unwrap_or("");
             let external_root = path.contains("::") && EXTERNAL_ROOTS.contains(&root);
             let local_rooted = matches!(root, "crate" | "self" | "super");
+            if !aliased && !self.globs.is_empty() && self.unbound_root(&spelled, e) {
+                tracing::debug!(%spelled, line = line(e), "canon: name from a glob import");
+                self.out.push(PathUse {
+                    offset: e.start_byte(),
+                    line: line(e),
+                    spelled,
+                    path,
+                    call,
+                    dynamic: false,
+                    external_root: false,
+                    computed: false,
+                    wildcards: self.globs.clone(),
+                    maybe: false,
+                });
+                return;
+            }
             if !aliased && !external_root && !local_rooted {
                 return;
             }
@@ -2128,6 +2191,24 @@ mod tests {
             uses.iter()
                 .any(|u| u.path == "libc" && u.spelled == "libc::*" && u.computed)
         );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_unbound_name_carries_its_glob_modules() {
+        let src = "use std::fs::*;\nfn f() { remove_file(\"x\"); }\n";
+        let u = path_uses("rust", src);
+        let w = u.iter().find(|u| u.spelled == "remove_file").expect("use");
+        assert_eq!(w.wildcards, vec!["std::fs".to_owned()]);
+        assert!(w.call && !w.computed);
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_glob_ignores_bound_and_rooted_names() {
+        let src = "use std::fs::*;\nfn f(r: u8) { r(1); std::fs::read(\"x\"); fn g() {} g(); }\n";
+        let u = path_uses("rust", src);
+        assert!(u.iter().all(|u| u.wildcards.is_empty()), "{u:?}");
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
