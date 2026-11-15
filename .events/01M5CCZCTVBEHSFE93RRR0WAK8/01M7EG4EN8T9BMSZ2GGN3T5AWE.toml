@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "idle past pm.max_age_days; drain"
+at = "2026-11-15T02:21:13Z"
+actor = "lognd"
+rev = 1
