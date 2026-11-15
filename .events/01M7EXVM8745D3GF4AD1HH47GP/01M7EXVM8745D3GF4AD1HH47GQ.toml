@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble-lints: collapse PATH002/PATH003/TIME001/TIME002 Unresolved to one per rule per language"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+acceptance = ["A repo of N ts files yields one Unresolved per rule"]
+body = "Audit: /home/logan/projects/frob-audit2-grimble.md L10. Four Unresolved lines per .ts/.tsx file. Crates: grimble-lints path.rs, time_pass.rs."
+at = "2026-11-15T06:21:04Z"
+actor = "lognd"
+rev = 1
