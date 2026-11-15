@@ -4,9 +4,10 @@ title = "frob stats --hotspots: git churn x finding density per file"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T06:20:53Z"
-updated = "2026-11-15T06:20:53Z"
+updated = "2026-11-15T09:24:44Z"
 idempotency_key = "static-research-k13"
 labels = ["no-story"]
 +++
