@@ -1,0 +1,12 @@
+kind = "create"
+title = "frob plan --from-design --waves: contract ticket, walking skeleton, ordered waves (G19,G20)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 5
+labels = ["no-story"]
+acceptance = ["plan emits a contract ticket before skeleton and waves", "Waves have disjoint owns", "Order follows sorry count"]
+body = "Research: /home/logan/projects/frob-research-lifecycle.md rec 5. Contract ticket first, then grimble skeleton, then waves with disjoint node owns ordered by sorry/unknown count. Split follow-up: grimble status --hill."
+at = "2026-11-15T06:22:12Z"
+actor = "lognd"
+rev = 1
