@@ -4,9 +4,10 @@ title = "crunk: N candidate directions picked by a seeded roll outside the model
 type = "task"
 category = "todo"
 priority = "medium"
+points = 5
 reporter = "lognd"
 created = "2026-11-15T05:19:39Z"
-updated = "2026-11-15T05:19:39Z"
+updated = "2026-11-15T06:21:37Z"
 labels = ["no-story"]
 +++
 
