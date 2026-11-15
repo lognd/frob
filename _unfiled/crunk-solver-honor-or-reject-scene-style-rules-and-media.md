@@ -2,7 +2,8 @@
 id = "01M7ETK7YXDYFF9HM71TE2A1YR"
 title = "crunk solver: honor or reject scene <style> rules and @media blocks"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
