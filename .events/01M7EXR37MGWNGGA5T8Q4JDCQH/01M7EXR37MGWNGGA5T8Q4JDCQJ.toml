@@ -1,0 +1,10 @@
+kind = "create"
+title = "docs: refresh architecture.md section 1.1 prose"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit2-repo.md L3. Evidence: docs/design/shared/architecture.md:36-51,904 stale. Files: that doc."
+at = "2026-11-15T06:19:08Z"
+actor = "lognd"
+rev = 1
