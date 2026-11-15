@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Adding a verb file selects the registry test (test)"]
+moved = []
+at = "2026-11-15T06:10:54Z"
+actor = "lognd"
+rev = 1
