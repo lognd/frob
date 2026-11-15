@@ -119,10 +119,7 @@ fn edit_content_reports_content_findings_for_the_touched_key_only() {
     let data = edit_ok(dir.path(), CONTENT_FILE, "content.patch.json");
     assert_eq!(data["touched"], serde_json::json!(["home.title"]));
     let findings = data["findings"].as_array().unwrap();
-    assert!(
-        findings.iter().any(|f| f["rule"] == "CONTENT002"),
-        "{data}"
-    );
+    assert!(findings.iter().any(|f| f["rule"] == "CONTENT002"), "{data}");
     for f in findings {
         let msg = f["message"].as_str().unwrap();
         assert!(msg.contains("home.title"), "{msg}");
