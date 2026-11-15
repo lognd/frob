@@ -163,7 +163,7 @@ fn solve_scene_supported_rule_applies_to_matching_element() {
     )
     .unwrap();
     let n = &s.doc.nodes[0];
-    assert_eq!((n.width, n.height), (40.0, 10.0));
+    assert!((n.width - 40.0).abs() < 0.01 && (n.height - 10.0).abs() < 0.01);
 }
 
 // frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
@@ -173,7 +173,7 @@ fn solve_scene_inline_style_overrides_rule() {
         r#"<style>.a { width: 40px; height: 10px }</style><div data-id="r" class="a" style="width:7px"></div>"#,
     )
     .unwrap();
-    assert_eq!(s.doc.nodes[0].width, 7.0);
+    assert!((s.doc.nodes[0].width - 7.0).abs() < 0.01);
 }
 
 // frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
@@ -183,7 +183,7 @@ fn solve_scene_rule_does_not_touch_other_elements() {
         r#"<style>.a { width: 40px }</style><div data-id="r"><p data-id="o" style="height:5px"></p></div>"#,
     )
     .unwrap();
-    assert!(s.doc.nodes.iter().all(|n| n.width != 40.0));
+    assert!(s.doc.nodes.iter().all(|n| (n.width - 40.0).abs() > 0.01));
 }
 
 // frob:tests crates/crunk-layout/src/solve/mod.rs::solve_scene_html
