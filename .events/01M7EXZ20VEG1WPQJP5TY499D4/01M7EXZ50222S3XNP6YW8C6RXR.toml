@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A11Y104 corpus has an unresolved case and every_crunk_rule_has_a_corpus passes"]
+moved = []
+at = "2026-11-15T06:22:59Z"
+actor = "lognd"
+rev = 1
