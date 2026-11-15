@@ -7,7 +7,7 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-10-08T13:40:25Z"
-updated = "2026-11-15T04:26:51Z"
+updated = "2026-11-15T04:28:02Z"
 labels = ["area:crunk"]
 scope = ["docs/crunk/README.md", "docs/guides/crunk.md"]
 
