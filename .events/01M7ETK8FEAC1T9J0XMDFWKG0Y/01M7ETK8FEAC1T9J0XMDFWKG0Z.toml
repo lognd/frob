@@ -1,0 +1,10 @@
+kind = "create"
+title = "crunk exports: carry composite tokens (shadow, typography) to all targets; flag var() to them"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Crunk audit2 H3. See /home/logan/projects/frob-audit2-crunk.md for evidence and remedy; verify against HEAD first (audit binary was 10 commits stale)."
+at = "2026-11-15T05:24:04Z"
+actor = "lognd"
+rev = 1
