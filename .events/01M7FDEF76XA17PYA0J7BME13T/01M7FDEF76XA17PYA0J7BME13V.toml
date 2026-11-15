@@ -1,0 +1,9 @@
+kind = "create"
+title = "crunk-layout: consume SceneDoc::rules and drop StylesheetNotApplied for supported selectors"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+at = "2026-11-15T10:53:30Z"
+actor = "lognd"
+rev = 1
