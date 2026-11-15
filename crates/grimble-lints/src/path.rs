@@ -76,6 +76,19 @@ pub struct Options {
     pub allowed: Vec<String>,
 }
 
+impl Options {
+    /// The defaults plus the configured `[path] allowed` literals.
+    pub fn with_allowed(extra: impl IntoIterator<Item = String>) -> Self {
+        let mut options = Self::default();
+        for a in extra {
+            if !options.allowed.contains(&a) {
+                options.allowed.push(a);
+            }
+        }
+        options
+    }
+}
+
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -340,5 +353,32 @@ mod tests {
         )
         .expect("parses");
         assert!(r.sites.is_empty());
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::Options.with_allowed
+    #[test]
+    fn configured_allowed_literal_is_quiet() {
+        let src = "fn f() { let a = \"/home/ci/cache\"; }\n";
+        let loud = scan(Language::Rust, src, &Options::default()).expect("parses");
+        assert_eq!(loud.sites.len(), 1);
+        let opts = Options::with_allowed([format!("{}home/ci/cache", '/')]);
+        assert!(opts.allowed.contains(&"/dev/null".to_owned()));
+        let quiet = scan(Language::Rust, src, &opts).expect("parses");
+        assert!(quiet.sites.is_empty());
+    }
+
+    // frob:tests crates/grimble-lints/src/path.rs::scan
+    #[test]
+    fn path_as_data_strings_are_not_host_paths() {
+        let cases = [
+            "fn f() { let a = r\"a:\\n  b: [1\\n\"; }\n",
+            "fn f() { let a = \"/home/u/a\\\n b\"; }\n",
+            "fn f() { let a = \"/tmp/.*\\\\.log$\"; }\n",
+            "fn f() { let a = \"^/home/(u|v)/a\"; }\n",
+        ];
+        for src in cases {
+            let r = scan(Language::Rust, src, &Options::default()).expect("parses");
+            assert!(r.sites.is_empty(), "{src}");
+        }
     }
 }
