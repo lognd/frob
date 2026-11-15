@@ -1,0 +1,18 @@
++++
+id = "01M7EXWGBSCZVX1GTJYFJDDGRC"
+title = "grimble-model: bound claims over a scenario path sum declared flow/step quantities"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+reporter = "lognd"
+created = "2026-11-15T06:21:32Z"
+updated = "2026-11-15T06:21:32Z"
+labels = ["no-story"]
+
+[[acceptance]]
+text = "A path-sum bound is PROVED or REFUTED from declared step quantities"
+bound = false
++++
+
+Child of H5 (~AGD0PHX), /home/logan/projects/frob-audit2-grimble.md H5 lifecycle coverage. Evidence: requirement/state/field/deployment/risk/glossary all give MDL000, kind host MDL009. Piece 4. Builds on the bound-claim ticket XRZXC2Z. Sum declared quantities along a scenario path.
