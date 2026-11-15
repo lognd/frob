@@ -8,9 +8,9 @@ points = 3
 parent = "01M5CVZND2H3YDDB67WZ7ANRQY"
 reporter = "lognd"
 created = "2026-10-21T05:32:16Z"
-updated = "2026-11-15T08:31:50Z"
+updated = "2026-11-15T08:34:03Z"
 labels = ["no-story"]
-scope = ["crates/crunk-cli/**"]
+scope = ["crates/crunk-cli/**", "crates/crunk/**"]
 
 [[acceptance]]
 text = "Given a screen file, when stamped, then STATE007 is clean until its content changes"
