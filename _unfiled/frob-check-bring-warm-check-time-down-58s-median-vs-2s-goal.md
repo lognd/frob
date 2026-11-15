@@ -4,9 +4,10 @@ title = "frob check: bring warm check time down (58s median vs 2s goal); build r
 type = "task"
 category = "todo"
 priority = "medium"
+points = 2
 reporter = "lognd"
 created = "2026-11-15T05:23:27Z"
-updated = "2026-11-15T05:23:27Z"
+updated = "2026-11-15T09:24:44Z"
 labels = ["no-story"]
 +++
 
