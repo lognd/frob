@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk render: one screen without a scene must not abort every cell"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-2f1ac565aaa5"
+labels = ["no-story"]
+acceptance = ["render of a project with one scene-less screen renders the rest"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding L4.
+Evidence: render aborts all cells when one screen lacks a scene
+Remedy: skip with a per-cell Unresolved
+Crates/files: crates/crunk/src/render.rs
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:27Z"
+actor = "lognd"
+rev = 1
