@@ -1,0 +1,10 @@
+kind = "create"
+title = "land CI-override note is idempotent"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-core.md L2. Evidence: crates/frob-land/src/land.rs:1774-1804 appends a duplicate note on every retry. Remedy: skip if an identical note exists. Files: crates/frob-land/src/land.rs."
+at = "2026-11-15T06:10:23Z"
+actor = "lognd"
+rev = 1
