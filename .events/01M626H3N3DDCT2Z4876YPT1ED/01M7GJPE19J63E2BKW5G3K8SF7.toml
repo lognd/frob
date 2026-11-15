@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["CRAFT008, HUMAN001 and HUMAN002 are Error severity and their rule pages no longer say Advisory"]
+moved = []
+at = "2026-11-15T21:44:27Z"
+actor = "lognd"
+rev = 1
