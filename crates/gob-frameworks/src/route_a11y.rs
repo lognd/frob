@@ -143,40 +143,40 @@ fn judge(repo: &Repo<'_>, route: &Route) -> Option<Verdict> {
 ///
 /// One entry per route, sorted; handler-only routes (API endpoints) are never judged.
 pub fn route_gaps(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteGap> {
-    let mut gaps: Vec<RouteGap> = routes
-        .iter()
-        .filter_map(|r| match judge(repo, r)? {
-            Verdict::Gap(g) => Some(g),
-            _ => None,
-        })
-        .collect();
-    gaps.sort();
-    gaps.dedup();
-    debug!(
-        routes = routes.len(),
-        gaps = gaps.len(),
-        "route a11y gaps found"
-    );
-    gaps
+    collect(repo, routes, "gaps", |v| match v {
+        Verdict::Gap(g) => Some(g),
+        _ => None,
+    })
 }
 
 /// The page routes of `routes` none of whose component or layout sources could be read.
 ///
 /// One entry per route, sorted; the rule cannot decide these, so it reports them Unresolved.
 pub fn route_unjudged(repo: &Repo<'_>, routes: &[Route]) -> Vec<RouteUnjudged> {
-    let mut out: Vec<RouteUnjudged> = routes
+    collect(repo, routes, "unjudged", |v| match v {
+        Verdict::Unjudged(u) => Some(u),
+        _ => None,
+    })
+}
+
+/// Judge every route, keep the verdicts `pick` selects, and return them sorted and de-duplicated.
+fn collect<T: Ord>(
+    repo: &Repo<'_>,
+    routes: &[Route],
+    what: &str,
+    pick: impl Fn(Verdict) -> Option<T>,
+) -> Vec<T> {
+    let mut found: Vec<T> = routes
         .iter()
-        .filter_map(|r| match judge(repo, r)? {
-            Verdict::Unjudged(u) => Some(u),
-            _ => None,
-        })
+        .filter_map(|r| pick(judge(repo, r)?))
         .collect();
-    out.sort();
-    out.dedup();
+    found.sort();
+    found.dedup();
     debug!(
         routes = routes.len(),
-        unjudged = out.len(),
-        "route a11y unjudged routes found"
+        found = found.len(),
+        what,
+        "route a11y verdicts collected"
     );
-    out
+    found
 }
