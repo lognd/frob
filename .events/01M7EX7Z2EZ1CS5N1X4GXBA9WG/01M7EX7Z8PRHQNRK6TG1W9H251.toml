@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A failed reset returns an error and the candidate is not used (test with a failing git stub)", "Negative test covers a merge that drops hunks and is skipped cleanly"]
+moved = []
+at = "2026-11-15T06:10:19Z"
+actor = "lognd"
+rev = 1
