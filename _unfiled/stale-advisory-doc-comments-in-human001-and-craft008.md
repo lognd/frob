@@ -2,7 +2,8 @@
 id = "01M626H3N3DDCT2Z4876YPT1ED"
 title = "Stale Advisory doc comments in human001 and craft008"
 type = "chore"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
