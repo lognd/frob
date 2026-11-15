@@ -1,0 +1,12 @@
+kind = "create"
+title = "grimble explain FAMILY: list rules of a family; add a rule index verb"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+acceptance = ["grimble explain PLAN lists every PLAN rule with one line each", "unknown name still errors with a hint"]
+body = "Audit: /home/logan/projects/frob-audit2-grimble.md L5. G explain PLAN errors and G rule list is unrecognized. Remedy: explain accepts a family prefix and lists its rules. Crate: crates/grimble."
+at = "2026-11-15T06:21:03Z"
+actor = "lognd"
+rev = 1
