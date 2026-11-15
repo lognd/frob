@@ -8,9 +8,13 @@ points = 2
 parent = "01M7ETK794J40RVB9YAWNQ6NF3"
 reporter = "lognd"
 created = "2026-11-15T06:19:19Z"
-updated = "2026-11-15T06:19:19Z"
+updated = "2026-11-15T06:19:20Z"
 idempotency_key = "crunkplan-b20f8b772261"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXRDAGY3M6ZGQQWR8M2ET6"
 
 [[acceptance]]
 text = "crunk diff --visual A B prints a pixel-difference verdict and exits non-zero above threshold"
