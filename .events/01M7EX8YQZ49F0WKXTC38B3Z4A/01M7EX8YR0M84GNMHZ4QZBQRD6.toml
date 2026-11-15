@@ -1,0 +1,10 @@
+kind = "create"
+title = "split ledger-scope rules (PM010-PM012) out of the code CI verdict"
+type = "task"
+category = "todo"
+priority = "medium"
+labels = ["no-story"]
+body = "Source: frob-audit-meta.md M2. Evidence: ledger-only rule failures turn the code CI verdict red and block lands. Remedy: report them in a separate ledger verdict. Files: crates/frob-land/src/base_ci.rs, .github/workflows/ci.yml, rule scoping."
+at = "2026-11-15T06:10:52Z"
+actor = "lognd"
+rev = 1
