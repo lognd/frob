@@ -25,3 +25,4 @@ mod stability;
 mod tracked_paths;
 mod vmodel_ref;
 mod vmodel_runnables;
+mod vmodel_verified_by;

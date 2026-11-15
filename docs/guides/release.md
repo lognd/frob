@@ -199,7 +199,7 @@ Open the run in the repository's Actions tab (workflow `release`).
 
    Publish status: every workspace crate ships in lockstep except the dev-only
    crates that carry `publish = false` (gob-dev, gob-mdtest, gob-testsupport,
-   frob-docgen, gob-frameworks). gob-plan and crunk-tailwind are published
+   frob-docgen). gob-plan, gob-frameworks and crunk-tailwind are published
    crates, because grimble and the crunk-* crates depend on them and a
    published crate cannot depend on an unpublished one. The order is derived
    from `cargo metadata` (crates/gob-dev/src/publish.rs), so both always
