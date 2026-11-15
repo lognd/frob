@@ -2,7 +2,8 @@
 id = "01M61QA7GY8CG9YQVFXQ71TFKF"
 title = "CAP: report non-literal getattr and computed attribute names as Unresolved uses"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
