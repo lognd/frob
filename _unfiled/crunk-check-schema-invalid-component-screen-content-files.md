@@ -2,12 +2,12 @@
 id = "01M7ETK8WHHFV8590QXMH57TRZ"
 title = "crunk check: schema-invalid component/screen/content files must fail, not be skipped"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:04Z"
-updated = "2026-11-15T05:48:01Z"
+updated = "2026-11-15T05:48:06Z"
 labels = ["no-story"]
 +++
 
