@@ -2,7 +2,8 @@
 id = "01M7FDEF76XA17PYA0J7BME13T"
 title = "crunk-layout: consume SceneDoc::rules and drop StylesheetNotApplied for supported selectors"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
