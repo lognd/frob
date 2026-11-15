@@ -12,7 +12,7 @@ scope = ["docs/schemas/sibling.json", "crates/gob-product/**"]
 
 [[acceptance]]
 text = "crunk verbs check_json_with_a_valid_config_is_a_valid_sibling_document passes: the sibling schema accepts the not_run section"
-bound = false
+bound = true
 +++
 
 crunk::verbs check_json_with_a_valid_config_is_a_valid_sibling_document fails on main: the check document now carries not_run (from 08R5Y3H) but docs/schemas/sibling.json does not allow it. Found while working NGXAEYS.
