@@ -7,8 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-15T06:22:11Z"
-updated = "2026-11-15T06:22:11Z"
+updated = "2026-11-15T06:22:16Z"
 labels = ["no-story"]
+
+[[links]]
+kind = "blocked-by"
+target = "01M7EXXP1YXB5DY9WKF73E4B3S"
 
 [[acceptance]]
 text = "Each of the three Error cases has a fixture"
