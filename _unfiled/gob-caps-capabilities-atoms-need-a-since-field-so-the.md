@@ -2,12 +2,12 @@
 id = "01M5WAN9NAK2Z228S550D6FW61"
 title = "gob-caps capabilities (atoms) need a since field so the changelog lists newly live atoms"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T14:43:32Z"
-updated = "2026-10-28T12:55:34Z"
+updated = "2026-11-15T15:22:36Z"
 labels = ["no-story"]
 scope = ["crates/gob-caps/**", "crates/frob-release/**"]
 
