@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-15T05:24:03Z"
-updated = "2026-11-15T05:51:03Z"
+updated = "2026-11-15T05:52:49Z"
 labels = ["no-story"]
 
 [[acceptance]]
 text = "A scene whose <style> body has rules is refused by solve_scene_html with SolveError::StylesheetNotApplied, not solved unstyled"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "A scene with an @media block is refused the same way"
