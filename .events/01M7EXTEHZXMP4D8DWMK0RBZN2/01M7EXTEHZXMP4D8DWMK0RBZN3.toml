@@ -1,0 +1,18 @@
+kind = "create"
+title = "crunk content: description and placeholders on [[key]]"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+idempotency_key = "crunkplan-2401425d7c54"
+labels = ["no-story"]
+acceptance = ["a string missing a declared placeholder raises a finding"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding M8.
+Evidence: keys have no description or placeholder metadata
+Remedy: add fields and validate placeholder use
+Crates/files: crates/crunk-spec content
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:20:25Z"
+actor = "lognd"
+rev = 1
