@@ -1,0 +1,19 @@
+kind = "create"
+title = "crunk export: tailwind and json mode output"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M7ETK97Q5VJ027ZV8AFBJWRQ"
+idempotency_key = "crunkplan-554fbe88d92c"
+labels = ["no-story"]
+acceptance = ["tailwind and json exports carry every declared mode (snapshot)"]
+body = """
+Source: /home/logan/projects/frob-audit2-crunk.md, finding H5.
+Evidence: tailwind and json exports lose modes
+Remedy: emit modes in tailwind theme and json output
+Crates/files: crates/crunk-export tailwind/json
+Verify against HEAD first; the audit ran on a stale binary."""
+at = "2026-11-15T06:19:48Z"
+actor = "lognd"
+rev = 1
