@@ -40,4 +40,5 @@
 | `rule catalog` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | List the std pack rules that `[packs]` in crunk.toml switches on. |
 | `snapshot` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Compare solved layouts with the committed baselines, or rewrite them with `--update`. |
 | `stamp` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Record the content hash of every locked screen (or the named ones). |
+| `status` | yes | yes | 0 ok, 3 refused, 2 usage, 4 internal | Report a screen's handoff standing, or hand it off with `ready`. |
 | `tokens` | yes | yes | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Write, preview (`--target`) or drift-check (`--check`) the generated token files. |
