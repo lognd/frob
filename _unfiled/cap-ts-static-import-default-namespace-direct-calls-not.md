@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-16T17:51:39Z"
+updated = "2026-11-16T17:56:32Z"
 scope = ["crates/gob-symbols/src/lookups.rs"]
 
 [[acceptance]]
 text = 'Given a TypeScript file with import cp from "x"; cp.exec(), when path_uses runs, then it emits a path use for x.exec'
-bound = false
+bound = true
 +++
 
 found while working ~6CV37RW: import cp from 'x'; cp.exec() is not emitted as a path use.
