@@ -1,0 +1,15 @@
+kind = "field"
+field = "body"
+old = """
+coordinate with 01M4H0WXVXJ18DX9SVX6EHT0AD; ~Q1ZG43K defines the [moved] format
+
+no-story: internal engineering task in gob-text; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+new = """
+Share the citation parser and the MOVED.toml format with frob doc remap; coordinate with 01M4H0WXVXJ18DX9SVX6EHT0AD; ~Q1ZG43K defines the [moved] format.
+
+## Start here
+Find the citation parser used by frob doc remap, move it into crates/gob-text, and have both callers use the shared copy."""
+reason = "good-first"
+at = "2026-11-16T10:45:20Z"
+actor = "lognd"
+rev = 1
