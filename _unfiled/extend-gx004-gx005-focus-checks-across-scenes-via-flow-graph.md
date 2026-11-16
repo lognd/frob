@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T05:11:26Z"
-updated = "2026-11-16T06:27:10Z"
+updated = "2026-11-16T06:27:11Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**", "docs/reference/rules/GX004.md", "docs/reference/rules/GX005.md", "crates/crunk-rules/src/flow_files.rs"]
+scope = ["crates/crunk-rules/**", "docs/reference/rules/GX004.md", "docs/reference/rules/GX005.md", "crates/crunk-rules/src/flow_files.rs", "crates/crunk-rules/src/rules/gx004.md"]
 
 [[acceptance]]
 text = "Behavior implemented with a bound test"
