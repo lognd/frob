@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-30T14:12:38Z"
-updated = "2026-11-16T10:45:19Z"
+updated = "2026-11-16T10:45:25Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/frob-check/**, crates/gob-check/**"]
 
@@ -20,3 +20,4 @@ found while working 01M63B7F02SKSJCQG7TMXQ4HW5: only gob-cli success rendering i
 
 ## Start here
 Read crates/frob-check/src/verb.rs and crates/gob-check/src/sibling.rs where from_finding is called; switch to FindingRecord::from_finding_for.
+no-story: internal engineering task in frob-check and gob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.

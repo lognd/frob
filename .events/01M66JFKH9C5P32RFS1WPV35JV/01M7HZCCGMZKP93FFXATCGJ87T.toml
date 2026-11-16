@@ -1,0 +1,17 @@
+kind = "field"
+field = "body"
+old = """
+found while working 01M63B7F02SKSJCQG7TMXQ4HW5: only gob-cli success rendering is audience-aware; the check engines still call from_finding and never set Finding.nature from RuleDef.
+
+## Start here
+Read crates/frob-check/src/verb.rs and crates/gob-check/src/sibling.rs where from_finding is called; switch to FindingRecord::from_finding_for."""
+new = """
+found while working 01M63B7F02SKSJCQG7TMXQ4HW5: only gob-cli success rendering is audience-aware; the check engines still call from_finding and never set Finding.nature from RuleDef.
+
+## Start here
+Read crates/frob-check/src/verb.rs and crates/gob-check/src/sibling.rs where from_finding is called; switch to FindingRecord::from_finding_for.
+no-story: internal engineering task in frob-check and gob-check; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+reason = "restore no-story reason"
+at = "2026-11-16T10:45:25Z"
+actor = "lognd"
+rev = 1
