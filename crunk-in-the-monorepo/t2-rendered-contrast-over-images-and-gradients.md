@@ -2,7 +2,8 @@
 id = "01M5XCXVJBTE8064EAX8E4PP6F"
 title = "T2 rendered contrast over images and gradients"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
