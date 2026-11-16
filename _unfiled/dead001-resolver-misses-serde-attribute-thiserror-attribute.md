@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T14:54:01Z"
-updated = "2026-11-16T08:42:41Z"
+updated = "2026-11-16T08:46:52Z"
 scope = ["crates/gob-rules/src/indexgen.rs", "crates/frob-code/**", "crates/grimble-arch/src/dead.rs", "crates/grimble-arch/tests/rules.rs", "crates/frob-ledger/src/redact.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/index.rs"]
 +++
 
