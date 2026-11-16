@@ -2,13 +2,13 @@
 id = "01M61MM4Z8F82DCCSZ87BCYC26"
 title = "org D1: generate docs/reference/crates.md crate map"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:52Z"
-updated = "2026-11-16T16:01:38Z"
+updated = "2026-11-16T16:01:45Z"
 scope = ["docs/**"]
 
 [[acceptance]]
