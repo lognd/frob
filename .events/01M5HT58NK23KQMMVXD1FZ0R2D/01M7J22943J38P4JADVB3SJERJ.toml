@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a scope whose unit case count is below its configured minimum, when frob check runs, then a COV rule finding names the scope and the shortfall; at or above the minimum it passes"]
+reason = "add criterion"
+moved = []
+at = "2026-11-16T11:32:19Z"
+actor = "lognd"
+rev = 1

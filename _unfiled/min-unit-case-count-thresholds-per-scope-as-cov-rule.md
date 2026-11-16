@@ -7,9 +7,13 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-11-16T11:31:51Z"
+updated = "2026-11-16T11:32:19Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/**"]
+
+[[acceptance]]
+text = "Given a scope whose unit case count is below its configured minimum, when frob check runs, then a COV rule finding names the scope and the shortfall; at or above the minimum it passes"
+bound = false
 +++
 
 found while working ~0MQ76H2: the min unit cases half of the v1 [testing] thresholds is not implemented; only line/branch percent (COV004) is.
