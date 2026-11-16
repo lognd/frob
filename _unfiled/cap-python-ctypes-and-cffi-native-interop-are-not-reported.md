@@ -2,7 +2,8 @@
 id = "01M64ZYSQNZY51971GJ1232TXR"
 title = "CAP: Python ctypes and cffi native interop are not reported as ffi"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
