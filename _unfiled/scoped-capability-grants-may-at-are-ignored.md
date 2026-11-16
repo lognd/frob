@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-26T04:22:25Z"
-updated = "2026-11-16T08:19:30Z"
+updated = "2026-11-16T08:34:12Z"
 scope = ["crates/gob-plan/src/examples/cells.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/grimble-check/src/example_model.rs", "crates/gob-plan/tests/it/examples_model.rs", "crates/grimble-check/tests/it/example_model.rs", "docs/design/shared/grl-spec.md", "crates/gob-plan/src/examples/mod.rs"]
 
 [[acceptance]]
