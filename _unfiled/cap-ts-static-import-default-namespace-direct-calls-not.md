@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-16T17:56:32Z"
+updated = "2026-11-16T18:03:59Z"
 scope = ["crates/gob-symbols/src/lookups.rs"]
 
 [[acceptance]]
