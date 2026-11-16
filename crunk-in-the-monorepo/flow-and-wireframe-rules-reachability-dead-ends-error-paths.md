@@ -8,9 +8,9 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-11-16T12:12:31Z"
+updated = "2026-11-16T12:31:17Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-rules/src/ux/flows.rs, crates/crunk-rules/tests/ux_flows.rs"]
+scope = ["crates/crunk-rules/src/ux/flows.rs, crates/crunk-rules/tests/ux_flows.rs", "crates/crunk-rules/tests/it/ux_flows.rs"]
 
 [[acceptance]]
 text = 'Given a flow with a dead-end state, when checked, then a UX finding names the state; given a decision node missing a branch, then it fires; given a scene at fidelity = "wire" using a brand token, then it fires. Edge cases: a terminal state flagged terminal=true is not a dead end; a flow with a single node is valid; unreachable states are named in stable order; a cycle with an exit is not a trap; a missing error path is reported only for steps marked fallible; fidelity absent means final and wire rules are silent'
