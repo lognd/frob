@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:39Z"
-updated = "2026-11-16T22:01:42Z"
+updated = "2026-11-16T22:01:43Z"
 labels = ["no-story"]
-scope = ["crates/gob-symbols/**", "crates/grimble-bind/**", "packs/core-effects/**"]
+scope = ["crates/gob-symbols/**", "crates/grimble-bind/**", "packs/core-effects/**", "grimble.packs.lock"]
 
 [[acceptance]]
 text = "Given Python code calling ctypes.CDLL/cffi dlopen, when scanned, then an ffi use is reported"
