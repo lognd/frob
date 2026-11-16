@@ -2,12 +2,12 @@
 id = "01M648G0AJCWY7TY7XBYHNK765"
 title = "CAP: TypeScript and C# capability vocabularies so literal lookups yield findings"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-16T18:51:52Z"
+updated = "2026-11-16T18:51:59Z"
 scope = ["crates/gob-caps/**,crates/grimble-bind/src/caps.rs"]
 
 [[acceptance]]
