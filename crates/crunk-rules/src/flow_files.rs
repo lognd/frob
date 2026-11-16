@@ -66,7 +66,7 @@ impl FlowFacts {
                 Err(err) => {
                     facts
                         .problems
-                        .push(DesignFileProblem::new(&rel, "flow file invalid", &err))
+                        .push(DesignFileProblem::new(&rel, "flow file invalid", &err));
                 }
             }
         }

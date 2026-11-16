@@ -5,7 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
-use crate::scene_docs::focus_atlas;
+use crate::scene_docs::focus_findings;
 
 /// A focusable element in a scene that the pad cannot reach from the default selection.
 #[derive(Debug, Clone, Copy, Default)]
@@ -26,32 +26,26 @@ pub struct Gx002;
 
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx002 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
-        let Some(facts) = host.scene_docs() else {
-            return;
-        };
-        for file in &facts.files {
-            let graph = file.focus_graph();
-            for n in graph.unreachable() {
-                let node = &graph.nodes[n];
-                let message = format!(
+        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+        let findings = focus_findings(
+            host,
+            "GX002",
+            |g| g.unreachable(),
+            |node| {
+                format!(
                     "{} (line {}) cannot be reached by the pad from the default selection: give a neighbour a data-nav-* move to it, or put it in document order inside a focus group",
                     node.label, node.line
-                );
-                tracing::debug!(path = %file.path, node = %node.label, "GX002: unreachable focusable");
-                out.fire_in(&file.path, node.offset, message);
-            }
-        }
-        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-        if let Some((facts, atlas)) = focus_atlas(host) {
-            for i in atlas.unreachable_scenes() {
-                let file = &facts.files[i];
-                let message = format!(
-                    "scene '{}' cannot be reached by the pad: no flow transition leads to it from an entry scene; add a flow edge into this screen",
-                    atlas.scenes[i].name
-                );
-                tracing::debug!(path = %file.path, "GX002: unreachable scene");
-                out.fire_in(&file.path, 0, message);
-            }
+                )
+            },
+            |a| a.unreachable_scenes(),
+            |name| {
+                format!(
+                    "scene '{name}' cannot be reached by the pad: no flow transition leads to it from an entry scene; add a flow edge into this screen"
+                )
+            },
+        );
+        for (path, offset, message) in findings {
+            out.fire_in(&path, offset, message);
         }
     }
 

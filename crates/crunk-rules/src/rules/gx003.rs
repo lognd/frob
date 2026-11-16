@@ -5,7 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
-use crate::scene_docs::focus_atlas;
+use crate::scene_docs::focus_findings;
 
 /// A focusable element that the pad can reach but not leave for the default selection.
 #[derive(Debug, Clone, Copy, Default)]
@@ -26,32 +26,26 @@ pub struct Gx003;
 
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx003 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
-        let Some(facts) = host.scene_docs() else {
-            return;
-        };
-        for file in &facts.files {
-            let graph = file.focus_graph();
-            for n in graph.traps() {
-                let node = &graph.nodes[n];
-                let message = format!(
+        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+        let findings = focus_findings(
+            host,
+            "GX003",
+            |g| g.traps(),
+            |node| {
+                format!(
                     "{} (line {}) is a focus trap: once the pad lands there no move leads back to the default selection; add a data-nav-* move out, or wrap the group",
                     node.label, node.line
-                );
-                tracing::debug!(path = %file.path, node = %node.label, "GX003: focus trap");
-                out.fire_in(&file.path, node.offset, message);
-            }
-        }
-        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-        if let Some((facts, atlas)) = focus_atlas(host) {
-            for i in atlas.stranded_scenes() {
-                let file = &facts.files[i];
-                let message = format!(
-                    "scene '{}' is a focus trap across screens: the flow leaves it only for scenes that never lead back to an entry; add a flow edge back out",
-                    atlas.scenes[i].name
-                );
-                tracing::debug!(path = %file.path, "GX003: stranded scene");
-                out.fire_in(&file.path, 0, message);
-            }
+                )
+            },
+            |a| a.stranded_scenes(),
+            |name| {
+                format!(
+                    "scene '{name}' is a focus trap across screens: the flow leaves it only for scenes that never lead back to an entry; add a flow edge back out"
+                )
+            },
+        );
+        for (path, offset, message) in findings {
+            out.fire_in(&path, offset, message);
         }
     }
 

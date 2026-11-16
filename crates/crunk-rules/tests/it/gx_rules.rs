@@ -127,6 +127,10 @@ where
 }
 
 // frob:tests crates/crunk-rules/src/rules/gx002.rs::Gx002
+// frob:tests crates/crunk-rules/src/scene_docs.rs::focus_atlas
+// frob:tests crates/crunk-rules/src/scene_docs.rs::focus_findings
+// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile::scene_name
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost::flows
 #[test]
 fn gx002_fires_for_a_scene_no_flow_transition_reaches() {
     let m = flow_msgs::<Gx002>(
