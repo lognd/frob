@@ -7,9 +7,9 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-11-16T11:39:40Z"
+updated = "2026-11-16T11:46:15Z"
 labels = ["no-story"]
-scope = ["crates/frob-obligations/**", "docs/reference/rules/COV005.md", "docs/reference/rules/README.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
+scope = ["crates/frob-obligations/**", "docs/reference/rules/COV005.md", "docs/reference/rules/README.md", "docs/reference/config/frob.md", "docs/schemas/config.json", "crates/frob/src/explain_cmd.rs"]
 
 [[acceptance]]
 text = "Given a scope whose unit case count is below its configured minimum, when frob check runs, then a COV rule finding names the scope and the shortfall; at or above the minimum it passes"

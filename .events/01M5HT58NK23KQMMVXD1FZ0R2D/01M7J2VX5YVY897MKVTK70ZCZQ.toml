@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/frob-obligations/**", "docs/reference/rules/COV005.md", "docs/reference/rules/README.md", "docs/reference/config/frob.md", "docs/schemas/config.json"]
+new = ["crates/frob-obligations/**", "docs/reference/rules/COV005.md", "docs/reference/rules/README.md", "docs/reference/config/frob.md", "docs/schemas/config.json", "crates/frob/src/explain_cmd.rs"]
+at = "2026-11-16T11:46:15Z"
+actor = "lognd"
+rev = 1
