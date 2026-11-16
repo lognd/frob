@@ -3,6 +3,7 @@
 // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
 
 use crate::support;
+use std::fmt::Write as _;
 
 use crunk_rules::rules::{gx002::Gx002, gx003::Gx003, gx004::Gx004, gx005::Gx005};
 use gob_rules::Finding;
@@ -99,9 +100,10 @@ fn flow(edges: &[(&str, &str)]) -> String {
     let list: Vec<String> = nodes.iter().map(|n| format!("\"{n}:default\"")).collect();
     let mut text = format!("name = \"main\"\nnodes = [{}]\n", list.join(", "));
     for (a, b) in edges {
-        text.push_str(&format!(
-            "[[edges]]\nfrom = \"{a}:default\"\nto = \"{b}:default\"\ntrigger = \"click\"\n"
-        ));
+        let _ = writeln!(
+            text,
+            "[[edges]]\nfrom = \"{a}:default\"\nto = \"{b}:default\"\ntrigger = \"click\""
+        );
     }
     text
 }
@@ -129,8 +131,8 @@ where
 // frob:tests crates/crunk-rules/src/rules/gx002.rs::Gx002
 // frob:tests crates/crunk-rules/src/scene_docs.rs::focus_atlas
 // frob:tests crates/crunk-rules/src/scene_docs.rs::focus_findings
-// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile::scene_name
-// frob:tests crates/crunk-rules/src/host.rs::CrunkHost::flows
+// frob:tests crates/crunk-rules/src/scene_docs.rs::SceneDocFile.scene_name
+// frob:tests crates/crunk-rules/src/host.rs::CrunkHost.flows
 #[test]
 fn gx002_fires_for_a_scene_no_flow_transition_reaches() {
     let m = flow_msgs::<Gx002>(

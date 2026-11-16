@@ -181,41 +181,36 @@ pub fn focus_atlas<H: crate::CrunkHost + ?Sized>(
 }
 
 // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-/// One focus-rule finding: the scene file path, the byte offset to anchor at, and the message.
-pub type FocusFinding = (String, usize, String);
-
-// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-/// The findings of a GX focus rule, shared by GX002 and GX003: `nodes` picks the offending
+/// Fire the findings of a GX focus rule, shared by GX002 and GX003: `nodes` picks the offending
 /// focusables of each scene (described by `node_message`), `scenes` picks offending scenes of the
 /// cross-scene atlas (described by `scene_message` from the scene name).
-pub fn focus_findings<H: crate::CrunkHost + ?Sized>(
+pub fn focus_findings<H: crate::CrunkHost + ?Sized, R: gob_rules::RuleDecl>(
     host: &H,
+    out: &mut gob_rules::Out<'_, R>,
     rule: &str,
     nodes: impl Fn(&crunk_layout::FocusGraph) -> Vec<usize>,
     node_message: impl Fn(&crunk_layout::FocusNode) -> String,
     scenes: impl Fn(&crunk_layout::FocusAtlas) -> Vec<usize>,
     scene_message: impl Fn(&str) -> String,
-) -> Vec<FocusFinding> {
-    let mut found = Vec::new();
+) {
     let Some(facts) = host.scene_docs() else {
-        return found;
+        return;
     };
     for file in &facts.files {
         let graph = file.focus_graph();
         for n in nodes(&graph) {
             let node = &graph.nodes[n];
             tracing::debug!(path = %file.path, node = %node.label, rule, "focusable flagged");
-            found.push((file.path.clone(), node.offset, node_message(node)));
+            out.fire_in(&file.path, node.offset, node_message(node));
         }
     }
     if let Some((facts, atlas)) = focus_atlas(host) {
         for i in scenes(&atlas) {
             let path = &facts.files[i].path;
             tracing::debug!(path = %path, rule, "scene flagged");
-            found.push((path.clone(), 0, scene_message(&atlas.scenes[i].name)));
+            out.fire_in(path, 0, scene_message(&atlas.scenes[i].name));
         }
     }
-    found
 }
 
 /// Every scene document of a project that parsed, sorted by path, and those that did not.
