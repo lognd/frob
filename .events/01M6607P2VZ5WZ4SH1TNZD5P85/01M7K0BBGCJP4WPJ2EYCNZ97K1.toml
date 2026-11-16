@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a Python source calling shutil.move(a, b) or os.rename(a, b), when grimble check scans it, then fs.write is scoped to both paths (source and destination), proven by a test in crates/grimble-bind/src/caps.rs."]
+moved = []
+at = "2026-11-16T20:21:34Z"
+actor = "lognd"
+rev = 1
