@@ -8,6 +8,7 @@ mod corpus;
 mod crosscrate;
 mod csharp;
 mod csharp_fixtures;
+mod csharp_name_only;
 mod css;
 mod def_use;
 mod doc_claims;

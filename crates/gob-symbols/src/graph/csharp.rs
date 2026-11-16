@@ -507,7 +507,7 @@ impl SymbolGraph {
             .map(|e| e.node)
             .collect();
         if exact.is_empty() {
-            return Outcome::Hit(hits.iter().map(|e| e.node).collect(), Status::May);
+            return Outcome::NameOnly(hits.iter().map(|e| e.node).collect());
         }
         let status = Self::cs_status(&exact);
         Outcome::Hit(exact, status)
