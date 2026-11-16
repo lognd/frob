@@ -2,12 +2,12 @@
 id = "01M7CAYGWRSTYC76QYCACS427V"
 title = "Glossary entry for cycle (what a cycle is, how to create and close one)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-14T06:51:47Z"
+updated = "2026-11-16T10:12:54Z"
 idempotency_key = "gf-docs/glossary/cycle.md"
 labels = ["good-first"]
 scope = ["docs/glossary/cycle.md", "docs/README.md"]
