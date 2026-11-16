@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-11-16T05:11:26Z"
 updated = "2026-11-16T07:09:36Z"
 labels = ["no-story"]
-scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/src/rules/spec001.md"]
+scope = ["crates/crunk-rules/**", "docs/reference/rules/**", "crates/crunk-rules/src/host.rs", "crates/crunk-rules/src/rules/spec001.md", "crates/crunk-rules/src/rules/spec001.rs"]
 
 [[acceptance]]
 text = "Behavior implemented with a bound test"
