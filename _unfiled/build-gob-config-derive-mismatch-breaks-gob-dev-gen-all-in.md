@@ -2,12 +2,13 @@
 id = "01M648G0P0HG7YK5X7VDSFP32A"
 title = "BUILD: gob-config derive mismatch breaks gob-dev gen all in worktrees"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-03T05:56:41Z"
+updated = "2026-11-16T15:31:33Z"
 scope = ["crates/gob-config/**"]
 +++
 
