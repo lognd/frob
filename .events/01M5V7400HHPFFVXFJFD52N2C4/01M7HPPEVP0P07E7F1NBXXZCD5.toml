@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-plan/src/examples/cells.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/grimble-check/src/example_model.rs", "crates/gob-plan/tests/it/examples_model.rs", "crates/grimble-check/tests/it/example_model.rs", "docs/design/shared/grl-spec.md"]
+new = ["crates/gob-plan/src/examples/cells.rs", "crates/gob-plan/src/examples/model_reader.rs", "crates/grimble-check/src/example_model.rs", "crates/gob-plan/tests/it/examples_model.rs", "crates/grimble-check/tests/it/example_model.rs", "docs/design/shared/grl-spec.md", "crates/gob-plan/src/examples/mod.rs"]
+at = "2026-11-16T08:13:37Z"
+actor = "lognd"
+rev = 1
