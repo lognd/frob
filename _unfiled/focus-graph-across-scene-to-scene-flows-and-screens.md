@@ -2,7 +2,8 @@
 id = "01M5HA924E3PTBVH6J8EBXP7XW"
 title = "Focus graph across scene-to-scene flows and screens"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
