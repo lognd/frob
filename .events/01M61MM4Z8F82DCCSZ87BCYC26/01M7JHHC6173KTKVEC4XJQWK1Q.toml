@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/**", "crates/gob-dev/src/render/crate_map.rs"]
+new = ["docs/**", "crates/gob-dev/src/render/crate_map.rs", "crates/gob-dev/src/render/mod.rs"]
+at = "2026-11-16T16:02:42Z"
+actor = "lognd"
+rev = 1
