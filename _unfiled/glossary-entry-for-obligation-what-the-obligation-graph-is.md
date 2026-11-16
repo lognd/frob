@@ -2,7 +2,8 @@
 id = "01M7CAYH4DH7619Y42EX0QMDF0"
 title = "Glossary entry for obligation (what the obligation graph is and where its rules live)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
