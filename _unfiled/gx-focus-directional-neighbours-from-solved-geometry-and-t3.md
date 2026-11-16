@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-11-16T05:14:51Z"
+updated = "2026-11-16T05:51:30Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**", "crates/crunk-layout/src/focus.rs", "crates/crunk-layout/tests/it/focus.rs", "changelog.d/01M5HA929PRX1MYGH048YVMQYR.added.md"]
 
