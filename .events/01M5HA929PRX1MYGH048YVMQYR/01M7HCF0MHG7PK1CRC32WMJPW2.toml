@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-layout/**", "crates/crunk-layout/src/focus.rs", "crates/crunk-layout/tests/it/focus.rs"]
+new = ["crates/crunk-layout/**", "crates/crunk-layout/src/focus.rs", "crates/crunk-layout/tests/it/focus.rs", "changelog.d/01M5HA929PRX1MYGH048YVMQYR.added.md"]
+at = "2026-11-16T05:14:48Z"
+actor = "lognd"
+rev = 1
