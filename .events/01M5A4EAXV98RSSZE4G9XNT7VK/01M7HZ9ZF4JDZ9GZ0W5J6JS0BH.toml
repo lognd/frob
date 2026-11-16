@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+old = ["good-first"]
+reason = "exceeds good-first points"
+at = "2026-11-16T10:44:06Z"
+actor = "lognd"
+rev = 1
