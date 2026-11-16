@@ -8,9 +8,9 @@ points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-10-28T12:55:44Z"
+updated = "2026-11-16T13:51:32Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-spec/src/qa.rs, crates/crunk-rules/src/ux/qa.rs, crates/crunk-rules/tests/ux_qa.rs"]
+scope = ["crates/crunk-spec/src/qa.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/ux/qa.rs", "crates/crunk-rules/src/ux/mod.rs", "crates/crunk-rules/tests/it/ux_qa.rs", "crates/crunk-rules/tests/it/main.rs"]
 
 [[acceptance]]
 text = "Given a walkthrough step with any answer no, when checked, then the step fails and names which question; given a major heuristic finding with no owner reference, then a finding fires; given a screen with no heuristic coverage, then coverage fires. Edge cases: an unknown heuristic name is a schema error listing the ten; missing evidence on a finding fires; severity outside 0-4 is rejected; an empty qa dir is silent"
