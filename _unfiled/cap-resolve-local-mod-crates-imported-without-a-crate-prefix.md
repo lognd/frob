@@ -2,12 +2,12 @@
 id = "01M61QA7KBV7444W3YFT432YR1"
 title = "CAP: resolve local mod crates imported without a crate:: prefix"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T17:00:53Z"
-updated = "2026-11-16T00:14:05Z"
+updated = "2026-11-16T00:14:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 
