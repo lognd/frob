@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T10:32:05Z"
+digest = "d18e014280552b812a02265fa7325888001fe6f3ffa3f0a3af7a78c774a44649"
+head = "618463149f7596ce2cf51080e714a9c8ce674c52"
+provider = "file"
+ref = "docs/glossary/obligation.md"
+size = 1480
+status = "measured"
+at = "2026-11-16T10:32:05Z"
+actor = "lognd"
+rev = 1
