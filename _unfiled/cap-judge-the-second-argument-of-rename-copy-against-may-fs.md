@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-11-16T00:33:01Z"
+updated = "2026-11-16T00:37:05Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/tests/it/caps.rs"]
 
 [[acceptance]]
 text = "the destination argument of rename/copy is judged too"
-bound = false
+bound = true
 +++
 
 found while working ~5X9CAQE: the destination argument of rename/copy is judged too
