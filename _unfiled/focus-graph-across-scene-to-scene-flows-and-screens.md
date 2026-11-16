@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-11-16T04:24:05Z"
+updated = "2026-11-16T04:24:06Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**,crates/crunk-rules/**", "docs/reference/rules/GX00*.md"]
 
 [[acceptance]]
 text = "GX002 and GX003 see across scenes: scenes joined by flow transitions are judged for scene-level reachability and stranding"
-bound = false
+bound = true
 +++
 
 found while working Q2ZC9QM: the flows half of the focus graph is not built; GX002-GX005 see one scene at a time.
