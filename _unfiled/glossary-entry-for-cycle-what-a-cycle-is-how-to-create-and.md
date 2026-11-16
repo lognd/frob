@@ -7,14 +7,14 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-16T10:13:26Z"
+updated = "2026-11-16T10:18:00Z"
 idempotency_key = "gf-docs/glossary/cycle.md"
 labels = ["good-first"]
 scope = ["docs/glossary/cycle.md", "docs/README.md", "changelog.d/01M7CAYGWRSTYC76QYCACS427V.added.md"]
 
 [[acceptance]]
 text = "Given docs/glossary/cycle.md, when read, then it has the header block, explains what a cycle is and how to create and close one, and is indexed in docs/README.md"
-bound = false
+bound = true
 +++
 
 ## Start here

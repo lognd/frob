@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T10:18:00Z"
+digest = "a4b6c948802d9eb7fa1d80182a0e5da31f1593969b518b79da46ae7db59b590a"
+head = "02f6ea41b4d71edc329f79d6a434b12c9985f395"
+provider = "file"
+ref = "docs/glossary/cycle.md"
+size = 1450
+status = "measured"
+at = "2026-11-16T10:18:00Z"
+actor = "lognd"
+rev = 1
