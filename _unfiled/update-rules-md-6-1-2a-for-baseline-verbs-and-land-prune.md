@@ -7,13 +7,9 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:16:11Z"
-updated = "2026-11-16T10:45:13Z"
+updated = "2026-11-16T10:45:19Z"
 labels = ["good-first"]
 scope = ["docs/design/rules.md"]
-
-[[acceptance]]
-text = "6.1.2a describes baseline adopt/prune, land prune, E-LAND-BASELINE and frob_land::baseline_prune"
-bound = false
 
 [[acceptance]]
 text = "Given docs/design/rules.md 6.1.2a, when a reader looks up baseline handling, then it names baseline adopt/prune, land prune, E-LAND-BASELINE and frob_land::baseline_prune"
