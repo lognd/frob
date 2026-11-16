@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+new = ["good-first"]
+reason = "small, self-contained; satisfies PM032 minimum"
+at = "2026-11-16T10:42:05Z"
+actor = "lognd"
+rev = 1

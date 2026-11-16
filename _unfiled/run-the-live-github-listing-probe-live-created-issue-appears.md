@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-19T13:08:32Z"
-updated = "2026-10-27T02:58:23Z"
+updated = "2026-11-16T10:42:05Z"
+labels = ["good-first"]
 
 [[acceptance]]
 text = "The ignored live probe passes against a real repository and is bound as evidence."
