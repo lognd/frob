@@ -2,7 +2,8 @@
 id = "01M61DFC5ZCSJTKMNBP88AKFVS"
 title = "Resolve serde with-attribute functions in the DEAD001 call graph"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
