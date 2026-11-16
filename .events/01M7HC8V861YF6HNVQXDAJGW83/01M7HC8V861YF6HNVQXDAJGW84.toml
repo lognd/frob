@@ -1,0 +1,13 @@
+kind = "create"
+title = "Report FlowFacts.problems through a crunk rule"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+scope = ["crates/crunk-rules/**"]
+acceptance = ["Behavior implemented with a bound test"]
+body = "Follow-up from EBXP7XW. no-story: internal follow-up of a landed ticket."
+at = "2026-11-16T05:11:26Z"
+actor = "lognd"
+rev = 1
