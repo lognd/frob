@@ -75,18 +75,28 @@ fn describe(dir: &Path, manifest: &toml::Table) -> String {
         .unwrap_or_else(|| NO_DESCRIPTION.to_owned())
 }
 
-/// Every crate below `crates_dir`, sorted by name.
+/// The sorted entries of `crates_dir`.
+fn crate_dirs(crates_dir: &Path) -> Result<Vec<PathBuf>, CrateMapError> {
+    let io = |source| CrateMapError::Io {
+        path: crates_dir.to_path_buf(),
+        source,
+    };
+    let mut dirs: Vec<PathBuf> = std::fs::read_dir(crates_dir)
+        .map_err(io)?
+        .map(|e| e.map(|e| e.path()))
+        .collect::<Result<_, _>>()
+        .map_err(io)?;
+    dirs.sort();
+    Ok(dirs)
+}
+
+/// Every crate under `crates_dir`, sorted by name.
 fn collect(crates_dir: &Path) -> Result<Vec<Krate>, CrateMapError> {
     let io = |path: &Path| {
         let path = path.to_path_buf();
         move |source| CrateMapError::Io { path, source }
     };
-    let mut dirs: Vec<PathBuf> = std::fs::read_dir(crates_dir)
-        .map_err(io(crates_dir))?
-        .map(|e| e.map(|e| e.path()))
-        .collect::<Result<_, _>>()
-        .map_err(io(crates_dir))?;
-    dirs.sort();
+    let dirs = crate_dirs(crates_dir)?;
     let mut out = Vec::new();
     for dir in dirs {
         let manifest_path = dir.join("Cargo.toml");
