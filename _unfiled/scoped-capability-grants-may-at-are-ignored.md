@@ -2,7 +2,8 @@
 id = "01M5V7400HHPFFVXFJFD52N2C4"
 title = "Scoped capability grants (may ... at) are ignored"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
