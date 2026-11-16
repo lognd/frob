@@ -2,7 +2,8 @@
 id = "01M64A0B2ZN3RQNY73KMTGYAND"
 title = "Document product-scoped config registries in docs/design (D87)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
