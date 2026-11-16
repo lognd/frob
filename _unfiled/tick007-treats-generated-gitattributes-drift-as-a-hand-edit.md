@@ -2,7 +2,8 @@
 id = "01M7H35TPY6X5M6RQ2DQ7YF8GV"
 title = "TICK007 treats generated .gitattributes drift as a hand edit"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "high"
 points = 1
 reporter = "lognd"
