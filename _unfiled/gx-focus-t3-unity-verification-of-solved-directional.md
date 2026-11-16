@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-16T05:14:48Z"
-updated = "2026-11-16T07:21:22Z"
+updated = "2026-11-16T07:21:24Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**"]
 +++
 
-split from 8YVMQYR: verify from_solved neighbours against the Unity runtime (needs external Unity tooling).
+x
