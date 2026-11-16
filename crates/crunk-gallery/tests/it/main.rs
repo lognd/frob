@@ -6,6 +6,7 @@ mod flashing;
 mod gallery;
 mod golden;
 mod render;
+mod rendered_contrast;
 mod router;
 mod triage;
 mod visual;
