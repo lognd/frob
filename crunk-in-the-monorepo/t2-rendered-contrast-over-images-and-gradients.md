@@ -10,7 +10,7 @@ reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
 updated = "2026-11-16T12:52:46Z"
 labels = ["area:crunk", "no-story"]
-scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs", "crates/crunk-gallery/src/lib.rs"]
+scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk-gallery/tests/it/main.rs"]
 
 [[links]]
 kind = "blocked-by"
