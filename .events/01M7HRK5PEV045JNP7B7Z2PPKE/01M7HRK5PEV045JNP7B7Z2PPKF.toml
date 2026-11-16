@@ -1,0 +1,9 @@
+kind = "create"
+title = "DEAD001: resolve serde with/default attribute targets and thiserror attribute method calls"
+type = "bug"
+category = "todo"
+priority = "medium"
+body = "Split from ~JWEYWT8 (fn-value edges done there). Remaining frob:defer directives citing 01M61G1Y62DQKF195X9JWEYWT8: frob-ledger event.rs rel_path/rel_paths, redact.rs yes, model.rs PointScale::describe."
+at = "2026-11-16T08:46:47Z"
+actor = "lognd"
+rev = 1
