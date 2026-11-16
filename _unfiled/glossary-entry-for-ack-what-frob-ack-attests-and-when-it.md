@@ -2,12 +2,12 @@
 id = "01M7CAYH7CTBT2SXY4DHJ4VN61"
 title = "Glossary entry for ack (what frob ack attests and when it goes stale)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-14T06:51:48Z"
+updated = "2026-11-16T10:38:30Z"
 idempotency_key = "gf-docs/glossary/ack.md"
 labels = ["good-first"]
 scope = ["docs/glossary/ack.md", "docs/README.md"]
