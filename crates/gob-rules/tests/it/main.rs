@@ -5,5 +5,6 @@ mod derive;
 mod family_owners;
 mod located;
 mod rule_attr;
+mod tool_stage_ids;
 mod ui;
 mod unresolved;

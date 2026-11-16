@@ -32,6 +32,7 @@ mod redirects;
 mod registry;
 pub mod rules;
 mod settings;
+pub mod tool_stage_ids;
 pub(crate) use gob_ir::vocab::{finding, id, nature, required, unresolved};
 
 pub use baseline::{
