@@ -7,10 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T22:51:26Z"
-updated = "2026-11-16T01:34:25Z"
+updated = "2026-11-16T01:34:26Z"
 idempotency_key = "path-allowed-wiring"
 labels = ["no-story"]
-scope = ["crates/grimble-lints/src/path.rs", "crates/grimble-check/src/config.rs"]
+scope = ["crates/grimble-lints/src/path.rs", "crates/grimble-check/src/config.rs", "crates/grimble-check/src/product.rs"]
 
 [[acceptance]]
 text = "A configured [path] allowed list reaches PATH001 through Options::with_allowed in every caller, covered by a test"
