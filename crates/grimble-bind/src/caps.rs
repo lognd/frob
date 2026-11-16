@@ -2352,10 +2352,10 @@ fn os_open_mode(src: &str, c: &gob_symbols::CallArgs) -> OpenMode {
     let Some(flags) = flags else {
         return OpenMode::Unknown;
     };
-    let (mut writes, mut wronly, mut rdwr) = (false, false, false);
+    let (mut writes, mut write_only, mut rdwr) = (false, false, false);
     for term in flags.split('|').map(str::trim) {
         match term.strip_prefix("os.") {
-            Some("O_WRONLY") => (writes, wronly) = (true, true),
+            Some("O_WRONLY") => (writes, write_only) = (true, true),
             Some("O_RDWR") => (writes, rdwr) = (true, true),
             Some("O_APPEND" | "O_CREAT" | "O_TRUNC" | "O_EXCL") => writes = true,
             Some(
@@ -2370,7 +2370,7 @@ fn os_open_mode(src: &str, c: &gob_symbols::CallArgs) -> OpenMode {
     }
     if writes {
         OpenMode::Write {
-            reads: rdwr || !wronly,
+            reads: rdwr || !write_only,
         }
     } else {
         OpenMode::Read
