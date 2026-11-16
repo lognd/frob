@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T22:14:05Z"
+digest = "f0e476072f830aae1af56a86f3c8b9d297101d371131c408e3ac8f2a95a27e5b"
+exit_code = 0
+head = "59704f040665058c3f95b87e32e0357a1e81c548"
+passed = true
+provider = "nextest"
+ref = "p18_cap_cffi_loaders"
+size = 17781
+status = "measured"
+test_count = 1
+tests_digest = "f24b5bca41aa28c8b189b281527a4d40c7a154b38c9e22757761fbe32b883d70"
+uri = "dir:.git/frob/artifacts/f0e476072f830aae1af56a86f3c8b9d297101d371131c408e3ac8f2a95a27e5b"
+at = "2026-11-16T22:14:05Z"
+actor = "lognd"
+rev = 1
