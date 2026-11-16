@@ -1515,6 +1515,38 @@ fn scan_python_receivers(cx: &Cx<'_>, uses: &mut Uses) {
     tracing::info!(added, "python receiver capability uses added");
 }
 
+/// Drops an edge-guess May use (no byte offset) when a certain resolved use of the same method sits
+/// on the same line of the same unit: the resolved call is the truth for that site, so the guess only
+/// duplicates it (ticket 01M6607PD368825RS2ZYKS9CCX).
+// frob:ticket 01M6607PD368825RS2ZYKS9CCX
+fn drop_shadowed_guesses(uses: &mut Uses) {
+    let tail = |callee: &str| last_segment(callee).to_owned();
+    let resolved: BTreeSet<(String, Option<u32>, String)> = uses
+        .lo
+        .values()
+        .flatten()
+        .filter(|u| u.certain && u.offset.is_some())
+        .map(|u| (u.unit.clone(), u.line, tail(&u.callee)))
+        .collect();
+    if resolved.is_empty() {
+        return;
+    }
+    let mut dropped = 0usize;
+    for list in uses.hi.values_mut() {
+        list.retain(|u| {
+            let shadowed = u.offset.is_none()
+                && !u.certain
+                && resolved.contains(&(u.unit.clone(), u.line, tail(&u.callee)));
+            dropped += usize::from(shadowed);
+            !shadowed
+        });
+    }
+    tracing::debug!(
+        dropped,
+        "edge-guess uses duplicating a resolved call dropped"
+    );
+}
+
 fn observe(cx: &Cx<'_>) -> Uses {
     let edges: Vec<_> = cx
         .graph
@@ -1587,6 +1619,7 @@ fn observe(cx: &Cx<'_>) -> Uses {
         }
     }
     scan_resolved(cx, &mut uses);
+    drop_shadowed_guesses(&mut uses);
     scan_typed_receivers(cx, &mut uses);
     scan_python_receivers(cx, &mut uses);
     scan_structural(cx, &mut uses);

@@ -1230,6 +1230,20 @@ fn argdet_python_aliased_open_is_resolved_symbolically_part_2() {
     assert!(!kinds.contains(&"fs.read".to_owned()), "{kinds:?}");
 }
 
+// frob:ticket 01M6607PD368825RS2ZYKS9CCX
+// frob:tests crates/grimble-bind/src/caps.rs::observe
+#[test]
+fn aliased_module_open_adds_no_duplicate_may_uses() {
+    for (imports, call, want) in [
+        ("import io as i\n", "i.open(p, 'w')", "fs.write"),
+        ("import io as i\n", "i.open(p)", "fs.read"),
+    ] {
+        let py = format!("{imports}\ndef go(p):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        assert_eq!(argdet_kinds(&b), [want], "{call}: {:?}", b.findings);
+    }
+}
+
 // frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
