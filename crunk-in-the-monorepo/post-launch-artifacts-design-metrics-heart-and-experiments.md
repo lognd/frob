@@ -2,7 +2,8 @@
 id = "01M5XCZ1C4P58PFPRCH880G1HE"
 title = "Post-launch artifacts: design/metrics (HEART) and experiments with PROC rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
