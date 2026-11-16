@@ -8,13 +8,13 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-11-16T12:12:19Z"
+updated = "2026-11-16T12:15:47Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/ia.rs, crates/crunk-rules/src/ux/ia.rs, crates/crunk-rules/tests/ux_ia.rs"]
 
 [[acceptance]]
 text = "Given a sitemap route with no screen, or a screen with no route, when checked, then a UX finding names it; given routes in code (gob-frameworks) absent from the sitemap, then a finding names the route. Edge cases: depth beyond the configured max fires once per deepest path; duplicate sibling labels differ only by case still collide; a cycle in parent links is a schema error; a page unreachable from home is named; a dynamic route segment matches a screen declared with the same param shape; absent sitemap with the pack on is silent"
-bound = false
+bound = true
 +++
 
 Design crunk.md section 8 IA row. Route discovery reuses gob-frameworks; if unavailable for a project, route/code comparison is Unresolved, not clean.
