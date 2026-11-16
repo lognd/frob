@@ -5,11 +5,11 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 2
-parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-15T22:51:26Z"
-updated = "2026-11-16T00:00:12Z"
+updated = "2026-11-16T00:11:52Z"
 idempotency_key = "path-allowed-wiring"
+labels = ["no-story"]
 scope = ["crates/grimble-lints/src/path.rs"]
 
 [[acceptance]]
@@ -17,4 +17,4 @@ text = "A configured [path] allowed list reaches PATH001 through Options::with_a
 bound = false
 +++
 
-Follow-up of AHK30R3: Options::with_allowed exists but no caller outside grimble-lints reads the [path] allowed config.
+no-story: small follow-up wiring an existing config key; no user story applies.

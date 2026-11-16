@@ -1,0 +1,7 @@
+kind = "field"
+field = "body"
+old = "Follow-up of AHK30R3: Options::with_allowed exists but no caller outside grimble-lints reads the [path] allowed config."
+new = "no-story: small follow-up wiring an existing config key; no user story applies."
+at = "2026-11-16T00:11:52Z"
+actor = "lognd"
+rev = 1
