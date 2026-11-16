@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/grimble-lints/src/path.rs"]
+new = ["crates/grimble-lints/src/path.rs", "crates/grimble-check/src/config.rs"]
+at = "2026-11-16T01:34:25Z"
+actor = "lognd"
+rev = 1
