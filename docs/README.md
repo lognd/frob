@@ -62,6 +62,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 
 | Document | Title | Status | Owner |
 |---|---|---|---|
+| [glossary/cycle.md](glossary/cycle.md) | Cycle | current | frob |
 | [glossary/ticket-lease.md](glossary/ticket-lease.md) | Ticket lease | current | frob |
 
 ## grimble
