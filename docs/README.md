@@ -125,6 +125,7 @@ Each hand-written document starts with a header block (Status, Owner, Decisions)
 | [reference/cli/grimble.md](reference/cli/grimble.md) | `grimble` commands | generated | - |
 | [reference/config/crunk.md](reference/config/crunk.md) | crunk.toml reference | generated | - |
 | [reference/config/frob.md](reference/config/frob.md) | Configuration reference | generated | - |
+| [reference/crates.md](reference/crates.md) | Crate map | generated | - |
 | [reference/directives.md](reference/directives.md) | Directives | generated | - |
 | [reference/fidelity.md](reference/fidelity.md) | Fidelity accounting | current | frob |
 | [reference/grl/catalog.md](reference/grl/catalog.md) | GRL relation catalog | generated | - |

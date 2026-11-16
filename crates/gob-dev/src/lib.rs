@@ -57,6 +57,8 @@ pub enum Kind {
     DocsIndex,
     /// The decision log `docs/decisions/README.md`, rendered from `decisions.toml`.
     Decisions,
+    /// The crate map `docs/reference/crates.md`: every workspace crate with its description.
+    CrateMap,
     /// Everything above.
     All,
 }
@@ -82,6 +84,9 @@ pub enum GenError {
     /// The decision log could not be generated.
     #[error(transparent)]
     Decisions(#[from] render::decisions::DecisionsError),
+    /// The crate map could not be generated.
+    #[error(transparent)]
+    CrateMap(#[from] render::crate_map::CrateMapError),
     /// The inline parser tests could not be extracted.
     #[error(transparent)]
     Inline(#[from] render::inline::InlineError),
@@ -134,6 +139,11 @@ pub fn generate(kind: Kind, crates_dir: &Path) -> Result<Vec<GenFile>, GenError>
         // frob:ticket 01M4H0X29ZW591D2AX69V9PQ94
         let root = crates_dir.parent().unwrap_or(crates_dir);
         files.extend(render::decisions::generate(root)?);
+    }
+    if all || kind == Kind::CrateMap {
+        // frob:ticket 01M61MM4Z8F82DCCSZ87BCYC26
+        let root = crates_dir.parent().unwrap_or(crates_dir);
+        files.extend(render::crate_map::generate(root)?);
     }
     if all || kind == Kind::Directives {
         files.extend(render::directives::generate());
