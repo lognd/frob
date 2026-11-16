@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a C# call whose receiver type is unproven, when it is resolved by an extension method of the same name, then the edge is May with EdgeBasis::NameOnly", "Given a file with using static System.Console, when the graph is built, then it terminates and resolves WriteLine"]
+moved = []
+at = "2026-11-16T15:32:57Z"
+actor = "lognd"
+rev = 1
