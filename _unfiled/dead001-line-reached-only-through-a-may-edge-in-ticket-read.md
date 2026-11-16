@@ -2,12 +2,12 @@
 id = "01M62AM9SH454DCNWR0ATTCAPV"
 title = "DEAD001 'line' reached only through a May edge in ticket/read.rs"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T22:38:26Z"
-updated = "2026-11-16T17:13:57Z"
+updated = "2026-11-16T17:14:04Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/ticket/read.rs"]
 
