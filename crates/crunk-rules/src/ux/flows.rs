@@ -102,9 +102,9 @@ fn check_flow(path: &str, flow: &FlowFile, notes: &FlowNotes) -> Vec<FlowFinding
     };
     let mut out = Vec::new();
     let reached = reachable(flow);
-    let mut nodes: Vec<&String> = flow.nodes.iter().collect();
-    nodes.sort();
-    for node in nodes {
+    let mut sorted: Vec<&String> = flow.nodes.iter().collect();
+    sorted.sort();
+    for node in sorted {
         if !reached.contains(node.as_str()) {
             tracing::debug!(%path, %node, "flow state unreachable");
             out.push(finding(
