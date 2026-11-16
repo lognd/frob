@@ -4,9 +4,10 @@ title = "GX focus: T3 Unity verification of solved directional neighbours"
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-16T05:14:48Z"
-updated = "2026-11-16T05:14:48Z"
+updated = "2026-11-16T07:21:20Z"
 scope = ["crates/crunk-layout/**"]
 +++
 
