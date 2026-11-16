@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T18:42:14Z"
+digest = "c664691b0bd0f274380dffbe511ff7f4159fa2405900c7e43384180db5ba65a4"
+head = "4eff17feb1ab28d328907cec2f5637d324466e1b"
+provider = "file"
+ref = "docs/design/shared/architecture.md"
+size = 68483
+status = "measured"
+at = "2026-11-16T18:42:14Z"
+actor = "lognd"
+rev = 1
