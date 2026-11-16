@@ -2,7 +2,8 @@
 id = "01M5XCZ0XPCPA1DT2QB5VGHDZC"
 title = "Information architecture: design/ia/sitemap.toml and content-model.toml with route/screen, depth, label and reachability rules"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
