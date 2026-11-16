@@ -2,7 +2,8 @@
 id = "01M67PBKDJP2WCYAAHMX41BW80"
 title = "CAP: infer C# receiver type from var local initialised by a call"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
