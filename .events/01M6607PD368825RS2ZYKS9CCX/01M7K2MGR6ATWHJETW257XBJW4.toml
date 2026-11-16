@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a Python source calling i.open(p) where i is an aliased module import, when grimble check scans it, then only the one certain use is reported and no extra May use duplicates it, proven by a test in crates/grimble-bind/src/caps.rs."]
+moved = []
+at = "2026-11-16T21:01:31Z"
+actor = "lognd"
+rev = 1
