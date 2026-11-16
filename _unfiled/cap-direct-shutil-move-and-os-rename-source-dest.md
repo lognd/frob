@@ -2,7 +2,8 @@
 id = "01M6607P2VZ5WZ4SH1TNZD5P85"
 title = "CAP: direct shutil.move and os.rename source/dest"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
