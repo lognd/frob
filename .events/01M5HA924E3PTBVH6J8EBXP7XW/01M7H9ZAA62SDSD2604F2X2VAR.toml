@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T04:24:15Z"
+digest = "6a76a11a8d54ef95ef7dba68c19269a6cf796ac0de54372e2fc6fbcdbe017b3f"
+exit_code = 0
+head = "ac9ee721de73b802352054558bbaed75180a2904"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 46s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b5096084-4892-4bbc-ba78-c65f68814ed5 with nextest profile: default
+    Starting 1 test across 164 binaries (8109 tests skipped)
+        PASS [   0.035s] crunk-rules::it gx_rules::gx002_fires_for_a_scene_no_flow_transition_reaches
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.048s] 1 test run: 1 passed, 8109 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "gx002_fires_for_a_scene_no_flow_transition_reaches"
+size = 628
+status = "measured"
+test_count = 1
+tests_digest = "b833a74fa0fc836473049738a3cc234194854d798e21bc4bbe14c4c848392fe7"
+at = "2026-11-16T04:24:15Z"
+actor = "lognd"
+rev = 1
