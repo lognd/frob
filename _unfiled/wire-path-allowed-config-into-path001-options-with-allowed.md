@@ -2,12 +2,12 @@
 id = "01M7GPH1Y4XQ9RZMAV1HQG7JPX"
 title = "Wire [path] allowed config into PATH001 Options::with_allowed callers"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-15T22:51:26Z"
-updated = "2026-11-16T00:11:52Z"
+updated = "2026-11-16T01:31:36Z"
 idempotency_key = "path-allowed-wiring"
 labels = ["no-story"]
 scope = ["crates/grimble-lints/src/path.rs"]
