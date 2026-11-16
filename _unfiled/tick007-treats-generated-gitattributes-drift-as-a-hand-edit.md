@@ -7,7 +7,7 @@ priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-16T02:32:30Z"
-updated = "2026-11-16T02:43:48Z"
+updated = "2026-11-16T02:44:38Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/replay.rs"]
 
