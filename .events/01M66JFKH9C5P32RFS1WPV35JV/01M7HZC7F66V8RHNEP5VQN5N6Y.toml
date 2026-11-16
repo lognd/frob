@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["frob-check verb.rs and gob-check sibling.rs use FindingRecord::from_finding_for with the detected audience; the engine stamps Finding.nature and note from RuleDef.nature"]
+new = ["Given a check run with a detected audience, when frob-check verb.rs and gob-check sibling.rs build records, then they use FindingRecord::from_finding_for and the engine stamps Finding.nature and note from RuleDef.nature"]
+reason = "good-first"
+moved = [0]
+at = "2026-11-16T10:45:19Z"
+actor = "lognd"
+rev = 1
