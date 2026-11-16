@@ -2,12 +2,13 @@
 id = "01M6454VHW7KYJV12E4TS1NZBR"
 title = "C# unknown-receiver fallback lacks NameOnly edge basis"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T15:41:05Z"
-updated = "2026-11-03T05:56:48Z"
+updated = "2026-11-16T15:32:57Z"
 scope = ["crates/gob-symbols/**"]
 +++
 
