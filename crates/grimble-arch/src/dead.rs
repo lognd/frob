@@ -123,11 +123,27 @@ fn name_only_fanout(graph: &SymbolGraph) -> BTreeMap<(String, Option<u32>, Optio
     fanout
 }
 
+/// Per referring unit and spelled name, how many targets a function-value reference may mean.
+fn value_fanout(graph: &SymbolGraph) -> BTreeMap<(String, String), usize> {
+    let mut fanout: BTreeMap<(String, String), usize> = BTreeMap::new();
+    for e in graph.edges_with_status() {
+        if let (EdgeKind::References, Status::May, Some(name), Some(_)) =
+            (e.kind, e.status, &e.name, &e.to)
+        {
+            *fanout
+                .entry((e.from.to_string(), name.clone()))
+                .or_default() += 1;
+        }
+    }
+    fanout
+}
+
 /// How each unit is reached, and the names spelled by unresolved calls.
 fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
     let mut reach: BTreeMap<String, Reach> = BTreeMap::new();
     let mut spelled: BTreeSet<&str> = BTreeSet::new();
     let fanout = name_only_fanout(graph);
+    let value_fanout = value_fanout(graph);
     for e in graph.edges_with_status() {
         if !matches!(
             e.kind,
@@ -150,6 +166,17 @@ fn reach_of(graph: &SymbolGraph) -> (BTreeMap<String, Reach>, BTreeSet<&str>) {
                                 == Some(&1) =>
                     {
                         tracing::debug!(unit = %to, "DEAD001 sole name-only candidate counts as reached");
+                        r.must = true;
+                    }
+                    // A function value naming exactly one unit can only mean that unit.
+                    Status::May
+                        if e.kind == EdgeKind::References
+                            && e.basis == EdgeBasis::Symbolic
+                            && e.name.as_ref().is_some_and(|n| {
+                                value_fanout.get(&(e.from.to_string(), n.clone())) == Some(&1)
+                            }) =>
+                    {
+                        tracing::debug!(unit = %to, "DEAD001 sole function-value reference counts as reached");
                         r.must = true;
                     }
                     Status::May => r.may = true,

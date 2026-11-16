@@ -134,6 +134,23 @@ fn cycle_names_both_crates() {
     );
 }
 
+// frob:ticket 01M61G1Y62DQKF195X9JWEYWT8
+#[test]
+fn dead001_counts_a_sole_function_value_as_reached() {
+    // frob:tests crates/grimble-arch/src/lib.rs::analyze
+    let dir = tempfile::tempdir().expect("tempdir");
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "fn double(x: u32) -> u32 {\n    x * 2\n}\n\npub fn run(v: Vec<u32>) -> Vec<u32> {\n    v.into_iter().map(double).collect()\n}\n",
+    );
+    let found: Vec<_> = run(dir.path(), 0)
+        .into_iter()
+        .filter(|f| f.rule == "DEAD001")
+        .collect();
+    assert!(found.is_empty(), "{found:?}");
+}
+
 #[test]
 fn dead_through_may_edge_is_unresolved() {
     // frob:tests crates/grimble-arch/src/lib.rs::analyze
