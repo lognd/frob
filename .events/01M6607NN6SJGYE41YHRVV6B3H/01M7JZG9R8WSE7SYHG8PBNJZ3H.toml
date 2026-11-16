@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T19:59:41Z"
+digest = "08de4863a25f7c02c3985248572083faccd953e8250c0fa638d5978f96dfc764"
+exit_code = 0
+head = "de2ede21a7a35c6e2c79a51006cb037c4118094d"
+passed = true
+provider = "nextest"
+ref = "os_open_rdonly_is_a_read"
+size = 17778
+status = "measured"
+test_count = 1
+tests_digest = "efaccc7998f6facc5fdf2fecaa67e7179b8128a5de559ce8e2817add057aed8c"
+uri = "dir:.git/frob/artifacts/08de4863a25f7c02c3985248572083faccd953e8250c0fa638d5978f96dfc764"
+at = "2026-11-16T19:59:41Z"
+actor = "lognd"
+rev = 1
