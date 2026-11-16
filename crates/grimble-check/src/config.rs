@@ -150,7 +150,7 @@ pub struct LogTable {
 }
 
 /// The `[path]` table (PATH001): literals accepted as written, added to the built-in `/dev/null`.
-// frob:ticket HQG7JPX
+// frob:ticket 01M7GPH1Y4XQ9RZMAV1HQG7JPX
 #[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
 #[config(table = "path")]
 pub struct PathTable {
