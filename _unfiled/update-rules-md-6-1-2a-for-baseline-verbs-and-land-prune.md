@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:16:11Z"
-updated = "2026-10-30T14:16:11Z"
+updated = "2026-11-16T10:45:13Z"
 scope = ["docs/design/rules.md"]
 
 [[acceptance]]
@@ -15,4 +15,7 @@ text = "6.1.2a describes baseline adopt/prune, land prune, E-LAND-BASELINE and f
 bound = false
 +++
 
-found while working QJPFKV3: the paragraph still says verbs and land prune are separate tickets; docs/design/rules.md was leased by MXQ4HW5.
+found while working QJPFKV3: rules.md 6.1.2a still says the baseline verbs and land prune are separate tickets.
+
+## Start here
+Open docs/design/rules.md, find section 6.1.2a, and rewrite the paragraph to describe the shipped behavior. See crates/frob-land for baseline_prune.

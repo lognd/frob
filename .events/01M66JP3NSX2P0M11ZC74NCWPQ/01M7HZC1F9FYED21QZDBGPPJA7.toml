@@ -1,0 +1,12 @@
+kind = "field"
+field = "body"
+old = "found while working QJPFKV3: the paragraph still says verbs and land prune are separate tickets; docs/design/rules.md was leased by MXQ4HW5."
+new = """
+found while working QJPFKV3: rules.md 6.1.2a still says the baseline verbs and land prune are separate tickets.
+
+## Start here
+Open docs/design/rules.md, find section 6.1.2a, and rewrite the paragraph to describe the shipped behavior. See crates/frob-land for baseline_prune."""
+reason = "complete good-first body"
+at = "2026-11-16T10:45:13Z"
+actor = "lognd"
+rev = 1
