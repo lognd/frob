@@ -2,7 +2,8 @@
 id = "01M7HNFQ470MGXGSX3K1M61BC6"
 title = "Windows CI: twelve_ready_tickets land test exceeds 120s hang guard"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
