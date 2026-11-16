@@ -254,7 +254,11 @@ mod tests {
         assert!(!grant_covers_call(&g, "src/a.rs", "Other.get"));
         assert!(!grant_covers_call(&g, "src/b.rs", "Client.get"));
         assert!(grant_covers_call(&grant(r#""src/**""#), "src/b.rs", ""));
-        assert!(grant_covers_call(&grant("src/a.rs::serve"), "src/a.rs", "serve.inner"));
+        assert!(grant_covers_call(
+            &grant("src/a.rs::serve"),
+            "src/a.rs",
+            "serve.inner"
+        ));
     }
 
     // frob:ticket 01M5V73ZX5V2VNBKHCQ9YD3YC3
