@@ -13,7 +13,7 @@ scope = ["crates/crunk-rules/**", "docs/reference/rules/GX004.md", "docs/referen
 
 [[acceptance]]
 text = "Behavior implemented with a bound test"
-bound = false
+bound = true
 +++
 
 Follow-up from EBXP7XW. no-story: internal follow-up of a landed ticket.
