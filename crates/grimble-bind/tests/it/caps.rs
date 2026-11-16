@@ -1163,6 +1163,25 @@ fn argdet_python_open_modes_pick_read_or_write() {
     }
 }
 
+// frob:ticket 01M6607NN6SJGYE41YHRVV6B3H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn argdet_python_os_open_flags_pick_read_or_write() {
+    let cases: &[(&str, &[&str])] = &[
+        ("os.open(p, os.O_RDONLY)", &["fs.read"]),
+        ("os.open(p, os.O_WRONLY | os.O_CREAT)", &["fs.write"]),
+        ("os.open(p, os.O_RDWR)", &["fs.read", "fs.write"]),
+        ("os.open(p, f)", &["fs.read", "fs.write?"]),
+    ];
+    for (call, want) in cases {
+        let py = format!("import os\n\ndef go(p, f):\n    return {call}\n");
+        let b = bind_py(&py, "");
+        let mut got = argdet_kinds(&b);
+        got.sort();
+        assert_eq!(got, *want, "{call}: {:?}", b.findings);
+    }
+}
+
 // frob:ticket 01M5XNNHY7KZDKBZKK2MM08TTF
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]

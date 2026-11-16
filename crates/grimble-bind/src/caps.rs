@@ -104,7 +104,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags, `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags are modeled from literal `os.O_*` terms joined by `|` (`O_RDONLY` reads; `O_WRONLY` / `O_APPEND` / `O_CREAT` / `O_TRUNC` / `O_EXCL` write; `O_RDWR` both; any other flag expression is a May `fs.write`; ticket 01M6607NN6SJGYE41YHRVV6B3H), `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
 //! severity is consulted for CAP001 (ticket K4EMP90): `[packs.severity]` for the atom, else the
 //! atom row (`warn` there makes the denied use Unresolved, never an Error), else Error; the message
 //! carries the row's rationale and safer alternative. CAP002 is a Warning.
@@ -2336,6 +2336,81 @@ fn open_mode(c: &gob_symbols::CallArgs, receiver: bool) -> OpenMode {
     }
 }
 
+/// Classify the `flags` of the `os.open` call `c` (ticket 01M6607NN6SJGYE41YHRVV6B3H) from its source
+/// text: literal `os.O_*` terms joined by `|` fold, anything else (or a splat) is `Unknown`.
+fn os_open_mode(src: &str, c: &gob_symbols::CallArgs) -> OpenMode {
+    if c.splat {
+        return OpenMode::Unknown;
+    }
+    let Some(args) = call_arg_texts(src, c.offset) else {
+        return OpenMode::Unknown;
+    };
+    let flags = args
+        .iter()
+        .find_map(|a| a.strip_prefix("flags=").map(str::trim))
+        .or_else(|| args.get(1).map(String::as_str).filter(|a| !a.contains('=')));
+    let Some(flags) = flags else {
+        return OpenMode::Unknown;
+    };
+    let (mut writes, mut wronly, mut rdwr) = (false, false, false);
+    for term in flags.split('|').map(str::trim) {
+        match term.strip_prefix("os.") {
+            Some("O_WRONLY") => (writes, wronly) = (true, true),
+            Some("O_RDWR") => (writes, rdwr) = (true, true),
+            Some("O_APPEND" | "O_CREAT" | "O_TRUNC" | "O_EXCL") => writes = true,
+            Some(
+                "O_RDONLY" | "O_CLOEXEC" | "O_NONBLOCK" | "O_NOFOLLOW" | "O_DIRECTORY" | "O_NOCTTY"
+                | "O_BINARY" | "O_NOINHERIT",
+            ) => {}
+            _ => {
+                tracing::debug!(term, "os.open flag term not modeled");
+                return OpenMode::Unknown;
+            }
+        }
+    }
+    if writes {
+        OpenMode::Write {
+            reads: rdwr || !wronly,
+        }
+    } else {
+        OpenMode::Read
+    }
+}
+
+/// The top-level argument texts (trimmed, whitespace-free around `=`) of the call whose callee starts at
+/// `offset`; `None` when the parentheses do not balance.
+fn call_arg_texts(src: &str, offset: usize) -> Option<Vec<String>> {
+    let rest = src.get(offset..)?;
+    let open = rest.find('(')?;
+    let (mut depth, mut quote) = (0usize, None::<char>);
+    let (mut args, mut cur) = (Vec::new(), String::new());
+    for ch in rest[open + 1..].chars() {
+        if let Some(q) = quote {
+            quote = (ch != q).then_some(q);
+            cur.push(ch);
+            continue;
+        }
+        match ch {
+            '"' | '\'' => quote = Some(ch),
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' if depth > 0 => depth -= 1,
+            ')' => {
+                args.push(cur.trim().to_owned());
+                return Some(args.into_iter().filter(|a| !a.is_empty()).collect());
+            }
+            ',' if depth == 0 => {
+                args.push(std::mem::take(&mut cur).trim().to_owned());
+                continue;
+            }
+            _ => {}
+        }
+        if !ch.is_whitespace() || !cur.is_empty() {
+            cur.push(ch);
+        }
+    }
+    None
+}
+
 /// Refine one Rust use of an `OpenOptions` builder by its flags (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); returns
 /// whether to keep `u`. The builder constructors sit in both `fs.read` and `fs.write` vocabulary, so
 /// each half is kept, dropped, or re-added as a May use per the proven flags.
@@ -2418,7 +2493,16 @@ fn refine_open_modes(cx: &Cx<'_>, uses: &mut Uses) {
                 return true;
             }
             let receiver = !matches!(u.callee.as_str(), "open" | "io.open" | "codecs.open");
-            let modes: Vec<OpenMode> = cands.iter().map(|c| open_mode(c, receiver)).collect();
+            let os_open = u.callee == "os.open";
+            let src = if os_open { code.source() } else { None };
+            let modes: Vec<OpenMode> = cands
+                .iter()
+                .map(|c| match (os_open, &src) {
+                    (true, Some(src)) => os_open_mode(src, c),
+                    (true, None) => OpenMode::Unknown,
+                    _ => open_mode(c, receiver),
+                })
+                .collect();
             let mode = match modes.as_slice() {
                 [only] => only,
                 _ => &OpenMode::Unknown,
@@ -4196,5 +4280,62 @@ mod relevance_tests {
             .expect("the parser finds the fs.readFileSync call");
         let hits = vocab_hits("typescript", &vocab, None, &pu, &pu.path);
         assert!(hits.contains(&"fs.read"), "{hits:?}");
+    }
+
+    /// The `os.open` mode of the single call in `py`.
+    fn os_open_of(py: &str) -> OpenMode {
+        let calls = gob_symbols::call_args("python", py);
+        let c = calls
+            .iter()
+            .find(|c| c.callee == "os.open")
+            .expect("an os.open call");
+        os_open_mode(py, c)
+    }
+
+    // frob:ticket 01M6607NN6SJGYE41YHRVV6B3H
+    // frob:tests crates/grimble-bind/src/caps.rs::os_open_mode
+    /// `os.open(p, os.O_RDONLY)` reads only, so it is `fs.read` and not `fs.write`.
+    #[test]
+    fn os_open_rdonly_is_a_read() {
+        assert_eq!(
+            os_open_of("import os\nos.open(p, os.O_RDONLY)\n"),
+            OpenMode::Read
+        );
+        assert_eq!(
+            os_open_of("import os\nos.open(p, flags=os.O_RDONLY | os.O_CLOEXEC)\n"),
+            OpenMode::Read
+        );
+    }
+
+    // frob:ticket 01M6607NN6SJGYE41YHRVV6B3H
+    // frob:tests crates/grimble-bind/src/caps.rs::os_open_mode
+    /// Write-side flags make `os.open` an `fs.write`; `O_RDWR` also keeps the read.
+    #[test]
+    fn os_open_write_flags_are_a_write() {
+        for (flags, reads) in [
+            ("os.O_WRONLY", false),
+            ("os.O_WRONLY | os.O_CREAT | os.O_APPEND", false),
+            ("os.O_CREAT", true),
+            ("os.O_RDWR", true),
+        ] {
+            let py = format!("import os\nos.open(p, {flags}, 0o644)\n");
+            assert_eq!(os_open_of(&py), OpenMode::Write { reads }, "{flags}");
+        }
+    }
+
+    // frob:ticket 01M6607NN6SJGYE41YHRVV6B3H
+    // frob:tests crates/grimble-bind/src/caps.rs::os_open_mode
+    /// A flag expression that is not literal `os.O_*` terms is unknown (a May write).
+    #[test]
+    fn os_open_non_literal_flags_are_unknown() {
+        for call in [
+            "os.open(p, f)",
+            "os.open(p)",
+            "os.open(p, os.O_RDONLY | extra)",
+            "os.open(*a)",
+        ] {
+            let py = format!("import os\n{call}\n");
+            assert_eq!(os_open_of(&py), OpenMode::Unknown, "{call}");
+        }
     }
 }
