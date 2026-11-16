@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T10:05:48Z"
+digest = "b106d52a11456fcb0a887f433afe14d219e84bb067cabb711afc284f8780be28"
+exit_code = 0
+head = "bfafad9fd35c1afc1938313982059051b5e0b039"
+passed = true
+provider = "nextest"
+ref = "every_emitted_tool_stage_id_is_declared"
+size = 17787
+status = "measured"
+test_count = 1
+tests_digest = "c23d359d90f9446d3279ceb8dd27bb5c833c3e2af2f0c45fabf165fde0489275"
+uri = "dir:.git/frob/artifacts/b106d52a11456fcb0a887f433afe14d219e84bb067cabb711afc284f8780be28"
+at = "2026-11-16T10:05:48Z"
+actor = "lognd"
+rev = 1
