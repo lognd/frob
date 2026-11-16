@@ -1,0 +1,1 @@
+Add design QA artifacts to crunk-spec and crunk-rules: `design/qa/heuristics` (findings against the ten NN/g heuristics with severity, owner and evidence) and `design/qa/walkthroughs` (four questions per step), with checks for failed steps, ownerless major findings, missing evidence and uncovered screens.

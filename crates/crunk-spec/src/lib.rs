@@ -64,6 +64,7 @@ pub mod model;
 pub mod naming;
 pub mod phase;
 pub mod presets;
+pub mod qa;
 pub mod research;
 pub mod schema;
 pub mod screen_file;
