@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T09:28:20Z"
+digest = "37dc0617f77edcca7417a743ec0d25303a078b65c3bdae11ba80e2cc299b5673"
+exit_code = 0
+head = "7ed7be86a2798539326dbb076a6acca141b0942b"
+passed = true
+provider = "nextest"
+ref = "serde_with_module_attribute_references_both_functions"
+size = 17793
+status = "measured"
+test_count = 1
+tests_digest = "79b8ca99dfebde8c5ae5aa74a1f58dd29ca23e38749eeb9473e5af5297acac84"
+uri = "dir:.git/frob/artifacts/37dc0617f77edcca7417a743ec0d25303a078b65c3bdae11ba80e2cc299b5673"
+at = "2026-11-16T09:28:20Z"
+actor = "lognd"
+rev = 1
