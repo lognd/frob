@@ -1,0 +1,13 @@
+kind = "create"
+title = "End-to-end GX002/GX003 test through crunk-check run on a scene-and-flow fixture"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+labels = ["no-story"]
+scope = ["crates/crunk-check/**"]
+acceptance = ["A test runs GX002 and GX003 through run on a fixture"]
+body = "Follow-up from FP71BSA. no-story: internal test follow-up."
+at = "2026-11-16T05:38:16Z"
+actor = "lognd"
+rev = 1
