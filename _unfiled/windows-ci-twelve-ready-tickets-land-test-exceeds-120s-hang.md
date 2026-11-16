@@ -2,12 +2,12 @@
 id = "01M7HNFQ470MGXGSX3K1M61BC6"
 title = "Windows CI: twelve_ready_tickets land test exceeds 120s hang guard"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T07:52:28Z"
-updated = "2026-11-16T07:52:28Z"
+updated = "2026-11-16T07:56:56Z"
 idempotency_key = "win-twelve-land-timeout"
 labels = ["no-story"]
 scope = [".config/nextest.toml"]

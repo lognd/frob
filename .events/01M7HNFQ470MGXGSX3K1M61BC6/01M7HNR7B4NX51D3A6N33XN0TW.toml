@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/1M61BC6; scope: .config/nextest.toml; ttl 7200s"
+at = "2026-11-16T07:56:56Z"
+actor = "lognd"
+rev = 1
