@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T04:31:36Z"
+digest = "4164f2fb5f8e50927ca65ea39373e20ae4686d7be1548c57c0ac64d29837f86b"
+exit_code = 0
+head = "07b35a625c8323f2422f0423b71612d3a5e22d4d"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.03s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID f52e6ac2-a429-4aac-9632-418d703c95ef with nextest profile: default
+    Starting 1 test across 164 binaries (8109 tests skipped)
+        PASS [   0.025s] crunk-layout::it focus::a_scene_no_transition_reaches_is_unreachable
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.043s] 1 test run: 1 passed, 8109 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_scene_no_transition_reaches_is_unreachable"
+size = 1516
+status = "measured"
+test_count = 1
+tests_digest = "42a9c873f4f866fe093042addd3d565b8be1988ceeeec8094ca1a7c79473a19a"
+at = "2026-11-16T04:31:36Z"
+actor = "lognd"
+rev = 1
