@@ -4,11 +4,11 @@
 
 // frob:ticket 01M5XCZ1C4P58PFPRCH880G1HE
 
-use std::collections::BTreeSet;
 use std::path::Path;
 
 use serde::Deserialize;
 
+use crate::qa::load_dir;
 use crate::research::{Date, ResearchError, ResearchProblem, parse_toml};
 
 /// Directory holding metric files, relative to the project root.
@@ -129,63 +129,25 @@ impl MetricSet {
     }
 }
 
-/// Load every `.toml` in `<root>/<dir>`, keeping valid files and refusing a repeated id.
-fn load_kind<T>(
-    root: &Path,
-    dir: &str,
-    parse: fn(&str) -> Result<T, ResearchError>,
-    id_of: fn(&T) -> &str,
-    problems: &mut Vec<ResearchProblem>,
-) -> Vec<(String, T)> {
-    let Ok(entries) = std::fs::read_dir(root.join(dir)) else {
-        tracing::debug!(dir, "no metrics directory");
-        return Vec::new();
-    };
-    let mut names: Vec<String> = entries
-        .filter_map(Result::ok)
-        .filter_map(|e| e.file_name().into_string().ok())
-        .filter(|n| Path::new(n).extension().is_some_and(|x| x == "toml"))
-        .collect();
-    names.sort();
-    let mut seen = BTreeSet::new();
-    let mut out = Vec::new();
-    for name in names {
-        let path = format!("{dir}/{name}");
-        let mut refuse = |message: String, line| {
-            tracing::warn!(%path, %message, "metrics file rejected");
-            problems.push(ResearchProblem {
-                path: path.clone(),
-                line,
-                message,
-            });
-        };
-        let text = match std::fs::read_to_string(root.join(&path)) {
-            Ok(t) => t,
-            Err(err) => {
-                refuse(format!("unreadable: {err}"), None);
-                continue;
-            }
-        };
-        match parse(&text) {
-            Ok(item) if seen.insert(id_of(&item).to_owned()) => out.push((path.clone(), item)),
-            Ok(item) => refuse(format!("duplicate id `{}`", id_of(&item)), None),
-            Err(e) => refuse(e.message, e.line),
-        }
-    }
-    out
-}
-
 /// Read every metric and experiment under `root`. A missing directory contributes nothing; a bad
 /// file becomes a [`ResearchProblem`] and a repeated id within a kind is refused.
 #[must_use]
 pub fn load_metrics(root: &Path) -> MetricSet {
     let mut problems = Vec::new();
-    let metrics = load_kind(root, METRICS_DIR, parse_metric, |m| &m.id, &mut problems);
-    let experiments = load_kind(
+    let metrics = load_dir(
+        root,
+        METRICS_DIR,
+        parse_metric,
+        |m| &m.id,
+        "id",
+        &mut problems,
+    );
+    let experiments = load_dir(
         root,
         EXPERIMENTS_DIR,
         parse_experiment,
         |x| &x.id,
+        "id",
         &mut problems,
     );
     tracing::debug!(

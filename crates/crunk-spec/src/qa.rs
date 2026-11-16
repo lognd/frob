@@ -198,12 +198,13 @@ impl QaSet {
     }
 }
 
-/// Load every `.toml` in `<root>/<dir>`, keeping valid files and refusing a repeated screen.
-fn load_dir<T>(
+/// Load every `.toml` in `<root>/<dir>`, keeping valid files and refusing a repeated key (named `key_name` in the message).
+pub(crate) fn load_dir<T>(
     root: &Path,
     dir: &str,
     parse: fn(&str) -> Result<T, ResearchError>,
     screen_of: fn(&T) -> &str,
+    key_name: &str,
     problems: &mut Vec<ResearchProblem>,
 ) -> Vec<(String, T)> {
     let Ok(entries) = std::fs::read_dir(root.join(dir)) else {
@@ -237,7 +238,7 @@ fn load_dir<T>(
         };
         match parse(&text) {
             Ok(item) if seen.insert(screen_of(&item).to_owned()) => out.push((path.clone(), item)),
-            Ok(item) => problem(format!("duplicate screen `{}`", screen_of(&item)), None),
+            Ok(item) => problem(format!("duplicate {key_name} `{}`", screen_of(&item)), None),
             Err(e) => problem(e.message, e.line),
         }
     }
@@ -254,6 +255,7 @@ pub fn load_qa(root: &Path) -> QaSet {
         HEURISTICS_DIR,
         parse_heuristics,
         |h| &h.screen,
+        "screen",
         &mut problems,
     );
     let walkthroughs = load_dir(
@@ -261,6 +263,7 @@ pub fn load_qa(root: &Path) -> QaSet {
         WALKTHROUGHS_DIR,
         parse_walkthrough,
         |w| &w.screen,
+        "screen",
         &mut problems,
     );
     tracing::debug!(
