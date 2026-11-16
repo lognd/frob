@@ -2,12 +2,12 @@
 id = "01M7HC8V861YF6HNVQXDAJGW83"
 title = "Report FlowFacts.problems through a crunk rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T05:11:26Z"
-updated = "2026-11-16T05:11:26Z"
+updated = "2026-11-16T06:51:31Z"
 labels = ["no-story"]
 scope = ["crates/crunk-rules/**"]
 
