@@ -2,7 +2,8 @@
 id = "01M6607NN6SJGYE41YHRVV6B3H"
 title = "CAP: model os.open flags (O_RDONLY/O_WRONLY/O_APPEND/O_CREAT)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
