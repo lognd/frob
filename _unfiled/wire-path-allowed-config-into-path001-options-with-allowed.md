@@ -2,7 +2,8 @@
 id = "01M7GPH1Y4XQ9RZMAV1HQG7JPX"
 title = "Wire [path] allowed config into PATH001 Options::with_allowed callers"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
