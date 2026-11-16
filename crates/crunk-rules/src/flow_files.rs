@@ -85,4 +85,18 @@ impl FlowFacts {
             .map(|(from, to)| (from.to_owned(), to.to_owned()))
             .collect()
     }
+
+    // frob:ticket 01M7HC8V5DNXKG467M2C4WBARE
+    /// The path of the first flow file with an edge from screen `from` to screen `to`.
+    #[must_use]
+    pub fn path_of_transition(&self, from: &str, to: &str) -> Option<&str> {
+        self.files
+            .iter()
+            .find(|(_, flow)| {
+                flow.edges
+                    .iter()
+                    .any(|e| screen_of(&e.from) == from && screen_of(&e.to) == to)
+            })
+            .map(|(path, _)| path.as_str())
+    }
 }

@@ -1,0 +1,1 @@
+GX004 and GX005 now also check across scenes through the flow graph: GX004 flags a scene a flow enters that has no focusable control, and GX005 flags a flow transition that names a screen no scene renders.
