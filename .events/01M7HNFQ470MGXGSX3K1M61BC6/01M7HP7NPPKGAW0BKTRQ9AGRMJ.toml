@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T08:05:24Z"
+digest = "903756fc7f73bc444e8a69b99e687dac043fec04bb71f417e2bd8043167a0d3c"
+exit_code = 0
+head = "49ead9cdf529fcc06cb440c2c1075fe6e27843ea"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3c181610-bd91-4563-904a-5dbba32455af with nextest profile: default
+    Starting 1 test across 164 binaries (8124 tests skipped)
+        PASS [   6.247s] frob-land::it land::twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   6.260s] 1 test run: 1 passed, 8124 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit"
+size = 589
+status = "measured"
+test_count = 1
+tests_digest = "1e95de603e7bc40c4e15e15cb54f224300d989d0d72a77896060b4609a3862ca"
+at = "2026-11-16T08:05:24Z"
+actor = "lognd"
+rev = 1
