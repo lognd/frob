@@ -2,7 +2,8 @@
 id = "01M62AM9SH454DCNWR0ATTCAPV"
 title = "DEAD001 'line' reached only through a May edge in ticket/read.rs"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
