@@ -2,7 +2,8 @@
 id = "01M7HC8V861YF6HNVQXDAJGW83"
 title = "Report FlowFacts.problems through a crunk rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
