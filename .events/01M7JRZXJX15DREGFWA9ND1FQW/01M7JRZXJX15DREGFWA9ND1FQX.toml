@@ -1,0 +1,13 @@
+kind = "create"
+title = "gob-dev gen all --check: confirm it fails on a stale crate map and investigate slowness"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/gob-dev/**"]
+acceptance = ["Given a stale docs/reference/crates.md, when gob-dev gen all --check runs, then it exits non-zero naming the file"]
+body = "The 7BCYC26 implementer run of gen all --check timed out at 590s so the stale-map failure is unconfirmed. Measure and speed up. no-story: internal tooling."
+at = "2026-11-16T18:12:59Z"
+actor = "lognd"
+rev = 1
