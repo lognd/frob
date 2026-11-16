@@ -2,12 +2,12 @@
 id = "01M6607P2VZ5WZ4SH1TNZD5P85"
 title = "CAP: direct shutil.move and os.rename source/dest"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T08:53:44Z"
-updated = "2026-11-16T20:21:34Z"
+updated = "2026-11-16T20:21:40Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/caps/**"]
 
