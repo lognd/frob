@@ -22,13 +22,11 @@ pub(crate) mod rel_path {
     use gob_git::RelPath;
     use serde::{Deserialize, Deserializer, Serializer};
 
-    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_path attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Write `p` as its slash-separated string.
     pub(crate) fn serialize<S: Serializer>(p: &RelPath, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_str(p.as_str())
     }
 
-    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_path attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Read a string and validate it as a [`RelPath`], refusing absolute or dot-segment paths.
     pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<RelPath, D::Error> {
         RelPath::new(String::deserialize(d)?).map_err(serde::de::Error::custom)
@@ -40,7 +38,6 @@ pub(crate) mod rel_paths {
     use gob_git::RelPath;
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_paths attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Write `ps` as a list of strings.
     pub(crate) fn serialize<S: Serializer>(ps: &[RelPath], s: S) -> Result<S::Ok, S::Error> {
         ps.iter()
@@ -49,7 +46,6 @@ pub(crate) mod rel_paths {
             .serialize(s)
     }
 
-    // frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by a serde with=rel_paths attribute string, an edge the call graph cannot see; exercised by every event round trip"
     /// Read a list of strings, validating each as a [`RelPath`].
     pub(crate) fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<RelPath>, D::Error> {
         Vec::<String>::deserialize(d)?
