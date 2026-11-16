@@ -23,6 +23,8 @@ fn may_clauses_yield_grants() {
     .expect("parses");
     assert_eq!(rows[0].grants, ["net.listen"]);
     assert_eq!(rows[0].excuses, ["net.connect"]);
+    assert_eq!(rows[0].scoped_grants.len(), 1);
+    assert_eq!(rows[0].scoped_grants[0].atom, "fs.write");
 }
 
 // frob:tests crates/grimble-check/src/example_model.rs::read_example_model

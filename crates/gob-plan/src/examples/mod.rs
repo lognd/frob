@@ -16,7 +16,7 @@ mod side;
 
 pub use judge::{ExampleResult, GRL016, judge, judge_fixed};
 pub use markers::{Actual, Expected, Level, Mark, expect_line, parse_markers};
-pub use model_reader::{ModelNodeRow, ModelReader, install_model_reader};
+pub use model_reader::{ModelNodeRow, ModelReader, ScopedGrant, install_model_reader};
 pub use runner::{RunError, run_example};
 
 /// Section-12 corpus rules run through `run_example`: directive, `calls`, `resolves to` and language-less examples.

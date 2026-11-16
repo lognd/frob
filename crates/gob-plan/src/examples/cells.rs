@@ -5,8 +5,10 @@
 //! the example's language (the shared registry, as `grimble-bind` reads it); the node is the model
 //! node whose `owns` selector matches the example's file path. `granted` is a `may` clause of the
 //! node naming the atom or an ancestor of it (`net` covers `net.listen`). `excused` is an
-//! `excuses` clause of the node under the same rule. A `may ... at` grant is not read (it covers
-//! only part of the node's code), and a grant's string arguments are ignored.
+//! `excuses` clause of the node under the same rule. A `may ... at FILE::SYMBOL` grant covers only
+//! the calls inside the selected file and symbols; a cell is granted when every call of its atom is
+//! covered, and its line is then the first uncovered call otherwise. A grant's string arguments are
+//! ignored.
 
 // frob:ticket 01M5ETB7SWJPH7EVK97WHEVEHY
 
@@ -15,7 +17,7 @@ use gob_ir::core_pack::names_callee;
 use gob_ir::{Answer, Model, Operator, Universal};
 use gob_text::SourceText;
 
-use super::model_reader::ModelNodeRow;
+use super::model_reader::{ModelNodeRow, ScopedGrant};
 use crate::catalog::{Column, FieldType};
 use crate::exec::Scalar;
 use crate::exec::relations::SideTable;
@@ -64,10 +66,74 @@ fn owns(row: &ModelNodeRow, path: &str) -> bool {
     })
 }
 
-/// The first line (and callee) of each distinct callee the model's calls name, in source order.
-fn calls(model: &Model, source: &SourceText) -> Vec<(String, i64)> {
+/// One call in the example's code: the callee, its line and the dotted names of the units around it.
+struct Call {
+    callee: String,
+    line: i64,
+    symbol: String,
+}
+
+/// The dotted names of the named units enclosing `id`, outermost first.
+fn enclosing_symbol(term: &gob_ir::Term, id: gob_ir::NodeId) -> String {
+    let mut names: Vec<&str> = Vec::new();
+    let mut cur = term.node(id).parent();
+    while let Some(p) = cur {
+        let n = term.node(p);
+        if matches!(n.op(), Operator::Universal(Universal::Unit { .. }))
+            && let Some(name) = n.name()
+        {
+            names.push(name);
+        }
+        cur = n.parent();
+    }
+    names.reverse();
+    names.join(".")
+}
+
+/// Whether `grant` covers a call inside `symbol` of the file `path`: the file glob matches and,
+/// when the selector names symbols after `::`, the pattern matches the symbol or one of its parents.
+fn grant_covers_call(grant: &ScopedGrant, path: &str, symbol: &str) -> bool {
+    let at = grant.at.trim_matches('"');
+    let (file, sym) = match at.split_once("::") {
+        Some((f, s)) => (f, Some(s)),
+        None => (at, None),
+    };
+    let file_ok = match Glob::new(file) {
+        Ok(g) => g.compile_matcher().is_match(path),
+        Err(e) => {
+            tracing::warn!(selector = at, error = %e, "unreadable at selector grants nothing");
+            false
+        }
+    };
+    if !file_ok {
+        return false;
+    }
+    let Some(pattern) = sym else {
+        return true;
+    };
+    let Ok(g) = Glob::new(pattern) else {
+        tracing::warn!(selector = at, "unreadable at symbol pattern grants nothing");
+        return false;
+    };
+    let m = g.compile_matcher();
+    // a pattern naming a symbol also covers the symbols nested in it
+    let mut prefix = String::new();
+    for part in symbol.split('.').filter(|p| !p.is_empty()) {
+        if !prefix.is_empty() {
+            prefix.push('.');
+        }
+        prefix.push_str(part);
+        if m.is_match(&prefix) {
+            return true;
+        }
+    }
+    false
+}
+
+/// Every call the model's calls make, in source order.
+fn calls(model: &Model, source: &SourceText) -> Vec<Call> {
     let term = model.term();
-    let mut out: Vec<(String, i64)> = Vec::new();
+    let mut out: Vec<Call> = Vec::new();
     for id in term.ids() {
         let n = term.node(id);
         if !matches!(n.op(), Operator::Universal(Universal::Apply { kind }) if kind == "call") {
@@ -84,9 +150,13 @@ fn calls(model: &Model, source: &SourceText) -> Vec<(String, i64)> {
             .span()
             .and_then(|s| source.line_col(s.range.start()))
             .map_or(NO_LINE, |lc| i64::from(lc.line));
-        out.push((name.clone(), line));
+        out.push(Call {
+            callee: name.clone(),
+            line,
+            symbol: enclosing_symbol(term, id),
+        });
     }
-    out.sort_by_key(|(_, line)| *line);
+    out.sort_by_key(|c| c.line);
     out
 }
 
@@ -110,11 +180,29 @@ pub(crate) fn cell_table(
             let Answer::Exact(names) = gob_ir::registry::callee_vocab(lang, atom.name) else {
                 continue;
             };
-            let Some((_, line)) = seen.iter().find(|(c, _)| names_callee(lang, &names, c)) else {
+            let uses: Vec<&Call> = seen
+                .iter()
+                .filter(|c| names_callee(lang, &names, &c.callee))
+                .collect();
+            let Some(first) = uses.first() else {
                 continue;
             };
             for node in &owners {
-                let granted = node.grants.iter().any(|g| covers(g, atom.name));
+                let everywhere = node.grants.iter().any(|g| covers(g, atom.name));
+                let scoped: Vec<&ScopedGrant> = node
+                    .scoped_grants
+                    .iter()
+                    .filter(|g| covers(&g.atom, atom.name))
+                    .collect();
+                let uncovered = if everywhere {
+                    None
+                } else {
+                    let p = path.unwrap_or_default();
+                    uses.iter()
+                        .find(|c| !scoped.iter().any(|g| grant_covers_call(g, p, &c.symbol)))
+                };
+                let granted = everywhere || uncovered.is_none();
+                let line = uncovered.map_or(first.line, |c| c.line);
                 let excused = node.excuses.iter().any(|g| covers(g, atom.name));
                 cells.push(vec![
                     Scalar::Str(node.name.clone()),
@@ -122,7 +210,7 @@ pub(crate) fn cell_table(
                     Scalar::Bool(true),
                     Scalar::Bool(granted),
                     Scalar::Bool(excused),
-                    Scalar::Int(*line),
+                    Scalar::Int(line),
                 ]);
             }
         }
@@ -137,7 +225,7 @@ pub(crate) fn cell_table(
 
 #[cfg(test)]
 mod tests {
-    use super::covers;
+    use super::{ScopedGrant, covers, grant_covers_call};
     use gob_ir::core_pack::names_callee;
     use std::collections::BTreeSet;
 
@@ -148,6 +236,25 @@ mod tests {
         assert!(covers("net", "net.listen"));
         assert!(!covers("net", "network.x"));
         assert!(!covers("net.listen", "net"));
+    }
+
+    fn grant(at: &str) -> ScopedGrant {
+        ScopedGrant {
+            atom: "net".to_owned(),
+            at: at.to_owned(),
+        }
+    }
+
+    // frob:ticket 01M5V7400HHPFFVXFJFD52N2C4
+    // frob:tests crates/gob-plan/src/examples/cells.rs::grant_covers_call
+    #[test]
+    fn a_scoped_grant_covers_only_its_file_and_symbols() {
+        let g = grant(r#""src/a.rs::Client.*""#);
+        assert!(grant_covers_call(&g, "src/a.rs", "Client.get"));
+        assert!(!grant_covers_call(&g, "src/a.rs", "Other.get"));
+        assert!(!grant_covers_call(&g, "src/b.rs", "Client.get"));
+        assert!(grant_covers_call(&grant(r#""src/**""#), "src/b.rs", ""));
+        assert!(grant_covers_call(&grant("src/a.rs::serve"), "src/a.rs", "serve.inner"));
     }
 
     // frob:ticket 01M5V73ZX5V2VNBKHCQ9YD3YC3

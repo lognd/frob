@@ -4,7 +4,7 @@
 //! the grimble binary installs it at startup.
 
 // frob:ticket 01M5FRCMBS9DHQ223JWGN6RNW7
-use gob_plan::examples::ModelNodeRow;
+use gob_plan::examples::{ModelNodeRow, ScopedGrant};
 use grimble_model::ast::{ClauseKind, EntityKind, Item};
 
 /// The path an example `model` text is read as.
@@ -47,6 +47,17 @@ fn model_items(items: &[Item], ns: &str, rows: &mut Vec<ModelNodeRow>) {
                         _ => None,
                     })
                     .collect();
+                let scoped_grants = e
+                    .clauses
+                    .iter()
+                    .filter_map(|c| match &c.kind {
+                        ClauseKind::May(m) => m.at.as_ref().map(|at| ScopedGrant {
+                            atom: m.atom.name.clone(),
+                            at: at.text.clone(),
+                        }),
+                        _ => None,
+                    })
+                    .collect();
                 let excuses = e
                     .clauses
                     .iter()
@@ -61,6 +72,7 @@ fn model_items(items: &[Item], ns: &str, rows: &mut Vec<ModelNodeRow>) {
                     path: EXAMPLE_MODEL_PATH.to_owned(),
                     selectors,
                     grants,
+                    scoped_grants,
                     excuses,
                 });
             }

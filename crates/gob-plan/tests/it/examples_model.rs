@@ -148,6 +148,48 @@ fn cells_fire_for_ungranted_atoms_and_clear_when_granted_covered_excused_or_unow
     all_pass(CELLS);
 }
 
+/// A cell rule over code with one call inside `ok` and one inside `bad`, under a scoped grant.
+const SCOPED: &str = r#"rule CEL002 "scoped" {
+  lang *
+  polarity P+  severity error  scope repo  rollup file
+  reads model
+
+  find c: cell where c.observed and not c.granted and not c.excused
+  report c "uses {c.atom} without a grant"
+  example fire rust {
+    model """node n { owns "src/**"; may net.listen at "src/a.rs::ok"; }"""
+    file "src/a.rs" """
+      fn ok() { std::net::TcpListener::bind("0.0.0.0:0"); }
+      fn bad() { std::net::TcpListener::bind("0.0.0.0:1"); }   //~ error
+    """
+  }
+  example clean rust {
+    model """node n { owns "src/**"; may net.listen at "src/a.rs::ok"; }"""
+    file "src/a.rs" """
+      fn ok() { std::net::TcpListener::bind("0.0.0.0:0"); }
+    """
+  }
+  example fire rust {
+    model """node n { owns "src/**"; may net.listen at "src/b.rs::ok"; }"""
+    file "src/a.rs" """
+      fn ok() { std::net::TcpListener::bind("0.0.0.0:0"); }   //~ error
+    """
+  }
+  explain """
+    Test rule.
+    ## Remedy
+    None.
+  """
+}
+"#;
+
+// frob:ticket 01M5V7400HHPFFVXFJFD52N2C4
+// frob:tests crates/gob-plan/src/examples/cells.rs::cell_table
+#[test]
+fn a_scoped_grant_grants_only_cells_inside_its_selector() {
+    all_pass(SCOPED);
+}
+
 // frob:tests crates/gob-plan/src/examples/side.rs::add_cells
 #[test]
 fn a_cell_rule_with_no_model_input_is_refused_not_silently_clean() {

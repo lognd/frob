@@ -6,6 +6,15 @@
 // frob:ticket 01M5FRCMBS9DHQ223JWGN6RNW7
 use std::sync::OnceLock;
 
+/// One `may ATOM at SELECTOR` grant: the atom and the selector text bounding it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScopedGrant {
+    /// The granted atom (for example `net.listen`).
+    pub atom: String,
+    /// The selector text as written: a file glob, optionally `::` and a dotted symbol pattern.
+    pub at: String,
+}
+
 /// One model node an example `model` declares: its dotted name, kind and `owns` selectors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ModelNodeRow {
@@ -18,8 +27,10 @@ pub struct ModelNodeRow {
     /// The `owns` selectors of the node.
     pub selectors: Vec<String>,
     /// The atoms the node grants everywhere with `may` (for example `net.listen`); a `may ... at`
-    /// grant covers only part of the node's code and is not listed.
+    /// grant covers only part of the node's code and is listed in `scoped_grants` instead.
     pub grants: Vec<String>,
+    /// The `may ATOM at SELECTOR` grants, each covering only what its selector names.
+    pub scoped_grants: Vec<ScopedGrant>,
     /// The atoms the node excuses with `excuses ATOM because="..."`.
     pub excuses: Vec<String>,
 }

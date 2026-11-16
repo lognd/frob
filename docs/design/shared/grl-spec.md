@@ -1470,8 +1470,10 @@ on a cell reports the line column.
 
 ### 15.4 Limits
 
-- Only unscoped `may` clauses count as grants; `may ... at "glob"` and
-  grant arguments are ignored.
+- A `may ... at "FILE::SYMBOL"` grant covers only the calls inside the
+  selected file and symbols (a symbol pattern also covers nested symbols);
+  a cell is granted when every use of its atom is covered. Grant arguments
+  are ignored.
 - Observed atoms come from callee names only, with no data-flow.
 
 ## Decision records
