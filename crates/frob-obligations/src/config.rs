@@ -1,4 +1,4 @@
-//! The `[invariants]` and `[coverage]` config tables: forbidden imports (INV002) and coverage minimums (COV004).
+//! The `[invariants]`, `[coverage]` and `[testing]` config tables: forbidden imports (INV002), coverage minimums (COV004) and unit case minimums (COV005).
 
 use std::path::Path;
 
@@ -48,3 +48,35 @@ impl InvariantsConfig {
 // frob:ticket 01M5XD3T31J311PC2KD9Q1N24Q
 // The `[coverage]` table lives beside the evidence capture that writes its report.
 pub use frob_evidence::config::{CoverageConfig, CoverageThreshold};
+
+// frob:ticket 01M5HT58NK23KQMMVXD1FZ0R2D
+/// One unit case minimum: the test functions in files matching `scope` must number at least `min_unit_cases`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct UnitCaseMinimum {
+    /// A path glob over test-bearing files, or a directory prefix (no glob characters).
+    pub scope: String,
+    /// The fewest unit test functions the scope must hold.
+    pub min_unit_cases: u64,
+}
+
+// frob:ticket 01M5HT58NK23KQMMVXD1FZ0R2D
+/// Test-count minimums per scope (COV005), written as `[[testing.threshold]]` entries.
+#[derive(Debug, Clone, ConfigTable)]
+#[config(table = "testing")]
+pub struct TestingConfig {
+    /// Minimums per scope, written as `[[testing.threshold]]` entries.
+    #[config(default = Vec::new())]
+    pub threshold: Vec<UnitCaseMinimum>,
+}
+
+impl TestingConfig {
+    /// Load `[testing]` from `<root>/frob.toml` (a missing file means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+}

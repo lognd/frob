@@ -7,6 +7,8 @@ pub mod cov001;
 pub mod cov003;
 /// Rule `COV004`.
 pub mod cov004;
+/// Rule `COV005`.
+pub mod cov005;
 /// Rule `DOC003`.
 pub mod doc003;
 /// Rule `DOC006`.
@@ -42,6 +44,7 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <cov001::Cov001 as gob_rules::RuleDecl>::DEF,
     <cov003::Cov003 as gob_rules::RuleDecl>::DEF,
     <cov004::Cov004 as gob_rules::RuleDecl>::DEF,
+    <cov005::Cov005 as gob_rules::RuleDecl>::DEF,
     <doc003::Doc003 as gob_rules::RuleDecl>::DEF,
     <doc006::Doc006 as gob_rules::RuleDecl>::DEF,
     <doc007::Doc007 as gob_rules::RuleDecl>::DEF,
@@ -76,6 +79,7 @@ where
     cov001::Cov001: gob_rules::Measured<P>,
     cov003::Cov003: gob_rules::RepoRule<P>,
     cov004::Cov004: gob_rules::RelayRule<P>,
+    cov005::Cov005: gob_rules::RelayRule<P>,
     doc003::Doc003: gob_rules::RelayRule<P>,
     doc006::Doc006: gob_rules::RelayRule<P>,
     doc007::Doc007: gob_rules::RelayRule<P>,
@@ -95,6 +99,7 @@ where
     rules.push(gob_rules::BoundRule::measured(cov001::Cov001));
     rules.push(gob_rules::BoundRule::repo(cov003::Cov003));
     rules.push(gob_rules::BoundRule::relay(cov004::Cov004));
+    rules.push(gob_rules::BoundRule::relay(cov005::Cov005));
     rules.push(gob_rules::BoundRule::relay(doc003::Doc003));
     rules.push(gob_rules::BoundRule::relay(doc006::Doc006));
     rules.push(gob_rules::BoundRule::relay(doc007::Doc007));

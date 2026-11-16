@@ -432,6 +432,16 @@ Materialized: yes.
 | `ttl_secs` | `u32` | `300` | no | Seconds a successful probe stays fresh before the next one is due. |
 | `warn_after_secs` | `u32` | `3600` | no | Seconds of cache age after which read verbs footnote that the ticket view is old. |
 
+## `[testing]`
+
+Test-count minimums per scope (COV005), written as `[[testing.threshold]]` entries.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `threshold` | `Vec<UnitCaseMinimum>` | `[]` | no | Minimums per scope, written as `[[testing.threshold]]` entries. |
+
 ## `[tests]`
 
 How `frob test` and the `pytest` provider find the Python interpreter (`[tests]`).

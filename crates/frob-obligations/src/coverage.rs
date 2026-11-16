@@ -40,7 +40,7 @@ impl Tally {
 }
 
 /// A matcher for `scope`: the glob itself, plus everything below it when it has no glob characters.
-fn scope_matcher(scope: &str) -> Result<GlobSet, globset::Error> {
+pub(crate) fn scope_matcher(scope: &str) -> Result<GlobSet, globset::Error> {
     let mut b = GlobSetBuilder::new();
     b.add(Glob::new(scope)?);
     if !scope.contains(['*', '?', '[', '{']) {
@@ -68,15 +68,26 @@ fn tally(report: &BTreeMap<String, FileCov>, matcher: &GlobSet) -> (Tally, Tally
 
 /// The byte range of the `index`th threshold header in `<root>/frob.toml` (offset 0 when absent).
 fn entry_span(root: &Path, index: usize, files: &mut FileInterner) -> Span {
+    header_span(root, ENTRY_HEADER, index, files)
+}
+
+// frob:ticket 01M5HT58NK23KQMMVXD1FZ0R2D
+/// The span of the `index`th line equal to `header` in `<root>/frob.toml` (offset 0 when absent).
+pub(crate) fn header_span(
+    root: &Path,
+    header: &str,
+    index: usize,
+    files: &mut FileInterner,
+) -> Span {
     let (start, len) = std::fs::read_to_string(root.join(CONFIG_FILE))
         .ok()
         .and_then(|text| {
             let mut offset = 0;
             let mut seen = 0;
             for line in text.split_inclusive('\n') {
-                if line.trim() == ENTRY_HEADER {
+                if line.trim() == header {
                     if seen == index {
-                        return Some((offset, ENTRY_HEADER.len()));
+                        return Some((offset, header.len()));
                     }
                     seen += 1;
                 }

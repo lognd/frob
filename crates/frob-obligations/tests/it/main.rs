@@ -13,6 +13,7 @@ mod fix_harness;
 mod polarity_conformance;
 mod repo;
 mod small_api;
+mod unit_case_minimum;
 mod unity;
 mod unity_dynamic;
 mod unity_fields;

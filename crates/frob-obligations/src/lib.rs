@@ -9,6 +9,7 @@
 //! | `COV001` | Warn | repo | a public function or method has no test reaching it |
 //! | `COV003` | Error | alias | never emitted, see below |
 //! | `COV004` | Error | repo | lcov coverage of a scope is under a `[[coverage.threshold]]` of [`CoverageConfig`] |
+//! | `COV005` | Error | repo | a scope holds fewer unit test functions than a `[[testing.threshold]]` of [`TestingConfig`] |
 //! | `TODO001` | Error | file | a comment carries a bare upper-case work marker |
 //! | `TODO002` | Warn | repo | a `frob:todo` names a done or dropped ticket |
 //! | `DOC001` | Warn | file | a public Rust item has no doc comment, or a public Python unit no docstring |
@@ -88,6 +89,7 @@ mod tick_paths;
 pub mod tick_protect;
 mod tickets;
 mod todo;
+mod unit_cases;
 mod unity;
 mod util;
 
@@ -103,7 +105,10 @@ use gob_symbols::{SymbolGraph, Target};
 use gob_text::{FileId, FileInterner};
 
 pub use collect::{CollectError, Collected, collect};
-pub use config::{CoverageConfig, CoverageThreshold, ForbidImport, InvariantsConfig};
+pub use config::{
+    CoverageConfig, CoverageThreshold, ForbidImport, InvariantsConfig, TestingConfig,
+    UnitCaseMinimum,
+};
 pub use gob_rules::Resolved;
 pub use host::ObligationHost;
 pub use legacy::{Doc001, Doc002, Exc014, Exc016, Exc017, Ref001, Tick006, Todo001};
@@ -113,6 +118,7 @@ pub use refs::unsettled_ticket_refs;
 pub use rules::cov001::Cov001;
 pub use rules::cov003::Cov003;
 pub use rules::cov004::Cov004;
+pub use rules::cov005::Cov005;
 pub use rules::doc003::Doc003;
 pub use rules::doc006::Doc006;
 pub use rules::doc007::Doc007;
@@ -336,7 +342,7 @@ fn evaluate_located_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner
     out
 }
 
-/// Every repo-level rule (`COV001`, `COV004`, `DOC003`, `DOC006`, `DOC007`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY004`); new files are interned into `files`.
+/// Every repo-level rule (`COV001`, `COV004`, `COV005`, `DOC003`, `DOC006`, `DOC007`, `TODO002`, `INV001`, `INV002`, `UNITY001`-`UNITY004`); new files are interned into `files`.
 ///
 /// Findings are raw: exceptions are applied by [`apply_exceptions`].
 pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) -> Vec<Finding> {
@@ -344,6 +350,8 @@ pub fn evaluate_repo(inputs: &ObligationInputs<'_>, files: &mut FileInterner) ->
     out.extend(inv::inv001(inputs.graph, inputs.directives, files));
     out.extend(inv::inv002(inputs.root, inputs.graph, inputs.config, files));
     out.extend(coverage::cov004(inputs.root, files, inputs.skip_tools));
+    // frob:ticket 01M5HT58NK23KQMMVXD1FZ0R2D
+    out.extend(unit_cases::cov005(inputs, files));
     // frob:ticket 01M4H0RKJHHWWT0XC17W5JD1VG
     out.extend(docstatus::doc003(inputs.root, files));
     // frob:ticket 01M4H0RE1Q9A1M47ZT7Q1ZG43K

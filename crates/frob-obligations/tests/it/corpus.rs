@@ -65,8 +65,10 @@ fn runner(case: &Case) -> RuleReport {
     } else {
         ""
     };
-    // COV004 blocks are the `frob.toml` itself, with the lcov report as an extra block.
-    if (case.config.is_some() || !tools.is_empty()) && case.rule.as_str() != "COV004" {
+    // COV004 and COV005 blocks are the `frob.toml` itself, with the lcov report as an extra block.
+    if (case.config.is_some() || !tools.is_empty())
+        && !matches!(case.rule.as_str(), "COV004" | "COV005")
+    {
         let cfg = case.config.as_deref().unwrap_or_default();
         common::write_tree(
             dir.path(),
