@@ -2,12 +2,12 @@
 id = "01M63G1NY275Y890ZD5W1EVN63"
 title = "gob-symbols C# graph overflows the stack on using static System.Console"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
-updated = "2026-11-03T05:56:49Z"
+updated = "2026-11-16T15:31:39Z"
 scope = ["crates/gob-symbols/**"]
 +++
 
