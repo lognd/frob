@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T17:00:53Z"
-updated = "2026-11-16T00:14:11Z"
+updated = "2026-11-16T00:17:01Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/src/canon.rs"]
 
 [[acceptance]]
 text = "A Rust use of a sibling local mod crate without a crate:: prefix resolves to that crate, covered by a test in canon.rs"
-bound = false
+bound = true
 +++
 
 Found while working D36SRKP; documented limit of import resolution.
