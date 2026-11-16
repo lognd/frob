@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T02:43:48Z"
+digest = "aff8dfd4e8a7218f768119665173e5f49f10c2e7d766dadc727bdd2375e81a6d"
+exit_code = 0
+head = "ac9ee721de73b802352054558bbaed75180a2904"
+inline = '''
+    Blocking waiting for file lock on build directory
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c692373c-41d1-4144-a8dc-75ef77b81982 with nextest profile: default
+    Starting 1 test across 164 binaries (8098 tests skipped)
+        PASS [   0.005s] frob-ledger replay::tests::gitattributes_marker_counts_as_generated
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 1 test run: 1 passed, 8098 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "gitattributes_marker_counts_as_generated"
+size = 741
+status = "measured"
+test_count = 1
+tests_digest = "5b8f6ab33575e3cb069261e640a036b4560bb5844af9932aeee17d1c90d9d749"
+at = "2026-11-16T02:43:48Z"
+actor = "lognd"
+rev = 1
