@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given docs/design, when a reader looks up gob-config registries, then the design docs describe product scoping (crates/gob-config/src/product.rs) and dynamic-key tables under D87."]
+moved = []
+at = "2026-11-16T18:41:31Z"
+actor = "lognd"
+rev = 1
