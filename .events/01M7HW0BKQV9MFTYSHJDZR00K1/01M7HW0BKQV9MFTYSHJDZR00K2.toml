@@ -1,0 +1,14 @@
+kind = "create"
+title = "Profile budget: frob cycle list warm 1415ms exceeds 1400ms in CI"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+idempotency_key = "profile-cycle-list-1415"
+labels = ["no-story"]
+scope = ["crates/gob-dev/profile.toml"]
+acceptance = ["The cycle list budget in profile.toml is raised with a recorded reason so the CI profile job passes"]
+body = "no-story: CI profile breach on experimental af4f91eac0 (1415 ms vs 1400 ms); ledger growth made cycle list slower. Budget calibration chore."
+at = "2026-11-16T09:46:25Z"
+actor = "lognd"
+rev = 1
