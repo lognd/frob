@@ -57,6 +57,9 @@ pub struct CrunkInputs {
     // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
     /// Which spec cells have a render in the gallery manifest; `None` when there is no manifest or spec.
     pub renders: Option<crunk_rules::render_ledger::RenderLedger>,
+    // frob:ticket 01M7HC8TXG8C5YBWXB8FP71BSA
+    /// The authored `design/flows/*.flow.toml` files (cross-scene GX002/GX003's input).
+    pub flows: Option<crunk_rules::flow_files::FlowFacts>,
     /// The repository `frob-baseline.toml`; tables of other products' rules never match a crunk finding.
     pub baseline: gob_rules::Baseline,
 }
@@ -106,6 +109,11 @@ impl CrunkHost for CrunkInputs {
     // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
     fn renders(&self) -> Option<&crunk_rules::render_ledger::RenderLedger> {
         self.renders.as_ref()
+    }
+
+    // frob:ticket 01M7HC8TXG8C5YBWXB8FP71BSA
+    fn flows(&self) -> Option<&crunk_rules::flow_files::FlowFacts> {
+        self.flows.as_ref()
     }
 }
 
@@ -223,6 +231,14 @@ impl Product for Crunk {
         let renders = spec
             .as_ref()
             .and_then(|spec| crate::render_ledger::gather(&cx.core.root, spec));
+        // frob:ticket 01M7HC8TXG8C5YBWXB8FP71BSA
+        let flows = spec
+            .as_ref()
+            .map(crunk_rules::flow_files::FlowFacts::load);
+        tracing::debug!(
+            flows = flows.as_ref().map_or(0, |f| f.files.len()),
+            "crunk collect: flow files gathered"
+        );
         let baseline = gob_rules::Baseline::load(&cx.core.root).map_err(|e| {
             tracing::warn!(%e, "crunk collect: frob-baseline.toml is unusable; the check refuses to run");
             CheckError::Config(gob_config::ConfigError::Invalid {
@@ -244,6 +260,7 @@ impl Product for Crunk {
                 screens,
                 components,
                 renders,
+                flows,
                 baseline,
             },
             findings: Vec::new(),
@@ -302,6 +319,10 @@ impl Product for Crunk {
         if let Some(ledger) = &snap.inputs.renders {
             // frob:ticket 01M7A3AHXFBFA5WT97NRGJWYQ4
             digest.extend(format!("{ledger:?}").into_bytes());
+        }
+        if let Some(facts) = &snap.inputs.flows {
+            // frob:ticket 01M7HC8TXG8C5YBWXB8FP71BSA
+            digest.extend(format!("{facts:?}").into_bytes());
         }
         if let Some(spec) = &snap.inputs.spec {
             // TOKENS001 reads the generated files from disk, outside the walk.
