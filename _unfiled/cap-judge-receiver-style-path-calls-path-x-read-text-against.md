@@ -2,7 +2,8 @@
 id = "01M61Y35309KEQP2SPTQHP1AT8"
 title = "CAP: judge receiver-style path calls (Path(x).read_text) against may args"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
