@@ -4,8 +4,8 @@ digest_scheme = 1
 
 [[pack]]
 name = "core-effects"
-version = "1.2.1"
-tree = "blake3:1ec4579a42c6394eeb22bbafc11285549eea3c29779956e665014fce49a2e6a9"
+version = "1.3.0"
+tree = "blake3:4d3771fa0ad98c40afbae3ccbe41b0a7c4d1743e0963e050a05db95db18fc68b"
 
 [pack.effects]
 

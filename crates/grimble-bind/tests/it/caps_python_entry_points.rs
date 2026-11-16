@@ -374,6 +374,39 @@ fn p18_cap_ctypes_loaders() {
     ]);
 }
 
+// frob:ticket 01M64ZYSQNZY51971GJ1232TXR
+// frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
+#[test]
+fn p18_cap_cffi_loaders() {
+    run(&[
+        (
+            "FFI().dlopen",
+            "ffi",
+            "from cffi import FFI\n\ndef go():\n    return FFI().dlopen('libc.so.6')\n",
+        ),
+        (
+            "cffi.FFI().dlopen",
+            "ffi",
+            "import cffi\n\ndef go():\n    return cffi.FFI().dlopen('libc.so.6')\n",
+        ),
+        (
+            "var dlopen",
+            "ffi",
+            "from cffi import FFI\n\ndef go():\n    ffi = FFI()\n    return ffi.dlopen('libc.so.6')\n",
+        ),
+        (
+            "FFI().verify",
+            "ffi",
+            "from cffi import FFI\n\ndef go():\n    return FFI().verify('int f(void);')\n",
+        ),
+        (
+            "FFI().set_source",
+            "ffi",
+            "from cffi import FFI\n\ndef go():\n    FFI().set_source('m', 'int f(void);')\n",
+        ),
+    ]);
+}
+
 // frob:tests crates/grimble-bind/src/caps.rs::scan_resolved
 #[test]
 fn p25_cap_deserialization_loaders() {

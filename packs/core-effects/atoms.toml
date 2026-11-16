@@ -29,6 +29,13 @@ module = "zipfile"
 ctors = ["zipfile.ZipFile", "zipfile.PyZipFile"]
 methods = ["fs.write:extractall", "fs.write:extract"]
 
+# cffi loads or builds native code through methods of an `FFI` instance (ticket 01M64ZYSQNZY51971GJ1232TXR).
+[[receiver_family]]
+lang = "python"
+module = "cffi"
+ctors = ["cffi.FFI"]
+methods = ["ffi:dlopen", "ffi:verify", "ffi:set_source"]
+
 # Crates whose `Command` is a builder type, not a process: `clap::Command::new` names a CLI command
 # and must not match the `Command::new` spawn entry behind its extra leading segments.
 [non_process]
