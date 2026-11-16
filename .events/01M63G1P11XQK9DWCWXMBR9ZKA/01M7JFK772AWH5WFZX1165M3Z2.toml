@@ -1,0 +1,7 @@
+kind = "transition"
+from = "in-progress"
+to = "todo"
+reason = "already fixed; test passes"
+at = "2026-11-16T15:28:46Z"
+actor = "lognd"
+rev = 1
