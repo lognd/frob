@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T00:39:36Z"
-updated = "2026-11-16T21:31:48Z"
+updated = "2026-11-16T21:41:30Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
 [[acceptance]]
 text = "A var local initialised from a method call with a declared return type resolves its method calls through that type, or is reported Unresolved"
-bound = false
+bound = true
 +++
 
 found while working VVKBEKG: var c = Make(); c.GetAsync(u) is silently clean today; needs return-type inference
