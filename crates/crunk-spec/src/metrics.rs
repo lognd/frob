@@ -133,34 +133,29 @@ impl MetricSet {
 /// file becomes a [`ResearchProblem`] and a repeated id within a kind is refused.
 #[must_use]
 pub fn load_metrics(root: &Path) -> MetricSet {
-    let mut problems = Vec::new();
-    let metrics = load_dir(
+    let mut set = MetricSet::default();
+    set.metrics = load_dir(
         root,
         METRICS_DIR,
         parse_metric,
         |m| &m.id,
         "id",
-        &mut problems,
+        &mut set.problems,
     );
-    let experiments = load_dir(
+    set.experiments = load_dir(
         root,
         EXPERIMENTS_DIR,
         parse_experiment,
         |x| &x.id,
         "id",
-        &mut problems,
+        &mut set.problems,
     );
     tracing::debug!(
-        metrics = metrics.len(),
-        experiments = experiments.len(),
-        problems = problems.len(),
+        metrics = set.metrics.len(),
+        experiments = set.experiments.len(),
         "loaded metrics"
     );
-    MetricSet {
-        metrics,
-        experiments,
-        problems,
-    }
+    set
 }
 
 #[cfg(test)]
