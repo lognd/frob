@@ -2,6 +2,7 @@
 
 // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
 
+use crunk_layout::output::{LayoutSolve, NodeKind, SolvedNode};
 use crunk_layout::{Direction, FocusGraph, InvalidReason};
 use crunk_scene::parse_scene_html;
 
@@ -290,4 +291,73 @@ fn a_transition_to_an_unknown_screen_is_dangling() {
     assert!(atlas.links.is_empty());
     assert_eq!(atlas.dangling.len(), 1);
     assert_eq!(atlas.dangling[0].to, "ghost");
+}
+
+fn solved_node(id: &str, x: f32, y: f32) -> SolvedNode {
+    SolvedNode {
+        id: id.to_owned(),
+        parent: None,
+        kind: NodeKind::Box,
+        x,
+        y,
+        width: 10.0,
+        height: 10.0,
+        text: None,
+        zero_size: false,
+        overflow: Vec::new(),
+        tokens: std::collections::BTreeMap::default(),
+    }
+}
+
+fn solved(nodes: Vec<SolvedNode>) -> LayoutSolve {
+    LayoutSolve {
+        version: 1,
+        viewport_width: 100.0,
+        viewport_height: 100.0,
+        nodes,
+        focus_order: Vec::new(),
+    }
+}
+
+/// Buttons a, b, c in document order, laid out as a at top-left, b at top-right, c below a.
+fn corner_graph() -> FocusGraph {
+    let doc = parse_scene_html(MENU).expect("parses");
+    let layout = solved(vec![
+        solved_node("a", 0.0, 0.0),
+        solved_node("b", 50.0, 0.0),
+        solved_node("c", 0.0, 50.0),
+    ]);
+    FocusGraph::from_solved(&doc, &layout)
+}
+
+// frob:tests FocusGraph.from_solved
+#[test]
+fn solved_geometry_gives_horizontal_neighbours_document_order_cannot() {
+    let g = corner_graph();
+    assert_eq!(moves(&g, "a", Direction::Right).as_deref(), Some("b"));
+    assert_eq!(moves(&g, "b", Direction::Left).as_deref(), Some("a"));
+}
+
+// frob:tests FocusGraph.from_solved
+#[test]
+fn solved_geometry_picks_the_straight_neighbour_below() {
+    let g = corner_graph();
+    assert_eq!(moves(&g, "a", Direction::Down).as_deref(), Some("c"));
+    assert_eq!(moves(&g, "c", Direction::Up).as_deref(), Some("a"));
+}
+
+// frob:tests FocusGraph.from_solved
+#[test]
+fn solved_geometry_leaves_edges_with_nothing_beyond_them_open() {
+    let g = corner_graph();
+    assert_eq!(moves(&g, "a", Direction::Up), None);
+    assert_eq!(moves(&g, "b", Direction::Right), None);
+}
+
+// frob:tests FocusGraph.from_solved
+#[test]
+fn a_group_with_an_unsolved_member_keeps_document_order() {
+    let doc = parse_scene_html(MENU).expect("parses");
+    let g = FocusGraph::from_solved(&doc, &solved(vec![solved_node("a", 0.0, 0.0)]));
+    assert_eq!(moves(&g, "a", Direction::Down).as_deref(), Some("b"));
 }

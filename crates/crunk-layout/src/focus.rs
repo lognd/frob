@@ -15,6 +15,8 @@
 //! - a group whose own inline `style` is `display: grid` with a countable `grid-template-columns`
 //!   (`repeat(3, 1fr)` or `1fr 1fr 1fr`) is a grid: its items fill rows in document order and every
 //!   direction moves along its axis (wrap stays within the row or column);
+//!   [`FocusGraph::from_solved`] replaces the document-order moves of non-grid groups with the
+//!   nearest member in each direction by solved geometry;
 //! - an element with `aria-modal="true"` (or `data-modal`) is a modal: it traps focus on purpose,
 //!   so [`FocusGraph::traps`] leaves its focusables out;
 //! - `data-nav-up|down|left|right="<data-id>"` overrides one direction; `none` blocks it.
@@ -24,6 +26,8 @@
 use std::collections::{BTreeSet, HashMap, VecDeque};
 
 use crunk_scene::{ElementKind, SceneDoc, SceneElement};
+
+use crate::output::LayoutSolve;
 
 /// Component tags that are interactive without further markup.
 const INTERACTIVE_COMPONENTS: &[&str] = &[
@@ -164,6 +168,9 @@ pub struct FocusGraph {
     pub modal_nodes: Vec<usize>,
 }
 
+/// Solved box centres by `data-id`.
+type Centers = HashMap<String, (f32, f32)>;
+
 /// An in-progress focus group.
 struct Group {
     axis: GroupAxis,
@@ -174,8 +181,24 @@ struct Group {
 }
 
 impl FocusGraph {
-    /// Derive the focus graph of `doc`.
+    /// Derive the focus graph of `doc` from markup alone (document-order neighbours).
     pub fn from_scene(doc: &SceneDoc) -> Self {
+        Self::build(doc, None)
+    }
+
+    /// Derive the focus graph of `doc` with implicit neighbours taken from the solved geometry:
+    /// in a non-grid group each direction leads to the nearest member lying that way. Groups with a
+    /// member that has no solved box keep their document-order moves.
+    pub fn from_solved(doc: &SceneDoc, solved: &LayoutSolve) -> Self {
+        let centers: Centers = solved
+            .nodes
+            .iter()
+            .map(|n| (n.id.clone(), (n.x + n.width / 2.0, n.y + n.height / 2.0)))
+            .collect();
+        Self::build(doc, Some(&centers))
+    }
+
+    fn build(doc: &SceneDoc, centers: Option<&Centers>) -> Self {
         let mut graph = Self::default();
         let mut node_of: HashMap<usize, usize> = HashMap::new();
         for (i, el) in doc.elements.iter().enumerate() {
@@ -231,7 +254,12 @@ impl FocusGraph {
         }
         for (key, members) in group_members(doc, &node_of) {
             let group = graph.read_group(doc, key, members);
-            implicit_edges(&group, &explicit, &mut edges);
+            match centers.and_then(|c| graph.member_centers(&group, c)) {
+                Some(points) if group.columns.is_none() => {
+                    geometric_edges(&group, &points, &explicit, &mut edges);
+                }
+                _ => implicit_edges(&group, &explicit, &mut edges),
+            }
         }
         graph.edges = edges.into_iter().collect();
         graph
@@ -245,6 +273,18 @@ impl FocusGraph {
             "focus graph built"
         );
         graph
+    }
+
+    /// The solved centre of every member of `group`, or `None` when any member has none.
+    fn member_centers(&self, group: &Group, centers: &Centers) -> Option<Vec<(f32, f32)>> {
+        group
+            .members
+            .iter()
+            .map(|&m| {
+                let id = self.nodes[m].data_id.as_ref()?;
+                centers.get(id).copied()
+            })
+            .collect()
     }
 
     /// Record `data-focus-default` elements as defaults or dead defaults.
@@ -361,6 +401,53 @@ impl FocusGraph {
         }
         seen
     }
+}
+
+/// Add, for each member and direction not authored, a move to the nearest member lying that way.
+fn geometric_edges(
+    group: &Group,
+    points: &[(f32, f32)],
+    explicit: &BTreeSet<(usize, Direction)>,
+    edges: &mut BTreeSet<FocusEdge>,
+) {
+    for (i, &from) in group.members.iter().enumerate() {
+        for direction in Direction::ALL {
+            if explicit.contains(&(from, direction)) {
+                continue;
+            }
+            if let Some(j) = nearest_towards(points, i, direction) {
+                edges.insert(FocusEdge {
+                    from,
+                    to: group.members[j],
+                    direction,
+                });
+            }
+        }
+    }
+    tracing::debug!(members = group.members.len(), "geometric focus edges added");
+}
+
+/// The index of the point nearest to `points[from]` strictly in `direction`; the cross-axis
+/// offset counts double so a straight neighbour beats a nearer diagonal one. Ties go to the
+/// earlier point.
+fn nearest_towards(points: &[(f32, f32)], from: usize, direction: Direction) -> Option<usize> {
+    let (fx, fy) = points[from];
+    points
+        .iter()
+        .enumerate()
+        .filter(|&(j, _)| j != from)
+        .filter_map(|(j, &(x, y))| {
+            let (dx, dy) = (x - fx, y - fy);
+            let (along, across) = match direction {
+                Direction::Up => (-dy, dx),
+                Direction::Down => (dy, dx),
+                Direction::Left => (-dx, dy),
+                Direction::Right => (dx, dy),
+            };
+            (along > 0.0).then_some((j, along + 2.0 * across.abs()))
+        })
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(j, _)| j)
 }
 
 /// Add the document-order moves of `group` along its axis, except where a direction is authored.
