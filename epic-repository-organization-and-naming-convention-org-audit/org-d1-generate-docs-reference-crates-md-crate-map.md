@@ -8,7 +8,7 @@ points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:52Z"
-updated = "2026-11-16T16:42:51Z"
+updated = "2026-11-16T17:05:53Z"
 scope = ["docs/**", "crates/gob-dev/src/render/crate_map.rs", "crates/gob-dev/src/render/mod.rs", "crates/gob-dev/src/lib.rs", "docs/reference/crates.md", "changelog.d/01M61MM4Z8F82DCCSZ87BCYC26.added.md"]
 
 [[acceptance]]
