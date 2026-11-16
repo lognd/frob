@@ -265,6 +265,66 @@ pub fn focus_findings<H: crate::CrunkHost + ?Sized, R: gob_rules::RuleDecl>(
     }
 }
 
+// frob:ticket 01M7HC8V5DNXKG467M2C4WBARE
+/// Scenes a flow transition enters that have no focusable control, so the pad arrives with no
+/// default selection to land on (the cross-scene half of GX004).
+#[must_use]
+pub fn blind_arrival_scenes(atlas: &crunk_layout::FocusAtlas) -> Vec<usize> {
+    (0..atlas.scenes.len())
+        .filter(|&i| {
+            atlas.scenes[i].graph.nodes.is_empty() && atlas.links.iter().any(|&(_, to)| to == i)
+        })
+        .collect()
+}
+
+// frob:ticket 01M7HC8V5DNXKG467M2C4WBARE
+/// Fire GX004's cross-scene findings: each scene a flow enters that offers nothing to select.
+pub fn blind_arrival_findings<H: crate::CrunkHost + ?Sized, R: gob_rules::RuleDecl>(
+    host: &H,
+    out: &mut gob_rules::Out<'_, R>,
+) {
+    let Some((facts, atlas)) = focus_atlas(host) else {
+        return;
+    };
+    for i in blind_arrival_scenes(&atlas) {
+        let path = &facts.files[i].path;
+        tracing::debug!(path = %path, "GX004: flow enters a scene with nothing to select");
+        out.fire_in(
+            path,
+            0,
+            format!(
+                "scene '{}' is entered by a flow transition but has no focusable control: the pad arrives with no default selection; add an enabled control marked data-focus-default",
+                atlas.scenes[i].name
+            ),
+        );
+    }
+}
+
+// frob:ticket 01M7HC8V5DNXKG467M2C4WBARE
+/// Fire GX005's cross-scene findings: each flow transition that names a screen no scene renders.
+pub fn dangling_transition_findings<H: crate::CrunkHost + ?Sized, R: gob_rules::RuleDecl>(
+    host: &H,
+    out: &mut gob_rules::Out<'_, R>,
+) {
+    let (Some((_, atlas)), Some(flows)) = (focus_atlas(host), host.flows()) else {
+        return;
+    };
+    for d in &atlas.dangling {
+        let Some(path) = flows.path_of_transition(&d.from, &d.to) else {
+            continue;
+        };
+        tracing::debug!(path, from = %d.from, to = %d.to, "GX005: flow names a missing scene");
+        out.fire_in(
+            path,
+            0,
+            format!(
+                "flow transition '{}' -> '{}' names a screen no scene renders: add design/scenes/<screen>.scene.html or correct the edge",
+                d.from, d.to
+            ),
+        );
+    }
+}
+
 /// Every scene document of a project that parsed, sorted by path, and those that did not.
 #[derive(Debug, Clone, Default)]
 pub struct SceneDocFacts {

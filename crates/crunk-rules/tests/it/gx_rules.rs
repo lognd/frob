@@ -184,3 +184,62 @@ fn transitions_drop_moves_between_states_of_one_screen() {
     };
     assert_eq!(facts.transitions(), vec![("a".to_owned(), "b".to_owned())]);
 }
+
+// frob:ticket 01M7HC8V5DNXKG467M2C4WBARE
+/// The messages of `R` over a flow of `edges` where only `scenes` exist and `blank` has no control.
+fn flow_msgs_with<R>(scenes: &[&str], blank: &str, edges: &[(&str, &str)]) -> Vec<String>
+where
+    R: gob_rules::RepoRule<support::Project> + Default,
+{
+    let flow_text = format!("{}{}", flow_header(edges), flow_edges(edges));
+    let mut extra: Vec<(String, &str)> = scenes
+        .iter()
+        .map(|s| {
+            (
+                format!("design/scenes/{s}.scene.html"),
+                if *s == blank { "<p></p>\n" } else { BTN },
+            )
+        })
+        .collect();
+    extra.push(("design/flows/main.flow.toml".to_owned(), flow_text.as_str()));
+    let extra: Vec<(&str, &str)> = extra.iter().map(|(n, t)| (n.as_str(), *t)).collect();
+    let host = support::project_files("design/scenes/menu.scene.html", BTN, &extra, None);
+    support::run::<R>(&host)
+        .into_iter()
+        .map(|f: Finding| f.message)
+        .collect()
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx004.rs::Gx004
+// frob:tests crates/crunk-rules/src/scene_docs.rs::blind_arrival_findings
+// frob:tests crates/crunk-rules/src/scene_docs.rs::blind_arrival_scenes
+#[test]
+fn gx004_fires_for_a_flow_entered_scene_with_nothing_to_select() {
+    let m = flow_msgs_with::<Gx004>(&["menu", "blank"], "blank", &[("menu", "blank")]);
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("scene 'blank'"), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx004.rs::Gx004
+#[test]
+fn gx004_is_quiet_when_the_flow_enters_scenes_with_controls() {
+    let m = flow_msgs_with::<Gx004>(&["menu", "game"], "", &[("menu", "game")]);
+    assert!(m.is_empty(), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx005.rs::Gx005
+// frob:tests crates/crunk-rules/src/scene_docs.rs::dangling_transition_findings
+// frob:tests crates/crunk-rules/src/flow_files.rs::FlowFacts.path_of_transition
+#[test]
+fn gx005_fires_for_a_flow_transition_to_a_missing_scene() {
+    let m = flow_msgs_with::<Gx005>(&["menu"], "", &[("menu", "ghost")]);
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].contains("'ghost'"), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx005.rs::Gx005
+#[test]
+fn gx005_is_quiet_when_every_transition_names_a_scene() {
+    let m = flow_msgs_with::<Gx005>(&["menu", "game"], "", &[("menu", "game")]);
+    assert!(m.is_empty(), "{m:?}");
+}

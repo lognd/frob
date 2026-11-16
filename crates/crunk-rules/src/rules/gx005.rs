@@ -26,6 +26,7 @@ pub struct Gx005;
 
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx005 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
+        crate::scene_docs::dangling_transition_findings(host, out);
         let Some(facts) = host.scene_docs() else {
             return;
         };

@@ -25,6 +25,7 @@ pub struct Gx004;
 
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx004 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
+        crate::scene_docs::blind_arrival_findings(host, out);
         let Some(facts) = host.scene_docs() else {
             return;
         };
