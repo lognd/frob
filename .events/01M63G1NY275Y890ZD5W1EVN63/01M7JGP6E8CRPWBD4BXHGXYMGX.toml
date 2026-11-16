@@ -1,0 +1,31 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-16T15:40:40Z"
+digest = "74d0290c6c8efcc4196ca902efdfac8c9a4a0d80a86047e9422c7e5ae78d1ca5"
+exit_code = 0
+head = "ee0ee1d3002827c63918ec2b0b660fce21e60c04"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a5fe870c-8679-4c47-a912-2bf198ed2b97 with nextest profile: default
+    Starting 1 test across 164 binaries (8220 tests skipped)
+        PASS [   0.007s] gob-symbols::it csharp_name_only::an_extension_with_no_exact_receiver_is_name_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 8220 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "an_extension_with_no_exact_receiver_is_name_only"
+size = 894
+status = "measured"
+test_count = 1
+tests_digest = "be33b7436a4f57a754f8ad3460e2c6e938a8825dbdcbe87ab041a7798b5c9a45"
+at = "2026-11-16T15:40:40Z"
+actor = "lognd"
+rev = 1

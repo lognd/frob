@@ -16,7 +16,7 @@ bound = true
 
 [[acceptance]]
 text = "Given a file with using static System.Console, when the graph is built, then it terminates and resolves WriteLine"
-bound = false
+bound = true
 +++
 
 found while working ~JKKJPTT: one-file C# repo with using static System.Console aborts with stack overflow (reproduced on the baseline release binary)
