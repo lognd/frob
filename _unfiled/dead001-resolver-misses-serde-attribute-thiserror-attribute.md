@@ -2,7 +2,8 @@
 id = "01M61G1Y62DQKF195X9JWEYWT8"
 title = "DEAD001 resolver misses serde attribute, thiserror attribute and fn-value edges; generated rules_index_is_fresh test flagged"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
