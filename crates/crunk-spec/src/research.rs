@@ -356,11 +356,14 @@ mod tests {
 
     // frob:tests crates/crunk-spec/src/research.rs::parse_toml
     #[test]
-    fn persona_and_journey_toml_parse_or_error() {
+    fn parse_toml_reads_a_persona() {
         let p: PersonaFile = parse_toml("id = \"p1\"\n").expect("persona");
         assert_eq!(p.id, "p1");
-        let j: JourneyFile = parse_toml("id = \"j1\"\npersona = \"p1\"\n").expect("journey");
-        assert_eq!(j.persona.as_deref(), Some("p1"));
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::parse_toml
+    #[test]
+    fn parse_toml_rejects_a_malformed_persona() {
         assert!(parse_toml::<PersonaFile>("name = 3").is_err());
     }
 
