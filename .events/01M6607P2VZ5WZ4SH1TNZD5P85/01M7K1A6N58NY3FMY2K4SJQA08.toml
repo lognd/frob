@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T20:33:24Z"
+digest = "ebb95f98728d6759ab6ff34d9b7e370c802e2de8377c89d969d6ea43d0df5d10"
+exit_code = 0
+head = "eb476b5ba67850a9c34b65177df2e7de15e3b5eb"
+passed = true
+provider = "nextest"
+ref = "move_and_rename_scope_fs_write_to_source_and_dest"
+size = 17798
+status = "measured"
+test_count = 1
+tests_digest = "ad5069f64b9daad7d5d165cbfa5d0cd7ce1d57229b8a7f8fbb2ae3522368d22a"
+uri = "dir:.git/frob/artifacts/ebb95f98728d6759ab6ff34d9b7e370c802e2de8377c89d969d6ea43d0df5d10"
+at = "2026-11-16T20:33:24Z"
+actor = "lognd"
+rev = 1
