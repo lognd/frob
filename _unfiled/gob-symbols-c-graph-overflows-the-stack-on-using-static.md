@@ -8,7 +8,7 @@ points = 3
 reporter = "lognd"
 created = "2026-10-29T09:32:21Z"
 updated = "2026-11-16T15:33:24Z"
-scope = ["crates/gob-symbols/**", "crates/gob-symbols/src/graph/csharp.rs"]
+scope = ["crates/gob-symbols/**", "crates/gob-symbols/src/graph/csharp.rs", "crates/gob-symbols/tests/it/csharp_name_only.rs"]
 
 [[acceptance]]
 text = "Given a C# call whose receiver type is unproven, when it is resolved by an extension method of the same name, then the edge is May with EdgeBasis::NameOnly"
