@@ -5,9 +5,10 @@ type = "task"
 category = "todo"
 priority = "medium"
 points = 2
+parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-11-15T22:51:26Z"
-updated = "2026-11-15T22:51:26Z"
+updated = "2026-11-16T00:00:12Z"
 idempotency_key = "path-allowed-wiring"
 scope = ["crates/grimble-lints/src/path.rs"]
 
