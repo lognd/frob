@@ -225,14 +225,15 @@ impl Reason {
     /// The typed reason [`gob_rules::Finding::reason`] carries for this binding reason.
     pub fn typed(self) -> UnresolvedReason {
         match self {
-            Self::UnseenRemainder => UnresolvedReason::Opaque(self.code().to_owned()),
+            Self::UnseenRemainder | Self::UnresolvedArgument => {
+                UnresolvedReason::Opaque(self.code().to_owned())
+            }
             Self::MayOnlyOwner => UnresolvedReason::EdgeMay,
             Self::Fidelity => UnresolvedReason::Fidelity,
             Self::InferenceUnavailable => UnresolvedReason::Partial,
             Self::Vacuous => UnresolvedReason::Vacuous,
             Self::LockUnreadable => UnresolvedReason::ParseFailed,
             Self::UnresolvedEdge => UnresolvedReason::EdgeUnknown,
-            Self::UnresolvedArgument => UnresolvedReason::Opaque(self.code().to_owned()),
         }
     }
 }
