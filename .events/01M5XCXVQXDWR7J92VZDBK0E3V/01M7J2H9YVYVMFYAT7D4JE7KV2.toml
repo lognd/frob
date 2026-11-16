@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-gallery/src/flashing.rs, crates/crunk-gallery/tests/flashing.rs"]
+new = ["crates/crunk-gallery/src/flashing.rs, crates/crunk-gallery/tests/flashing.rs", "crates/crunk-gallery/tests/it/flashing.rs"]
+at = "2026-11-16T11:40:30Z"
+actor = "lognd"
+rev = 1
