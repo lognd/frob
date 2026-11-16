@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T18:59:21Z"
-updated = "2026-11-16T01:07:56Z"
+updated = "2026-11-16T01:07:57Z"
 labels = ["no-story"]
-scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/types.rs"]
+scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/types.rs", "crates/grimble-bind/tests/it/caps.rs"]
 
 [[acceptance]]
 text = "unresolved arguments carry their own Reason, not UnresolvedEdge"
