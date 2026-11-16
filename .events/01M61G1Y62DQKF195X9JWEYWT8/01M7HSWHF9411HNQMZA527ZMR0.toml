@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a private function referenced only as a function value naming exactly one unit, when DEAD001 runs, then the function counts as reached. Edge cases: an ambiguous name stays a May edge"]
+reason = "attest scope after cut; serde/thiserror split to 7Z2PPKE"
+moved = []
+at = "2026-11-16T09:09:23Z"
+actor = "lognd"
+rev = 1
