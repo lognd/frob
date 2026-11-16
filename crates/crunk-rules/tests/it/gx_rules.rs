@@ -92,13 +92,17 @@ fn gx003_resolves_grid_neighbours_and_exempts_a_modal_trap() {
 const BTN: &str = "<button data-id=\"a\" data-focus-default></button>\n";
 
 // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-fn flow(edges: &[(&str, &str)]) -> String {
+fn flow_header(edges: &[(&str, &str)]) -> String {
     let mut nodes: Vec<&str> = edges.iter().flat_map(|(a, b)| [*a, *b]).collect();
     nodes.sort_unstable();
     nodes.dedup();
     let list: Vec<String> = nodes.iter().map(|n| format!("\"{n}:default\"")).collect();
-    let head = format!("name = \"main\"\nnodes = [{}]\n", list.join(", "));
-    let edge_tables: Vec<String> = edges
+    format!("name = \"main\"\nnodes = [{}]\n", list.join(", "))
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+fn flow_edges(edges: &[(&str, &str)]) -> String {
+    let tables: Vec<String> = edges
         .iter()
         .map(|(a, b)| {
             format!(
@@ -106,7 +110,7 @@ fn flow(edges: &[(&str, &str)]) -> String {
             )
         })
         .collect();
-    format!("{head}{}", edge_tables.concat())
+    tables.concat()
 }
 
 // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
@@ -115,7 +119,7 @@ where
     R: gob_rules::RepoRule<support::Project> + Default,
 {
     let first = format!("design/scenes/{}.scene.html", scenes[0]);
-    let flow_text = flow(edges);
+    let flow_text = format!("{}{}", flow_header(edges), flow_edges(edges));
     let mut extra: Vec<(String, &str)> = scenes[1..]
         .iter()
         .map(|s| (format!("design/scenes/{s}.scene.html"), BTN))
