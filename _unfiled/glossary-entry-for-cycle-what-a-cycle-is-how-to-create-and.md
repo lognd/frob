@@ -2,7 +2,8 @@
 id = "01M7CAYGWRSTYC76QYCACS427V"
 title = "Glossary entry for cycle (what a cycle is, how to create and close one)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
