@@ -7,14 +7,14 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-16T10:38:30Z"
+updated = "2026-11-16T10:47:47Z"
 idempotency_key = "gf-docs/glossary/ack.md"
 labels = ["good-first"]
 scope = ["docs/glossary/ack.md", "docs/README.md"]
 
 [[acceptance]]
 text = "Given docs/glossary/ack.md, when read, then it has the header block, explains what frob ack attests and when it goes stale, and is indexed in docs/README.md"
-bound = false
+bound = true
 +++
 
 ## Start here

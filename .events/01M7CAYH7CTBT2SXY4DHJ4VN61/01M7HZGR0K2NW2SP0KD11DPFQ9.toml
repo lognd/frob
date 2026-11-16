@@ -1,0 +1,12 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T10:47:47Z"
+digest = "a722c866dd2b85ad4421c0cfe8eab033adaa7e1b0f1c30ddc95318ec0cd1fc09"
+head = "bc48a2e513338b239c1986faabb5d4ca897a2e88"
+provider = "file"
+ref = "docs/glossary/ack.md"
+size = 886
+status = "measured"
+at = "2026-11-16T10:47:47Z"
+actor = "lognd"
+rev = 1
