@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk-gallery/tests/it/main.rs", "crates/crunk-gallery/tests/it/rendered_contrast.rs"]
+new = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk-gallery/tests/it/main.rs", "crates/crunk-gallery/tests/it/rendered_contrast.rs", "crates/crunk-gallery/src/rendered_contrast.rs"]
+at = "2026-11-16T13:15:52Z"
+actor = "lognd"
+rev = 1
