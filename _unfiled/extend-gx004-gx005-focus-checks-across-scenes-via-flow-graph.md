@@ -2,7 +2,8 @@
 id = "01M7HC8V5DNXKG467M2C4WBARE"
 title = "Extend GX004/GX005 focus checks across scenes via flow graph"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
