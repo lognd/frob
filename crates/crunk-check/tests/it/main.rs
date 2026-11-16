@@ -4,6 +4,7 @@ mod baseline;
 mod color001;
 mod craft010;
 mod crunk_web_pack;
+mod flow_focus;
 mod flows_host;
 mod gx014;
 mod gx_corpus;
