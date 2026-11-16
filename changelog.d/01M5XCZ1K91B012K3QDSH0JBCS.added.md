@@ -1,0 +1,1 @@
+The crunk UX pack gains prototyping checks over design/flows: an edge targeting an undeclared node, a motion that is a literal or lies above the duration bound, and a motion without a reduced-motion twin.

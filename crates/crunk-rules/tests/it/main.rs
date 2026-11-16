@@ -28,4 +28,5 @@ mod tailwind_rules;
 mod token_host;
 mod typography_rules;
 mod ux_ia;
+mod ux_motion;
 mod waiver;
