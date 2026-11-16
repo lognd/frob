@@ -2,7 +2,8 @@
 id = "01M7HDSZSHJ9DCR3DDVXZA5PCM"
 title = "End-to-end GX002/GX003 test through crunk-check run on a scene-and-flow fixture"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
