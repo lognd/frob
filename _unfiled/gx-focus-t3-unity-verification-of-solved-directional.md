@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-16T05:14:48Z"
-updated = "2026-11-16T07:21:24Z"
+updated = "2026-11-16T07:22:58Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**"]
 +++
 
-x
+split from 8YVMQYR: verify from_solved neighbours against the Unity runtime (needs external Unity tooling). no-story: internal verification task with no user-visible change of its own.
