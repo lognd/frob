@@ -2,7 +2,8 @@
 id = "01M5HA929PRX1MYGH048YVMQYR"
 title = "GX focus: directional neighbours from solved geometry and T3 Unity verification"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
