@@ -2,7 +2,7 @@
 id = "01M5XCXVQXDWR7J92VZDBK0E3V"
 title = "T2 flashing-frames check (WCAG 2.3.1 three flashes) over captured frame sequences"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
