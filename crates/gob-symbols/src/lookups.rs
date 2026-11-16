@@ -1074,6 +1074,14 @@ mod tests {
         );
     }
 
+    // frob:ticket 01M648G0HAPTHCHX4BKCFHG5QT
+    // frob:tests crates/gob-symbols/src/lookups.rs::scan
+    #[test]
+    fn typescript_default_import_call_resolves_to_module_member() {
+        let u = uses("typescript", "import cp from \"x\"; cp.exec(y);");
+        assert!(has(&u, "x.exec"), "{u:?}");
+    }
+
     // frob:tests crates/gob-symbols/src/lookups.rs::scan
     #[test]
     fn typescript_imports_resolve_to_module_paths() {
