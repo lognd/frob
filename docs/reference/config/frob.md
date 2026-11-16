@@ -322,6 +322,16 @@ Materialized: yes.
 | `severity` | `std::collections::BTreeMap<String, std::collections::BTreeMap<
 String, String>>` | `{}` | no | Repository severity overrides by atom then rule (`[packs.severity]`). |
 
+## `[path]`
+
+The `[path]` table (PATH001): literals accepted as written, added to the built-in `/dev/null`.
+
+Materialized: no.
+
+| Key | Type | Default | Enforcement | Doc |
+|---|---|---|---|---|
+| `allowed` | `Vec<String>` | `[]` | no | Literals PATH001 accepts as written, on top of the built-in defaults. |
+
 ## `[perf]`
 
 The time budget of the built-in rules.

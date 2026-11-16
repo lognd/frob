@@ -1533,6 +1533,21 @@
       },
       "type": "object"
     },
+    "path": {
+      "additionalProperties": false,
+      "description": "The `[path]` table (PATH001): literals accepted as written, added to the built-in `/dev/null`.",
+      "properties": {
+        "allowed": {
+          "default": [],
+          "description": "Literals PATH001 accepts as written, on top of the built-in defaults.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "perf": {
       "additionalProperties": false,
       "description": "The time budget of the built-in rules.",

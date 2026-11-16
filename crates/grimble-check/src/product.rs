@@ -23,7 +23,9 @@ use crate::coh_pass::CohPassOptions;
 use crate::coh001::CohOptions;
 use crate::coh002::Coh002Options;
 use crate::coh004::Coh004Options;
-use crate::config::{CohTable, GrimbleTable, LogTable, PRODUCT, PacksTable, RuleOverrides};
+use crate::config::{
+    CohTable, GrimbleTable, LogTable, PRODUCT, PacksTable, PathTable, RuleOverrides,
+};
 use crate::fidelity::language_tag;
 use crate::layers::ModelLayers;
 use crate::model_view::ModelView;
@@ -492,6 +494,7 @@ fn ci_report(entries: &[gob_walk::FileEntry], read: &dyn Fn(&str) -> Option<Stri
 fn path_report(
     entries: &[gob_walk::FileEntry],
     read: &dyn Fn(&str) -> Option<String>,
+    options: &grimble_lints::path::Options,
 ) -> PathReport {
     let texts: Vec<(&str, gob_languages::Language, String)> = entries
         .iter()
@@ -508,7 +511,7 @@ fn path_report(
             text,
         })
         .collect();
-    grimble_lints::pass::analyze(&files, &grimble_lints::path::Options::default())
+    grimble_lints::pass::analyze(&files, options)
 }
 
 /// Run the TIME rules over every Rust and Python file of the walk (uncached).
@@ -958,6 +961,7 @@ fn reports(
     digest: &str,
     table: &GrimbleTable,
     coh_opts: &CohPassOptions,
+    path_opts: &grimble_lints::path::Options,
     changed: &BTreeSet<String>,
 ) -> (
     ArchReport,
@@ -993,7 +997,9 @@ fn reports(
         u8::from(vocab.is_some())
     );
     let arch_key = report_cache::key(&arch_kind, digest, &engine, table.large_lines);
-    let path_key = report_cache::key("path", digest, &engine, table.large_lines);
+    // The allowed literals change the PATH report, so they are part of its key.
+    let path_kind = format!("path:{}", path_opts.allowed.join("\u{1f}"));
+    let path_key = report_cache::key(&path_kind, digest, &engine, table.large_lines);
     let arch_hit = cx
         .cache
         .get_artifact(&arch_key)
@@ -1091,7 +1097,8 @@ fn reports(
                 });
                 let arch_took = started.elapsed();
                 let started = std::time::Instant::now();
-                let path = path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read));
+                let path =
+                    path_hit.unwrap_or_else(|| path_report(&cx.core.entries, &read, path_opts));
                 let path_took = started.elapsed();
                 let time = time_hit.unwrap_or_else(|| time_report(&cx.core.entries, &read));
                 let pair = pair_hit.unwrap_or_else(|| pair_report(&cx.core.entries, &read));
@@ -1262,8 +1269,9 @@ impl Product for Grimble {
             model: ModelLayers::from_model(&model),
         };
         let changed = changed_files(&cx.core.root, self.base.as_deref());
+        let path_opts = PathTable::load(&cx.core.root)?.options();
         let (arch, path, time, pair, err, res, typing, unity, coh) =
-            reports(cx, &digest, &table, &coh_opts, &changed);
+            reports(cx, &digest, &table, &coh_opts, &path_opts, &changed);
         let log_table = LogTable::load(&cx.core.root)?;
         let log_opts = crate::log::pass::LogOptions {
             modules: log_table.modules,

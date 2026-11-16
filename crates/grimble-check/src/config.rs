@@ -149,6 +149,33 @@ pub struct LogTable {
     pub extra_crates: Vec<String>,
 }
 
+/// The `[path]` table (PATH001): literals accepted as written, added to the built-in `/dev/null`.
+// frob:ticket HQG7JPX
+#[derive(Debug, Clone, PartialEq, Eq, ConfigTable)]
+#[config(table = "path")]
+pub struct PathTable {
+    /// Literals PATH001 accepts as written, on top of the built-in defaults.
+    #[config(default = Vec::new())]
+    pub allowed: Vec<String>,
+}
+
+impl PathTable {
+    /// Load `[path]` from `<root>/grimble.toml` (a missing file or table means defaults).
+    ///
+    /// # Errors
+    ///
+    /// The [`ConfigError`] for an unreadable file, bad TOML, unknown key or mistyped value.
+    pub fn load(root: &Path) -> Result<Self, ConfigError> {
+        Ok(gob_config::load::<Self>(root, PRODUCT)?.value)
+    }
+
+    /// The PATH001 scan options: defaults plus the configured `allowed` literals.
+    pub fn options(&self) -> grimble_lints::path::Options {
+        tracing::debug!(allowed = self.allowed.len(), "PATH001 allowed literals");
+        grimble_lints::path::Options::with_allowed(self.allowed.iter().cloned())
+    }
+}
+
 /// The default `[log] modules` globs.
 #[must_use]
 pub fn default_log_modules() -> Vec<String> {
@@ -490,5 +517,19 @@ mod tests {
             std::fs::write(r.join(d).join("grimble.toml"), "").unwrap();
         }
         assert_eq!(nested_roots(r).unwrap(), vec![r.join("a")]);
+    }
+
+    // frob:tests PathTable.options
+    #[test]
+    fn path_table_allowed_reaches_the_path001_options() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("grimble.toml"),
+            "[path]\nallowed = [\"/srv/cache\"]\n",
+        )
+        .unwrap();
+        let opts = PathTable::load(dir.path()).unwrap().options();
+        assert!(opts.allowed.contains(&"/srv/cache".to_owned()));
+        assert!(opts.allowed.contains(&"/dev/null".to_owned()));
     }
 }
