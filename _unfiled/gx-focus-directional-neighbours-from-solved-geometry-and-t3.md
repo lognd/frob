@@ -10,6 +10,10 @@ created = "2026-10-22T08:05:12Z"
 updated = "2026-11-16T05:14:48Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**", "crates/crunk-layout/src/focus.rs", "crates/crunk-layout/tests/it/focus.rs", "changelog.d/01M5HA929PRX1MYGH048YVMQYR.added.md"]
+
+[[acceptance]]
+text = "FocusGraph::from_solved gives non-grid groups nearest-in-direction neighbours from solved geometry, keeping authored overrides"
+bound = false
 +++
 
 found while working Q2ZC9QM: depends on the layout solver; document order is used today.
