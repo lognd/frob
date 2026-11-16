@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/crunk-layout/**,crates/crunk-rules/**", "docs/reference/rules/GX00*.md", "crates/crunk-layout/src/focus_flow.rs", "crates/crunk-layout/src/lib.rs", "crates/crunk-layout/tests/it/focus.rs", "crates/crunk-rules/src/flow_files.rs"]
+new = ["crates/crunk-layout/**,crates/crunk-rules/**", "docs/reference/rules/GX00*.md", "crates/crunk-layout/src/focus_flow.rs", "crates/crunk-layout/src/lib.rs", "crates/crunk-layout/tests/it/focus.rs", "crates/crunk-rules/src/flow_files.rs", "crates/crunk-rules/src/host.rs"]
+at = "2026-11-16T04:31:59Z"
+actor = "lognd"
+rev = 1
