@@ -2,7 +2,8 @@
 id = "01M5HT58NK23KQMMVXD1FZ0R2D"
 title = "Min unit case count thresholds per scope as COV rule"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
