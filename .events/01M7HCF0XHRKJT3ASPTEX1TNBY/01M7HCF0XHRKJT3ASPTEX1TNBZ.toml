@@ -1,0 +1,10 @@
+kind = "create"
+title = "GX focus: T3 Unity verification of solved directional neighbours"
+type = "task"
+category = "todo"
+priority = "medium"
+scope = ["crates/crunk-layout/**"]
+body = "split from 8YVMQYR: verify from_solved neighbours against the Unity runtime (needs external Unity tooling)."
+at = "2026-11-16T05:14:48Z"
+actor = "lognd"
+rev = 1
