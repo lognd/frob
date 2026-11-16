@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T13:59:58Z"
+digest = "6272fa2448dd26204207fcb65a517c56d7c555bfb270c8839e66edf6d9884c2e"
+exit_code = 0
+head = "1ccfab4ce37f9213e83915ddafc3983b56acff1e"
+passed = true
+provider = "nextest"
+ref = "ux_qa::"
+size = 18364
+status = "measured"
+test_count = 8
+tests_digest = "d54a8085db9cbaed52021894b17fd95bf51afe15c48aafc7c5cc8060752e27dc"
+uri = "dir:.git/frob/artifacts/6272fa2448dd26204207fcb65a517c56d7c555bfb270c8839e66edf6d9884c2e"
+at = "2026-11-16T13:59:58Z"
+actor = "lognd"
+rev = 1
