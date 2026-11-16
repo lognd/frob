@@ -3392,6 +3392,26 @@ impl<'a> RustFold<'a> {
         tracing::trace!(name = last, "attribute names a function");
     }
 
+    // frob:ticket 01M61DFC5ZCSJTKMNBP88AKFVS
+    /// Files value references to `serialize` and `deserialize` of the module a serde
+    /// `with = "module"` attribute names, since the derive calls both.
+    fn attr_with_module_sites(&mut self, leaf: Node<'_>, node: NodeId) {
+        let module = self.t(leaf).trim().to_owned();
+        let Some(last) = module.rsplit("::").next().filter(|m| !m.is_empty()) else {
+            return;
+        };
+        let Some(&caller) = self.callers.last().or(self.unit_stack.last()) else {
+            return;
+        };
+        let saved = self.callers.len();
+        self.callers.push(caller);
+        for f in ["serialize", "deserialize"] {
+            self.value_site(f, Some(last.to_owned()), node);
+        }
+        self.callers.truncate(saved);
+        tracing::trace!(module = last, "serde with-module names serialize functions");
+    }
+
     fn attr_node(&mut self, item: Node<'_>) -> R<NodeId> {
         let attr = children(item)
             .into_iter()
@@ -3411,7 +3431,19 @@ impl<'a> RustFold<'a> {
                 let id = self.cx.lit(l.kind(), self.t(*l), *l)?;
                 let is_key = ls.get(i + 1).is_some_and(|n| n.kind() == "=");
                 if !is_key {
-                    self.attr_value_site(*l, id);
+                    let before: Vec<&str> = ls[..i]
+                        .iter()
+                        .rev()
+                        .map(|p| self.t(*p))
+                        .filter(|t| *t != "\"")
+                        .take(2)
+                        .collect();
+                    let with_mod = l.kind() == "string_content" && before == ["=", "with"];
+                    if with_mod {
+                        self.attr_with_module_sites(*l, id);
+                    } else {
+                        self.attr_value_site(*l, id);
+                    }
                 }
                 payload.push(id);
             }

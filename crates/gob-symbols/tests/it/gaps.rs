@@ -148,6 +148,24 @@ fn g04_function_passed_as_value_is_a_may_reference_edge() {
     );
 }
 
+// frob:tests crates/gob-symbols/src/rust.rs::RustFold.attr_with_module_sites
+// frob:ticket 01M61DFC5ZCSJTKMNBP88AKFVS
+#[test]
+fn serde_with_module_attribute_references_both_functions() {
+    let src = "mod codec {\n    pub fn serialize() {}\n    pub fn deserialize() {}\n}\n\
+               struct S {\n    #[serde(with = \"codec\")]\n    x: u8,\n}\n";
+    let g = graph_of(&[("c/src/lib.rs", src)]);
+    for f in ["serialize", "deserialize"] {
+        let to = sym(&format!("c/src/lib.rs::codec.{f}"));
+        assert!(
+            g.edges_with_status()
+                .iter()
+                .any(|e| e.kind == EdgeKind::References && e.to.as_ref() == Some(&to)),
+            "no reference edge to {f}"
+        );
+    }
+}
+
 #[test]
 fn g07_outer_attributes_are_in_sig_and_attr_digests() {
     let plain = extract("x.rs", "pub fn f() {}\n");
