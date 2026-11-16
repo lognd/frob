@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T04:31:24Z"
+digest = "f539e93c717e7871dfbee8e8d4e1cdfa82a71ef4d7ddf7190fd018fc52d67dd0"
+exit_code = 0
+head = "ac9ee721de73b802352054558bbaed75180a2904"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.36s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5c4aca94-9c16-490a-8125-1f70a6c4cf1c with nextest profile: default
+    Starting 1 test across 164 binaries (8109 tests skipped)
+        PASS [   0.023s] crunk-layout::it focus::scenes_circling_with_no_way_back_are_stranded
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.035s] 1 test run: 1 passed, 8109 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "scenes_circling_with_no_way_back_are_stranded"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "e64c00009f6858ac9c770db1efe3825c08916cb50c305457405a7e39a72186ae"
+at = "2026-11-16T04:31:24Z"
+actor = "lognd"
+rev = 1
