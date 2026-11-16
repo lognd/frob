@@ -7,10 +7,10 @@ priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-16T10:31:31Z"
+updated = "2026-11-16T10:32:04Z"
 idempotency_key = "gf-docs/glossary/obligation.md"
 labels = ["good-first"]
-scope = ["docs/glossary/obligation.md", "docs/README.md"]
+scope = ["docs/glossary/obligation.md", "docs/README.md", "changelog.d/01M7CAYH4DH7619Y42EX0QMDF0.added.md"]
 
 [[acceptance]]
 text = "Given docs/glossary/obligation.md, when read, then it has the header block, explains what the obligation graph is and where its rules live, and is indexed in docs/README.md"
