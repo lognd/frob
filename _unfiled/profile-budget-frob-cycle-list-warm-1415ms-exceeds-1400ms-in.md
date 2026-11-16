@@ -2,12 +2,12 @@
 id = "01M7HW0BKQV9MFTYSHJDZR00K1"
 title = "Profile budget: frob cycle list warm 1415ms exceeds 1400ms in CI"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-11-16T09:46:25Z"
-updated = "2026-11-16T09:46:25Z"
+updated = "2026-11-16T09:46:34Z"
 idempotency_key = "profile-cycle-list-1415"
 labels = ["no-story"]
 scope = ["crates/gob-dev/profile.toml"]
