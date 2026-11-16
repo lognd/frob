@@ -2,12 +2,12 @@
 id = "01M67PBKDJP2WCYAAHMX41BW80"
 title = "CAP: infer C# receiver type from var local initialised by a call"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-31T00:39:36Z"
-updated = "2026-11-03T05:56:31Z"
+updated = "2026-11-16T21:31:48Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
