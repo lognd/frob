@@ -76,3 +76,11 @@ test-group = "trybuild"
 [[profile.ci.overrides]]
 filter = "package(frob-check) & binary(it) & test(mdtest_corpus)"
 slow-timeout = { period = "30s", terminate-after = 10 }
+
+# frob:ticket 01M7HNFQ470MGXGSX3K1M61BC6
+# frob-land it twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit (~1M61BC6)
+# lands twelve tickets in one test and exceeded the 120 s hang guard on windows-latest. It gets the
+# same reviewed 300 s allowance as the other slow Windows CI tests.
+[[profile.ci.overrides]]
+filter = "package(frob-land) & test(twelve_ready_tickets_with_one_failing_land_eleven_and_return_the_culprit)"
+slow-timeout = { period = "30s", terminate-after = 10 }
