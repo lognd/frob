@@ -126,6 +126,15 @@ deepest path), sibling labels equal ignoring case, and pages unreachable from ho
 discovered the code comparison is reported as unresolved, never clean. A project with no sitemap
 gets no IA findings.
 
+## Prototyping (opt-in UX pack)
+
+The UX prototyping checks (`crunk_rules::ux::motion::check_motion_rules`) read the flow files'
+edges: an edge from or to an undeclared node, a `motion` that is a duration literal (`200ms`)
+instead of a token, a motion token longer than `[tokens] max_duration_ms`, and a motion without a
+reduced-motion twin fire. The twin is the token's `reduced` mode or a `<token>-reduced` sibling
+token; a zero-length twin is valid, one longer than the bound fires. With motion in use but no
+duration tokens declared the result is unresolved, never clean.
+
 ## Exit codes (docs/design/shared/cli-contract.md section 2)
 
 | Code | Meaning here |
