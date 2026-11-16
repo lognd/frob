@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["GX002 and GX003 see across scenes: scenes joined by flow transitions are judged for scene-level reachability and stranding"]
+moved = []
+at = "2026-11-16T04:16:03Z"
+actor = "lognd"
+rev = 1
