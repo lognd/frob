@@ -2,12 +2,12 @@
 id = "01M7H35TPY6X5M6RQ2DQ7YF8GV"
 title = "TICK007 treats generated .gitattributes drift as a hand edit"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "high"
 points = 1
 reporter = "lognd"
 created = "2026-11-16T02:32:30Z"
-updated = "2026-11-16T02:32:30Z"
+updated = "2026-11-16T02:33:33Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/src/replay.rs"]
 
