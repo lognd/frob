@@ -1,0 +1,8 @@
+kind = "land"
+base_ref = "refs/heads/experimental"
+commit = "7aaddf20b5aa17d93534dd50bbfdc0465ac6bdf8"
+branch = "ticket/ATTCAPV"
+pushed = false
+at = "2026-11-16T17:31:23Z"
+actor = "lognd"
+rev = 1
