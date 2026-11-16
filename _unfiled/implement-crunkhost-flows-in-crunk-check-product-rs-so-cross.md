@@ -2,12 +2,12 @@
 id = "01M7HC8TXG8C5YBWXB8FP71BSA"
 title = "Implement CrunkHost::flows() in crunk-check product.rs so cross-scene GX002/GX003 run in production"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T05:11:25Z"
-updated = "2026-11-16T05:11:25Z"
+updated = "2026-11-16T05:21:43Z"
 labels = ["no-story"]
 scope = ["crates/crunk-check/**"]
 
