@@ -12,7 +12,7 @@ scope = ["crates/gob-rules/src/indexgen.rs", "crates/frob-code/**", "crates/grim
 
 [[acceptance]]
 text = "Given a private function referenced only as a function value naming exactly one unit, when DEAD001 runs, then the function counts as reached. Edge cases: an ambiguous name stays a May edge"
-bound = false
+bound = true
 +++
 
 Found while working ~RFX8QWR. DEAD001 reports as Unresolved: serde with/default attribute targets (frob-ledger event.rs rel_path, redact.rs yes), a thiserror attribute method call (model.rs PointScale::describe), and functions passed as values (index.rs summary_row, ops.rs is_empty_list, redact.rs Rule::hit). Also the generated mod freshness test rules_index_is_fresh emitted by crates/gob-rules/src/indexgen.rs:290 is flagged DEAD001 in about 15 crates; the generator should emit a marker the rule honors. Fix the resolver or generator, then drop the frob:defer directives that cite this ticket.

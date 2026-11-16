@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T09:09:23Z"
+digest = "5f544bf1c13bd45c0615a863d798c8bd8af82f3846c4922355efe4ccead5b406"
+exit_code = 0
+head = "6b055ae275f4a3095ecf8b87f46ce92fe7633710"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.44s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 158d2036-cefb-41cd-87d8-c5605692445a with nextest profile: default
+    Starting 1 test across 164 binaries (8127 tests skipped)
+        PASS [   0.050s] grimble-arch::rules dead001_counts_a_sole_function_value_as_reached
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.062s] 1 test run: 1 passed, 8127 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "dead001_counts_a_sole_function_value_as_reached"
+size = 564
+status = "measured"
+test_count = 1
+tests_digest = "250cfe895216e2a097cb24578ed6f271ec276f6e95cf4af2b9c9e4978a2c14a4"
+at = "2026-11-16T09:09:23Z"
+actor = "lognd"
+rev = 1
