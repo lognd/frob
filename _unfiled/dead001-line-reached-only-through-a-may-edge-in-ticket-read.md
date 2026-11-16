@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T22:38:26Z"
-updated = "2026-11-03T05:56:41Z"
+updated = "2026-11-16T17:13:57Z"
 labels = ["no-story"]
 scope = ["crates/frob/src/ticket/read.rs"]
+
+[[acceptance]]
+text = "Given crates/frob/src/ticket/read.rs, when frob check runs, then DEAD001 no longer reports EvidenceView::line as reached only through a May edge"
+bound = false
 +++
 
 found while working ~5E5N62X; pre-existing (blame 2026-10-21), not in that diff
