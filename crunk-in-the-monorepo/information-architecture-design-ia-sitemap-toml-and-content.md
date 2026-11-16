@@ -2,13 +2,13 @@
 id = "01M5XCZ0XPCPA1DT2QB5VGHDZC"
 title = "Information architecture: design/ia/sitemap.toml and content-model.toml with route/screen, depth, label and reachability rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-10-28T12:55:43Z"
+updated = "2026-11-16T12:12:19Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/ia.rs, crates/crunk-rules/src/ux/ia.rs, crates/crunk-rules/tests/ux_ia.rs"]
 
