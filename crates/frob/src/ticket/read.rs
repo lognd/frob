@@ -255,7 +255,7 @@ fn brief_markdown(ledger: &frob_ledger::Ledger, id: TicketId) -> Result<String, 
     if !evidence.is_empty() {
         markdown.push_str("\n## Evidence\n\n");
         for e in &evidence {
-            markdown.push_str(&e.line());
+            markdown.push_str(&EvidenceView::line(e));
             markdown.push('\n');
         }
     }
@@ -877,5 +877,29 @@ impl Command for Brief {
             handle: view.summary.handle,
             markdown,
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::EvidenceView;
+
+    // frob:ticket 01M62AM9SH454DCNWR0ATTCAPV
+    // frob:tests crates/frob/src/ticket/read.rs::line
+    #[test]
+    fn a_tool_record_renders_its_criterion_provider_and_verdict() {
+        let view = EvidenceView {
+            event: "e".to_owned(),
+            provider: "nextest".to_owned(),
+            reference: "a_test".to_owned(),
+            accepts: vec![1],
+            passed: Some(true),
+            label: None,
+            attestation: None,
+        };
+        assert_eq!(
+            EvidenceView::line(&view),
+            "- criterion 1: nextest a_test passed"
+        );
     }
 }
