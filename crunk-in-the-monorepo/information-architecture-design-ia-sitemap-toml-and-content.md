@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:02Z"
-updated = "2026-11-16T12:15:47Z"
+updated = "2026-11-16T12:22:31Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/ia.rs, crates/crunk-rules/src/ux/ia.rs, crates/crunk-rules/tests/ux_ia.rs"]
 
