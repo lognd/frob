@@ -305,7 +305,7 @@ fn solved_node(id: &str, x: f32, y: f32) -> SolvedNode {
         text: None,
         zero_size: false,
         overflow: Vec::new(),
-        tokens: Default::default(),
+        tokens: std::collections::BTreeMap::default(),
     }
 }
 
