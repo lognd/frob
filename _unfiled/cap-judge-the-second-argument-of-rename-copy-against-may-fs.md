@@ -2,7 +2,7 @@
 id = "01M61Y356JN6KCHRD81WWJ56CZ"
 title = "CAP: judge the second argument of rename/copy against may fs.write args"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
