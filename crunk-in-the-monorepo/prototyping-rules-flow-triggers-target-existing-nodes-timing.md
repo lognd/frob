@@ -2,13 +2,13 @@
 id = "01M5XCZ1K91B012K3QDSH0JBCS"
 title = "Prototyping rules: flow triggers target existing nodes, timing within token bounds, reduced-motion twins"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:03Z"
-updated = "2026-10-28T12:56:01Z"
+updated = "2026-11-16T08:41:47Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-rules/src/ux/motion.rs, crates/crunk-rules/tests/ux_motion.rs"]
 
