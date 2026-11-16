@@ -2,7 +2,8 @@
 id = "01M61QA7KBV7444W3YFT432YR1"
 title = "CAP: resolve local mod crates imported without a crate:: prefix"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
