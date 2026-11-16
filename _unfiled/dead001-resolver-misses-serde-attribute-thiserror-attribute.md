@@ -2,12 +2,12 @@
 id = "01M61G1Y62DQKF195X9JWEYWT8"
 title = "DEAD001 resolver misses serde attribute, thiserror attribute and fn-value edges; generated rules_index_is_fresh test flagged"
 type = "bug"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-28T14:54:01Z"
-updated = "2026-11-03T05:56:43Z"
+updated = "2026-11-16T08:41:35Z"
 scope = ["crates/gob-rules/src/indexgen.rs", "crates/frob-code/**"]
 +++
 
