@@ -1,0 +1,17 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T15:40:40Z"
+digest = "d8c2440a7b41e340becfe4a79c7f09f9013d04713c8862cb1f12b5df8e7a8d4c"
+exit_code = 0
+head = "ee0ee1d3002827c63918ec2b0b660fce21e60c04"
+passed = true
+provider = "nextest"
+ref = "using_static_of_a_bcl_type_terminates_with_an_honest_gap"
+size = 18016
+status = "measured"
+test_count = 1
+tests_digest = "65ea227266bee496173ea0919ee8bbee54f559fb94f526dc90f391ea1d20a4c6"
+uri = "dir:.git/frob/artifacts/d8c2440a7b41e340becfe4a79c7f09f9013d04713c8862cb1f12b5df8e7a8d4c"
+at = "2026-11-16T15:40:40Z"
+actor = "lognd"
+rev = 1
