@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-03T05:56:50Z"
+updated = "2026-11-16T18:51:52Z"
 scope = ["crates/gob-caps/**,crates/grimble-bind/src/caps.rs"]
+
+[[acceptance]]
+text = "Given a TypeScript source that calls a literal capability callee (for example fs.readFileSync), when grimble check scans it, then the matching capability atom is reported as a use, proven by a test in crates/grimble-bind/src/caps.rs."
+bound = false
 +++
 
 found while working ~6CV37RW: name lookups are resolved for TS/JS/C# in gob-symbols but scan_resolved is gated to rust|python and no TS/C# vocabulary exists.
