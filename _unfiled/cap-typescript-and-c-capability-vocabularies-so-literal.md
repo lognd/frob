@@ -2,7 +2,8 @@
 id = "01M648G0AJCWY7TY7XBYHNK765"
 title = "CAP: TypeScript and C# capability vocabularies so literal lookups yield findings"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
