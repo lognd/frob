@@ -48,6 +48,7 @@ pub mod file_problem;
 pub mod fixes;
 pub mod flow_files;
 pub mod grl_rules;
+pub mod gx_files;
 pub mod handoff;
 pub mod host;
 pub mod i18n;

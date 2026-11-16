@@ -57,6 +57,7 @@ pub mod content_file;
 mod dynamic;
 mod error;
 pub mod flow_file;
+pub mod game_files;
 pub mod handoff;
 pub mod ia;
 mod load;
