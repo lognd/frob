@@ -2,12 +2,12 @@
 id = "01M5HA929PRX1MYGH048YVMQYR"
 title = "GX focus: directional neighbours from solved geometry and T3 Unity verification"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-10-28T12:55:46Z"
+updated = "2026-11-16T05:11:35Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**"]
 +++
