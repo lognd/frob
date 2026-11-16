@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-11-16T05:11:35Z"
+updated = "2026-11-16T05:14:47Z"
 labels = ["no-story"]
-scope = ["crates/crunk-layout/**"]
+scope = ["crates/crunk-layout/**", "crates/crunk-layout/src/focus.rs"]
 +++
 
 found while working Q2ZC9QM: depends on the layout solver; document order is used today.
