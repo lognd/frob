@@ -2,13 +2,13 @@
 id = "01M61MM4H8E5N93CRKFTREB77M"
 title = "org R5: declare tool-stage ids and test every emitted id is declared"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:52Z"
-updated = "2026-11-03T05:56:28Z"
+updated = "2026-11-16T10:01:34Z"
 labels = ["no-story"]
 scope = ["crates/gob-rules/**"]
 
