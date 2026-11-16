@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T08:53:44Z"
-updated = "2026-11-16T19:59:41Z"
+updated = "2026-11-16T20:16:08Z"
 labels = ["no-story"]
 scope = ["crates/grimble-bind/src/caps.rs", "crates/grimble-bind/src/caps/**", "packs/core-effects/atoms.toml", "crates/grimble-bind/tests/it/caps.rs"]
 
