@@ -57,7 +57,6 @@ struct RuleSpec {
     case_sensitive: bool,
 }
 
-// frob:defer DEAD001 ticket=01M61G1Y62DQKF195X9JWEYWT8 because="named by the serde attribute default = yes, an edge the call graph cannot see"
 fn yes() -> bool {
     true
 }
