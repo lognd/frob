@@ -87,3 +87,89 @@ fn gx003_resolves_grid_neighbours_and_exempts_a_modal_trap() {
     let open = trap.replace(" aria-modal=\"true\"", "");
     assert_eq!(msgs::<Gx003>(&open).len(), 1);
 }
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+const BTN: &str = "<button data-id=\"a\" data-focus-default></button>\n";
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+fn flow(edges: &[(&str, &str)]) -> String {
+    let mut nodes: Vec<&str> = edges.iter().flat_map(|(a, b)| [*a, *b]).collect();
+    nodes.sort_unstable();
+    nodes.dedup();
+    let list: Vec<String> = nodes.iter().map(|n| format!("\"{n}:default\"")).collect();
+    let mut text = format!("name = \"main\"\nnodes = [{}]\n", list.join(", "));
+    for (a, b) in edges {
+        text.push_str(&format!(
+            "[[edges]]\nfrom = \"{a}:default\"\nto = \"{b}:default\"\ntrigger = \"click\"\n"
+        ));
+    }
+    text
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+fn flow_msgs<R>(scenes: &[&str], edges: &[(&str, &str)]) -> Vec<String>
+where
+    R: gob_rules::RepoRule<support::Project> + Default,
+{
+    let first = format!("design/scenes/{}.scene.html", scenes[0]);
+    let flow_text = flow(edges);
+    let mut extra: Vec<(String, &str)> = scenes[1..]
+        .iter()
+        .map(|s| (format!("design/scenes/{s}.scene.html"), BTN))
+        .collect();
+    extra.push(("design/flows/main.flow.toml".to_owned(), flow_text.as_str()));
+    let extra: Vec<(&str, &str)> = extra.iter().map(|(n, t)| (n.as_str(), *t)).collect();
+    let host = support::project_files(&first, BTN, &extra, None);
+    support::run::<R>(&host)
+        .into_iter()
+        .map(|f: Finding| f.message)
+        .collect()
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx002.rs::Gx002
+#[test]
+fn gx002_fires_for_a_scene_no_flow_transition_reaches() {
+    let m = flow_msgs::<Gx002>(
+        &["menu", "game", "a", "b"],
+        &[("menu", "game"), ("a", "b"), ("b", "a")],
+    );
+    assert_eq!(m.len(), 2, "{m:?}");
+    assert!(m.iter().any(|s| s.contains("scene 'a'")), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx002.rs::Gx002
+#[test]
+fn gx002_is_quiet_when_every_scene_is_reachable_through_flows() {
+    let m = flow_msgs::<Gx002>(&["menu", "game"], &[("menu", "game"), ("game", "menu")]);
+    assert!(m.is_empty(), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx003.rs::Gx003
+#[test]
+fn gx003_fires_for_scenes_the_flow_never_leaves_back_to_an_entry() {
+    let m = flow_msgs::<Gx003>(
+        &["menu", "a", "b"],
+        &[("menu", "a"), ("a", "b"), ("b", "a")],
+    );
+    assert_eq!(m.len(), 2, "{m:?}");
+    assert!(m[0].contains("across screens"), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/rules/gx003.rs::Gx003
+#[test]
+fn gx003_is_quiet_for_a_flow_that_ends_in_a_leaf_scene() {
+    let m = flow_msgs::<Gx003>(&["menu", "credits"], &[("menu", "credits")]);
+    assert!(m.is_empty(), "{m:?}");
+}
+
+// frob:tests crates/crunk-rules/src/flow_files.rs::FlowFacts.transitions
+#[test]
+fn transitions_drop_moves_between_states_of_one_screen() {
+    let text = "name = \"m\"\nnodes = [\"a:x\", \"a:y\", \"b:x\"]\n[[edges]]\nfrom = \"a:x\"\nto = \"a:y\"\ntrigger = \"click\"\n[[edges]]\nfrom = \"a:y\"\nto = \"b:x\"\ntrigger = \"click\"\n";
+    let flow = crunk_spec::parse_flow_file(text).expect("parses");
+    let facts = crunk_rules::flow_files::FlowFacts {
+        files: vec![("design/flows/m.flow.toml".to_owned(), flow)],
+        problems: Vec::new(),
+    };
+    assert_eq!(facts.transitions(), vec![("a".to_owned(), "b".to_owned())]);
+}

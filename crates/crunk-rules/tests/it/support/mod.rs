@@ -52,6 +52,8 @@ pub struct Project {
     pub content: Option<ContentFacts>,
     pub screens: Option<ScreenFacts>,
     pub components: Option<ComponentFacts>,
+    // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+    pub flows: Option<crunk_rules::flow_files::FlowFacts>,
     _dir: tempfile::TempDir,
 }
 
@@ -88,6 +90,9 @@ impl CrunkHost for Project {
     }
     fn components(&self) -> Option<&ComponentFacts> {
         self.components.as_ref()
+    }
+    fn flows(&self) -> Option<&crunk_rules::flow_files::FlowFacts> {
+        self.flows.as_ref()
     }
 }
 
@@ -413,6 +418,8 @@ fn build(
     let screens = Some(ScreenFacts::load(&spec));
     // frob:ticket 01M4CXR7CHD30VMWHMRD6TTN3F
     let components = Some(ComponentFacts::load(&spec));
+    // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+    let flows = Some(crunk_rules::flow_files::FlowFacts::load(&spec));
     let tailwind = tailwind_facts(&spec, &styles, config);
     let reviews = config.and_then(|c| review_facts(&spec, c));
     // frob:ticket 01M5EF4A7DQJQ2SHXYAYCAB73X
@@ -429,6 +436,7 @@ fn build(
         content,
         screens,
         components,
+        flows,
         _dir: dir,
     }
 }

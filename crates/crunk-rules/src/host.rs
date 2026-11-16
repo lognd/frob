@@ -8,6 +8,7 @@ use crunk_spec::DesignSpec;
 
 use crate::component_files::ComponentFacts;
 use crate::content_files::ContentFacts;
+use crate::flow_files::FlowFacts;
 use crate::render_ledger::RenderLedger;
 use crate::review::ReviewFacts;
 use crate::scene_docs::SceneDocFacts;
@@ -78,6 +79,12 @@ pub trait CrunkHost {
     // frob:ticket 01M4CXSM408E7A05DWKENDB7V4
     /// The judged human reviews, when the pipeline gathered them (HUMAN001 and HUMAN002's input).
     fn reviews(&self) -> Option<&ReviewFacts> {
+        None
+    }
+
+    // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+    /// The authored `design/flows/*.flow.toml` files (the scene-to-scene half of GX002 and GX003).
+    fn flows(&self) -> Option<&FlowFacts> {
         None
     }
 

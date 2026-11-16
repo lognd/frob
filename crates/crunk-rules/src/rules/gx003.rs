@@ -5,6 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
+use crate::scene_docs::focus_atlas;
 
 /// A focusable element that the pad can reach but not leave for the default selection.
 #[derive(Debug, Clone, Copy, Default)]
@@ -38,6 +39,18 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx003 {
                 );
                 tracing::debug!(path = %file.path, node = %node.label, "GX003: focus trap");
                 out.fire_in(&file.path, node.offset, message);
+            }
+        }
+        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+        if let Some((facts, atlas)) = focus_atlas(host) {
+            for i in atlas.stranded_scenes() {
+                let file = &facts.files[i];
+                let message = format!(
+                    "scene '{}' is a focus trap across screens: the flow leaves it only for scenes that never lead back to an entry; add a flow edge back out",
+                    atlas.scenes[i].name
+                );
+                tracing::debug!(path = %file.path, "GX003: stranded scene");
+                out.fire_in(&file.path, 0, message);
             }
         }
     }

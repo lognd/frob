@@ -204,3 +204,90 @@ fn nodes_inside_a_modal_are_not_traps() {
     let bare = html.replace(" aria-modal=\"true\"", "");
     assert_eq!(names(&graph(&bare), &graph(&bare).traps()), vec!["ok"]);
 }
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+fn scene(name: &str, html: &str) -> crunk_layout::AtlasScene {
+    crunk_layout::AtlasScene {
+        name: name.to_owned(),
+        graph: graph(html),
+    }
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+fn hop(a: &str, b: &str) -> (String, String) {
+    (a.to_owned(), b.to_owned())
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+const ONE_BUTTON: &str = "<button data-id=\"a\" data-focus-default></button>\n";
+
+// frob:tests FocusAtlas.entries
+#[test]
+fn entries_are_the_scenes_nothing_transitions_into() {
+    let atlas = crunk_layout::FocusAtlas::new(
+        vec![scene("menu", ONE_BUTTON), scene("game", ONE_BUTTON)],
+        &[hop("menu", "game")],
+    );
+    assert_eq!(atlas.entries(), vec![0]);
+}
+
+// frob:tests FocusAtlas.unreachable_scenes
+#[test]
+fn a_scene_no_transition_reaches_is_unreachable() {
+    let atlas = crunk_layout::FocusAtlas::new(
+        vec![
+            scene("menu", ONE_BUTTON),
+            scene("game", ONE_BUTTON),
+            scene("a", ONE_BUTTON),
+            scene("b", ONE_BUTTON),
+        ],
+        &[hop("menu", "game"), hop("a", "b"), hop("b", "a")],
+    );
+    // a and b enter each other, so only menu is an entry; the island is unreachable.
+    assert_eq!(atlas.entries(), vec![0]);
+    assert_eq!(atlas.unreachable_scenes(), vec![2, 3]);
+}
+
+// frob:tests FocusAtlas.unreachable_scenes
+#[test]
+fn a_connected_flow_has_no_unreachable_scene() {
+    let atlas = crunk_layout::FocusAtlas::new(
+        vec![scene("menu", ONE_BUTTON), scene("game", ONE_BUTTON)],
+        &[hop("menu", "game"), hop("game", "menu")],
+    );
+    assert!(atlas.unreachable_scenes().is_empty());
+}
+
+// frob:tests FocusAtlas.stranded_scenes
+#[test]
+fn scenes_circling_with_no_way_back_are_stranded() {
+    let atlas = crunk_layout::FocusAtlas::new(
+        vec![
+            scene("menu", ONE_BUTTON),
+            scene("a", ONE_BUTTON),
+            scene("b", ONE_BUTTON),
+        ],
+        &[hop("menu", "a"), hop("a", "b"), hop("b", "a")],
+    );
+    assert_eq!(atlas.stranded_scenes(), vec![1, 2]);
+}
+
+// frob:tests FocusAtlas.stranded_scenes
+#[test]
+fn a_scene_that_ends_the_flow_is_not_stranded() {
+    let atlas = crunk_layout::FocusAtlas::new(
+        vec![scene("menu", ONE_BUTTON), scene("credits", ONE_BUTTON)],
+        &[hop("menu", "credits")],
+    );
+    assert!(atlas.stranded_scenes().is_empty());
+}
+
+// frob:tests FocusAtlas.new
+#[test]
+fn a_transition_to_an_unknown_screen_is_dangling() {
+    let atlas =
+        crunk_layout::FocusAtlas::new(vec![scene("menu", ONE_BUTTON)], &[hop("menu", "ghost")]);
+    assert!(atlas.links.is_empty());
+    assert_eq!(atlas.dangling.len(), 1);
+    assert_eq!(atlas.dangling[0].to, "ghost");
+}

@@ -1,0 +1,1 @@
+Focus graph now spans scenes: crunk-layout builds a FocusAtlas joining each scene's focus graph by the flows' screen-to-screen transitions, and GX002 and GX003 fire for scenes the pad cannot reach or never leave across flows.

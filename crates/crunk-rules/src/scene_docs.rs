@@ -149,6 +149,37 @@ impl SceneDocFile {
     }
 }
 
+impl SceneDocFile {
+    // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+    /// The scene name flows refer to: the file name without its `.scene.html` suffix (the screen id).
+    pub fn scene_name(&self) -> &str {
+        let file = self.path.rsplit('/').next().unwrap_or(&self.path);
+        file.strip_suffix(SCENE_DOC_SUFFIX).unwrap_or(file)
+    }
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+/// The cross-scene focus atlas: every scene's focus graph joined by `host`'s flow transitions;
+/// `None` when the host has no scene documents or no flow files.
+pub fn focus_atlas<H: crate::CrunkHost + ?Sized>(
+    host: &H,
+) -> Option<(&SceneDocFacts, crunk_layout::FocusAtlas)> {
+    let facts = host.scene_docs()?;
+    let flows = host.flows().filter(|f| !f.files.is_empty())?;
+    let scenes = facts
+        .files
+        .iter()
+        .map(|f| crunk_layout::AtlasScene {
+            name: f.scene_name().to_owned(),
+            graph: f.focus_graph(),
+        })
+        .collect();
+    Some((
+        facts,
+        crunk_layout::FocusAtlas::new(scenes, &flows.transitions()),
+    ))
+}
+
 /// Every scene document of a project that parsed, sorted by path, and those that did not.
 #[derive(Debug, Clone, Default)]
 pub struct SceneDocFacts {

@@ -46,6 +46,7 @@ pub mod family;
 pub mod file_attrs;
 pub mod file_problem;
 pub mod fixes;
+pub mod flow_files;
 pub mod grl_rules;
 pub mod handoff;
 pub mod host;

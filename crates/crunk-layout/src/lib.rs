@@ -6,6 +6,7 @@
 
 pub mod findings;
 mod focus;
+mod focus_flow;
 pub mod output;
 pub mod solve;
 pub mod style;
@@ -14,3 +15,4 @@ pub mod text;
 pub use focus::{
     Direction, FocusEdge, FocusGraph, FocusNode, GroupAxis, InvalidEdge, InvalidReason, WrapMode,
 };
+pub use focus_flow::{AtlasScene, DanglingTransition, FocusAtlas};

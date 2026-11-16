@@ -5,6 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
+use crate::scene_docs::focus_atlas;
 
 /// A focusable element in a scene that the pad cannot reach from the default selection.
 #[derive(Debug, Clone, Copy, Default)]
@@ -38,6 +39,18 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx002 {
                 );
                 tracing::debug!(path = %file.path, node = %node.label, "GX002: unreachable focusable");
                 out.fire_in(&file.path, node.offset, message);
+            }
+        }
+        // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+        if let Some((facts, atlas)) = focus_atlas(host) {
+            for i in atlas.unreachable_scenes() {
+                let file = &facts.files[i];
+                let message = format!(
+                    "scene '{}' cannot be reached by the pad: no flow transition leads to it from an entry scene; add a flow edge into this screen",
+                    atlas.scenes[i].name
+                );
+                tracing::debug!(path = %file.path, "GX002: unreachable scene");
+                out.fire_in(&file.path, 0, message);
             }
         }
     }
