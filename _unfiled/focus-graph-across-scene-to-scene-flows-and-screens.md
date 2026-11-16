@@ -2,12 +2,12 @@
 id = "01M5HA924E3PTBVH6J8EBXP7XW"
 title = "Focus graph across scene-to-scene flows and screens"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-10-28T12:55:52Z"
+updated = "2026-11-16T04:11:40Z"
 labels = ["no-story"]
 scope = ["crates/crunk-layout/**,crates/crunk-rules/**"]
 +++
