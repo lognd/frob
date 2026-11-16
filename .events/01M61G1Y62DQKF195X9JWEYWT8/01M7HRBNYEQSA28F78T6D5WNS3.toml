@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["crates/gob-rules/src/indexgen.rs", "crates/frob-code/**", "crates/grimble-arch/src/dead.rs", "crates/grimble-arch/tests/rules.rs", "crates/frob-ledger/src/redact.rs", "crates/frob-ledger/src/ops.rs"]
+new = ["crates/gob-rules/src/indexgen.rs", "crates/frob-code/**", "crates/grimble-arch/src/dead.rs", "crates/grimble-arch/tests/rules.rs", "crates/frob-ledger/src/redact.rs", "crates/frob-ledger/src/ops.rs", "crates/frob-ledger/src/index.rs"]
+at = "2026-11-16T08:42:41Z"
+actor = "lognd"
+rev = 1
