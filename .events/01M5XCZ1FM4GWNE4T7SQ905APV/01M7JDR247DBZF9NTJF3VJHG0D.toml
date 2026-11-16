@@ -1,0 +1,7 @@
+kind = "transition"
+from = "todo"
+to = "in-progress"
+reason = "lease: lognd in frob-wt/Q905APV; scope: crates/crunk-spec/src/game_files.rs, crates/crunk-rules/src/gx_files.rs, crates/crunk-rules/tests/it/gx_files.rs, crates/crunk-spec/src/lib.rs, crates/crunk-rules/src/lib.rs, crates/crunk-rules/tests/it/main.rs; ttl 7200s"
+at = "2026-11-16T14:56:12Z"
+actor = "lognd"
+rev = 1

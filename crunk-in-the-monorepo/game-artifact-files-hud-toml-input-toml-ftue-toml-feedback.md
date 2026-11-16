@@ -2,13 +2,13 @@
 id = "01M5XCZ1FM4GWNE4T7SQ905APV"
 title = "Game artifact files: hud/*.toml, input.toml, ftue.toml, feedback.toml, gx-a11y.toml keyed to Game Accessibility Guidelines"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:03Z"
-updated = "2026-11-16T14:21:33Z"
+updated = "2026-11-16T14:56:12Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/game_files.rs", "crates/crunk-rules/src/gx_files.rs", "crates/crunk-rules/tests/it/gx_files.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/main.rs"]
 
