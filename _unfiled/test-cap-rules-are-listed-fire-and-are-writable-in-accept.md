@@ -2,12 +2,13 @@
 id = "01M648G0KM50Z5YMFBPKQM6SEF"
 title = "TEST: cap_rules_are_listed_fire_and_are_writable_in_accept fails on baseline (MDL013 x4)"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "duplicate"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T16:39:37Z"
-updated = "2026-11-03T05:56:43Z"
+updated = "2026-11-16T15:28:46Z"
 scope = ["crates/grimble-check/tests/binding.rs,crates/grimble-model/src/directive.rs"]
 +++
 
