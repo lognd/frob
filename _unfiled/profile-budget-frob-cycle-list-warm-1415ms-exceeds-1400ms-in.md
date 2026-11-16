@@ -2,7 +2,8 @@
 id = "01M7HW0BKQV9MFTYSHJDZR00K1"
 title = "Profile budget: frob cycle list warm 1415ms exceeds 1400ms in CI"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
