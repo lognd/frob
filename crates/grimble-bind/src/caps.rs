@@ -104,7 +104,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags are modeled from literal `os.O_*` terms joined by `|` (`O_RDONLY` reads; `O_WRONLY` / `O_APPEND` / `O_CREAT` / `O_TRUNC` / `O_EXCL` write; `O_RDWR` both; any other flag expression is a May `fs.write`; ticket 01M6607NN6SJGYE41YHRVV6B3H), `shutil.move` / `os.rename` directions and other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags are modeled from literal `os.O_*` terms joined by `|` (`O_RDONLY` reads; `O_WRONLY` / `O_APPEND` / `O_CREAT` / `O_TRUNC` / `O_EXCL` write; `O_RDWR` both; any other flag expression is a May `fs.write`; ticket 01M6607NN6SJGYE41YHRVV6B3H), `shutil.move` / `os.rename` / `os.replace` / `fs::rename` scope `fs.write` to both the source and the destination (tickets 01M61Y356JN6KCHRD81WWJ56CZ, 01M6607P2VZ5WZ4SH1TNZD5P85); other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
 //! severity is consulted for CAP001 (ticket K4EMP90): `[packs.severity]` for the atom, else the
 //! atom row (`warn` there makes the denied use Unresolved, never an Error), else Error; the message
 //! carries the row's rationale and safer alternative. CAP002 is a Warning.
@@ -2076,7 +2076,7 @@ enum CopyEnd {
 }
 
 /// Copy calls whose first argument is the source and second the destination
-/// (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); `shutil.move` and `os.rename` also remove the source, so they stay undirected.
+/// (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); renames are not copies: both ends are `fs.write` (see `RENAME_CALLS`).
 const COPY_CALLS: &[&str] = &[
     "shutil.copy",
     "shutil.copy2",
@@ -4196,6 +4196,46 @@ mod cell_tests {
         assert!(a.contains("why: shells out"), "{a}");
         assert!(a.contains("safer: use the library API"), "{a}");
         assert_eq!(advice("k4emp90.absent"), "");
+    }
+
+    /// The `CAP001` messages for `py` under a node granting only `fs.write("out/**")`.
+    fn move_messages(py: &str) -> Vec<String> {
+        let grant = "may fs.write(\"out/**\") because=\"o\";";
+        cap001_files_out(&[("src/a.py", py)], grant, &[])
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == "CAP001" && f.message.contains("`fs.write`"))
+            .map(|f| f.message)
+            .collect()
+    }
+
+    // frob:ticket 01M6607P2VZ5WZ4SH1TNZD5P85
+    // frob:tests crates/grimble-bind/src/caps.rs::is_rename_call
+    /// `shutil.move` / `os.rename` write both paths: each end outside the grant is its own finding.
+    #[test]
+    fn move_and_rename_scope_fs_write_to_source_and_dest() {
+        for call in ["shutil.move", "os.rename"] {
+            let head = format!("import os, shutil\n\ndef go():\n    {call}");
+            let clean = move_messages(&format!("{head}('out/a', 'out/b')\n"));
+            assert!(clean.is_empty(), "{call} inside: {clean:?}");
+            let dest = move_messages(&format!("{head}('out/a', 'etc/b')\n"));
+            assert_eq!(dest.len(), 1, "{call} dest: {dest:?}");
+            assert!(dest[0].contains("etc/b"), "{call}: {}", dest[0]);
+            let source = move_messages(&format!("{head}('etc/a', 'out/b')\n"));
+            assert_eq!(source.len(), 1, "{call} source: {source:?}");
+            assert!(source[0].contains("etc/a"), "{call}: {}", source[0]);
+            let both = move_messages(&format!("{head}('etc/a', 'var/b')\n"));
+            assert_eq!(both.len(), 2, "{call} both: {both:?}");
+        }
+    }
+
+    // frob:ticket 01M6607P2VZ5WZ4SH1TNZD5P85
+    // frob:tests crates/grimble-bind/src/caps.rs::is_rename_call
+    /// A `shutil.move` end that does not fold is an Unresolved finding, never clean.
+    #[test]
+    fn move_with_a_non_literal_end_is_never_clean() {
+        let msgs = move_messages("import shutil\n\ndef go(dst):\n    shutil.move('out/a', dst)\n");
+        assert_eq!(msgs.len(), 1, "{msgs:?}");
     }
 }
 
