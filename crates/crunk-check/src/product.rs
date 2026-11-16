@@ -232,9 +232,7 @@ impl Product for Crunk {
             .as_ref()
             .and_then(|spec| crate::render_ledger::gather(&cx.core.root, spec));
         // frob:ticket 01M7HC8TXG8C5YBWXB8FP71BSA
-        let flows = spec
-            .as_ref()
-            .map(crunk_rules::flow_files::FlowFacts::load);
+        let flows = spec.as_ref().map(crunk_rules::flow_files::FlowFacts::load);
         tracing::debug!(
             flows = flows.as_ref().map_or(0, |f| f.files.len()),
             "crunk collect: flow files gathered"
