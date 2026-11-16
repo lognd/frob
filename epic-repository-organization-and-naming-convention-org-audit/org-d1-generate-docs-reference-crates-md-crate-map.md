@@ -2,7 +2,8 @@
 id = "01M61MM4Z8F82DCCSZ87BCYC26"
 title = "org D1: generate docs/reference/crates.md crate map"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
