@@ -2,13 +2,13 @@
 id = "01M5XCXVJBTE8064EAX8E4PP6F"
 title = "T2 rendered contrast over images and gradients"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-10-28T12:55:46Z"
+updated = "2026-11-16T12:51:34Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs"]
 
