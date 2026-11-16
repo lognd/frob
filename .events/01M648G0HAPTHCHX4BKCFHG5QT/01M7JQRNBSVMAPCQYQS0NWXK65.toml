@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ['Given a TypeScript file with import cp from "x"; cp.exec(), when path_uses runs, then it emits a path use for x.exec']
+moved = []
+at = "2026-11-16T17:51:33Z"
+actor = "lognd"
+rev = 1
