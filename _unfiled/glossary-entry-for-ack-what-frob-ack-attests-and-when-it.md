@@ -2,7 +2,8 @@
 id = "01M7CAYH7CTBT2SXY4DHJ4VN61"
 title = "Glossary entry for ack (what frob ack attests and when it goes stale)"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
