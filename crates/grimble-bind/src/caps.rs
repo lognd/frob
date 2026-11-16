@@ -4180,4 +4180,21 @@ mod relevance_tests {
         assert!(vocab_hits("python", &vocab, None, &pu, "json").is_empty());
         assert_eq!(vocab_hits("python", &vocab, None, &pu, "os"), vec!["a.one"]);
     }
+
+    // frob:ticket 01M648G0AJCWY7TY7XBYHNK765
+    // frob:tests crates/grimble-bind/src/caps.rs::vocab_hits
+    /// A TypeScript `fs.readFileSync(..)` call is reported as a use of the `fs.read` atom.
+    #[test]
+    fn typescript_read_file_sync_is_an_fs_read_use() {
+        let packs = BTreeMap::new();
+        let vocab = vocabularies("typescript", &packs);
+        let src =
+            "import * as fs from \"fs\";\nexport const a = (p: string) => fs.readFileSync(p);\n";
+        let pu = gob_symbols::path_uses("typescript", src)
+            .into_iter()
+            .find(|u| u.call && u.path == "fs.readFileSync")
+            .expect("the parser finds the fs.readFileSync call");
+        let hits = vocab_hits("typescript", &vocab, None, &pu, &pu.path);
+        assert!(hits.contains(&"fs.read"), "{hits:?}");
+    }
 }
