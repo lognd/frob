@@ -32,9 +32,9 @@ fn the_version_is_recorded_in_the_repo_lock_and_the_lock_holds() {
     let lock = read(&lock_path()).unwrap();
     let live = core_effects::locked().unwrap();
     assert_eq!(live.name, OWNER);
-    assert_eq!(live.version, "1.2.0");
+    assert_eq!(live.version, "1.2.1");
     let entry = lock.pack.iter().find(|p| p.name == OWNER).expect("locked");
-    assert_eq!(entry.version, "1.2.0");
+    assert_eq!(entry.version, "1.2.1");
     assert_eq!(verify(&lock, &[live]), vec![]);
 }
 
