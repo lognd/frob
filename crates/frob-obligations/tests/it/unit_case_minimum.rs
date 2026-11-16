@@ -27,7 +27,7 @@ fn table(scope: &str, min: u64) -> String {
     format!("[[testing.threshold]]\nscope = \"{scope}\"\nmin_unit_cases = {min}\n")
 }
 
-// frob:tests unit_cases.cov005
+// frob:tests crates/frob-obligations/src/unit_cases.rs::cov005
 #[test]
 fn below_minimum_names_scope_and_shortfall() {
     let found = cov005(&table("src", 5));
@@ -41,19 +41,19 @@ fn below_minimum_names_scope_and_shortfall() {
     );
 }
 
-// frob:tests unit_cases.cov005
+// frob:tests crates/frob-obligations/src/unit_cases.rs::cov005
 #[test]
 fn at_the_minimum_passes() {
     assert!(cov005(&table("src", 2)).is_empty());
 }
 
-// frob:tests unit_cases.cov005
+// frob:tests crates/frob-obligations/src/unit_cases.rs::cov005
 #[test]
 fn above_the_minimum_passes() {
     assert!(cov005(&table("src/a.rs", 1)).is_empty());
 }
 
-// frob:tests unit_cases.cov005
+// frob:tests crates/frob-obligations/src/unit_cases.rs::cov005
 #[test]
 fn an_empty_scope_falls_short_of_any_minimum() {
     let found = cov005(&table("elsewhere", 1));
@@ -65,7 +65,7 @@ fn an_empty_scope_falls_short_of_any_minimum() {
     );
 }
 
-// frob:tests unit_cases.cov005
+// frob:tests crates/frob-obligations/src/unit_cases.rs::cov005
 #[test]
 fn an_invalid_glob_is_unresolved() {
     let found = cov005(&table("src/[", 1));
