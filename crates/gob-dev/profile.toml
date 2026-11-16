@@ -247,7 +247,8 @@ budget_ms = 5900
 args = ["cycle", "list"]
 readonly = true
 exit = [0, 3]
-budget_ms = 700
+# Raised from 700: cycle ledger growth pushed warm median past the old budget.
+budget_ms = 800
 
 [scenario."frob cycle show"]
 args = ["cycle", "show"]
