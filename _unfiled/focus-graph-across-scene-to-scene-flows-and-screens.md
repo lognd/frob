@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-22T08:05:12Z"
-updated = "2026-11-16T04:31:54Z"
+updated = "2026-11-16T04:31:56Z"
 labels = ["no-story"]
-scope = ["crates/crunk-layout/**,crates/crunk-rules/**", "docs/reference/rules/GX00*.md", "crates/crunk-layout/src/focus_flow.rs", "crates/crunk-layout/src/lib.rs", "crates/crunk-layout/tests/it/focus.rs"]
+scope = ["crates/crunk-layout/**,crates/crunk-rules/**", "docs/reference/rules/GX00*.md", "crates/crunk-layout/src/focus_flow.rs", "crates/crunk-layout/src/lib.rs", "crates/crunk-layout/tests/it/focus.rs", "crates/crunk-rules/src/flow_files.rs"]
 
 [[acceptance]]
 text = "GX002 and GX003 see across scenes: scenes joined by flow transitions are judged for scene-level reachability and stranding"
