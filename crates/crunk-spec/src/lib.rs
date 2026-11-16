@@ -60,6 +60,7 @@ pub mod flow_file;
 pub mod handoff;
 pub mod ia;
 mod load;
+pub mod metrics;
 pub mod model;
 pub mod naming;
 pub mod phase;

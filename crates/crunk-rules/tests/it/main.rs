@@ -16,6 +16,7 @@ mod gx_rules;
 mod i18n_rules;
 mod org_rules;
 mod phase_profile;
+mod proc_metrics;
 mod review;
 mod rules;
 mod scales_rules;

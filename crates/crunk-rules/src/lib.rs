@@ -55,6 +55,7 @@ pub mod lint;
 pub mod mode;
 pub mod org;
 pub mod phase_profile;
+pub mod proc_metrics;
 pub mod registry;
 pub mod render_ledger;
 pub mod review;
