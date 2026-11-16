@@ -2,7 +2,8 @@
 id = "01M63G1P11XQK9DWCWXMBR9ZKA"
 title = "binding test cap_rules_are_listed_fire_and_are_writable_in_accept fails with MDL013 accept requires atom=/until="
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "invalid"
 priority = "medium"
 points = 3
 reporter = "lognd"
