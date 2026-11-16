@@ -24,6 +24,7 @@
 //! - [`boxes`]: browser per-data-id boxes in the layout-solve shape (T2/T3).
 //! - [`parity`]: solver-browser box comparison within a pixel tolerance; the CI parity gate.
 //! - [`flashing`]: FLASH001, the WCAG 2.3.1 three-flashes check over timestamped frame sequences.
+//! - [`rendered_contrast`]: WCAG contrast of text boxes sampled over a rendered PNG.
 //! - [`a11y`]: the T3 axe-core check; findings carry the axe rule id and the offending node.
 //! - [`triage`]: a blocking loopback HTTP contact sheet with keyboard verdicts, saved to the
 //!   manifest; no async runtime.
@@ -37,6 +38,7 @@ pub mod flashing;
 pub mod manifest;
 pub mod parity;
 pub mod render;
+pub mod rendered_contrast;
 pub mod report;
 pub mod router;
 pub mod rules;
