@@ -182,6 +182,13 @@ fn dim_of(unit: &str) -> Option<Dim> {
 /// The ledger rule that audits capability exceptions; it is never itself excepted.
 pub const CAP_LEDGER_RULE: &str = "CAP005";
 
+/// Parse the `at=` text of a capability exception: a selector, or a bare path glob taken as a quoted literal.
+pub fn parse_exception_at(text: &str) -> Option<gob_walk::Selector> {
+    gob_walk::Selector::parse(text)
+        .or_else(|_| gob_walk::Selector::parse(&format!("{text:?}")))
+        .ok()
+}
+
 /// True for the capability rules whose exceptions must name an atom and expire.
 pub fn is_cap_exception_rule(rule: &str) -> bool {
     matches!(rule, "CAP001" | "CAP002")
@@ -1584,6 +1591,7 @@ impl<'a> Checker<'a> {
             // A capability exception names the atom it covers and expires.
             required.extend(["atom", "until"]);
             optional.retain(|k| *k != "until");
+            optional.push("at");
         }
         if x.rule.text == CAP_LEDGER_RULE {
             self.raise(
@@ -1623,6 +1631,7 @@ impl<'a> Checker<'a> {
             let ok = match (k, &a.value.value) {
                 ("because", Value::Str(_)) => true,
                 ("atom", Value::Str(s)) => !s.trim().is_empty(),
+                ("at", Value::Str(s)) => parse_exception_at(s).is_some(),
                 ("ticket", Value::Str(s)) => is_full_ulid(s),
                 ("until", Value::Date(d)) => date_ok(d),
                 _ => false,
@@ -1633,7 +1642,7 @@ impl<'a> Checker<'a> {
                     None,
                     file,
                     a.value.span,
-                    format!("`{k}=` is malformed (because: string, atom: non-empty string, ticket: full ULID string, until: calendar date)"),
+                    format!("`{k}=` is malformed (because: string, atom: non-empty string, at: selector string, ticket: full ULID string, until: calendar date)"),
                     anchor,
                 );
             }

@@ -151,6 +151,8 @@ pub struct CapException {
     pub until: Option<String>,
     /// The written `because=` reason.
     pub because: Option<String>,
+    /// The `at="SELECTOR"` restriction: the exception silences only uses in the selected files; `None` covers every file.
+    pub at: Option<Selector>,
     /// The .grmb file the exception is written in.
     pub file: String,
     /// The exception span in that file.
@@ -179,6 +181,7 @@ impl CapException {
             atom,
             until: text("until"),
             because: text("because"),
+            at: text("at").and_then(|t| grimble_model::check::parse_exception_at(&t)),
             file: file.to_owned(),
             span,
         })
@@ -195,13 +198,25 @@ impl CapException {
     }
 }
 
-/// True when `ent` holds an active exception of `rule` for the canonical atom `atom` on `today`.
-pub fn silenced(ent: &Entity, rule: &str, atom: &str, today: gob_time::Day) -> bool {
+/// True when `ent` holds an active exception of `rule` for the canonical atom `atom` on `today`
+/// that covers `file` (an exception with `at=` covers only the selected files; `None` file matches only unrestricted ones).
+pub fn silenced(
+    ent: &Entity,
+    rule: &str,
+    atom: &str,
+    file: Option<&str>,
+    today: gob_time::Day,
+) -> bool {
     let canon = canonical_atom(atom);
     let hit = ent
         .cap_exceptions
         .iter()
-        .filter(|x| x.rule == rule && x.atom == canon);
+        .filter(|x| x.rule == rule && x.atom == canon)
+        .filter(|x| match (&x.at, file) {
+            (None, _) => true,
+            (Some(sel), Some(f)) => gob_walk::selects_unit_or_enclosing::<&str>(sel, f, &[]),
+            (Some(_), None) => false,
+        });
     for x in hit {
         if x.active(today) {
             tracing::debug!(node = %ent.anchor, rule, atom = %canon, "CAP exception silences the atom");

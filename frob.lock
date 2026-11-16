@@ -1702,6 +1702,17 @@ acked_by = "lognd <logan@logandapp.com>"
 acked_at = "2026-11-13T08:50:13.931930546Z"
 
 [[symbol]]
+identity = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_files_out"
+symref = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_files_out"
+sig = "14d6ca3d02f0586f616e10127c34346fab4f38cce7d38f01445060844898e47e"
+body = "d0541340646bc47f4607123cdecf9b46fba627adf057b66fc91357c30c272195"
+doc = "ad96bb1e29df9f7cacb56969b71d740cae7787acbcb7c3119e41a2b8c29da49b"
+attr = "d880c6f943aba82ca8c42871bd6942e55ef03345488ef776162ab8922b6e23a1"
+contract = "365043da1c7ab1a7cbac7076e0539aacc15d0edd40599d0cbebb1f20de11957c"
+acked_by = "lognd <logan@logandapp.com>"
+acked_at = "2026-11-16T02:05:35.716567396Z"
+
+[[symbol]]
 identity = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_out"
 symref = "crates/grimble-bind/src/caps.rs::cell_tests.cap001_out"
 sig = "46cfed766e02be3186083ba9fc20b2e1ee5e09e380f2ca23cfebb0a16b6a696e"

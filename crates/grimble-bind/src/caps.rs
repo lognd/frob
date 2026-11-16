@@ -2785,7 +2785,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
             // argument findings: (atom, observed, granted) -> uses; observed None is unfolded
             let mut by_arg: ByArg<'_> = BTreeMap::new();
             for u in found {
-                if crate::model::silenced(e, "CAP001", &u.atom, today) {
+                if crate::model::silenced(e, "CAP001", &u.atom, Some(&u.file), today) {
                     continue;
                 }
                 // One root cause, one finding: a use in excused code is CAP004, not CAP001.
@@ -3415,7 +3415,7 @@ fn cap002(cx: &Cx<'_>, uses: &Uses, today: gob_time::Day, out: &mut Output) {
         let Some(e) = cx.model.entities.values().find(|e| e.anchor == c.node) else {
             continue;
         };
-        if crate::model::silenced(e, "CAP002", &c.atom, today) {
+        if crate::model::silenced(e, "CAP002", &c.atom, None, today) {
             continue;
         }
         out.fire(
@@ -3915,11 +3915,20 @@ mod cell_tests {
 
     /// Runs CAP001 over one ungranted file at `rel` (under `src/`) with `[packs.severity]` overrides.
     fn cap001_file_out(rel: &str, src: &str, sev: &[(&str, &str)]) -> Output {
+        cap001_files_out(&[(rel, src)], "", sev)
+    }
+
+    /// Runs CAP001 over ungranted `files` (path, source) of a node whose body also holds `extra` clauses.
+    fn cap001_files_out(files: &[(&str, &str)], extra: &str, sev: &[(&str, &str)]) -> Output {
         let dir = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(dir.path().join("src")).unwrap();
-        // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
-        std::fs::write(dir.path().join(rel), src).unwrap();
-        let text = "grimble = \"2\";\nmodule m;\nnode a : trusted {\n  owns \"src/**\";\n}\n";
+        for (rel, src) in files {
+            // frob:accept LOG001 because="test fixture writes a temp source file, not log output"
+            std::fs::write(dir.path().join(rel), src).unwrap();
+        }
+        let text = format!(
+            "grimble = \"2\";\nmodule m;\nnode a : trusted {{\n  owns \"src/**\";\n  {extra}\n}}\n"
+        );
         let walked = gob_walk::walk(dir.path(), &gob_walk::WalkConfig::default()).unwrap();
         let severity = sev
             .iter()
@@ -3957,6 +3966,55 @@ mod cell_tests {
         let mut out = Output::default();
         evaluate(&cx, &mut out);
         out
+    }
+
+    /// The files with a CAP001 finding for `atom` among the findings of `out`, by message text.
+    fn cap001_hit(out: &Output, file: &str) -> bool {
+        out.findings
+            .iter()
+            .any(|f| f.rule == "CAP001" && f.message.contains(file))
+    }
+
+    const SPAWN_SRC: &str = "import os\n\ndef go():\n    os.system('ls')\n";
+
+    // frob:ticket 01M62TNXN0WGJTV9Z56WSK26Q2
+    // frob:tests crates/grimble-bind/src/model.rs::silenced
+    /// An `at=` exception silences the atom in the selected file only.
+    #[test]
+    fn cap_exception_at_silences_the_selected_file() {
+        let exc =
+            "accept CAP001 atom=\"process.spawn\" at=\"src/a.py\" until=2999-01-01 because=\"x\";";
+        let out = cap001_files_out(
+            &[("src/a.py", SPAWN_SRC), ("src/b.py", SPAWN_SRC)],
+            exc,
+            &[],
+        );
+        assert!(!cap001_hit(&out, "src/a.py"), "{:?}", out.findings);
+    }
+
+    // frob:ticket 01M62TNXN0WGJTV9Z56WSK26Q2
+    // frob:tests crates/grimble-bind/src/model.rs::silenced
+    /// An `at=` exception leaves the same atom firing in files outside the selector.
+    #[test]
+    fn cap_exception_at_still_fires_in_other_files() {
+        let exc =
+            "accept CAP001 atom=\"process.spawn\" at=\"src/a.py\" until=2999-01-01 because=\"x\";";
+        let out = cap001_files_out(
+            &[("src/a.py", SPAWN_SRC), ("src/b.py", SPAWN_SRC)],
+            exc,
+            &[],
+        );
+        assert!(cap001_hit(&out, "src/b.py"), "{:?}", out.findings);
+    }
+
+    // frob:ticket 01M62TNXN0WGJTV9Z56WSK26Q2
+    // frob:tests crates/grimble-bind/src/model.rs::silenced
+    /// An exception for another atom does not silence this one, even in the selected file.
+    #[test]
+    fn cap_exception_at_is_per_atom() {
+        let exc = "accept CAP001 atom=\"fs.write\" at=\"src/a.py\" until=2999-01-01 because=\"x\";";
+        let out = cap001_files_out(&[("src/a.py", SPAWN_SRC)], exc, &[]);
+        assert!(cap001_hit(&out, "src/a.py"), "{:?}", out.findings);
     }
 
     // frob:ticket 01M5MD33MEXJ5AW3WPKZ7G326G
