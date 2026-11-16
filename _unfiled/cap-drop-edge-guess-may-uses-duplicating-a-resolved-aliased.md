@@ -2,7 +2,8 @@
 id = "01M6607PD368825RS2ZYKS9CCX"
 title = "CAP: drop edge-guess May uses duplicating a resolved aliased call"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
