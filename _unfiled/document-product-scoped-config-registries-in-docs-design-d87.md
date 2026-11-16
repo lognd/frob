@@ -2,12 +2,12 @@
 id = "01M64A0B2ZN3RQNY73KMTGYAND"
 title = "Document product-scoped config registries in docs/design (D87)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T17:06:00Z"
-updated = "2026-11-16T18:41:31Z"
+updated = "2026-11-16T18:41:40Z"
 scope = ["docs/design/**"]
 
 [[acceptance]]
