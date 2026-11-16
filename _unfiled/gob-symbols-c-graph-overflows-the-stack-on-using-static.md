@@ -2,7 +2,8 @@
 id = "01M63G1NY275Y890ZD5W1EVN63"
 title = "gob-symbols C# graph overflows the stack on using static System.Console"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
