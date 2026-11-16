@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T16:34:53Z"
+digest = "6d10f1123e2027c5cbcedfb5f70d83b8588c9064ae5e03a96f0318fd82fd1033"
+exit_code = 0
+head = "ee0ee1d3002827c63918ec2b0b660fce21e60c04"
+inline = '''
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 54s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 067925f4-b73e-45b2-ac36-4820fc8028e6 with nextest profile: default
+    Starting 1 test across 164 binaries (8222 tests skipped)
+        PASS [   0.008s] gob-dev render::crate_map::tests::lists_each_crate_with_path_and_manifest_description
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 8222 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "lists_each_crate_with_path_and_manifest_description"
+size = 845
+status = "measured"
+test_count = 1
+tests_digest = "ee5499875aab7b457df09a09ec4d2bad4539dc1a6e298660e804eb4fffa83391"
+at = "2026-11-16T16:34:53Z"
+actor = "lognd"
+rev = 1
