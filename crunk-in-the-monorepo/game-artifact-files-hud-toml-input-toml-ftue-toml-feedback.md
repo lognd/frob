@@ -8,13 +8,13 @@ points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:43:03Z"
-updated = "2026-11-16T14:56:12Z"
+updated = "2026-11-16T14:59:25Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/game_files.rs", "crates/crunk-rules/src/gx_files.rs", "crates/crunk-rules/tests/it/gx_files.rs", "crates/crunk-spec/src/lib.rs", "crates/crunk-rules/src/lib.rs", "crates/crunk-rules/tests/it/main.rs"]
 
 [[acceptance]]
 text = "Given a mechanic with no ftue entry and no explicit none, when checked, then a GX finding names it; given a feedback event with no accessibility toggle, then it fires; given a gx-a11y guideline item marked met with no evidence, then it fires. Edge cases: unknown guideline id is a schema error; input.toml action with no glyph for a declared device is reported once per device; hud element outside any declared profile is Unresolved; absent files with a [game] table present are silent"
-bound = false
+bound = true
 +++
 
 Design crunk.md section 8 game row. Extends the existing [game] table work in KDEW049; do not duplicate GX015-021.
