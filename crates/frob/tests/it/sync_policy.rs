@@ -98,7 +98,7 @@ fn warnings(v: &Value) -> String {
 #[test]
 fn doable_probes_in_the_foreground() {
     let (_origin, clone) = clone_with_origin();
-    let (code, v) = frob(clone.path(), false, &["ticket", "doable"]);
+    let (code, v) = doable_once_probed(clone.path());
     assert_eq!(code, 0, "{v}");
     assert!(state_file(clone.path()).exists(), "foreground probe ran");
     let (_, v) = frob(clone.path(), false, &["refresh", "--status"]);
