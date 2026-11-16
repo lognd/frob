@@ -2,7 +2,8 @@
 id = "01M62TNXN0WGJTV9Z56WSK26Q2"
 title = "CAP exceptions: support at SELECTOR restriction"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
