@@ -1,0 +1,35 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-16T11:34:49Z"
+digest = "b4580eb8f59cd8aa3215d430cf5cedfeda1ecdfba74379c67b19f175b9753de4"
+exit_code = 0
+head = "92f230ccdf6210013045718f2b31effb22516a9c"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5m 16s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5411443b-6ed4-46b7-bc98-9d84de941d64 with nextest profile: default
+    Starting 10 tests across 164 binaries (8129 tests skipped)
+        PASS [   0.042s] crunk-gallery::it flashing::a_quarter_of_the_field_counts
+        PASS [   0.046s] crunk-gallery::it flashing::flashes_under_a_quarter_of_the_field_are_ignored
+        PASS [   0.048s] crunk-gallery::it flashing::fewer_than_two_frames_are_unresolved
+        PASS [   0.051s] crunk-gallery::it flashing::red_flashes_fire_even_when_luminance_barely_moves
+        PASS [   0.054s] crunk-gallery::it flashing::non_monotonic_timestamps_are_a_typed_error
+        PASS [   0.055s] crunk-gallery::it flashing::three_flashes_pass
+        PASS [   0.057s] crunk-gallery::it flashing::a_bright_dark_frame_is_not_a_flash
+        PASS [   0.057s] crunk-gallery::it flashing::flashes_spread_over_more_than_a_second_pass
+        PASS [   0.057s] crunk-gallery::it flashing::mixed_frame_sizes_are_a_typed_error
+        PASS [   0.063s] crunk-gallery::it flashing::four_flashes_in_a_second_fire_and_name_the_frames
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.115s] 10 tests run: 10 passed, 8129 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "flashing"
+size = 1454
+status = "measured"
+test_count = 10
+tests_digest = "cfa34f20dae0ce43c7bbceeb265e85123537bb2b69defae8d2361b9ce03d7b7b"
+at = "2026-11-16T11:34:49Z"
+actor = "lognd"
+rev = 1
