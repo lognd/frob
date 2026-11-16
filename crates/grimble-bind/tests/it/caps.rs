@@ -1378,13 +1378,19 @@ const OUT_WRITE: &str = "  may fs.write(\"out/**\") because=\"o\";\n";
 // frob:ticket 01M61Y356JN6KCHRD81WWJ56CZ
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-fn rename_destination_outside_the_grant_fires() {
+fn rename_destination_outside_the_grant_fires_in_python() {
     let py = "import os\n\ndef go():\n    os.rename('out/a', 'etc/b')\n";
     let b = bind_py(py, OUT_WRITE);
     let f = of(&b, "CAP001");
     assert_eq!(f.len(), 1, "{:?}", b.findings);
     assert!(f[0].message.contains("etc/b"), "{}", f[0].message);
     assert!(f[0].reason.is_none(), "an Error, not Unresolved: {f:?}");
+}
+
+// frob:ticket 01M61Y356JN6KCHRD81WWJ56CZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rename_destination_outside_the_grant_fires_in_rust() {
     let rs = "use std::fs;\n\nfn go() {\n    let _ = fs::rename(\"out/a\", \"etc/b\");\n}\n";
     let b = bind_file("src/x.rs", rs, OUT_WRITE);
     assert_eq!(of(&b, "CAP001").len(), 1, "{:?}", b.findings);
@@ -1393,10 +1399,16 @@ fn rename_destination_outside_the_grant_fires() {
 // frob:ticket 01M61Y356JN6KCHRD81WWJ56CZ
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]
-fn rename_destination_inside_the_grant_stays_clean() {
+fn rename_destination_inside_the_grant_stays_clean_in_python() {
     let py = "import os\n\ndef go():\n    os.rename('out/a', 'out/b')\n";
     let b = bind_py(py, OUT_WRITE);
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
+}
+
+// frob:ticket 01M61Y356JN6KCHRD81WWJ56CZ
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn rename_destination_inside_the_grant_stays_clean_in_rust() {
     let rs = "use std::fs;\n\nfn go() {\n    let _ = fs::rename(\"out/a\", \"out/b\");\n}\n";
     let b = bind_file("src/x.rs", rs, OUT_WRITE);
     assert!(of(&b, "CAP001").is_empty(), "{:?}", b.findings);
