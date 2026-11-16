@@ -1,0 +1,40 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-16T16:42:51Z"
+digest = "fde4ef6c3e57603d4a2d3503b7faf48205aad26985c0cb299f94d70c312eca63"
+exit_code = 0
+head = "1dc4ce6ae39215de2f94f8680e8415d794f7a59c"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling frob-cli v0.532.0 (<worktree>/crates/frob)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>/crates/gob-product)
+   Compiling crunk-check v0.532.0 (<worktree>/crates/crunk-check)
+   Compiling frob-obligations v0.532.0 (<worktree>/crates/frob-obligations)
+   Compiling crunk-fix v0.532.0 (<worktree>/crates/crunk-fix)
+   Compiling crunk v0.532.0 (<worktree>/crates/crunk)
+   Compiling grimble-serve v0.532.0 (<worktree>/crates/grimble-serve)
+   Compiling frob-check v0.532.0 (<worktree>/crates/frob-check)
+   Compiling gob-plan v0.532.0 (<worktree>/crates/gob-plan)
+   Compiling grimble v0.532.0 (<worktree>/crates/grimble)
+   Compiling frob-land v0.532.0 (<worktree>/crates/frob-land)
+   Compiling gob-dev v0.532.0 (<worktree>/crates/gob-dev)
+   Compiling frob-docgen v0.532.0 (<worktree>/crates/frob-docgen)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.87s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b281a114-ccf4-4f19-808d-e11c9d39cd74 with nextest profile: default
+    Starting 1 test across 164 binaries (8222 tests skipped)
+        PASS [   0.008s] gob-dev render::crate_map::tests::lists_each_crate_with_path_and_manifest_description
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 1 test run: 1 passed, 8222 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "lists_each_crate_with_path_and_manifest_description"
+size = 1533
+status = "measured"
+test_count = 1
+tests_digest = "ee5499875aab7b457df09a09ec4d2bad4539dc1a6e298660e804eb4fffa83391"
+at = "2026-11-16T16:42:51Z"
+actor = "lognd"
+rev = 1

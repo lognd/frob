@@ -8,7 +8,7 @@ points = 3
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
 reporter = "lognd"
 created = "2026-10-28T16:13:52Z"
-updated = "2026-11-16T16:34:53Z"
+updated = "2026-11-16T16:42:51Z"
 scope = ["docs/**", "crates/gob-dev/src/render/crate_map.rs", "crates/gob-dev/src/render/mod.rs", "crates/gob-dev/src/lib.rs", "docs/reference/crates.md", "changelog.d/01M61MM4Z8F82DCCSZ87BCYC26.added.md"]
 
 [[acceptance]]
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the workspace, when gob-dev gen all runs, then docs/reference/crates.md lists every workspace crate with its one-line description and path, and gen all --check fails when it is stale"
-bound = false
+bound = true
 +++
 
 Org audit step; see section 4.7 of the Opus org audit report (scratchpad org-audit.md).
