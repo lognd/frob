@@ -2,13 +2,13 @@
 id = "01M5XCYCSXSPQP9A4DZKNX5RGS"
 title = "Research artifacts: design/research/*.md front matter, personas/*.toml, journeys/*.toml with UX evidence rules"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
 reporter = "lognd"
 created = "2026-10-27T00:42:41Z"
-updated = "2026-10-28T12:55:55Z"
+updated = "2026-11-16T12:51:46Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-spec/src/research.rs, crates/crunk-rules/src/ux/research.rs, crates/crunk-rules/tests/ux_research.rs"]
 
