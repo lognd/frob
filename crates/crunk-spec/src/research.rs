@@ -182,22 +182,11 @@ pub fn parse_research(text: &str) -> Result<ResearchDoc, ResearchError> {
     }
 }
 
-/// Parse a persona file.
+/// Parse a persona or journey TOML file into `T`.
 ///
 /// # Errors
 /// [`ResearchError`] for invalid TOML or the wrong schema.
-pub fn parse_persona(text: &str) -> Result<PersonaFile, ResearchError> {
-    toml_edit::de::from_str(text).map_err(|e| ResearchError {
-        line: None,
-        message: e.to_string(),
-    })
-}
-
-/// Parse a journey file.
-///
-/// # Errors
-/// [`ResearchError`] for invalid TOML or the wrong schema.
-pub fn parse_journey(text: &str) -> Result<JourneyFile, ResearchError> {
+pub fn parse_toml<T: serde::de::DeserializeOwned>(text: &str) -> Result<T, ResearchError> {
     toml_edit::de::from_str(text).map_err(|e| ResearchError {
         line: None,
         message: e.to_string(),
@@ -317,8 +306,20 @@ pub fn load_research(root: &Path) -> ResearchSet {
     let journeys = read_dir_files(root, JOURNEYS_DIR, ".toml", &mut problems);
     let set = ResearchSet {
         research: load_kind(notes, parse_research, |d| &d.id, "research", &mut problems),
-        personas: load_kind(personas, parse_persona, |p| &p.id, "persona", &mut problems),
-        journeys: load_kind(journeys, parse_journey, |j| &j.id, "journey", &mut problems),
+        personas: load_kind(
+            personas,
+            parse_toml::<PersonaFile>,
+            |p| &p.id,
+            "persona",
+            &mut problems,
+        ),
+        journeys: load_kind(
+            journeys,
+            parse_toml::<JourneyFile>,
+            |j| &j.id,
+            "journey",
+            &mut problems,
+        ),
         problems,
     };
     tracing::debug!(
@@ -337,15 +338,30 @@ mod tests {
 
     // frob:tests crates/crunk-spec/src/research.rs::parse_research
     #[test]
-    fn front_matter_parses_and_locates_errors() {
+    fn front_matter_parses() {
         let ok =
             parse_research("---\nid: r1\ndate: 2026-01-02\ntags:\n  - a\n---\nbody\n").expect("ok");
         assert_eq!(ok.id, "r1");
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::parse_research
+    #[test]
+    fn front_matter_errors_are_located() {
         let bad = parse_research("---\nid: r1\nnonsense\n---\n").expect_err("bad");
         assert_eq!(bad.line, Some(3));
         assert!(parse_research("no front matter").is_err());
         assert!(parse_research("---\nid: r1\ndate: nope\n---\n").is_err());
         assert!(parse_research("---\nid: r1\ndate: 2026-01-02\n").is_err());
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::parse_toml
+    #[test]
+    fn persona_and_journey_toml_parse_or_error() {
+        let p: PersonaFile = parse_toml("id = \"p1\"\n").expect("persona");
+        assert_eq!(p.id, "p1");
+        let j: JourneyFile = parse_toml("id = \"j1\"\npersona = \"p1\"\n").expect("journey");
+        assert_eq!(j.persona.as_deref(), Some("p1"));
+        assert!(parse_toml::<PersonaFile>("name = 3").is_err());
     }
 
     // frob:tests crates/crunk-spec/src/research.rs::Date
