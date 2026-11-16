@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T05:11:25Z"
-updated = "2026-11-16T05:21:43Z"
+updated = "2026-11-16T05:26:01Z"
 labels = ["no-story"]
-scope = ["crates/crunk-check/**"]
+scope = ["crates/crunk-check/**", "crates/crunk-check/src/product.rs"]
 
 [[acceptance]]
 text = "Behavior implemented with a bound test"
