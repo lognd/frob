@@ -5,9 +5,7 @@
 use gob_rules::{Measured, Out, RepoRule, rule};
 
 use crate::host::{CrunkHost, missing_scene_doc_inputs, scene_doc_subjects};
-use crunk_layout::{FocusAtlas, FocusGraph};
-
-use crate::scene_docs::focus_findings;
+use crate::scene_docs::{FocusKind, focus_findings};
 
 /// A focusable element that the pad can reach but not leave for the default selection.
 #[derive(Debug, Clone, Copy, Default)]
@@ -29,24 +27,7 @@ pub struct Gx003;
 impl<P: ?Sized + CrunkHost> RepoRule<P> for Gx003 {
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-        focus_findings(
-            host,
-            out,
-            "GX003",
-            FocusGraph::traps,
-            |node| {
-                format!(
-                    "{} (line {}) is a focus trap: once the pad lands there no move leads back to the default selection; add a data-nav-* move out, or wrap the group",
-                    node.label, node.line
-                )
-            },
-            FocusAtlas::stranded_scenes,
-            |name| {
-                format!(
-                    "scene '{name}' is a focus trap across screens: the flow leaves it only for scenes that never lead back to an entry; add a flow edge back out"
-                )
-            },
-        );
+        focus_findings(host, out, FocusKind::Trapped);
     }
 
     fn inapplicable(&self, host: &P) -> Option<String> {

@@ -181,34 +181,86 @@ pub fn focus_atlas<H: crate::CrunkHost + ?Sized>(
 }
 
 // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
-/// Fire the findings of a GX focus rule, shared by GX002 and GX003: `nodes` picks the offending
-/// focusables of each scene (described by `node_message`), `scenes` picks offending scenes of the
-/// cross-scene atlas (described by `scene_message` from the scene name).
+/// Which focus failure a GX rule reports (GX002 and GX003 share one checker).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FocusKind {
+    /// Focusables or scenes the pad cannot reach (GX002).
+    Unreachable,
+    /// Focusables or scenes the pad can reach but not leave (GX003).
+    Trapped,
+}
+
+impl FocusKind {
+    fn rule(self) -> &'static str {
+        match self {
+            Self::Unreachable => "GX002",
+            Self::Trapped => "GX003",
+        }
+    }
+
+    fn nodes(self, graph: &crunk_layout::FocusGraph) -> Vec<usize> {
+        match self {
+            Self::Unreachable => graph.unreachable(),
+            Self::Trapped => graph.traps(),
+        }
+    }
+
+    fn node_message(self, node: &crunk_layout::FocusNode) -> String {
+        let (label, line) = (&node.label, node.line);
+        match self {
+            Self::Unreachable => format!(
+                "{label} (line {line}) cannot be reached by the pad from the default selection: give a neighbour a data-nav-* move to it, or put it in document order inside a focus group"
+            ),
+            Self::Trapped => format!(
+                "{label} (line {line}) is a focus trap: once the pad lands there no move leads back to the default selection; add a data-nav-* move out, or wrap the group"
+            ),
+        }
+    }
+
+    fn scenes(self, atlas: &crunk_layout::FocusAtlas) -> Vec<usize> {
+        match self {
+            Self::Unreachable => atlas.unreachable_scenes(),
+            Self::Trapped => atlas.stranded_scenes(),
+        }
+    }
+
+    fn scene_message(self, name: &str) -> String {
+        match self {
+            Self::Unreachable => format!(
+                "scene '{name}' cannot be reached by the pad: no flow transition leads to it from an entry scene; add a flow edge into this screen"
+            ),
+            Self::Trapped => format!(
+                "scene '{name}' is a focus trap across screens: the flow leaves it only for scenes that never lead back to an entry; add a flow edge back out"
+            ),
+        }
+    }
+}
+
+// frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
+/// Fire the `kind` findings of a GX focus rule, shared by GX002 and GX003: offending focusables of
+/// each scene, then offending scenes of the cross-scene atlas.
 pub fn focus_findings<H: crate::CrunkHost + ?Sized, R: gob_rules::RuleDecl>(
     host: &H,
     out: &mut gob_rules::Out<'_, R>,
-    rule: &str,
-    nodes: impl Fn(&crunk_layout::FocusGraph) -> Vec<usize>,
-    node_message: impl Fn(&crunk_layout::FocusNode) -> String,
-    scenes: impl Fn(&crunk_layout::FocusAtlas) -> Vec<usize>,
-    scene_message: impl Fn(&str) -> String,
+    kind: FocusKind,
 ) {
     let Some(facts) = host.scene_docs() else {
         return;
     };
+    let rule = kind.rule();
     for file in &facts.files {
         let graph = file.focus_graph();
-        for n in nodes(&graph) {
+        for n in kind.nodes(&graph) {
             let node = &graph.nodes[n];
             tracing::debug!(path = %file.path, node = %node.label, rule, "focusable flagged");
-            out.fire_in(&file.path, node.offset, node_message(node));
+            out.fire_in(&file.path, node.offset, kind.node_message(node));
         }
     }
     if let Some((facts, atlas)) = focus_atlas(host) {
-        for i in scenes(&atlas) {
+        for i in kind.scenes(&atlas) {
             let path = &facts.files[i].path;
             tracing::debug!(path = %path, rule, "scene flagged");
-            out.fire_in(path, 0, scene_message(&atlas.scenes[i].name));
+            out.fire_in(path, 0, kind.scene_message(&atlas.scenes[i].name));
         }
     }
 }

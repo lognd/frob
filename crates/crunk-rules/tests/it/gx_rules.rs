@@ -3,7 +3,6 @@
 // frob:ticket 01M4CXRSYQQW9C6D7K2Q2ZC9QM
 
 use crate::support;
-use std::fmt::Write as _;
 
 use crunk_rules::rules::{gx002::Gx002, gx003::Gx003, gx004::Gx004, gx005::Gx005};
 use gob_rules::Finding;
@@ -98,14 +97,16 @@ fn flow(edges: &[(&str, &str)]) -> String {
     nodes.sort_unstable();
     nodes.dedup();
     let list: Vec<String> = nodes.iter().map(|n| format!("\"{n}:default\"")).collect();
-    let mut text = format!("name = \"main\"\nnodes = [{}]\n", list.join(", "));
-    for (a, b) in edges {
-        let _ = writeln!(
-            text,
-            "[[edges]]\nfrom = \"{a}:default\"\nto = \"{b}:default\"\ntrigger = \"click\""
-        );
-    }
-    text
+    let head = format!("name = \"main\"\nnodes = [{}]\n", list.join(", "));
+    let edge_tables: Vec<String> = edges
+        .iter()
+        .map(|(a, b)| {
+            format!(
+                "[[edges]]\nfrom = \"{a}:default\"\nto = \"{b}:default\"\ntrigger = \"click\"\n"
+            )
+        })
+        .collect();
+    format!("{head}{}", edge_tables.concat())
 }
 
 // frob:ticket 01M5HA924E3PTBVH6J8EBXP7XW
