@@ -8,7 +8,7 @@ points = 5
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-11-16T12:52:46Z"
+updated = "2026-11-16T12:56:30Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk-gallery/src/rendered_contrast.rs, crates/crunk-gallery/tests/rendered_contrast.rs", "crates/crunk-gallery/src/lib.rs", "crates/crunk-gallery/tests/it/main.rs", "crates/crunk-gallery/tests/it/rendered_contrast.rs"]
 
@@ -18,7 +18,7 @@ target = "01M5XCXV74XZTCK4N56B46PAY4"
 
 [[acceptance]]
 text = "Given a rendered PNG with text over a gradient, when checked, then CONTRAST finds the worst-case text/background pair by sampling and reports it with the pixel region. Edge cases: text over a fully transparent area falls back to the page background; text bounding box smaller than 1 px is skipped with a note; an image with alpha is composited over the declared surface; a uniform background reports exactly the declared ratio; large text uses the 3:1 threshold; missing PNG is Unresolved not run"
-bound = false
+bound = true
 +++
 
 Design crunk.md section 4 T2 row. Pure function over Image from visual.rs plus boxes from the boxes capture, so it is unit testable without a browser.
