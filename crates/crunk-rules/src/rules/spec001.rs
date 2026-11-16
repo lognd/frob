@@ -1,4 +1,4 @@
-//! SPEC001: a component, screen or content file that cannot be read or parsed. Off when the project has none of them.
+//! SPEC001: a component, screen, flow or content file that cannot be read or parsed. Off when the project has none of them.
 
 // frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
 
@@ -35,7 +35,7 @@ impl<P: ?Sized + CrunkHost> RepoRule<P> for Spec001 {
         inapplicable_without(
             host,
             design_file_subjects(host),
-            "no component, screen or content files",
+            "no component, screen, flow or content files",
         )
     }
 }

@@ -260,14 +260,15 @@ pub fn component_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
 }
 
 // frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
-/// Every design file of `host` that did not load (components, screens, content), in that order.
+/// Every design file of `host` that did not load (components, screens, content, flows), in that order.
 pub fn design_file_problems<H: CrunkHost + ?Sized>(
     host: &H,
 ) -> Vec<&crate::file_problem::DesignFileProblem> {
     let components = host.components().map(|f| &f.problems);
     let screens = host.screens().map(|f| &f.problems);
     let content = host.content().map(|f| &f.problems);
-    [components, screens, content]
+    let flows = host.flows().map(|f| &f.problems);
+    [components, screens, content, flows]
         .into_iter()
         .flatten()
         .flatten()
@@ -275,8 +276,9 @@ pub fn design_file_problems<H: CrunkHost + ?Sized>(
 }
 
 // frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
-/// How many component, screen and content files `host` carries, loaded or not (SPEC001's subjects).
+/// How many component, screen, content and flow files `host` carries, loaded or not (SPEC001's subjects).
 pub fn design_file_subjects<H: CrunkHost + ?Sized>(host: &H) -> usize {
-    let loaded = component_subjects(host) + screen_subjects(host) + content_subjects(host);
+    let flows = host.flows().map_or(0, |f| f.files.len());
+    let loaded = component_subjects(host) + screen_subjects(host) + content_subjects(host) + flows;
     loaded + design_file_problems(host).len()
 }

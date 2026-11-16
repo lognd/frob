@@ -567,7 +567,7 @@
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
 |---|---|---|---|---|---|---|
-| [SPEC001](SPEC001.md) | design-file-invalid | error | manual | P+ | true | A component, screen or content file loads. Each block is one file in a project whose `crunk.toml` is the default preset. |
+| [SPEC001](SPEC001.md) | design-file-invalid | error | manual | P+ | true | A component, screen, flow or content file loads. Each block is one file in a project whose `crunk.toml` is the default preset. |
 
 ## STATE
 

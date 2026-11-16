@@ -2,6 +2,7 @@
 //! file keeping other files' findings, and the inapplicable path.
 
 // frob:ticket 01M7ETK8WHHFV8590QXMH57TRZ
+// frob:ticket 01M7HC8V861YF6HNVQXDAJGW83
 
 use crate::support;
 
@@ -83,4 +84,13 @@ fn a_broken_file_counts_as_a_subject() {
     );
     assert_eq!(design_file_subjects(&host), 1);
     assert!(RepoRule::<support::Project>::inapplicable(&Spec001, &host).is_none());
+}
+
+// frob:tests crates/crunk-rules/src/rules/spec001.rs::Spec001
+// frob:tests crates/crunk-rules/src/host.rs::design_file_problems
+#[test]
+fn a_flow_file_that_is_not_toml_fires() {
+    let m = messages("design/flows/main.flow.toml", "id = = =\n");
+    assert_eq!(m.len(), 1, "{m:?}");
+    assert!(m[0].1.contains("flow file invalid"), "{m:?}");
 }
