@@ -7,9 +7,9 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T05:38:16Z"
-updated = "2026-11-16T06:17:14Z"
+updated = "2026-11-16T06:36:08Z"
 labels = ["no-story"]
-scope = ["crates/crunk-check/**"]
+scope = ["crates/crunk-check/**", "crates/crunk-check/tests/it/flow_focus.rs"]
 
 [[acceptance]]
 text = "A test runs GX002 and GX003 through run on a fixture"
