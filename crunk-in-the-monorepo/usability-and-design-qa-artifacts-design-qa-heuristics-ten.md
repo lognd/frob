@@ -2,7 +2,8 @@
 id = "01M5XCZ14WCPMG9R6E269QRPVH"
 title = "Usability and design QA artifacts: design/qa/heuristics (ten NN/g enum) and walkthrough (four questions per step)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
