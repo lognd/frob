@@ -2100,6 +2100,59 @@ fn copy_end(atom: &str, callee: &str) -> Option<CopyEnd> {
     }
 }
 
+/// Rename calls whose second argument is a destination written to (ticket 01M61Y356JN6KCHRD81WWJ56CZ);
+/// the first argument (the removed source) is judged as for any `fs.write`.
+const RENAME_CALLS: &[&str] = &["os.rename", "os.replace", "shutil.move", "fs::rename"];
+
+/// True when the `atom` use of `callee` is a rename whose destination is a second path to judge.
+fn is_rename_call(atom: &str, callee: &str) -> bool {
+    if atom != "fs.write" {
+        return false;
+    }
+    let tail = |n: &str| {
+        callee == n || callee.ends_with(&format!(".{n}")) || callee.ends_with(&format!("::{n}"))
+    };
+    RENAME_CALLS.iter().any(|n| tail(n))
+        || (matches!(last_segment(callee), "rename" | "replace")
+            && (callee.starts_with("Path(")
+                || callee.starts_with("pathlib.Path(")
+                || callee.starts_with("Path.")))
+}
+
+/// The one folded value `observed_arg` gives over every candidate call, or `None` when they
+/// disagree or do not fold.
+fn folded_arg(
+    kind: ArgKind,
+    cands: &[gob_symbols::CallArgs],
+    dir: Option<CopyEnd>,
+) -> Option<String> {
+    let vals: BTreeSet<Option<String>> = cands.iter().map(|c| observed_arg(kind, c, dir)).collect();
+    if vals.len() == 1 {
+        vals.into_iter().next().flatten()
+    } else {
+        None
+    }
+}
+
+/// The folded destination of a `Path("a").rename("b")` receiver call on `line`: the only argument
+/// of the one `method` call there; anything else is `None`.
+fn receiver_dest_arg(
+    calls: &BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>,
+    line: u32,
+    method: &str,
+) -> Option<String> {
+    let [outer] = calls.get(&(line, method.to_owned()))?.as_slice() else {
+        return None;
+    };
+    if outer.splat || !outer.kwargs.is_empty() {
+        return None;
+    }
+    match outer.args.as_slice() {
+        [Some(gob_symbols::ArgValue::Str(s))] => Some(s.clone()),
+        _ => None,
+    }
+}
+
 /// True when the vocabulary entry reaches the call through a receiver, so the first call argument
 /// is not the path, name or program the atom is about (`Path.read_text`, `.read_text`).
 fn receiver_entry(callee: &str) -> bool {
@@ -2165,63 +2218,81 @@ fn attach_scoped_args(cx: &Cx<'_>, uses: &mut Uses) {
     let mut parsed: BTreeMap<String, BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>>> =
         BTreeMap::new();
     let (mut known, mut unknown) = (0usize, 0usize);
-    for u in uses.lo.values_mut().chain(uses.hi.values_mut()).flatten() {
-        let Some(kind) = use_arg_kind(cx.packs, &u.atom) else {
-            continue;
-        };
-        let Some(line) = u.line else { continue };
-        let ctor_call = ["Path(", "pathlib.Path("]
-            .iter()
-            .any(|p| u.callee.starts_with(p));
-        let receiver = kind != ArgKind::Host && (ctor_call || receiver_entry(&u.callee));
-        if receiver && !(kind == ArgKind::Path && (ctor_call || u.callee.starts_with("Path."))) {
-            unknown += 1;
-            continue;
-        }
-        let Some(code) = cx.code.file(&u.file) else {
-            continue;
-        };
-        let calls = parsed.entry(u.file.clone()).or_insert_with(|| {
-            let mut m: BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>> = BTreeMap::new();
-            if let Some(src) = code.source() {
-                for c in gob_symbols::call_args(&code.language, &src) {
-                    m.entry((c.line, last_segment(&c.callee).to_owned()))
-                        .or_default()
-                        .push(c);
-                }
-            }
-            m
-        });
-        if receiver {
-            // `Path("a").read_text()`: the path is the constructor's argument (ticket 01M61Y35309KEQP2SPTQHP1AT8)
-            u.arg = if code.language == "python" {
-                path_receiver_arg(calls, line, last_segment(&u.callee))
-            } else {
-                None
+    for found in uses.lo.values_mut().chain(uses.hi.values_mut()) {
+        let mut dests: Vec<Use> = Vec::new();
+        for u in found.iter_mut() {
+            let Some(kind) = use_arg_kind(cx.packs, &u.atom) else {
+                continue;
             };
-            tracing::debug!(file = %u.file, line, callee = %u.callee, folded = u.arg.is_some(), "receiver path argument");
+            let Some(line) = u.line else { continue };
+            let ctor_call = ["Path(", "pathlib.Path("]
+                .iter()
+                .any(|p| u.callee.starts_with(p));
+            let receiver = kind != ArgKind::Host && (ctor_call || receiver_entry(&u.callee));
+            if receiver && !(kind == ArgKind::Path && (ctor_call || u.callee.starts_with("Path.")))
+            {
+                unknown += 1;
+                continue;
+            }
+            let Some(code) = cx.code.file(&u.file) else {
+                continue;
+            };
+            let calls = parsed.entry(u.file.clone()).or_insert_with(|| {
+                let mut m: BTreeMap<(u32, String), Vec<gob_symbols::CallArgs>> = BTreeMap::new();
+                if let Some(src) = code.source() {
+                    for c in gob_symbols::call_args(&code.language, &src) {
+                        m.entry((c.line, last_segment(&c.callee).to_owned()))
+                            .or_default()
+                            .push(c);
+                    }
+                }
+                m
+            });
+            if receiver {
+                // `Path("a").read_text()`: the path is the constructor's argument (ticket 01M61Y35309KEQP2SPTQHP1AT8)
+                u.arg = if code.language == "python" {
+                    path_receiver_arg(calls, line, last_segment(&u.callee))
+                } else {
+                    None
+                };
+                tracing::debug!(file = %u.file, line, callee = %u.callee, folded = u.arg.is_some(), "receiver path argument");
+                if code.language == "python" && is_rename_call(&u.atom, &u.callee) {
+                    let dest = receiver_dest_arg(calls, line, last_segment(&u.callee));
+                    tracing::debug!(file = %u.file, line, callee = %u.callee, folded = dest.is_some(), "rename destination argument");
+                    dests.push(Use {
+                        arg: dest,
+                        ..u.clone()
+                    });
+                }
+                if u.arg.is_some() {
+                    known += 1;
+                } else {
+                    unknown += 1;
+                }
+                continue;
+            }
+            let Some(cands) = calls.get(&(line, last_segment(&u.callee).to_owned())) else {
+                unknown += 1;
+                continue;
+            };
+            let dir = copy_end(&u.atom, &u.callee);
+            u.arg = folded_arg(kind, cands, dir);
+            if is_rename_call(&u.atom, &u.callee) {
+                // `os.rename(src, dst)`: `dst` is written too, so it is judged as its own `fs.write` use
+                let dest = folded_arg(kind, cands, Some(CopyEnd::Dest));
+                tracing::debug!(file = %u.file, line, callee = %u.callee, folded = dest.is_some(), "rename destination argument");
+                dests.push(Use {
+                    arg: dest,
+                    ..u.clone()
+                });
+            }
             if u.arg.is_some() {
                 known += 1;
             } else {
                 unknown += 1;
             }
-            continue;
         }
-        let Some(cands) = calls.get(&(line, last_segment(&u.callee).to_owned())) else {
-            unknown += 1;
-            continue;
-        };
-        let dir = copy_end(&u.atom, &u.callee);
-        let vals: BTreeSet<Option<String>> =
-            cands.iter().map(|c| observed_arg(kind, c, dir)).collect();
-        if vals.len() == 1 {
-            u.arg = vals.into_iter().next().flatten();
-        }
-        if u.arg.is_some() {
-            known += 1;
-        } else {
-            unknown += 1;
-        }
+        found.extend(dests);
     }
     tracing::info!(known, unknown, "call arguments attached to uses");
 }
