@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:39Z"
-updated = "2026-11-03T05:56:36Z"
+updated = "2026-11-16T22:01:30Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
+
+[[acceptance]]
+text = "Given Python code calling ctypes.CDLL/cffi dlopen, when scanned, then an ffi use is reported"
+bound = false
 +++
 
 found while working S3EC85S: ffi vocab covers C#, Rust and TS only
