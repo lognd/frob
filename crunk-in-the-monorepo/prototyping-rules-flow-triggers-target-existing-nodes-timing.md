@@ -2,7 +2,8 @@
 id = "01M5XCZ1K91B012K3QDSH0JBCS"
 title = "Prototyping rules: flow triggers target existing nodes, timing within token bounds, reduced-motion twins"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
