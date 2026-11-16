@@ -2,7 +2,8 @@
 id = "01M648G0HAPTHCHX4BKCFHG5QT"
 title = "CAP: TS static import default/namespace direct calls not emitted by path_uses"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
