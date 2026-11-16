@@ -2,12 +2,12 @@
 id = "01M7CAYH4DH7619Y42EX0QMDF0"
 title = "Glossary entry for obligation (what the obligation graph is and where its rules live)"
 type = "docs"
-category = "todo"
+category = "in-progress"
 priority = "low"
 points = 1
 reporter = "lognd"
 created = "2026-11-14T06:12:07Z"
-updated = "2026-11-14T06:51:47Z"
+updated = "2026-11-16T10:31:31Z"
 idempotency_key = "gf-docs/glossary/obligation.md"
 labels = ["good-first"]
 scope = ["docs/glossary/obligation.md", "docs/README.md"]
