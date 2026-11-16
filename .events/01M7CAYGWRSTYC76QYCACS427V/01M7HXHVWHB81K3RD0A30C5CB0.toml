@@ -1,0 +1,7 @@
+kind = "field"
+field = "scope"
+old = ["docs/glossary/cycle.md", "docs/README.md"]
+new = ["docs/glossary/cycle.md", "docs/README.md", "changelog.d/01M7CAYGWRSTYC76QYCACS427V.added.md"]
+at = "2026-11-16T10:13:26Z"
+actor = "lognd"
+rev = 1
