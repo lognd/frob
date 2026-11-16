@@ -2,7 +2,8 @@
 id = "01M61MM4H8E5N93CRKFTREB77M"
 title = "org R5: declare tool-stage ids and test every emitted id is declared"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M61MHM8ER57BA9VVKXDTE2G7"
