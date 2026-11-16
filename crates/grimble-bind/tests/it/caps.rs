@@ -663,6 +663,17 @@ fn arg_scope_constants_fold_and_a_non_literal_argument_is_unresolved_never_clean
     assert!(of(&recv, "CAP001").is_empty(), "{:?}", recv.findings);
 }
 
+// frob:ticket 01M61Y35M4HHEFVJRMV8HFMF8H
+// frob:tests crates/grimble-bind/src/caps.rs::evaluate
+#[test]
+fn unresolved_argument_reason_is_dedicated_not_unresolved_edge() {
+    let grant = "  may fs.read(\"config/**\") because=\"cfg\";\n";
+    let b = bind_py("def go(p):\n    open(p)\n", grant);
+    let f = of(&b, "CAP001");
+    assert_eq!(f.len(), 1, "{:?}", b.findings);
+    assert_eq!(f[0].reason, Some(grimble_bind::Reason::UnresolvedArgument));
+}
+
 // frob:ticket 01M61Y35309KEQP2SPTQHP1AT8
 // frob:tests crates/grimble-bind/src/caps.rs::evaluate
 #[test]

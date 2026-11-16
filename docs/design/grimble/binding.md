@@ -1145,7 +1145,7 @@ The cell of `(n, a)` is computed, in this order:
    real host after the last `@` with scheme default ports, binaries and names exactly. A folded
    argument that matches no covering grant argument is CAP001 (Error) naming the observed and the
    granted arguments. An argument that does not fold, a use through a receiver (`Path(..).read_text()`),
-   or an atom a pack declares is Unresolved (`unresolved-edge`), never clean. A grant with no
+   or an atom a pack declares is Unresolved (`unresolved-argument` for an argument that does not fold, otherwise `unresolved-edge`), never clean. A grant with no
    arguments covers every argument. A wrong-typed grant argument is an MDL008 error, and an
    argument-scoped grant counts toward a trust zone like any other grant. Observed uses are matched on the import-resolved path of the callee, not its
    spelling: `use` aliases, `import x as y`, `from m import f`, function values and

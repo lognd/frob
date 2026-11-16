@@ -168,6 +168,8 @@ pub enum Reason {
     LockUnreadable,
     /// An import or call edge is May or has no known target, so no owner pair can be claimed.
     UnresolvedEdge,
+    /// A call argument cannot be resolved statically, so an argument-scoped grant cannot be checked.
+    UnresolvedArgument,
 }
 
 impl Reason {
@@ -181,6 +183,7 @@ impl Reason {
             Self::Vacuous => "vacuous",
             Self::LockUnreadable => "lock-unreadable",
             Self::UnresolvedEdge => "unresolved-edge",
+            Self::UnresolvedArgument => "unresolved-argument",
         }
     }
 }
@@ -196,6 +199,7 @@ impl Reason {
             Self::Vacuous,
             Self::LockUnreadable,
             Self::UnresolvedEdge,
+            Self::UnresolvedArgument,
         ]
         .into_iter()
         .find(|r| r.code() == code)
@@ -211,6 +215,9 @@ impl Reason {
             UnresolvedReason::Vacuous => Self::Vacuous,
             UnresolvedReason::ParseFailed => Self::LockUnreadable,
             UnresolvedReason::EdgeUnknown => Self::UnresolvedEdge,
+            UnresolvedReason::Opaque(code) if code == "unresolved-argument" => {
+                Self::UnresolvedArgument
+            }
             _ => return None,
         })
     }
@@ -225,6 +232,7 @@ impl Reason {
             Self::Vacuous => UnresolvedReason::Vacuous,
             Self::LockUnreadable => UnresolvedReason::ParseFailed,
             Self::UnresolvedEdge => UnresolvedReason::EdgeUnknown,
+            Self::UnresolvedArgument => UnresolvedReason::Opaque(self.code().to_owned()),
         }
     }
 }
@@ -338,6 +346,7 @@ mod tests {
             Reason::Vacuous,
             Reason::LockUnreadable,
             Reason::UnresolvedEdge,
+            Reason::UnresolvedArgument,
         ] {
             assert_eq!(Reason::from_typed(&r.typed()), Some(r));
         }

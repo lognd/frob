@@ -2862,7 +2862,7 @@ fn cap001(cx: &Cx<'_>, uses: &Uses, excuses: &[Excuse], today: gob_time::Day, ou
                         push_flagged(out, e, atom, Cell::Unknown);
                         out.unresolved(
                             "CAP001",
-                            Reason::UnresolvedEdge,
+                            Reason::UnresolvedArgument,
                             &format!(
                                 "`{atom}` is used by `{}` with an argument that cannot be resolved statically, so the granted arguments ({allowed}) cannot be checked: {}",
                                 e.anchor,
