@@ -5,3 +5,4 @@
 pub mod flows;
 pub mod ia;
 pub mod motion;
+pub mod research;

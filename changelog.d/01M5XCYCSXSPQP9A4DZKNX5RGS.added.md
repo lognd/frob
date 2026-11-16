@@ -1,0 +1,1 @@
+crunk-spec loads design research artifacts (front matter notes, personas, journeys) and crunk-rules gains opt-in evidence checks: uncited personas, journeys and screens, dangling citations and stale research.

@@ -30,4 +30,5 @@ mod typography_rules;
 mod ux_flows;
 mod ux_ia;
 mod ux_motion;
+mod ux_research;
 mod waiver;
