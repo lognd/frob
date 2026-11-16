@@ -47,6 +47,17 @@ const EXTERNAL_ROOTS: &[&str] = &[
     EXTERN_ROOT,
 ];
 
+/// True when `path` is a multi-segment path headed by a bare lowercase name no scope binds, which
+/// can only be a sibling workspace crate named without a `crate::` prefix.
+fn is_crate_root(path: &str) -> bool {
+    path.split_once("::").is_some_and(|(head, _)| {
+        head.starts_with(|c: char| c.is_ascii_lowercase())
+            && head
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+    })
+}
+
 /// The synthetic root of a function or static declared in an `extern "C" { .. }` block.
 const EXTERN_ROOT: &str = "extern";
 
@@ -1182,7 +1193,7 @@ mod rust {
             let root = path.split("::").next().unwrap_or("");
             let external_root = path.contains("::") && EXTERNAL_ROOTS.contains(&root);
             let local_rooted = matches!(root, "crate" | "self" | "super");
-            if !aliased && !external_root && !local_rooted {
+            if !aliased && !external_root && !local_rooted && !super::is_crate_root(&path) {
                 return;
             }
             self.out.push(PathUse {
@@ -1234,7 +1245,7 @@ mod rust {
                 });
                 return;
             }
-            if !aliased && !external_root && !local_rooted {
+            if !aliased && !external_root && !local_rooted && !super::is_crate_root(&path) {
                 return;
             }
             self.out.push(PathUse {
@@ -2324,6 +2335,16 @@ mod tests {
             got.iter()
                 .any(|u| u.path == "crate::proc::File::create" && !u.external_root)
         );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_local_crate_without_prefix_resolves_to_that_crate() {
+        let src = "fn f() { gob_path::free(1); Vec::new(); }\n";
+        let got = path_uses("rust", src);
+        assert_eq!(got.len(), 1, "{got:?}");
+        assert_eq!(got[0].path, "gob_path::free");
+        assert!(!got[0].external_root);
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
