@@ -2,12 +2,12 @@
 id = "01M5HT58NK23KQMMVXD1FZ0R2D"
 title = "Min unit case count thresholds per scope as COV rule"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-10-22T12:42:45Z"
-updated = "2026-10-28T12:57:31Z"
+updated = "2026-11-16T11:31:51Z"
 labels = ["no-story"]
 scope = ["crates/frob-obligations/**"]
 +++
