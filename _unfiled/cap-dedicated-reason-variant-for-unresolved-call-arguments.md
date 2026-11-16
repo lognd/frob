@@ -2,7 +2,8 @@
 id = "01M61Y35M4HHEFVJRMV8HFMF8H"
 title = "CAP: dedicated Reason variant for unresolved call arguments"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
