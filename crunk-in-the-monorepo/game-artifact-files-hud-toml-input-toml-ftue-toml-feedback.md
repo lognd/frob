@@ -2,7 +2,8 @@
 id = "01M5XCZ1FM4GWNE4T7SQ905APV"
 title = "Game artifact files: hud/*.toml, input.toml, ftue.toml, feedback.toml, gx-a11y.toml keyed to Game Accessibility Guidelines"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M4CXSAG0YPF18FX3KAPVX45C"
