@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["A bare builtin output call (print) after a Python star import of an external or unknown module is reported Unresolved, not a hit or silently clean"]
+moved = []
+at = "2026-11-17T06:43:53Z"
+actor = "lognd"
+rev = 1
