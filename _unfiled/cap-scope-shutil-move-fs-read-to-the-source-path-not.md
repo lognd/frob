@@ -2,7 +2,8 @@
 id = "01M7K4BGAK2EWZVBFF18SDN3JW"
 title = "CAP: scope shutil.move fs.read to the source path, not unscoped"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
