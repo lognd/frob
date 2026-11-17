@@ -2,12 +2,12 @@
 id = "01M69111N328P45MG4C0NTRDJF"
 title = "crunk cache prune: --age N (delete entries older than N days)"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:05:18Z"
-updated = "2026-11-17T03:12:51Z"
+updated = "2026-11-17T04:32:09Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**"]
 
