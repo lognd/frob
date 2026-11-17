@@ -833,7 +833,16 @@ impl<'t> Cx<'_, 't> {
         let name = self.name_of(*args.get(prim.name_arg)?);
         match (prim.kind, receiver) {
             (LookupKind::Attribute, Some(r)) => {
-                let (p, _) = self.resolve(r, d)?;
+                // an instance of unknown origin (`o.GetType().GetMethod(n)`) still reflects:
+                // report the lookup as computed rather than dropping the chain
+                // frob:ticket 01M64ZYSNAWWBYFVHEC10TMK06
+                let Some((p, _)) = self.resolve(r, d) else {
+                    tracing::debug!(
+                        line = call.start_position().row + 1,
+                        "lookups: reflection on a value of unknown origin"
+                    );
+                    return Some((COMPUTED.to_owned(), true));
+                };
                 Some((format!("{p}.{name}"), true))
             }
             (LookupKind::Attribute, None) => None,

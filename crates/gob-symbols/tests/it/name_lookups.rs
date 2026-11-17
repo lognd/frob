@@ -120,3 +120,17 @@ fn csharp_literal_names_resolve_and_others_are_computed() {
     );
     assert!(u.iter().any(|(_, c)| *c), "{u:?}");
 }
+
+// frob:ticket 01M64ZYSNAWWBYFVHEC10TMK06
+// frob:tests crates/gob-symbols/src/lookups.rs::scan
+#[test]
+fn csharp_reflection_on_a_value_of_unknown_origin_is_reported_computed() {
+    for src in [
+        "using System.Reflection;\nclass C { void M(object o) { var m = o.GetType().GetMethod(\"Run\"); m.Invoke(o, null); } }",
+        "using System.Reflection;\nclass C { void M(object o, string n) { o.GetType().GetMethod(n).Invoke(o, null); } }",
+        "using System.Reflection;\nclass C { void M(object o) { o.GetType().GetMethod(\"Run\").Invoke(o, null); } }",
+    ] {
+        let u = uses("csharp", src);
+        assert!(u.iter().any(|(_, c)| *c), "{src}: {u:?}");
+    }
+}
