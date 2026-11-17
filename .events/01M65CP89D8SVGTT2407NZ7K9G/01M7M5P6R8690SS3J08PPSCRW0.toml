@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-17T07:14:02Z"
+digest = "7d670f7b4b857d6af8c706bdb51640d5d92dd7d2791440ac3703631a15bed5a3"
+exit_code = 0
+head = "0228776e31c801e3246802f26eecefe43a8a887d"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>/crates/gob-check)
+   Compiling grimble-check v0.532.0 (<worktree>/crates/grimble-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 60ed3426-140b-42f2-8a6b-37e511de1d89 with nextest profile: default
+    Starting 6 tests across 2 binaries (443 tests skipped)
+        PASS [   0.016s] grimble-check::it log_rules::js_log_constructor_call_with_non_constant_arg_is_reported
+        PASS [   0.016s] grimble-check::it log_rules::js_log_constructor_property_read_is_not_reported
+        PASS [   0.016s] grimble-check::it log_rules::js_log_constructor_call_with_constant_string_is_reported
+        PASS [   0.019s] grimble-check::it log_rules::js_log_chained_constructor_call_is_reported
+        PASS [   0.020s] grimble-check::it log_rules::js_log_eval_and_function_constructor_are_reported
+        PASS [   0.315s] grimble-check::it symbolic_audit::python_receiver_types_from_constructors_resolve
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.317s] 6 tests run: 6 passed, 443 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p grimble-check constructor"
+size = 1236
+status = "measured"
+at = "2026-11-17T07:14:02Z"
+actor = "lognd"
+rev = 1

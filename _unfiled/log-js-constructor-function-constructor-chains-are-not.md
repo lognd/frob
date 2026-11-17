@@ -7,12 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T03:12:10Z"
-updated = "2026-11-17T07:10:06Z"
+updated = "2026-11-17T07:14:02Z"
 scope = ["crates/grimble-check/**"]
 
 [[acceptance]]
 text = "JS X.constructor(<code>) member calls, including chained, are reported as unresolved dynamic code; a bare .constructor property read is not"
-bound = false
+bound = true
 +++
 
 Found while working CS763EX. e.g. (()=>{}).constructor('...')() evades the dynamic-code check.
