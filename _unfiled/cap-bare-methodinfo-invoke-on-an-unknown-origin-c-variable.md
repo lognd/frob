@@ -4,8 +4,9 @@ title = "CAP: bare MethodInfo.Invoke on an unknown-origin C# variable is unrepor
 type = "task"
 category = "todo"
 priority = "medium"
+points = 3
 reporter = "lognd"
 created = "2026-11-17T00:51:24Z"
-updated = "2026-11-17T00:51:24Z"
+updated = "2026-11-17T00:51:27Z"
 idempotency_key = "10tmk06-bare-invoke"
 +++
