@@ -4292,12 +4292,28 @@ mod cell_tests {
     /// `shutil.move` scopes `fs.read` to the source (including `src=`), never to the destination.
     #[test]
     fn move_scopes_fs_read_to_the_source() {
-        let ok = move_atom_messages("import shutil\n\ndef go():\n    shutil.move('in/a', 'out/b')\n", "fs.read");
+        let ok = move_atom_messages(
+            "import shutil\n\ndef go():\n    shutil.move('in/a', 'out/b')\n",
+            "fs.read",
+        );
         assert!(ok.is_empty(), "{ok:?}");
-        let bad = move_atom_messages("import shutil\n\ndef go():\n    shutil.move('etc/a', 'out/b')\n", "fs.read");
+        let bad = move_atom_messages(
+            "import shutil\n\ndef go():\n    shutil.move('etc/a', 'out/b')\n",
+            "fs.read",
+        );
         assert_eq!(bad.len(), 1, "{bad:?}");
         assert!(bad[0].contains("etc/a"), "{bad:?}");
-        let kw = move_atom_messages("import shutil\n\ndef go():\n    shutil.move(dst='out/b', src='etc/a')\n", "fs.read");
+    }
+
+    // frob:ticket 01M7K4BGAK2EWZVBFF18SDN3JW
+    // frob:tests crates/grimble-bind/src/caps.rs::copy_end
+    /// `shutil.move` with keyword arguments scopes `fs.read` to `src=`.
+    #[test]
+    fn move_scopes_fs_read_to_the_keyword_source() {
+        let kw = move_atom_messages(
+            "import shutil\n\ndef go():\n    shutil.move(dst='out/b', src='etc/a')\n",
+            "fs.read",
+        );
         assert_eq!(kw.len(), 1, "{kw:?}");
         assert!(kw[0].contains("etc/a"), "{kw:?}");
     }
