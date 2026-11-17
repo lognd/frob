@@ -7,9 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T04:03:10Z"
-updated = "2026-11-17T06:19:58Z"
+updated = "2026-11-17T06:20:43Z"
 labels = ["no-story"]
 scope = ["crates/grimble-check/src/log/**", "docs/design/grimble/output-atoms.md"]
+
+[[acceptance]]
+text = "Given a project module defining print locally, when another module star-imports it and calls print, then the call is not reported as the builtin"
+bound = false
 +++
 
 found while working 01M64230T88F77RTBYS9M3CY3C: locally defined (Opaque) names are not bound by star import.

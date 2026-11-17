@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a project module defining print locally, when another module star-imports it and calls print, then the call is not reported as the builtin"]
+moved = []
+at = "2026-11-17T06:20:43Z"
+actor = "lognd"
+rev = 1
