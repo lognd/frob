@@ -2,7 +2,8 @@
 id = "01M65FKMFTM3TH0MVPXSRWVHSN"
 title = "LOG: Python exec/eval constant source with hex, unicode or octal escapes is unresolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
