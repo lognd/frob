@@ -9,7 +9,7 @@ reporter = "lognd"
 created = "2026-10-31T13:05:18Z"
 updated = "2026-11-17T04:32:32Z"
 labels = ["no-story", "good-first"]
-scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "crates/crunk/tests/e2e/divergences.toml"]
+scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "crates/crunk/tests/e2e/divergences.toml", "docs/reference/cli/crunk.md"]
 
 [[acceptance]]
 text = "Given cache rows older than N days, when crunk cache prune --age N runs, then those rows are deleted and it exits 0"
