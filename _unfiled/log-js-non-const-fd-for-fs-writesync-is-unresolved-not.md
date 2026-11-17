@@ -7,8 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T03:12:10Z"
-updated = "2026-11-17T06:07:06Z"
-scope = ["crates/grimble-check/**"]
+updated = "2026-11-17T06:15:41Z"
+scope = ["crates/grimble-check/**", "docs/design/grimble/output-atoms.md"]
 
 [[acceptance]]
 text = "Given a let or var bound fd, when fs.writeSync is called with it, then the LOG scan reports it Unresolved"
