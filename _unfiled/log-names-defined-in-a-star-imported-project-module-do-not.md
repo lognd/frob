@@ -2,7 +2,8 @@
 id = "01M65FKMBKNXK4PDXXDHFTKHDK"
 title = "LOG: names defined in a star-imported project module do not shadow builtins"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
