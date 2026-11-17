@@ -41,7 +41,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 | `crunk preview` | `crunk preview` | `--color always` adds truecolor swatches; `NO_COLOR` suppresses escapes. |
 | `crunk diff OTHER` | `crunk diff OTHER` | Always exit 0. |
 | `crunk fix`, `crunk fix --dry-run` | `crunk fix`, `crunk fix --dry-run` | Applies the machine-applicable fixes to stylesheets only; a dry run prints the same diff and writes nothing. JSX style props are judged, never fixed. |
-| `crunk cache ls`, `crunk cache prune` | `crunk cache ls`, `crunk cache prune [--all]` | Operate on the shared goblin cache; see "Cache" below. |
+| `crunk cache ls`, `crunk cache prune` | `crunk cache ls`, `crunk cache prune [--all] [--age N]` | Operate on the shared goblin cache; see "Cache" below. |
 | (none) | `crunk doctor`, `crunk schema`, `crunk serve` | Shared by every goblin binary. |
 | (none) | `crunk review`, `crunk ack` | Human review of screen states, recorded in `crunk.lock`. |
 | (none) | `crunk rule catalog` | The std pack rules that `[packs]` switches on. |

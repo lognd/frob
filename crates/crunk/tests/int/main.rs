@@ -175,6 +175,15 @@ fn int_06_report() {
     assert_eq!(envelope(&js)["data"]["report"]["version"], 2, "{js}");
 }
 
+// frob:tests crates/crunk/src/cache.rs::CachePrune
+#[test]
+fn int_09_cache_prune_age_is_accepted() {
+    // frob:ticket 01M69111N328P45MG4C0NTRDJF
+    let dir = scaffold();
+    let (code, out) = crunk(dir.path(), &["cache", "prune", "--age", "0", "--json"]);
+    assert_eq!(code, 0, "cache prune --age 0 answers: {out}");
+}
+
 // frob:tests crates/crunk/src/cache.rs::CacheLs
 // frob:tests crates/crunk/src/cache.rs::CachePrune
 #[test]

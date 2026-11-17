@@ -6,6 +6,7 @@
 //! regenerable (a miss only costs a re-ingest).
 
 // frob:ticket 01M4MD9FEH1F337CTWPZ03B67Y
+// frob:ticket 01M69111N328P45MG4C0NTRDJF
 
 use std::path::Path;
 
@@ -128,6 +129,12 @@ fn ls(root: &Path) -> CacheLsData {
 struct PruneArgs {
     #[arg(long, help = "Delete every row, not only those of other engines")]
     all: bool,
+    #[arg(
+        long,
+        value_name = "N",
+        help = "Delete rows stored more than N days ago"
+    )]
+    age: Option<u64>,
 }
 
 /// Delete cache rows no run of this build can hit, or every row with `--all`.
@@ -141,6 +148,7 @@ struct PruneArgs {
 )]
 pub struct CachePrune {
     all: bool,
+    age: Option<u64>,
 }
 
 impl Command for CachePrune {
@@ -151,8 +159,10 @@ impl Command for CachePrune {
     }
 
     fn from_matches(m: &ArgMatches) -> Result<Self, CliError> {
+        let args = gob_cli::parse::<PruneArgs>(m)?;
         Ok(Self {
-            all: gob_cli::parse::<PruneArgs>(m)?.all,
+            all: args.all,
+            age: args.age,
         })
     }
 
@@ -161,11 +171,20 @@ impl Command for CachePrune {
         let present = cache_dir(&root).is_some_and(|d| d.join(DB_FILE).is_file());
         let pruned = if present && !ctx.dry_run {
             let dir = cache_dir(&root).unwrap_or_default();
-            Cache::open(&dir).with_engine(run_engine()).prune(self.all)
+            let cache = Cache::open(&dir).with_engine(run_engine());
+            match self.age {
+                Some(days) => cache.prune_older_than(days),
+                None => cache.prune(self.all),
+            }
         } else {
             gob_cache::Pruned::default()
         };
-        tracing::info!(all = self.all, total = pruned.total(), "cache prune");
+        tracing::info!(
+            all = self.all,
+            age = self.age,
+            total = pruned.total(),
+            "cache prune"
+        );
         let data = CachePruneData {
             dry_run: ctx.dry_run || !present,
             artifacts: pruned.artifacts,

@@ -119,14 +119,6 @@ steps = [
 reason = "The Python `check <path>` positional scope was not ported; the Rust check takes no path argument and rejects it with a usage error (exit 2)."
 
 [[divergence]]
-id = "cache-verb-removed"
-field = "exit"
-steps = [
-  "e2e_56_57_58_honesty/e2e_57_cache_ls_and_prune#06",
-]
-reason = "The Python `cache prune --age N` (delete entries older than N days) was not ported; the Rust `cache prune` only drops rows no run of this build can hit, or all with --all, so --age is a usage error (exit 2)."
-
-[[divergence]]
 id = "rust-rules-error-where-python-warned"
 field = "exit"
 steps = [

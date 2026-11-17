@@ -56,6 +56,12 @@ const MIGRATIONS: &[&str] = &[
     ALTER TABLE findings ADD COLUMN mac BLOB;
     ALTER TABLE repo_rule ADD COLUMN mac BLOB;
 ",
+    // Row dates for `prune --age`: artifacts already carry one; rows written before this are 0
+    // (the epoch), so any age prune treats them as old.
+    "
+    ALTER TABLE findings ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE repo_rule ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0;
+",
 ];
 
 /// Domain-separation context of every row MAC.
@@ -556,14 +562,16 @@ impl Cache {
         let done = self.with("put_findings", |c| {
             c.execute(
                 "INSERT OR REPLACE INTO findings(file_digest, rule_id, rule_version,
-                 side_input_digest, payload, mac) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                 side_input_digest, payload, mac, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
                 params![
                     key.file_digest,
                     key.rule_id,
                     key.rule_version,
                     side,
                     payload,
-                    mac
+                    mac,
+                    self.clock.now().unix()
                 ],
             )
         });
@@ -594,9 +602,9 @@ impl Cache {
         );
         let done = self.with("put_repo_rule", |c| {
             c.execute(
-                "INSERT OR REPLACE INTO repo_rule(graph_digest, rule_id, payload, mac)
-                 VALUES (?1, ?2, ?3, ?4)",
-                params![graph, rule_id, payload, mac],
+                "INSERT OR REPLACE INTO repo_rule(graph_digest, rule_id, payload, mac, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![graph, rule_id, payload, mac, self.clock.now().unix()],
             )
         });
         if done.is_some() {
@@ -639,6 +647,33 @@ impl Cache {
             })
             .unwrap_or_default();
         tracing::info!(all, total = pruned.total(), "cache pruned");
+        pruned
+    }
+
+    /// Deletes every row, in every table, stored more than `days` days ago.
+    ///
+    /// Rows written before rows were dated count as infinitely old. The null cache prunes nothing.
+    // frob:ticket 01M69111N328P45MG4C0NTRDJF
+    pub fn prune_older_than(&self, days: u64) -> Pruned {
+        let secs = i64::try_from(days.saturating_mul(86_400)).unwrap_or(i64::MAX);
+        let cutoff = self.clock.now().unix().saturating_sub(secs);
+        let pruned = self
+            .with("prune_older_than", |c| {
+                let old = |table: &str| -> rusqlite::Result<u64> {
+                    let n = c.execute(
+                        &format!("DELETE FROM {table} WHERE created_at <= ?1"),
+                        params![cutoff],
+                    )?;
+                    Ok(n as u64)
+                };
+                Ok(Pruned {
+                    artifacts: old("artifacts")?,
+                    findings: old("findings")?,
+                    repo_rule: old("repo_rule")?,
+                })
+            })
+            .unwrap_or_default();
+        tracing::info!(days, total = pruned.total(), "cache pruned by age");
         pruned
     }
 
@@ -779,6 +814,29 @@ mod tests {
         assert_eq!(Cache::null().prune(true), Pruned::default());
     }
 
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.prune_older_than
+    #[test]
+    fn prune_older_than_zero_days_drops_every_row() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        cache.put_findings(&fkey(), b"a");
+        cache.put_repo_rule("g", "R", b"b");
+        let gone = cache.prune_older_than(0);
+        assert_eq!((gone.findings, gone.repo_rule), (1, 1));
+        assert_eq!(cache.stats().findings, 0);
+    }
+
+    // frob:tests crates/gob-cache/src/lib.rs::Cache.prune_older_than
+    #[test]
+    fn prune_older_than_keeps_rows_newer_than_the_cutoff() {
+        let dir = tempfile::tempdir().unwrap();
+        let cache = Cache::open(dir.path());
+        cache.put_findings(&fkey(), b"a");
+        assert_eq!(cache.prune_older_than(1), Pruned::default());
+        assert_eq!(cache.stats().findings, 1);
+        assert_eq!(Cache::null().prune_older_than(0), Pruned::default());
+    }
+
     #[test]
     fn artifacts_and_repo_rules_round_trip() {
         let dir = tempfile::tempdir().unwrap();
@@ -880,7 +938,7 @@ mod tests {
         cache
             .with("t", |c| {
                 c.execute(
-                    "INSERT INTO findings VALUES ('d','R1',1,?1,x'01',NULL)",
+                    "INSERT INTO findings VALUES ('d','R1',1,?1,x'01',NULL,0)",
                     [scoped(cache.engine(), "s")],
                 )
             })
