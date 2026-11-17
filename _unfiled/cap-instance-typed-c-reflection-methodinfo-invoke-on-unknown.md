@@ -2,12 +2,12 @@
 id = "01M64ZYSNAWWBYFVHEC10TMK06"
 title = "CAP: instance-typed C# reflection (MethodInfo.Invoke on unknown-origin values) is not reported"
 type = "task"
-category = "todo"
+category = "in-progress"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:38Z"
-updated = "2026-11-17T00:21:34Z"
+updated = "2026-11-17T00:21:40Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
