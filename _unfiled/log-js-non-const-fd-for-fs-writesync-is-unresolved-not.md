@@ -2,7 +2,8 @@
 id = "01M65CP8FBE5BKGTBXBYMMQZNY"
 title = "LOG: JS non-const fd for fs.writeSync is Unresolved, not resolved"
 type = "bug"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
