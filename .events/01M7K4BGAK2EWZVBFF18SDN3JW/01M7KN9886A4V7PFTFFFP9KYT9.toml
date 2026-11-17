@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["shutil.move scopes fs.read to the source path, positional or keyword"]
+moved = []
+at = "2026-11-17T02:27:25Z"
+actor = "lognd"
+rev = 1

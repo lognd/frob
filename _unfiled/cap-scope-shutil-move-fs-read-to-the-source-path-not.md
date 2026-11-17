@@ -7,6 +7,10 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-16T21:31:33Z"
-updated = "2026-11-17T02:21:43Z"
+updated = "2026-11-17T02:27:25Z"
 idempotency_key = "shutil-move-read-scope"
+
+[[acceptance]]
+text = "shutil.move scopes fs.read to the source path, positional or keyword"
+bound = false
 +++
