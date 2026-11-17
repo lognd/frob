@@ -860,8 +860,17 @@ plus `migrate_ratchet_lock`, which reads the old lock once (a top-level or
 baseline already exists. A brand-new table is the adopt event and is not
 growth; BASE001 fails only added keys or a changed `ticket` on an existing
 table. Both rules take a `BaselineHost` (head file, base-tip file, ticket
-liveness). The `frob baseline` verbs, prune in `frob land`, the `baselined`
-envelope section and the `frob migrate` hook are separate tickets.
+liveness). Everything around the store has shipped. `frob baseline adopt`
+records the standing Error findings of one rule under a reason and a
+ticket, and `frob baseline prune` removes the keys whose finding no longer
+occurs (`crates/frob/src/baseline_cmd.rs`). `frob check --fix` runs the
+same prune through `frob_check::baseline_prune::prune_file`, only on a full
+unscoped run (never with `--only` or `--ticket`). `frob land` prunes on the
+merge tree after the base is merged and the full head check has run
+(`frob_land::baseline_prune`), and commits the shrunken file; a baseline
+file that cannot be read fails the land with `E-LAND-BASELINE`. The
+`baselined` section of the check envelope and the `frob migrate` hook
+(`migrate_cmd.rs`, ratchet lock to baseline) are in place too.
 
 **6.1.2b Product adoption (~BZF44PC).** `grimble check` and `crunk check`
 read `frob-baseline.toml` at the repo root through `Baseline::load` (a
