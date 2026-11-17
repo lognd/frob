@@ -9,8 +9,8 @@
 
 use std::path::Path;
 
-use frob_check::baseline_prune::{prune_input, pruned_text};
 use frob_check::CheckOptions;
+use frob_check::baseline_prune::{prune_input, pruned_text};
 use frob_ledger::LedgerConfig;
 use gob_git::Repo;
 use gob_rules::{BASELINE_FILE, BaselineError, PruneInput, PruneReport};

@@ -58,7 +58,7 @@ fn fired(dir: &tempfile::TempDir, rule: &str) -> usize {
 }
 
 // frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
-// frob:tests crates/frob-check/src/host.rs::FrobInputs
+// frob:tests crates/frob-check/src/snapshot.rs::FrobInputs
 #[test]
 fn base001_fires_when_the_working_baseline_grew_against_the_base_ref() {
     let dir = fixture(Some(&[KEY_A]), &[KEY_A, KEY_B]);
@@ -66,7 +66,7 @@ fn base001_fires_when_the_working_baseline_grew_against_the_base_ref() {
 }
 
 // frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
-// frob:tests crates/frob-check/src/host.rs::FrobInputs
+// frob:tests crates/frob-check/src/snapshot.rs::FrobInputs
 #[test]
 fn base001_is_silent_when_the_base_ref_has_no_baseline_file() {
     let dir = fixture(None, &[KEY_A, KEY_B]);
@@ -74,7 +74,7 @@ fn base001_is_silent_when_the_base_ref_has_no_baseline_file() {
 }
 
 // frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
-// frob:tests crates/frob-check/src/host.rs::FrobInputs
+// frob:tests crates/frob-check/src/snapshot.rs::FrobInputs
 #[test]
 fn base002_reports_a_ticket_missing_from_the_ledger_as_unresolved() {
     let dir = fixture(None, &[KEY_A]);

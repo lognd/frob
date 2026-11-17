@@ -28,6 +28,13 @@
 | [AMB008](AMB008.md) | amb-unverified-policy | error | manual | P+ | false | A system ambient policy has no `verified_by` test. |
 | [AMB009](AMB009.md) | amb-restart-stateful | error | manual | P+ | false | A `restart` policy covers an impl in a stateful node that has no flow to a store. |
 
+## BASE
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [BASE001](BASE001.md) | baseline-grew | error | manual | P+ | true | A baseline table gained a key or changed its ticket against the base tip. |
+| [BASE002](BASE002.md) | baseline-ticket-dead | error | manual | P+ | true | A baseline table whose burn-down ticket is closed or dropped without a successor. |
+
 ## BP
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

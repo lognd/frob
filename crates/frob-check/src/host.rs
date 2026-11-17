@@ -18,7 +18,10 @@ use gob_symbols::SymbolGraph;
 use crate::snapshot::FrobInputs;
 
 /// Everything the migrated rule crates ask of frob: obligations, ack, test-coverage, ledger and PM facts.
-pub trait FrobHost: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + BaselineHost {}
+pub trait FrobHost:
+    ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + BaselineHost
+{
+}
 
 impl<T: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + BaselineHost + ?Sized> FrobHost
     for T
