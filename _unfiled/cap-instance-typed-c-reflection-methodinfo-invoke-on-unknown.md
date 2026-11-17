@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-29T23:29:38Z"
-updated = "2026-11-17T00:26:20Z"
+updated = "2026-11-17T00:41:35Z"
 labels = ["no-story"]
 scope = ["crates/gob-symbols/**"]
 
