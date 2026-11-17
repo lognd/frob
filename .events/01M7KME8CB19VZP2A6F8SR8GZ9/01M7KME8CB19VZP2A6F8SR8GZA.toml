@@ -1,0 +1,9 @@
+kind = "create"
+title = "frob check --fix: prune dead baseline keys as a post-run step"
+type = "task"
+category = "todo"
+priority = "medium"
+idempotency_key = "split-8az7dkd-fix"
+at = "2026-11-17T02:12:40Z"
+actor = "lognd"
+rev = 1
