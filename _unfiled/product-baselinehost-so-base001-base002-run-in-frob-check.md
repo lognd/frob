@@ -2,12 +2,12 @@
 id = "01M66JP3KAF056MN4AF8AZ7DKD"
 title = "Product BaselineHost so BASE001/BASE002 run in frob check, plus check --fix prune"
 type = "task"
-category = "in-progress"
+category = "todo"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T14:16:11Z"
-updated = "2026-11-17T02:11:34Z"
+updated = "2026-11-17T02:13:45Z"
 labels = ["no-story"]
 scope = ["crates/frob-check/**"]
 
