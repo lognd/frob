@@ -8,6 +8,8 @@ use gob_cli::{CliError, Command, Context, ExplainArgs, ExplainData, Outcome, Pag
 
 /// Every `frob` rule page (`docs/reference/rules/<ID>.md`), embedded at build time.
 static PAGES: &[Page] = gob_cli::rule_pages![
+    "BASE001",
+    "BASE002",
     "AFFECT001",
     "DOC001",
     "DRIFT003",
