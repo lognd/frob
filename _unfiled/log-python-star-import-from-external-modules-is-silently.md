@@ -7,9 +7,9 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T04:03:10Z"
-updated = "2026-11-03T05:56:43Z"
+updated = "2026-11-17T06:31:28Z"
 labels = ["no-story"]
-scope = ["crates/grimble-check/src/log/**", "docs/design/output-atoms.md"]
+scope = ["crates/grimble-check/src/log/**", "docs/design/grimble/output-atoms.md"]
 +++
 
 found while working 01M64230T88F77RTBYS9M3CY3C: only project modules are expanded.
