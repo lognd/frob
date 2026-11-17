@@ -13,7 +13,7 @@ scope = ["crates/grimble-check/src/log/**", "docs/design/output-atoms.md", "crat
 
 [[acceptance]]
 text = "Given a project module with a literal __all__, when another file star-imports it, then only the names listed in __all__ are bound"
-bound = false
+bound = true
 +++
 
 found while working 01M64230T88F77RTBYS9M3CY3C: star imports bind every non-underscore export instead of honouring __all__.
