@@ -2,7 +2,8 @@
 id = "01M65FKMDW5CXZ40878K73M31T"
 title = "LOG: Python star import from external modules is silently unresolved"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
