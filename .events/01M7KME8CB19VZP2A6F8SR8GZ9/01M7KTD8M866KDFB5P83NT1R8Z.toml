@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-17T03:56:57Z"
+digest = "cf210aefbcd315a2598fa376290011a64fe87b1ad0f02922e8b53fee6a779d92"
+exit_code = 0
+head = "c1bfa7ad4fb10ec11d9c4f6f08410ce4e9301501"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.79s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3d31a22f-63a0-43b8-88d2-b6c2dcba80fc with nextest profile: default
+    Starting 1 test across 164 binaries (8245 tests skipped)
+        PASS [   0.007s] frob-check baseline_prune::tests::a_second_prune_file_changes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.020s] 1 test run: 1 passed, 8245 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "a_second_prune_file_changes_nothing"
+size = 566
+status = "measured"
+test_count = 1
+tests_digest = "394b6a7ce1e46cc5042f343ec7f4e170bbdd79ce0d6c0074c3ebfb9f746542c9"
+at = "2026-11-17T03:56:57Z"
+actor = "lognd"
+rev = 1

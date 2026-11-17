@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-17T02:12:40Z"
-updated = "2026-11-17T03:49:46Z"
+updated = "2026-11-17T03:56:57Z"
 idempotency_key = "split-8az7dkd-fix"
 
 [[acceptance]]
