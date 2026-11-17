@@ -177,7 +177,7 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(report.removed.len(), 1);
-        let on_disk = std::fs::read_to_string(&path).unwrap();
+        let on_disk = gob_fs::read_optional(&path).unwrap().unwrap();
         assert!(on_disk.contains(LIVE) && !on_disk.contains(DEAD));
     }
 
@@ -189,9 +189,9 @@ mod tests {
         std::fs::write(&path, file("DOC001", &[DEAD, LIVE])).unwrap();
         let live = input(&[LIVE], &["DOC001"], true);
         assert!(prune_file(dir.path(), &live).unwrap().is_some());
-        let first = std::fs::read_to_string(&path).unwrap();
+        let first = gob_fs::read_optional(&path).unwrap().unwrap();
         assert!(prune_file(dir.path(), &live).unwrap().is_none());
-        assert_eq!(std::fs::read_to_string(&path).unwrap(), first);
+        assert_eq!(gob_fs::read_optional(&path).unwrap().unwrap(), first);
     }
 
     // frob:tests crates/frob-check/src/baseline_prune.rs::prune_file
