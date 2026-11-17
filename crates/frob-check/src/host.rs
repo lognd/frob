@@ -12,15 +12,18 @@ use frob_obligations::{ObligationHost, ObligationInputs};
 use frob_pm::{PmConfig, PmHost};
 use frob_tests::TestsHost;
 use gob_directives::DirectiveRecord;
-use gob_rules::Finding;
+use gob_rules::{Baseline, BaselineHost, Finding, TicketLife};
 use gob_symbols::SymbolGraph;
 
 use crate::snapshot::FrobInputs;
 
 /// Everything the migrated rule crates ask of frob: obligations, ack, test-coverage, ledger and PM facts.
-pub trait FrobHost: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost {}
+pub trait FrobHost: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + BaselineHost {}
 
-impl<T: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + ?Sized> FrobHost for T {}
+impl<T: ObligationHost + AckHost + TestsHost + LedgerHost + PmHost + BaselineHost + ?Sized> FrobHost
+    for T
+{
+}
 
 impl ObligationHost for FrobInputs {
     fn obligations(&self) -> ObligationInputs<'_> {
@@ -151,6 +154,49 @@ impl PmHost for FrobInputs {
                 Box::new(NoLeases)
             }
         }
+    }
+}
+
+// frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
+impl BaselineHost for FrobInputs {
+    fn baseline_head(&self) -> Option<&Baseline> {
+        self.baseline_head.as_ref()
+    }
+
+    fn baseline_base(&self) -> Option<&Baseline> {
+        self.baseline_base.as_ref()
+    }
+
+    fn ticket_life(&self, ticket: &str) -> TicketLife {
+        let Some(state) = &self.ledger else {
+            return TicketLife::Unknown;
+        };
+        life_in(&state.ledger, ticket)
+    }
+}
+
+/// Liveness of `ticket` in `ledger`: open is live, done is live only through a live supersession link, absent is unknown.
+fn life_in(ledger: &frob_ledger::Ledger, ticket: &str) -> TicketLife {
+    let Ok(id) = ledger.resolve(ticket) else {
+        tracing::debug!(ticket, "baseline ticket not in the ledger");
+        return TicketLife::Unknown;
+    };
+    let Ok(view) = ledger.show(id) else {
+        return TicketLife::Unknown;
+    };
+    if !view.summary.category.is_terminal() {
+        return TicketLife::Live;
+    }
+    let successor_live = view
+        .outgoing
+        .iter()
+        .chain(&view.incoming)
+        .filter(|l| l.kind == frob_ledger::model::LinkKind::SupersededBy)
+        .any(|l| l.category.is_some_and(|c| !c.is_terminal()));
+    if successor_live {
+        TicketLife::Live
+    } else {
+        TicketLife::Dead
     }
 }
 

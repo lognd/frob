@@ -1321,7 +1321,7 @@ fn verify_check(
     let timer = Instant::now();
     let head = frob_check::run(wt_path, &options(None))?;
     record(&mut stages, "head", timer.elapsed());
-    let prune = crate::baseline_prune::prune_input(&head);
+    let prune = frob_check::baseline_prune::prune_input(&head);
     let timer = Instant::now();
     let base_oid = wt.rev_parse(&base_ref(base))?.to_string();
     let base_set = ratchet::base_findings(wt, wt_path, &base_oid, ledger.config())?;

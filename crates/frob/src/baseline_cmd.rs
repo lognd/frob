@@ -9,7 +9,7 @@
 use std::path::Path;
 
 use frob_check::{CheckOptions, CheckReport};
-use frob_land::baseline_prune::{prune_input, pruned_text};
+use frob_check::baseline_prune::{prune_input, pruned_text};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_rules::{BASELINE_FILE, Baseline, BaselineError, Finding, RuleId};

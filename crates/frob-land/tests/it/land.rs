@@ -3413,7 +3413,7 @@ fn land_prunes_dead_baseline_keys_on_the_merge_tree_and_commits_the_result() {
         },
     )
     .expect("check");
-    let rule = frob_land::baseline_prune::prune_input(&report)
+    let rule = frob_check::baseline_prune::prune_input(&report)
         .evaluated
         .into_iter()
         .next()

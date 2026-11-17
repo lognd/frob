@@ -114,6 +114,12 @@ pub struct FrobInputs {
     pub(crate) doctor: std::sync::OnceLock<Result<Vec<gob_rules::Finding>, String>>,
     /// Walked text of every file declaring a `frob:tests` target (`TEST001`), read through the core, never the disk.
     pub(crate) test_sources: std::collections::BTreeMap<String, String>,
+    /// The working-tree `frob-baseline.toml`, `None` when absent or unreadable (BASE001, BASE002).
+    // frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
+    pub(crate) baseline_head: Option<gob_rules::Baseline>,
+    /// The `frob-baseline.toml` at the `[check] base` ref, `None` when the base has none or cannot be read (BASE001).
+    // frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
+    pub(crate) baseline_base: Option<gob_rules::Baseline>,
     /// `directives` grouped by file, built once so a per-file check never rescans every directive.
     // frob:ticket 01M42301J2JXZBNPKYTAKMV3C3
     pub(crate) by_file:
@@ -631,7 +637,42 @@ pub(crate) fn collect(
     let (graph, built) = graph_stage(cx);
     let mut scan = scan_stage(cx, opts)?;
     let ledger = ledger_stage(cx, opts, std::mem::take(&mut scan.ledger_cfg));
-    assemble(cx.core, opts, (graph, built), scan, ledger)
+    let baselines = load_baselines(&cx.core.root, &cx.table.base);
+    assemble(cx.core, opts, (graph, built), scan, ledger, baselines)
+}
+
+/// The head and base-ref baselines BASE001 and BASE002 read; an absent or unreadable file is `None`, never an error.
+// frob:ticket 01M7KME88Y8N7JD506Y0WRG2MX
+fn load_baselines(
+    root: &std::path::Path,
+    base_ref: &str,
+) -> (Option<gob_rules::Baseline>, Option<gob_rules::Baseline>) {
+    let head = if root.join(gob_rules::BASELINE_FILE).is_file() {
+        gob_rules::Baseline::load(root)
+            .inspect_err(|err| tracing::warn!(%err, "head baseline unreadable; BASE rules skip it"))
+            .ok()
+    } else {
+        None
+    };
+    if head.is_none() {
+        return (None, None);
+    }
+    let base = gob_git::Repo::discover_shared(root)
+        .ok()
+        .and_then(|repo| {
+            repo.read_blob_at(base_ref, gob_rules::BASELINE_FILE)
+                .inspect_err(|err| tracing::debug!(%err, base_ref, "no baseline at the base ref"))
+                .ok()
+                .flatten()
+        })
+        .and_then(|bytes| String::from_utf8(bytes).ok())
+        .and_then(|text| {
+            gob_rules::Baseline::parse(&text)
+                .inspect_err(|err| tracing::warn!(%err, "base baseline unreadable; BASE001 silent"))
+                .ok()
+        });
+    tracing::debug!(base_present = base.is_some(), "baselines loaded");
+    (head, base)
 }
 
 /// Join the stage outputs into the collected shared state and per-run inputs.
@@ -641,6 +682,7 @@ fn assemble(
     (graph, built): (gob_symbols::SymbolGraph, gob_symbols::BuildStats),
     scan: ScanStage,
     stage: LedgerStage,
+    (baseline_head, baseline_base): (Option<gob_rules::Baseline>, Option<gob_rules::Baseline>),
 ) -> Result<Collected<Frob>, CheckError> {
     let (root, entries, files) = (&core.root, &core.entries, &core.files);
     let ScanStage {
@@ -732,6 +774,8 @@ fn assemble(
             lease: opts.lease.clone(),
             doctor: std::sync::OnceLock::new(),
             test_sources,
+            baseline_head,
+            baseline_base,
             by_file: std::sync::OnceLock::new(),
         },
         findings: scan_findings,

@@ -2,6 +2,7 @@
 // frob:ticket 01M4CTE9W9QH6SBZSJ3E0E8M28
 // frob:ticket 01M5AH5JNAB2APDDP317HGFM86
 mod autocrlf;
+mod baseline_rules;
 mod check;
 mod corpus;
 mod csharp;

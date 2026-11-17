@@ -1,0 +1,1 @@
+Baseline rules (BASE001, BASE002) now run in `frob check`: BASE001 compares the working `frob-baseline.toml` with the `[check] base` ref (silent when the base has none), BASE002 judges each table ticket against the ledger (a ticket missing from it is unresolved); the prune helpers moved to `frob-check`.

@@ -33,6 +33,7 @@
 // A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
+pub mod baseline_prune;
 mod baselined;
 mod concurrent;
 mod filecheck;

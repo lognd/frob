@@ -20,5 +20,6 @@ gob_check::product_rules! {
         frob_release,
         frob_lease,
         gob_config,
+        gob_rules,
     ];
 }
