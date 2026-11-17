@@ -2,7 +2,8 @@
 id = "01M66JP3Y9AHPNPNK5S9ZHTAS8"
 title = "Prune baseline in the merge-train path (train_check, candidate)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
