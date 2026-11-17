@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-17T04:40:19Z"
+digest = "b0aedf7511d208899077a1304cb6993625ff16945b0e956247ea88d45b82b66e"
+exit_code = 0
+head = "7eeb6fd93beb4fc88643508bfdae43f545cf81ea"
+inline = '''
+    Blocking waiting for file lock on build directory
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 34s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 7c4872d7-c7b6-4525-98c5-b7884be909f5 with nextest profile: default
+    Starting 1 test across 164 binaries (8248 tests skipped)
+        PASS [   0.313s] crunk::e2e e2e_56_57_58_honesty_e2e_57_cache_ls_and_prune
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.327s] 1 test run: 1 passed, 8248 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "e2e_56_57_58_honesty_e2e_57_cache_ls_and_prune"
+size = 609
+status = "measured"
+test_count = 1
+tests_digest = "d3c9727c91328e3cb0287a1ca6f40f4c9c2eb4ba156d653deffdf5d8e9fea306"
+at = "2026-11-17T04:40:19Z"
+actor = "lognd"
+rev = 1
