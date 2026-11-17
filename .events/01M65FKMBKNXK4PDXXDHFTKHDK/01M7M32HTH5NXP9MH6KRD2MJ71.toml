@@ -1,0 +1,24 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-17T06:26:10Z"
+digest = "f04dc37c5d3e6a4c3c15c6eeb9c76229aaf0138c9865b7112afe2863eb06792f"
+exit_code = 0
+head = "9fcf75457c615e3437b19cc64d8b032581c97bb1"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cb89ff29-1b9b-4eb0-b1ba-049068754f9f with nextest profile: default
+    Starting 2 tests across 2 binaries (432 tests skipped)
+        PASS [   0.014s] grimble-check::it log_rules::py_log_star_import_local_def_shadows_builtin
+        PASS [   0.016s] grimble-check::it log_rules::py_log_star_import_local_assignment_shadows_builtin
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.017s] 2 tests run: 2 passed, 432 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p grimble-check py_log_star_import_local"
+size = 674
+status = "measured"
+at = "2026-11-17T06:26:10Z"
+actor = "lognd"
+rev = 1
