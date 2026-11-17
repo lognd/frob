@@ -24,6 +24,13 @@ use crate::rule;
 pub struct Base002;
 
 impl<P: ?Sized + BaselineHost> RepoRule<P> for Base002 {
+    /// A repository with no `frob-baseline.toml` has nothing to judge.
+    fn inapplicable(&self, host: &P) -> Option<String> {
+        host.baseline_head()
+            .is_none()
+            .then(|| "no frob-baseline.toml".to_owned())
+    }
+
     /// Fail every table whose ticket is dead; report Unresolved when the ledger cannot say.
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         let Some(head) = host.baseline_head() else {
