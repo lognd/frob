@@ -24,6 +24,13 @@ use crate::rule;
 pub struct Base001;
 
 impl<P: ?Sized + BaselineHost> RepoRule<P> for Base001 {
+    /// A repository with no `frob-baseline.toml` has nothing to judge.
+    fn inapplicable(&self, host: &P) -> Option<String> {
+        host.baseline_head()
+            .is_none()
+            .then(|| "no frob-baseline.toml".to_owned())
+    }
+
     /// Fail every table of the head baseline that gained a key or changed ticket versus the base.
     fn check(&self, host: &P, out: &mut Out<'_, Self>) {
         let (Some(head), Some(base)) = (host.baseline_head(), host.baseline_base()) else {
