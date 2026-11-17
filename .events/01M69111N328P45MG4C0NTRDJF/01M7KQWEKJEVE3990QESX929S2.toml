@@ -1,0 +1,9 @@
+kind = "field"
+field = "acceptance"
+old = ["crunk cache prune --age N deletes rows older than N days and exits 0", "the cache-verb-removed e2e divergence is removed"]
+new = ["Given cache rows older than N days, when crunk cache prune --age N runs, then those rows are deleted and it exits 0", "Given the e2e_57 step 6 cache prune --age 0, when the e2e runs, then the cache-verb-removed divergence is gone"]
+reason = "good-first needs GWT acceptance"
+moved = [0, 0]
+at = "2026-11-17T03:12:51Z"
+actor = "lognd"
+rev = 1
