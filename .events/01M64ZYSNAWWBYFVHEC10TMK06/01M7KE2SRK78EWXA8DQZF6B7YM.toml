@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a C# unit calling MethodInfo.Invoke on a value of unknown origin, when grimble binds it, then a May reflection use is reported rather than nothing"]
+moved = []
+at = "2026-11-17T00:21:34Z"
+actor = "lognd"
+rev = 1
