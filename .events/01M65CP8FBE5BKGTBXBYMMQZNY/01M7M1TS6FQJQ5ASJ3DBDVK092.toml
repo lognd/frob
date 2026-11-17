@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a let or var bound fd, when fs.writeSync is called with it, then the LOG scan reports it Unresolved"]
+moved = []
+at = "2026-11-17T06:06:42Z"
+actor = "lognd"
+rev = 1

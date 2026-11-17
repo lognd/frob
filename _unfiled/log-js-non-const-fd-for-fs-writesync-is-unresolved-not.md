@@ -7,8 +7,12 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-10-30T03:12:10Z"
-updated = "2026-11-17T06:02:10Z"
+updated = "2026-11-17T06:06:42Z"
 scope = ["crates/grimble-check/**"]
+
+[[acceptance]]
+text = "Given a let or var bound fd, when fs.writeSync is called with it, then the LOG scan reports it Unresolved"
+bound = false
 +++
 
 Found while working CS763EX. Fd values from non-const bindings are flagged Unresolved.
