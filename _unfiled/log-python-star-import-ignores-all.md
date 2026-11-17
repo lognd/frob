@@ -2,7 +2,8 @@
 id = "01M65FKM97K956PQS8M509EQA2"
 title = "LOG: Python star import ignores __all__"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
