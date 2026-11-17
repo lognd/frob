@@ -104,7 +104,7 @@
 //!
 //! Known limits: receiver typing is per file and textual (no cross-module constants, no
 //! shadowing by unannotated parameters; typed receivers resolve only types written in the same
-//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags are modeled from literal `os.O_*` terms joined by `|` (`O_RDONLY` reads; `O_WRONLY` / `O_APPEND` / `O_CREAT` / `O_TRUNC` / `O_EXCL` write; `O_RDWR` both; any other flag expression is a May `fs.write`; ticket 01M6607NN6SJGYE41YHRVV6B3H), `shutil.move` / `os.rename` / `os.replace` / `fs::rename` scope `fs.write` to both the source and the destination (tickets 01M61Y356JN6KCHRD81WWJ56CZ, 01M6607P2VZ5WZ4SH1TNZD5P85); other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
+//! file, not values returned by calls); `open(..)` in a write mode is `fs.write` (ticket 01M4HYH9CDNJSYEZQGKRZA7WX2) but a mode other than a literal (or a `*args` / `**kw` call) is a May `fs.write` beside the read; a call is matched to its use by byte offset, so an aliased or shadowed `open` is judged symbolically (ticket 01M5XNNHY7KZDKBZKK2MM08TTF); a Rust `OpenOptions::new()` / `File::options()` builder is followed through chains and `let` bindings (`argdet.rs`): `read(true)` alone needs only `fs.read`, `write` / `append` / `create` / `truncate` need `fs.write`, a conditional or escaping builder is May; `shutil.copy*` / `fs::copy` / `shutil.move` scope `fs.read` to the source and `fs.write` to the destination; `os.open` flags are modeled from literal `os.O_*` terms joined by `|` (`O_RDONLY` reads; `O_WRONLY` / `O_APPEND` / `O_CREAT` / `O_TRUNC` / `O_EXCL` write; `O_RDWR` both; any other flag expression is a May `fs.write`; ticket 01M6607NN6SJGYE41YHRVV6B3H), `shutil.move` / `os.rename` / `os.replace` / `fs::rename` scope `fs.write` to both the source and the destination (tickets 01M61Y356JN6KCHRD81WWJ56CZ, 01M6607P2VZ5WZ4SH1TNZD5P85); other languages' open modes are not modeled; template excuses are resolved to files and CAP004 (packs-and-plugins.md 6.7) is emitted from `grimble_capabilities::excuse::cap004` (Error for a certain use, Unresolved for a May use; the use is then not also CAP001); the pack
 //! severity is consulted for CAP001 (ticket K4EMP90): `[packs.severity]` for the atom, else the
 //! atom row (`warn` there makes the denied use Unresolved, never an Error), else Error; the message
 //! carries the row's rationale and safer alternative. CAP002 is a Warning.
@@ -2123,6 +2123,10 @@ fn copy_end(atom: &str, callee: &str) -> Option<CopyEnd> {
     let tail = |n: &str| {
         callee == n || callee.ends_with(&format!(".{n}")) || callee.ends_with(&format!("::{n}"))
     };
+    if tail("shutil.move") && atom == "fs.read" {
+        // `shutil.move(src, dst)` reads `src` (a copy then delete across devices); `dst` is only written
+        return Some(CopyEnd::Source);
+    }
     if !COPY_CALLS.iter().any(|n| tail(n)) {
         return None;
     }
@@ -4269,6 +4273,33 @@ mod cell_tests {
     fn move_with_a_non_literal_end_is_never_clean() {
         let msgs = move_messages("import shutil\n\ndef go(dst):\n    shutil.move('out/a', dst)\n");
         assert_eq!(msgs.len(), 1, "{msgs:?}");
+    }
+
+    /// The `CAP001` messages naming `atom` for `py` under a grant of `fs.read("in/**")` and `fs.write("out/**")`.
+    fn move_atom_messages(py: &str, atom: &str) -> Vec<String> {
+        let grant = "may fs.read(\"in/**\") because=\"i\"; may fs.write(\"in/**\", \"out/**\") because=\"o\";";
+        let needle = format!("`{atom}`");
+        cap001_files_out(&[("src/a.py", py)], grant, &[])
+            .findings
+            .into_iter()
+            .filter(|f| f.rule == "CAP001" && f.message.contains(&needle))
+            .map(|f| f.message)
+            .collect()
+    }
+
+    // frob:ticket 01M7K4BGAK2EWZVBFF18SDN3JW
+    // frob:tests crates/grimble-bind/src/caps.rs::copy_end
+    /// `shutil.move` scopes `fs.read` to the source (including `src=`), never to the destination.
+    #[test]
+    fn move_scopes_fs_read_to_the_source() {
+        let ok = move_atom_messages("import shutil\n\ndef go():\n    shutil.move('in/a', 'out/b')\n", "fs.read");
+        assert!(ok.is_empty(), "{ok:?}");
+        let bad = move_atom_messages("import shutil\n\ndef go():\n    shutil.move('etc/a', 'out/b')\n", "fs.read");
+        assert_eq!(bad.len(), 1, "{bad:?}");
+        assert!(bad[0].contains("etc/a"), "{bad:?}");
+        let kw = move_atom_messages("import shutil\n\ndef go():\n    shutil.move(dst='out/b', src='etc/a')\n", "fs.read");
+        assert_eq!(kw.len(), 1, "{kw:?}");
+        assert!(kw[0].contains("etc/a"), "{kw:?}");
     }
 }
 
