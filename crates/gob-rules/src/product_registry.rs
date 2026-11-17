@@ -36,6 +36,7 @@ pub const PRODUCT_CRATES: &[ProductCrates] = &[
             "frob-check",
             "gob-check",
             "gob-directives",
+            "gob-rules",
         ],
     },
     ProductCrates {
