@@ -78,13 +78,9 @@ pub enum PruneFileError {
 /// [`PruneFileError`] when the file cannot be read or written, or is not a readable baseline.
 pub fn prune_file(root: &Path, input: &PruneInput) -> Result<Option<PruneReport>, PruneFileError> {
     let path = root.join(BASELINE_FILE);
-    let existing = match std::fs::read_to_string(&path) {
-        Ok(text) => text,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            tracing::debug!("baseline prune: no baseline file");
-            return Ok(None);
-        }
-        Err(e) => return Err(e.into()),
+    let Some(existing) = gob_fs::read_optional(&path)? else {
+        tracing::debug!("baseline prune: no baseline file");
+        return Ok(None);
     };
     let Some((text, report)) = pruned_text(&existing, None, input)? else {
         tracing::debug!("baseline prune: already minimal");
