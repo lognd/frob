@@ -1,0 +1,16 @@
+kind = "field"
+field = "body"
+old = "found while working ~Z03B67Y: e2e_57 step 6 (cache prune --age 0) still exits 2."
+new = """
+found while working ~Z03B67Y: e2e_57 step 6 (cache prune --age 0) still exits 2.
+
+## Start here
+
+- Files to read first: crates/crunk/src/cache.rs (the prune verb) and crates/gob-cache/src/lib.rs (row deletion)
+- Test command: cargo nextest run -p crunk -p gob-cache
+- Who to ask: lognd
+"""
+reason = "PM032 needs 3 ready good-first tickets"
+at = "2026-11-17T03:11:15Z"
+actor = "lognd"
+rev = 1
