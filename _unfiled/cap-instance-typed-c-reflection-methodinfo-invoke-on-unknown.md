@@ -2,7 +2,8 @@
 id = "01M64ZYSNAWWBYFVHEC10TMK06"
 title = "CAP: instance-typed C# reflection (MethodInfo.Invoke on unknown-origin values) is not reported"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
