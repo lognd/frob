@@ -12,5 +12,5 @@ idempotency_key = "shutil-move-read-scope"
 
 [[acceptance]]
 text = "shutil.move scopes fs.read to the source path, positional or keyword"
-bound = false
+bound = true
 +++
