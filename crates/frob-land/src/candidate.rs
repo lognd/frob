@@ -68,6 +68,37 @@ impl Candidate {
     pub fn ref_name(&self) -> &str {
         &self.ref_name
     }
+
+    /// Prune dead baseline keys on the candidate checkout and move `oid` and the temp ref to the prune commit.
+    ///
+    /// Returns the report when the baseline changed. frob:ticket 01M66JP3Y9AHPNPNK5S9ZHTAS8
+    ///
+    /// # Errors
+    ///
+    /// The baseline cannot be read or committed, or the temp ref cannot move.
+    pub fn prune_baseline(
+        &mut self,
+        repo: &Repo,
+        base_oid: &str,
+        input: &gob_rules::PruneInput,
+    ) -> Result<Option<gob_rules::PruneReport>, LandError> {
+        let Some(report) =
+            crate::baseline_prune::prune_on_merge_tree(repo, &self.checkout, base_oid, input)?
+        else {
+            return Ok(None);
+        };
+        let oid = head(repo, &self.checkout)?;
+        let moved = git(repo, &self.primary, &["update-ref", &self.ref_name, &oid])?;
+        if !moved.ok() {
+            return Err(LandError::Config(format!(
+                "could not move {} to the pruned candidate: {}",
+                self.ref_name, moved.text
+            )));
+        }
+        tracing::info!(ref_name = %self.ref_name, from = %self.oid, to = %oid, "candidate advanced past the baseline prune");
+        self.oid = oid;
+        Ok(Some(report))
+    }
 }
 
 impl Drop for Candidate {
@@ -623,5 +654,37 @@ mod tests {
             "{:?}",
             c.skipped
         );
+    }
+
+    // frob:ticket 01M66JP3Y9AHPNPNK5S9ZHTAS8
+    // frob:tests crates/frob-land/src/candidate.rs::Candidate.prune_baseline
+    #[test]
+    fn a_train_candidate_prunes_dead_baseline_keys_and_advances_its_ref() {
+        let dead = "0".repeat(64);
+        let live = "1".repeat(64);
+        let (dir, repo, base) = fixture(&[("ticket-A", "a.txt", "a2\n")]);
+        let p = dir.path();
+        let text = format!(
+            "version = 1\n\n[rules.DOC001]\nreason = \"r\"\nticket = \"~T1\"\nfindings = [\"{dead}\", \"{live}\"]\n"
+        );
+        sh(p, &["checkout", "-q", "ticket-A"]);
+        std::fs::write(p.join("frob-baseline.toml"), &text).expect("baseline");
+        sh(p, &["add", "."]);
+        sh(p, &["commit", "-m", "baseline"]);
+        sh(p, &["checkout", "--detach", &base]);
+        let mut c = build_candidate(&repo, p, "t", &base, &[member(p, "A", "a.txt")]).unwrap();
+        let before = c.oid.clone();
+        let input = gob_rules::PruneInput {
+            live: std::iter::once(live.clone()).collect(),
+            evaluated: std::iter::once("DOC001".to_owned()).collect(),
+            full_run: true,
+        };
+        let report = c.prune_baseline(&repo, &base, &input).unwrap().unwrap();
+        assert_eq!(report.removed.len(), 1);
+        assert_ne!(c.oid, before);
+        assert_eq!(sh(p, &["rev-parse", c.ref_name()]), c.oid);
+        let shown = sh(p, &["show", &format!("{}:frob-baseline.toml", c.oid)]);
+        assert!(shown.contains(&live) && !shown.contains(&dead));
+        assert!(c.prune_baseline(&repo, &base, &input).unwrap().is_none());
     }
 }

@@ -771,7 +771,7 @@ impl<'a> Driver<'a> {
         if !landable.is_empty() {
             self.lock.progress("train-close");
             let members: Vec<CandidateMember> = landable.iter().map(|c| member_of(c)).collect();
-            let candidate = build_candidate(
+            let mut candidate = build_candidate(
                 &self.site.repo,
                 &self.site.primary,
                 &format!("final-{}", report.run),
@@ -786,6 +786,18 @@ impl<'a> Driver<'a> {
                 tracing::warn!(run = %report.run, evicted = skipped.len(), "final candidate dropped members; round ends");
                 self.evict_skipped(&skipped, &mut chosen, &mut report)?;
                 return Ok(report);
+            }
+            // frob:ticket 01M66JP3Y9AHPNPNK5S9ZHTAS8
+            if let Some(pruned) = crate::baseline_prune::prune_candidate(
+                &self.site.repo,
+                &mut candidate,
+                &base_oid,
+                self.site.ws.ledger.config(),
+            )? {
+                report.warnings.push(format!(
+                    "pruned {} dead baseline keys on the train candidate",
+                    pruned.removed.len()
+                ));
             }
             let mut run = TrainRun::new(
                 report.run.clone(),

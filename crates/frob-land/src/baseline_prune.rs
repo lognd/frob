@@ -10,10 +10,12 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
-use frob_check::CheckReport;
+use frob_check::{CheckOptions, CheckReport};
+use frob_ledger::LedgerConfig;
 use gob_git::Repo;
 use gob_rules::{BASELINE_FILE, Baseline, BaselineError, PruneInput, PruneReport};
 
+use crate::candidate::Candidate;
 use crate::error::{LandError, needs_action};
 use crate::git::git;
 
@@ -120,6 +122,43 @@ fn base_baseline_text(
         &["show", &format!("{base_oid}:{BASELINE_FILE}")],
     )?;
     Ok(shown.ok().then_some(shown.text))
+}
+
+/// Prune the baseline of a land-train candidate: one full unscoped check of the candidate tree, then the merge-tree prune.
+///
+/// Skipped (no check run) when the candidate carries no baseline file. frob:ticket 01M66JP3Y9AHPNPNK5S9ZHTAS8
+///
+/// # Errors
+///
+/// The check cannot run, or the baseline cannot be pruned or committed.
+pub fn prune_candidate(
+    repo: &Repo,
+    candidate: &mut Candidate,
+    base_oid: &str,
+    ledger: &LedgerConfig,
+) -> Result<Option<PruneReport>, LandError> {
+    let dir = candidate.checkout().to_path_buf();
+    if !dir.join(BASELINE_FILE).is_file() {
+        tracing::debug!("no baseline file on the train candidate; nothing to prune");
+        return Ok(None);
+    }
+    crate::ratchet::isolate_build_dir(&dir);
+    let head = frob_check::run(
+        &dir,
+        &CheckOptions {
+            ledger: Some(ledger.clone()),
+            skip_telemetry: true,
+            skip_tools: true,
+            ..CheckOptions::default()
+        },
+    )
+    .map_err(|e| LandError::Config(e.to_string()))?;
+    let pruned = candidate.prune_baseline(repo, base_oid, &prune_input(&head))?;
+    tracing::info!(
+        removed = pruned.as_ref().map_or(0, |r| r.removed.len()),
+        "train candidate baseline prune done"
+    );
+    Ok(pruned)
 }
 
 /// Prune the baseline in the worktree against the merge-tree check `input` and commit the result; the report when it changed.
