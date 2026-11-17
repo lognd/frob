@@ -1,0 +1,7 @@
+kind = "field"
+field = "labels"
+new = ["no-story"]
+reason = "follow-up of 8AZ7DKD split; no story"
+at = "2026-11-17T03:07:27Z"
+actor = "lognd"
+rev = 1
