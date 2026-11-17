@@ -7,7 +7,7 @@ priority = "medium"
 points = 1
 reporter = "lognd"
 created = "2026-10-30T14:16:11Z"
-updated = "2026-11-17T04:25:10Z"
+updated = "2026-11-17T04:25:19Z"
 labels = ["good-first"]
 scope = ["docs/design/rules.md", "docs/design/shared/rules.md", "changelog.d/01M66JP3NSX2P0M11ZC74NCWPQ.changed.md"]
 
