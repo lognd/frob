@@ -2,7 +2,8 @@
 id = "01M69111N328P45MG4C0NTRDJF"
 title = "crunk cache prune: --age N (delete entries older than N days)"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
