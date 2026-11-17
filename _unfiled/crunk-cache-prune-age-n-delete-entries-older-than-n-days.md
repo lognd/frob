@@ -7,7 +7,7 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-31T13:05:18Z"
-updated = "2026-11-17T04:40:19Z"
+updated = "2026-11-17T04:45:13Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk/src/cache.rs", "crates/gob-cache/src/lib.rs", "crates/crunk/tests/**", "crates/crunk/tests/e2e/divergences.toml", "docs/reference/cli/crunk.md", "docs/guides/crunk.md", "docs/guides/crunk-from-python.md", "changelog.d/01M69111N328P45MG4C0NTRDJF.added.md"]
 
