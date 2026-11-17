@@ -148,7 +148,8 @@ computed `EntryPoint`. `NativeLibrary.GetExport` and
 the function they bind is not followed.
 
 For Python the resolver follows `from module import *` of a project
-module (every public export, names starting with `_` excluded) and
+module (the names its literal `__all__` lists, `+=` extensions included;
+without one, every public export, names starting with `_` excluded) and
 re-export chains of any length: exports are linked to their origin
 symbol, and scanning repeats until the project export table stops
 changing. It scans `exec` and `eval` of constant source (string
@@ -156,8 +157,8 @@ literals, implicit and `+` concatenation, names bound once to such a
 constant, `compile(<constant>, ..)`) as Python in the calling scope,
 with hits attributed to the call. It reports as unresolved: `exec` or
 `eval` of any other source, constant source that does not parse, and
-nesting deeper than four layers. Known limits: `__all__` is not read,
-and names a star-imported module defines locally (rather than aliases)
+nesting deeper than four layers. Known limits: a non-literal `__all__` is
+treated as absent, and names a star-imported module defines locally (rather than aliases)
 do not shadow builtins.
 
 Python capability entry points (ticket 01M6422ZVVSTEKVMY0PR269X33): the registry in

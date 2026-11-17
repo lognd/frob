@@ -1,6 +1,7 @@
 //! The Python scanner: import and alias resolution over the tree-sitter-python tree.
 
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
+// frob:ticket 01M65FKM97K956PQS8M509EQA2
 
 use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use tree_sitter::Node;
@@ -138,6 +139,9 @@ fn visit<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         }
         "assignment" => do_assign(st, n, d),
         "augmented_assignment" => {
+            if extend_dunder_all(st, n) {
+                return;
+            }
             if let Some(r) = n.child_by_field_name("right") {
                 visit(st, r, d);
             }
@@ -254,6 +258,9 @@ fn do_assign<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
     match (left, right) {
         (Some(lhs), Some(rhs)) if lhs.kind() == "identifier" => {
             let name = st.name(lhs).into_owned();
+            if name == DUNDER_ALL && record_dunder_all(st, rhs, false) {
+                return;
+            }
             if let Some(text) = const_str(st, rhs) {
                 st.bind(&name, Binding::Lit(Lit::Str(text)));
                 return;
@@ -281,6 +288,56 @@ fn do_assign<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
             }
         }
     }
+}
+
+/// The export-table key under which a module's literal `__all__` names are recorded.
+const DUNDER_ALL: &str = "__all__";
+
+/// The string-literal names of a list or tuple `__all__` value, or `None` when it is not a plain literal.
+fn all_names(st: &State<'_>, rhs: Node<'_>) -> Option<Vec<String>> {
+    if !matches!(rhs.kind(), "list" | "tuple") {
+        return None;
+    }
+    kids(rhs).into_iter().map(|c| string_lit(st, c)).collect()
+}
+
+/// Record a module-level literal `__all__` (or append to it when `append`); false when not recordable.
+///
+/// The names ride in the module frame under [`DUNDER_ALL`] so they reach the file's exports.
+fn record_dunder_all(st: &mut State<'_>, rhs: Node<'_>, append: bool) -> bool {
+    if st.frames.len() != 1 {
+        return false;
+    }
+    let Some(mut names) = all_names(st, rhs) else {
+        return false;
+    };
+    if append {
+        match st.frames[0].get(DUNDER_ALL) {
+            Some(Binding::Alias(prev)) => {
+                let mut all = prev.clone();
+                all.append(&mut names);
+                names = all;
+            }
+            _ => return false,
+        }
+    }
+    tracing::debug!(names = names.len(), "recorded module __all__");
+    st.frames[0].insert(DUNDER_ALL.to_owned(), Binding::Alias(names));
+    true
+}
+
+/// Handle `__all__ += [..]` at module level; true when it was consumed as an `__all__` extension.
+fn extend_dunder_all(st: &mut State<'_>, n: Node<'_>) -> bool {
+    let (Some(l), Some(r)) = (
+        n.child_by_field_name("left"),
+        n.child_by_field_name("right"),
+    ) else {
+        return false;
+    };
+    l.kind() == "identifier"
+        && st.name(l) == DUNDER_ALL
+        && st.txt(n).contains("+=")
+        && record_dunder_all(st, r, true)
 }
 
 fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
@@ -633,16 +690,21 @@ fn do_from(st: &mut State<'_>, n: Node<'_>) {
     }
 }
 
-/// Bind every public export of a project `module` (`from module import *`), and keep the module
+/// Bind the exports a project `module` lists in `__all__` (every public one without it) for
+/// `from module import *`, and keep the module
 /// as a glob prefix so unknown names still resolve against symbol modules like `sys`.
 fn star_import(st: &mut State<'_>, module: &SymPath) {
     st.globs.push(module.clone());
     let Some(exports) = st.ctx.project.exports_of(module) else {
         return;
     };
+    let listed = exports.get(DUNDER_ALL);
     let public: Vec<(String, SymPath)> = exports
         .iter()
-        .filter(|(k, _)| !k.starts_with('_'))
+        .filter(|(k, _)| match listed {
+            Some(all) => k.as_str() != DUNDER_ALL && all.contains(k),
+            None => !k.starts_with('_'),
+        })
         .map(|(k, v)| (k.clone(), v.clone()))
         .collect();
     tracing::debug!(module = %module.join("."), names = public.len(), "star import of a project module");

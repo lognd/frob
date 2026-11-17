@@ -850,6 +850,55 @@ fn py_log_star_import_from_project_module_resolves() {
     );
 }
 
+// frob:ticket 01M65FKM97K956PQS8M509EQA2
+// frob:tests crates/grimble-check/src/log/lang_python.rs::star_import
+#[test]
+fn py_log_star_import_honours_dunder_all() {
+    // only names listed in __all__ are bound, so an unlisted public alias stays unbound
+    let util = ("util.py", "say = print\nshout = print\n__all__ = ['say']\n");
+    assert_eq!(
+        py_log(
+            &[util, ("app.py", "from util import *\nsay('x')\n")],
+            "app.py"
+        ),
+        (1, 0)
+    );
+    assert_eq!(
+        py_log(
+            &[util, ("app.py", "from util import *\nshout('x')\n")],
+            "app.py"
+        ),
+        (0, 0)
+    );
+    // an underscore name listed in __all__ is exported
+    let hid = ("util.py", "_quiet = print\n__all__ = ('_quiet',)\n");
+    assert_eq!(
+        py_log(
+            &[hid, ("app.py", "from util import *\n_quiet('x')\n")],
+            "app.py"
+        ),
+        (1, 0)
+    );
+    // __all__ += extends the list
+    let ext = (
+        "util.py",
+        "a = print\nb = print\n__all__ = ['a']\n__all__ += ['b']\n",
+    );
+    assert_eq!(
+        py_log(&[ext, ("app.py", "from util import *\nb('x')\n")], "app.py"),
+        (1, 0)
+    );
+    // a non-literal __all__ falls back to every public name
+    let dynamic = ("util.py", "say = print\n__all__ = make()\n");
+    assert_eq!(
+        py_log(
+            &[dynamic, ("app.py", "from util import *\nsay('x')\n")],
+            "app.py"
+        ),
+        (1, 0)
+    );
+}
+
 // frob:ticket 01M64230T88F77RTBYS9M3CY3C
 // frob:tests crates/grimble-check/src/log/engine.rs::Project
 #[test]
