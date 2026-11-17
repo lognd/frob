@@ -7,10 +7,10 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-17T02:12:40Z"
-updated = "2026-11-17T03:38:10Z"
+updated = "2026-11-17T03:38:11Z"
 idempotency_key = "split-8az7dkd-host"
 labels = ["no-story"]
-scope = ["crates/frob-check/**", "crates/frob-land/**", "crates/frob/src/baseline_cmd.rs", "changelog.d/01M7KME88Y8N7JD506Y0WRG2MX.added.md", "crates/gob-rules/**", "crates/frob/src/explain_cmd.rs", "docs/reference/rules/**"]
+scope = ["crates/frob-check/**", "crates/frob-land/**", "crates/frob/src/baseline_cmd.rs", "changelog.d/01M7KME88Y8N7JD506Y0WRG2MX.added.md", "crates/gob-rules/**", "crates/frob/src/explain_cmd.rs", "docs/reference/rules/**", "docs/README.md"]
 
 [[acceptance]]
 text = "Given a repo with frob-baseline.toml, when frob check runs, then BASE001 (vs [check] base file, silent when absent) and BASE002 (ticket liveness; missing ledger ticket is Unknown) fire; prune_input/pruned_text live in a shared crate used by frob-land and frob-check"
