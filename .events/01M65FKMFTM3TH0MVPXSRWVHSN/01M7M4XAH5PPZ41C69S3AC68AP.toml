@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-17T07:00:31Z"
+digest = "1841d8590d8380122be7acbd4839b517ea23e22284d3a92d47a6c02e4ec5d15c"
+exit_code = 0
+head = "3a7e3d9c63a106860cdc116927eb5b622663b8d5"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d47d6ce8-9a5d-4ea6-8751-501617609b19 with nextest profile: default
+    Starting 8 tests across 2 binaries (437 tests skipped)
+        PASS [   0.017s] grimble-check::it log_rules::py_log_exec_source_with_named_escape_is_unresolved
+        PASS [   0.019s] grimble-check::it log_rules::py_log_exec_source_with_surrogate_escape_is_unresolved
+        PASS [   0.020s] grimble-check::it log_rules::py_log_exec_source_with_non_hex_escape_is_unresolved
+        PASS [   0.020s] grimble-check::it log_rules::py_log_exec_source_with_short_unicode_escape_resolves
+        PASS [   0.020s] grimble-check::it log_rules::py_log_exec_source_with_long_unicode_escape_resolves
+        PASS [   0.020s] grimble-check::it log_rules::py_log_exec_source_with_short_hex_escape_is_unresolved
+        PASS [   0.020s] grimble-check::it log_rules::py_log_exec_source_with_hex_escape_resolves
+        PASS [   0.022s] grimble-check::it log_rules::py_log_exec_source_with_octal_escape_resolves
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 8 tests run: 8 passed, 437 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p grimble-check exec_source"
+size = 1312
+status = "measured"
+at = "2026-11-17T07:00:31Z"
+actor = "lognd"
+rev = 1
