@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-17T02:12:40Z"
-updated = "2026-11-17T04:04:02Z"
+updated = "2026-11-17T04:16:31Z"
 idempotency_key = "split-8az7dkd-fix"
 scope = ["crates/frob-check/src/baseline_prune.rs", "crates/frob-check/src/verb.rs"]
 
