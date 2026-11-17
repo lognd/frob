@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given Python exec/eval with a constant source using hex, unicode or octal escapes, when scanned, then the source is decoded and scanned; malformed escapes stay unresolved"]
+moved = []
+at = "2026-11-17T06:59:23Z"
+actor = "lognd"
+rev = 1
