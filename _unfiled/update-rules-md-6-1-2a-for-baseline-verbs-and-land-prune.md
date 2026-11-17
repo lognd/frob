@@ -2,7 +2,8 @@
 id = "01M66JP3NSX2P0M11ZC74NCWPQ"
 title = "Update rules.md 6.1.2a for baseline verbs and land prune"
 type = "docs"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 1
 reporter = "lognd"
