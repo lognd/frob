@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-17T05:47:13Z"
+digest = "892ed6b32d80792ae1935e75fced0ba85b4abcbd43830fa8fefa5a22af1c1a3b"
+exit_code = 0
+head = "f1474de03a2447056e281aee013473219002e630"
+inline = '''
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.35s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 5cd7d10c-342f-4b03-8c0b-6be4d89264b6 with nextest profile: default
+    Starting 6 tests across 2 binaries (423 tests skipped)
+        PASS [   0.016s] grimble-check::it log_rules::py_log_star_import_leaves_unlisted_name_unbound
+        PASS [   0.016s] grimble-check::it log_rules::py_log_star_import_binds_listed_name
+        PASS [   0.016s] grimble-check::it log_rules::py_log_star_import_non_literal_dunder_all_binds_every_public_name
+        PASS [   0.016s] grimble-check::it log_rules::py_log_star_import_dunder_all_augmented_assign_extends
+        PASS [   0.019s] grimble-check::it log_rules::py_log_star_import_exports_listed_underscore_name
+        PASS [   0.023s] grimble-check::it log_rules::py_log_star_import_from_project_module_resolves
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.024s] 6 tests run: 6 passed, 423 skipped
+'''
+passed = true
+provider = "command"
+ref = "cargo nextest run -p grimble-check py_log_star_import"
+size = 1097
+status = "measured"
+at = "2026-11-17T05:47:13Z"
+actor = "lognd"
+rev = 1
