@@ -2,7 +2,8 @@
 id = "01M7KME8CB19VZP2A6F8SR8GZ9"
 title = "frob check --fix: prune dead baseline keys as a post-run step"
 type = "task"
-category = "in-progress"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
