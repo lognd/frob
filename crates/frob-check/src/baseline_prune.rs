@@ -7,7 +7,9 @@
 
 use std::collections::BTreeSet;
 
-use gob_rules::{Baseline, BaselineError, PruneInput, PruneReport};
+use std::path::Path;
+
+use gob_rules::{BASELINE_FILE, Baseline, BaselineError, PruneInput, PruneReport};
 
 use crate::CheckReport;
 
@@ -54,6 +56,47 @@ pub fn pruned_text(
         return Ok(None);
     }
     Ok(Some((text, report)))
+}
+
+/// Why [`prune_file`] could not rewrite the baseline file.
+#[derive(Debug, thiserror::Error)]
+pub enum PruneFileError {
+    /// The baseline file could not be read or written.
+    #[error("{BASELINE_FILE}: {0}")]
+    Io(#[from] std::io::Error),
+    /// The baseline file is not a readable baseline.
+    #[error("{BASELINE_FILE}: {0}")]
+    Baseline(#[from] BaselineError),
+}
+
+/// Prune `frob-baseline.toml` under `root` against `input`, writing only when something changed.
+///
+/// A missing file is nothing to prune. Returns what was removed, or `None` when the file was
+/// absent or already minimal, so a second call after a write changes nothing.
+///
+/// # Errors
+/// [`PruneFileError`] when the file cannot be read or written, or is not a readable baseline.
+pub fn prune_file(root: &Path, input: &PruneInput) -> Result<Option<PruneReport>, PruneFileError> {
+    let path = root.join(BASELINE_FILE);
+    let existing = match std::fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            tracing::debug!("baseline prune: no baseline file");
+            return Ok(None);
+        }
+        Err(e) => return Err(e.into()),
+    };
+    let Some((text, report)) = pruned_text(&existing, None, input)? else {
+        tracing::debug!("baseline prune: already minimal");
+        return Ok(None);
+    };
+    gob_fs::write_atomic(&path, text.as_bytes())?;
+    tracing::info!(
+        removed = report.removed.len(),
+        tables_deleted = report.tables_deleted.len(),
+        "baseline pruned by check --fix"
+    );
+    Ok(Some(report))
 }
 
 #[cfg(test)]
@@ -126,5 +169,43 @@ mod tests {
     fn conflict_markers_are_an_error_not_an_empty_baseline() {
         let text = "<<<<<<< HEAD\nversion = 1\n=======\n>>>>>>> base\n";
         assert!(pruned_text(text, None, &input(&[], &[], true)).is_err());
+    }
+
+    // frob:tests crates/frob-check/src/baseline_prune.rs::prune_file
+    #[test]
+    fn prune_file_removes_a_dead_key_on_disk() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(BASELINE_FILE);
+        std::fs::write(&path, file("DOC001", &[DEAD, LIVE])).unwrap();
+        let report = prune_file(dir.path(), &input(&[LIVE], &["DOC001"], true))
+            .unwrap()
+            .unwrap();
+        assert_eq!(report.removed.len(), 1);
+        let on_disk = std::fs::read_to_string(&path).unwrap();
+        assert!(on_disk.contains(LIVE) && !on_disk.contains(DEAD));
+    }
+
+    // frob:tests crates/frob-check/src/baseline_prune.rs::prune_file
+    #[test]
+    fn a_second_prune_file_changes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(BASELINE_FILE);
+        std::fs::write(&path, file("DOC001", &[DEAD, LIVE])).unwrap();
+        let live = input(&[LIVE], &["DOC001"], true);
+        assert!(prune_file(dir.path(), &live).unwrap().is_some());
+        let first = std::fs::read_to_string(&path).unwrap();
+        assert!(prune_file(dir.path(), &live).unwrap().is_none());
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), first);
+    }
+
+    // frob:tests crates/frob-check/src/baseline_prune.rs::prune_file
+    #[test]
+    fn prune_file_without_a_baseline_file_is_nothing_to_do() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(
+            prune_file(dir.path(), &input(&[], &[], true))
+                .unwrap()
+                .is_none()
+        );
     }
 }

@@ -426,6 +426,29 @@ impl Check {
     }
 }
 
+impl Check {
+    /// With `--fix` on a full unscoped run, drop dead baseline keys; the note says what went.
+    fn prune_baseline(
+        &self,
+        root: &std::path::Path,
+        report: &CheckReport,
+    ) -> Result<Option<String>, CliError> {
+        if !self.fix || !self.only.is_empty() || report.scope.is_some() {
+            return Ok(None);
+        }
+        let input = crate::baseline_prune::prune_input(report);
+        let pruned = crate::baseline_prune::prune_file(root, &input).map_err(CliError::internal)?;
+        Ok(pruned.map(|p| {
+            format!(
+                "pruned {} dead key(s) and {} table(s) from {}",
+                p.removed.len(),
+                p.tables_deleted.len(),
+                gob_rules::BASELINE_FILE
+            )
+        }))
+    }
+}
+
 impl Command for Check {
     type Data = CheckData;
 
@@ -483,6 +506,8 @@ impl Command for Check {
         };
         let (mut report, diff) = run_with_diff(&root, &opts).map_err(cli_error)?;
         // frob:ticket 01M66G70F82EC8EERE0077QKVV
+        // frob:ticket 01M7KME8CB19VZP2A6F8SR8GZ9
+        let pruned_note = self.prune_baseline(&root, &report)?;
         let muted = split(&root, std::mem::take(&mut report.findings));
         report.findings = muted.live;
         let lead = (!ctx.json && ctx.verbosity == 0)
@@ -498,6 +523,7 @@ impl Command for Check {
         data.baselined =
             baselined_section(&root, &report, &muted.baselined, muted.remaining, ctx.json);
         data.notes.extend(muted.note);
+        data.notes.extend(pruned_note);
         // frob:ticket 01M5XMN8N235JFVMJW9MCY59H4
         let profile = stage_profile(&report.timing);
         if self.profile {
