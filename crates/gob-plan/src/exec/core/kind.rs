@@ -252,6 +252,28 @@ impl KindTest {
     }
 }
 
+/// `node` and then its ancestors, nearest first, without allocating (`Term::ancestors` builds a
+/// vector on every call, which dominated the per-node field reads).
+pub(crate) fn self_and_ancestors(
+    term: &gob_ir::Term,
+    node: NodeId,
+) -> impl Iterator<Item = NodeId> + '_ {
+    std::iter::successors(Some(node), move |&n| term.parent(n))
+}
+
+/// The members of the `file` kind: the root, or every grafted file root of a workspace.
+pub(crate) fn artifact_members(model: &Model) -> Vec<(NodeId, Truth)> {
+    let term = model.term();
+    if term.node(term.root()).attrs().get(WORKSPACE_ATTR).is_some() {
+        term.ids()
+            .filter(|&n| term.node(n).attrs().get(PATH_ATTR).is_some())
+            .map(|n| (n, Truth::Yes))
+            .collect()
+    } else {
+        vec![(term.root(), Truth::Yes)]
+    }
+}
+
 /// Whether `node` is a bare group: sequencing structure that is no level of nesting itself.
 pub(crate) fn is_group(model: &Model, node: NodeId) -> bool {
     matches!(

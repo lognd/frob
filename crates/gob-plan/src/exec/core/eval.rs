@@ -114,6 +114,8 @@ pub(crate) struct Eval<'a> {
     operands: RefCell<FastMap<OperandKey, Rc<Datum>>>,
     /// Equality-join indexes by the id of the equality conjunct they serve.
     indexes: RefCell<FastMap<OpId, Rc<index::EqIndex>>>,
+    /// The equality conjuncts of each quantifier body, found once.
+    conjuncts: RefCell<FastMap<OpId, Rc<Vec<index::Conjunct>>>>,
     /// The unit each closure target stands for, computed once per node.
     units: RefCell<FastMap<NodeId, NodeId>>,
     domains: RefCell<FastMap<StrId, Domain>>,
@@ -144,11 +146,23 @@ fn scan(model: &Model, kinds: &FastMap<StrId, KindTest>) -> (bool, FastMap<StrId
     let term = model.term();
     let tests: Vec<(StrId, KindTest)> = kinds.iter().map(|(&k, &t)| (k, t)).collect();
     let mut found: Vec<Vec<(NodeId, Truth)>> = vec![Vec::new(); tests.len()];
+    // The `file` kind reads one root attribute, not one per node: its members come from one pass.
+    let scanned: Vec<(usize, KindTest)> = tests
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, t))| *t != KindTest::Artifact)
+        .map(|(i, (_, t))| (i, *t))
+        .collect();
+    for (i, (_, t)) in tests.iter().enumerate() {
+        if *t == KindTest::Artifact {
+            found[i] = super::kind::artifact_members(model);
+        }
+    }
     let mut hidden = false;
     for n in term.ids() {
         let op = term.node(n).op();
         hidden |= op.is_opaque() || op.is_hole();
-        for (i, (_, t)) in tests.iter().enumerate() {
+        for &(i, t) in &scanned {
             if let Some(m) = t.member(model, n) {
                 found[i].push((n, m));
             }
@@ -181,10 +195,11 @@ impl<'a> Eval<'a> {
             kinds,
             matchers,
             wired,
-            spans: RefCell::new(vec![None; model.term().ids().count()]),
+            spans: RefCell::default(),
             closures: RefCell::default(),
             units: RefCell::default(),
             indexes: RefCell::default(),
+            conjuncts: RefCell::default(),
             operands: RefCell::default(),
             domains: RefCell::new(domains),
             views: RefCell::default(),
@@ -225,9 +240,13 @@ impl<'a> Eval<'a> {
         }
         let test = self.kinds[&kind];
         let mut members = Vec::new();
-        for n in self.rd.model.term().ids() {
-            if let Some(t) = test.member(self.rd.model, n) {
-                members.push((n, t));
+        if test == KindTest::Artifact {
+            members = super::kind::artifact_members(self.rd.model);
+        } else {
+            for n in self.rd.model.term().ids() {
+                if let Some(t) = test.member(self.rd.model, n) {
+                    members.push((n, t));
+                }
             }
         }
         order_members(self.rd.model, &mut members);
@@ -552,8 +571,7 @@ impl<'a> Eval<'a> {
             return u;
         }
         let model = self.rd.model;
-        let unit = std::iter::once(node)
-            .chain(model.term().ancestors(node))
+        let unit = super::kind::self_and_ancestors(model.term(), node)
             .find(|&n| is_canonical_unit(model, n))
             .unwrap_or(node);
         self.units.borrow_mut().insert(node, unit);
@@ -572,7 +590,11 @@ impl<'a> Eval<'a> {
         };
         let line = |o| self.rd.source.and_then(|s| s.line_col(o)).map(|lc| lc.line);
         let span = line(r.start()).zip(line(last));
-        self.spans.borrow_mut()[n.index()] = Some(span);
+        let mut spans = self.spans.borrow_mut();
+        if spans.is_empty() {
+            spans.resize(self.rd.model.term().ids().count(), None);
+        }
+        spans[n.index()] = Some(span);
         span
     }
 
@@ -580,10 +602,7 @@ impl<'a> Eval<'a> {
     fn peer_of(&self, a: NodeId, b: NodeId) -> bool {
         let model = self.rd.model;
         let up = |n: NodeId| {
-            model
-                .term()
-                .ancestors(n)
-                .into_iter()
+            std::iter::successors(model.term().parent(n), |&x| model.term().parent(x))
                 .find(|&p| is_canonical_unit(model, p))
         };
         a != b && up(a) == up(b)
@@ -692,7 +711,7 @@ impl<'a> Eval<'a> {
             }
             up == Some(sup)
         } else {
-            term.is_ancestor(sup, sub)
+            std::iter::successors(term.parent(sub), |&n| term.parent(n)).any(|a| a == sup)
         }
     }
 

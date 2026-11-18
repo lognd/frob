@@ -314,10 +314,7 @@ impl Eval<'_> {
     pub(super) fn in_unit_op(&self, sub: VarId, unit: VarId, env: &Env) -> Verdict {
         let model = self.rd.model;
         let (sub, unit) = (Self::node(env, sub), Self::node(env, unit));
-        let nearest = model
-            .term()
-            .ancestors(sub)
-            .into_iter()
+        let nearest = std::iter::successors(model.term().parent(sub), |&n| model.term().parent(n))
             .find(|&p| is_canonical_unit(model, p));
         Verdict::certain(nearest == Some(unit))
     }

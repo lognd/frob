@@ -183,7 +183,10 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
             continue;
         };
         let subject = row.node(p.reports[report].subject);
-        if kind == Kind::Fire && subject.is_some_and(|n| reason::touches_unread(ev.rd.model, n)) {
+        // Nothing is unread anywhere unless the model is hidden, so the walk below is skipped.
+        if kind == Kind::Fire
+            && ev.hidden
+            && subject.is_some_and(|n| reason::touches_unread(ev.rd.model, n)) {
             kind = Kind::Unresolved;
             reasons.push(Reason::ParseError);
         }

@@ -15,6 +15,7 @@ use gob_text::SourceText;
 
 use super::kind::{
     BUCKET_ATTR, COMPONENT_ATTR, PATH_ATTR, directive_name, is_canonical_unit, is_key, key_path,
+    self_and_ancestors,
 };
 use crate::plan::CmpOp;
 
@@ -240,8 +241,7 @@ impl<'a> Reader<'a> {
     /// else the artifact's locator.
     fn file_path(&self, node: NodeId) -> String {
         let term = self.model.term();
-        std::iter::once(node)
-            .chain(term.ancestors(node))
+        self_and_ancestors(term, node)
             .find_map(|n| term.node(n).attrs().get_str(PATH_ATTR))
             .map_or_else(|| term.locator().to_owned(), str::to_owned)
     }
@@ -267,8 +267,7 @@ impl<'a> Reader<'a> {
     /// The value the host stamped for `part` on `node` or its nearest stamped ancestor.
     fn stamped(&self, node: NodeId, part: PathPart) -> Option<String> {
         let term = self.model.term();
-        std::iter::once(node)
-            .chain(term.ancestors(node))
+        self_and_ancestors(term, node)
             .find_map(|n| term.node(n).attrs().get_str(part.attr()))
             .map(str::to_owned)
     }
@@ -277,8 +276,7 @@ impl<'a> Reader<'a> {
     // frob:ticket 01M5GE4YWPW8XRWCP5N1A69KMM
     fn unit(&self, node: NodeId) -> Datum {
         let model = self.model;
-        std::iter::once(node)
-            .chain(model.term().ancestors(node))
+        self_and_ancestors(model.term(), node)
             .find(|&n| is_canonical_unit(model, n))
             .map_or(Datum::Absent, Datum::Node)
     }

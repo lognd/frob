@@ -23,6 +23,9 @@ pub(super) struct EqIndex {
     wild: Vec<u32>,
 }
 
+/// An equality conjunct: (op, key side, probe side, whether the probe is the right-hand side).
+pub(super) type Conjunct = (OpId, Operand, Operand, bool);
+
 /// The variables an operand reads (at most two).
 fn reads(o: Operand) -> [Option<VarId>; 2] {
     let leaf = |l: crate::plan::Leaf| match l.operand() {
@@ -48,7 +51,16 @@ fn only(o: Operand, var: VarId) -> bool {
 impl Eval<'_> {
     /// The key operands of the equality conjuncts of `cond` over `var`: (conjunct, key side,
     /// probe side).
-    fn eq_conjuncts(&self, cond: OpId, var: VarId) -> Vec<(OpId, Operand, Operand)> {
+    fn eq_conjuncts(&self, cond: OpId, var: VarId) -> Rc<Vec<Conjunct>> {
+        if let Some(c) = self.conjuncts.borrow().get(&cond) {
+            return Rc::clone(c);
+        }
+        let found = Rc::new(self.find_eq_conjuncts(cond, var));
+        self.conjuncts.borrow_mut().insert(cond, Rc::clone(&found));
+        found
+    }
+
+    fn find_eq_conjuncts(&self, cond: OpId, var: VarId) -> Vec<Conjunct> {
         let single = [cond];
         let cs: &[OpId] = match &self.plan.ops[cond as usize] {
             Op::And(cs) => cs,
@@ -66,9 +78,9 @@ impl Eval<'_> {
                 };
                 let reads_var = |o: Operand| reads(o).contains(&Some(var));
                 if only(lhs, var) && !reads_var(rhs) {
-                    Some((c, lhs, rhs))
+                    Some((c, lhs, rhs, true))
                 } else if only(rhs, var) && !reads_var(lhs) {
-                    Some((c, rhs, lhs))
+                    Some((c, rhs, lhs, false))
                 } else {
                     None
                 }
@@ -124,19 +136,25 @@ impl Eval<'_> {
         domain: &Domain,
         env: &mut Env,
     ) -> Option<Vec<u32>> {
-        let mut best: Option<(Vec<u32>, usize)> = None;
-        for (c, key, probe) in self.eq_conjuncts(cond, var) {
+        // The smallest candidate set so far: its index, the probe key and its size.
+        let mut best: Option<(Rc<EqIndex>, Scalar, usize)> = None;
+        for &(c, key, probe, probe_rhs) in self.eq_conjuncts(cond, var).iter() {
             let idx = self.eq_index(c, key, probe, var, domain, env);
-            let Datum::Known(k) = self.datum(&idx.probe, env) else {
+            // Read through the operand cache: the body evaluates this same side next.
+            let side = self.side(c, probe_rhs, &idx.probe, env);
+            let Datum::Known(k) = &*side else {
                 continue;
             };
-            let hits = idx.buckets.get(&k).map_or(&[][..], Vec::as_slice);
+            let hits = idx.buckets.get(k).map_or(&[][..], Vec::as_slice);
             let n = hits.len() + idx.wild.len();
-            if best.as_ref().is_none_or(|(_, m)| n < *m) {
-                best = Some((merge(hits, &idx.wild), n));
+            if best.as_ref().is_none_or(|(_, _, m)| n < *m) {
+                best = Some((Rc::clone(&idx), k.clone(), n));
             }
         }
-        best.map(|(v, _)| v)
+        best.map(|(idx, k, _)| {
+            let hits = idx.buckets.get(&k).map_or(&[][..], Vec::as_slice);
+            merge(hits, &idx.wild)
+        })
     }
 }
 
