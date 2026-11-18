@@ -226,7 +226,7 @@ fn wall_rs_carries_exactly_one_reasoned_allow() {
 #[test]
 fn frob_lock_ack_text_round_trips_byte_identically() {
     // acked_at values captured from the frob.lock of experimental before this migration.
-    let fixture = include_str!("fixtures/lock_acked_at.txt");
+    let fixture = include_str!("../fixtures/lock_acked_at.txt");
     let mut seen = 0;
     for line in fixture.lines().filter(|l| !l.is_empty()) {
         let stamp: Stamp = line.parse().expect("ack stamp");
