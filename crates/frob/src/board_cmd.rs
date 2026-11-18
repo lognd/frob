@@ -380,7 +380,7 @@ impl Command for BoardVerb {
         );
 
         let tty = std::io::stdout().is_terminal();
-        let width = resolve_width(self.width, std::env::var("COLUMNS").ok().as_deref(), tty);
+        let width = resolve_width(self.width, ctx.env.get("COLUMNS").as_deref(), tty);
         let brief = if self.brief {
             let extra = brief_input(BriefSources {
                 root: &root,

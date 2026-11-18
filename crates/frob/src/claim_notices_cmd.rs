@@ -83,7 +83,7 @@ impl Command for ClaimNotices {
         let policy = EvictPolicy {
             windows: cfg.claims,
             utc_offset_secs: gob_time::Shown::local_offset_secs(now),
-            in_ci: std::env::var_os("CI").is_some_and(|v| !v.is_empty()),
+            in_ci: ctx.env.is_set_nonempty("CI"),
         };
         let ws = Workspace {
             ledger: &ledger,

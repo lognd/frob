@@ -114,6 +114,17 @@ fn ambient_path_is_hermetic() -> bool {
     })
 }
 
+/// True when `key` is read only through `Context.env` (verb level), so an in-process run honours an override; every other variable (`GIT_*`, `PATH`, `HOME`, `FROB_GRIMBLE`, `CI`, which deep libraries read from the process) needs a real process.
+fn injectable(key: &std::ffi::OsStr) -> bool {
+    let Some(key) = key.to_str() else {
+        return false;
+    };
+    matches!(
+        key,
+        "COLUMNS" | "PAGER" | "GH_TOKEN" | "GITHUB_TOKEN" | "NO_COLOR"
+    ) || gob_cli::AGENT_MARKERS.contains(&key)
+}
+
 /// A `std::process::Output` carrying `code` as the exit status, so in-process runs look like spawned ones.
 fn output_with_code(code: i32, stdout: String, stderr: String) -> std::process::Output {
     #[cfg(unix)]
@@ -196,10 +207,29 @@ impl FrobCmd {
     fn needs_process(&self) -> bool {
         self.force_process
             || self.args.iter().any(|a| a == "init")
-            || !self.envs.is_empty()
             || self.timeout.is_some()
-            || self.removed.iter().any(|k| k != "FROB_LOG")
+            || self.envs.iter().any(|(k, _)| !injectable(k))
+            || self
+                .removed
+                .iter()
+                .any(|k| k != "FROB_LOG" && !injectable(k))
             || !ambient_path_is_hermetic()
+    }
+
+    /// The injected environment for an in-process run: every `env` set and `env_remove` hidden over the live process environment.
+    fn injected_env(&self) -> gob_cli::Env {
+        let mut env = gob_cli::Env::process();
+        for key in &self.removed {
+            if let Some(k) = key.to_str().filter(|k| *k != "FROB_LOG") {
+                env = env.without(k);
+            }
+        }
+        for (key, value) in &self.envs {
+            if let Some(k) = key.to_str() {
+                env = env.with(k, value);
+            }
+        }
+        env
     }
 
     /// Run to completion and capture the output.
@@ -228,7 +258,8 @@ impl FrobCmd {
             .map(|a| gob_path::Shown::with_home(std::path::Path::new(a), None).to_string())
             .collect();
         let argv: Vec<&str> = argv.iter().map(String::as_str).collect();
-        let (code, stdout, stderr) = gob_cli::run_for_test(&frob_cli::cli(), &argv, &cwd);
+        let (code, stdout, stderr) =
+            gob_cli::run_for_test_with_env(&frob_cli::cli(), &argv, &cwd, self.injected_env());
         Ok(output_with_code(code, stdout, stderr))
     }
 }

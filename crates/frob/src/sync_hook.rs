@@ -31,7 +31,7 @@ pub(crate) fn kick(repo: &Repo, cfg: &FrobConfig, ctx: &Context) -> KickOutcome 
         return KickOutcome::NotDue;
     }
     let out = background_kick(repo, &cfg.sync, &exe, ctx.clock.now().unix(), |k| {
-        std::env::var(k).ok()
+        ctx.env.get(k)
     });
     tracing::debug!(?out, "background refresh kick");
     out
@@ -39,7 +39,7 @@ pub(crate) fn kick(repo: &Repo, cfg: &FrobConfig, ctx: &Context) -> KickOutcome 
 
 /// Probe in the foreground within the budget and return the freshness notice for the (possibly cached) view.
 pub(crate) fn foreground(repo: &Repo, cfg: &FrobConfig, ctx: &Context) -> Option<String> {
-    if repo.remote_url(&cfg.sync.remote).is_none() || sync_disabled(|k| std::env::var(k).ok()) {
+    if repo.remote_url(&cfg.sync.remote).is_none() || sync_disabled(|k| ctx.env.get(k)) {
         return None;
     }
     let now = ctx.clock.now().unix();
