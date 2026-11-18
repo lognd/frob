@@ -51,6 +51,10 @@ impl Env {
     }
 
     /// The value of `key` when set and valid UTF-8.
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "an environment value is text, not a path"
+    )]
     pub fn get(&self, key: &str) -> Option<String> {
         self.get_os(key).and_then(|v| v.into_string().ok())
     }

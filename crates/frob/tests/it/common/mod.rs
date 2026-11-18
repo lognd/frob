@@ -1,6 +1,7 @@
 //! Fixture helpers shared by the integration tests of the `frob` binary.
 // frob:ticket 01M40WS6200M99J09D5XGAS05X
 #![allow(dead_code)] // each test binary compiles this module and uses a subset
+#![allow(clippy::disallowed_methods)] // env names and values are text, not paths
 
 use std::path::{Path, PathBuf};
 
