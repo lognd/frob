@@ -122,3 +122,19 @@ pub fn evidence_verdict(claim: &str, proof: &str, has_evidence: bool) -> Verdict
     tracing::debug!(claim, proof, "claim has no evidence");
     verdict
 }
+
+/// Decide an `attests`: the model cannot decide it, so with no evidence it is Unresolved
+/// ("attested by OWNER, no evidence") whatever its `proof`, never satisfied by say-so.
+///
+/// With evidence the kernel assigns the verdict (G03), so the model raises nothing.
+pub fn attests_verdict(owner: Option<&str>, has_evidence: bool) -> Verdict {
+    if has_evidence {
+        return Verdict::Satisfied;
+    }
+    let verdict = Verdict::Unresolved(format!(
+        "attested by {}, no evidence",
+        owner.unwrap_or("an unnamed owner")
+    ));
+    tracing::debug!(?owner, "attests has no evidence");
+    verdict
+}

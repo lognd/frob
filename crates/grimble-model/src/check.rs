@@ -1004,7 +1004,47 @@ impl<'a> Checker<'a> {
                 rec.entity.name.span,
             ),
         };
+        let attests = clauses
+            .iter()
+            .find(|c| matches!(c.kind, ClauseKind::What(ClaimWhat::Attests { .. })));
+        if let Some(att) = attests {
+            self.attests_verdict(rec, att.span, anchor);
+            return;
+        }
         let v = crate::claim::evidence_verdict(&rec.full, rung, has_evidence);
+        self.claim_verdict(rec, span, &v, anchor);
+    }
+
+    /// An `attests` needs `assumed` (MDL008) and, with no evidence, is Unresolved (grmb-spec 4.4).
+    fn attests_verdict(&mut self, rec: &EntityRec<'_>, span: Span, anchor: &str) {
+        let clauses = &rec.entity.clauses;
+        let owner = clauses.iter().find_map(|c| match &c.kind {
+            ClauseKind::Assumed(kvs) => kvs
+                .iter()
+                .find(|kv| kv.key.text == "owner")
+                .map(|kv| crate::text::value_text(&kv.value.value)),
+            _ => None,
+        });
+        let assumed = clauses
+            .iter()
+            .any(|c| matches!(c.kind, ClauseKind::Assumed(_)));
+        if !assumed {
+            self.raise(
+                "MDL008",
+                None,
+                rec.file,
+                span,
+                format!(
+                    "claim `{}` attests without `assumed`; an attestation with no owner or expiry is not an assumption anyone holds",
+                    rec.full
+                ),
+                anchor,
+            );
+        }
+        let has_evidence = clauses
+            .iter()
+            .any(|c| matches!(c.kind, ClauseKind::Evidence(_)));
+        let v = crate::claim::attests_verdict(owner.as_deref(), has_evidence);
         self.claim_verdict(rec, span, &v, anchor);
     }
 

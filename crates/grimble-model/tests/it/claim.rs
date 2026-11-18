@@ -176,3 +176,79 @@ fn attests_over_an_unknown_node_or_empty_statement_is_reported() {
     assert!(got.iter().any(|r| r == "MDL006"), "{got:?}");
     assert!(got.iter().any(|r| r == "MDL008"), "{got:?}");
 }
+
+/// Every (rule, message) finding of `claims` after the shared nodes.
+fn all_findings(claims: &str) -> Vec<(String, String)> {
+    let text = format!("{NODES}{claims}");
+    let model = ModelFiles::new().with_file("design/model.grmb", text.as_bytes());
+    check_model(&model)
+        .into_iter()
+        .map(|f| (f.rule.to_string(), f.message))
+        .collect()
+}
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/claim.rs::attests_verdict
+#[test]
+fn attests_without_evidence_is_unresolved_naming_the_owner_at_any_proof() {
+    let text = "claim k {
+  attests \"s\" on a;
+  proof L1;
+  assumed because=\"b\" until=2026-10-15 owner=logan;
+}
+";
+    let got: Vec<_> = all_findings(text)
+        .into_iter()
+        .filter(|f| f.0 == "CLAIM003")
+        .collect();
+    assert_eq!(got.len(), 1, "{got:?}");
+    assert_eq!(got[0].1, "attested by logan, no evidence");
+}
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/claim.rs::attests_verdict
+#[test]
+fn attests_with_evidence_raises_no_claim_finding() {
+    let text = "claim k {
+  attests \"s\";
+  assumed because=\"b\" until=2026-10-15 owner=logan;
+  verified_by \"docs/t.md\";
+}
+";
+    let got = all_findings(text);
+    assert!(!got.iter().any(|f| f.0.starts_with("CLAIM")), "{got:?}");
+}
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn attests_without_assumed_is_mdl008() {
+    let got = all_findings(
+        "claim k {
+  attests \"s\";
+  verified_by \"docs/t.md\";
+}
+",
+    );
+    assert!(got.iter().any(|f| f.0 == "MDL008"), "{got:?}");
+}
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn extend_may_not_set_attests() {
+    let got = all_findings(
+        "claim k {
+  noflow a -> b;
+}
+extend claim k {
+  attests \"s\";
+}
+",
+    );
+    assert!(
+        got.iter()
+            .any(|f| f.0 == "MDL008" && f.1.contains("scalar")),
+        "{got:?}"
+    );
+}

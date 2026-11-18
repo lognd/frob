@@ -5,6 +5,7 @@ node shell : trusted {
 claim cwe_78_vet {
   attests "shell arguments are vetted before exec" on shell;
   assumed because="inputs come from argv only" until=2026-10-15 owner=logan;
+  verified_by "docs/threat/cwe-78.md";
 }
 claim pii_retention {
   attests "email is deleted after 30 days";
@@ -13,8 +14,20 @@ claim pii_retention {
 claim empty {
   attests "";
   assumed because="x" until=2026-10-15 owner=logan;
+  verified_by "docs/e.md";
 }
 claim ghost {
   attests "s" on nowhere;
   assumed because="x" until=2026-10-15 owner=logan;
+  verified_by "docs/g.md";
+}
+claim bare {
+  attests "no assumed clause";
+  verified_by "docs/b.md";
+}
+claim pure {
+  noflow shell -> shell;
+}
+extend claim pure {
+  attests "set by extend";
 }

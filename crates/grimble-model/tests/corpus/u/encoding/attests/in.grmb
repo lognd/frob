@@ -4,7 +4,11 @@ node a : trusted {
 }
 claim s {
   attests "x holds" on a;
+  assumed because="b" until=2026-10-15 owner=l;
+  verified_by "docs/t.md";
 }
 claim w {
   attests "y holds";
+  assumed because="b" until=2026-10-15 owner=l;
+  verified_by "docs/t.md";
 }
