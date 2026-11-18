@@ -3,3 +3,4 @@ pack: grimble/p 1.0.0
 fmt: roundtrip
 error: CLAIM001
 error: MDL008
+error: VMOD001

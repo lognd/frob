@@ -32,6 +32,8 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "MDL016",
     "MDL006",
     "FLOW003",
+    "VMOD001",
+    "VMOD002",
     "MDL015",
     "PATH001",
     "MDL017",

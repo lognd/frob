@@ -420,6 +420,10 @@ impl<'a> Checker<'a> {
             let anchor = format!("flow/{}", f.flow);
             self.raise(f.rule.id(), None, f.file, f.span, f.message, &anchor);
         }
+        for f in crate::kernel::vmodel_findings(&self.idx) {
+            let anchor = format!("vmodel/{}", f.vmodel);
+            self.raise(f.rule.id(), None, f.file, f.span, f.message, &anchor);
+        }
         let atoms: std::collections::BTreeSet<String> = self
             .input
             .packs

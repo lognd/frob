@@ -737,6 +737,13 @@
 |---|---|---|---|---|---|---|
 | [VIS001](VIS001.md) | arch-wide-visibility | error | manual | P- | true | A `pub` function that no other package uses. |
 
+## VMOD
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [VMOD001](VMOD001.md) | orphan-requirement | error | manual | P+ | false | A requirement is satisfied by no design artifact. |
+| [VMOD002](VMOD002.md) | unjustified-design | error | manual | P+ | false | A design artifact satisfies no requirement. |
+
 ## WAIVE
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
