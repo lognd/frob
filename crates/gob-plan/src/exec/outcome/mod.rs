@@ -186,7 +186,8 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
         // Nothing is unread anywhere unless the model is hidden, so the walk below is skipped.
         if kind == Kind::Fire
             && ev.hidden
-            && subject.is_some_and(|n| reason::touches_unread(ev.rd.model, n)) {
+            && subject.is_some_and(|n| reason::touches_unread(ev.rd.model, n))
+        {
             kind = Kind::Unresolved;
             reasons.push(Reason::ParseError);
         }
