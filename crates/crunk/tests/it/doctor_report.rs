@@ -9,7 +9,7 @@ fn report_marks_a_repository_without_crunk_toml_absent() {
     assert!(!payload.data.config.present);
     assert_eq!(
         payload.data.root,
-        gob_path::Shown::of(dir.path()).as_str().to_owned()
+        dir.path().display().to_string()
     );
     assert_eq!(payload.data.version, env!("CARGO_PKG_VERSION"));
 }
