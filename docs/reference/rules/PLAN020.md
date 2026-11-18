@@ -81,3 +81,51 @@ system s {
   }
 }
 ```
+
+## Examples
+
+### PLAN020 plan-variant-as-arm / Examples / Fires case 1 #1 (line 22) (fire)
+
+```grmb
+grimble = "2";
+module m;
+
+system s {
+  ambient escalate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.pick : { ok, cash };
+
+  goal u { start; }
+  goal u.start { one_of { card; cash; } }
+
+  scenario t realizes u.start.card {
+    u.pick => {
+      ok => end ok;
+      cash => end err(cash);
+    }
+  }
+}
+```
+
+### PLAN020 plan-variant-as-arm / Examples / Clean case 2 #2 (line 45) (clean)
+
+```grmb
+grimble = "2";
+module m;
+
+system s {
+  ambient escalate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.pick : { ok, declined };
+
+  goal u { start; }
+  goal u.start { one_of { card; cash; } }
+
+  scenario t realizes u.start.card {
+    u.pick => {
+      ok => end ok;
+      declined => end err(declined);
+    }
+  }
+}
+```
