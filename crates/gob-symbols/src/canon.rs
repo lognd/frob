@@ -741,6 +741,30 @@ mod rust {
                 }
                 end += 2;
             }
+            // a turbofish, `read::<T>(..)`, sits between the path and its arguments
+            // (ticket 01M648G0F02C65NHXJAN6J4SDG's sibling: macro token-tree calls)
+            if end + 1 < kids.len()
+                && text(src, kids[end]) == "::"
+                && text(src, kids[end + 1]) == "<"
+            {
+                let mut depth = 0i32;
+                let mut j = end + 1;
+                while j < kids.len() {
+                    match text(src, kids[j]) {
+                        "<" => depth += 1,
+                        ">" => depth -= 1,
+                        ">>" => depth -= 2,
+                        _ => {}
+                    }
+                    j += 1;
+                    if depth <= 0 {
+                        break;
+                    }
+                }
+                if depth <= 0 {
+                    end = j;
+                }
+            }
             if let Some(next) = kids.get(end) {
                 if next.kind() == "token_tree" && text(src, *next).starts_with('(') {
                     out.push(BodyCall::Path(segs));
@@ -2221,6 +2245,32 @@ mod tests {
             paths("rust", src)
                 .iter()
                 .any(|(p, call, _)| p == "std::fs::read" && *call)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_macro_argument_turbofish_call_is_a_path_use() {
+        let src =
+            "fn f() { dbg!(std::fs::read::<_>(\"x\")); dbg!(nix::unistd::fork::<Vec<u8>>()); }\n";
+        let got = paths("rust", src);
+        assert!(got.iter().any(|(p, call, _)| p == "std::fs::read" && *call));
+        assert!(
+            got.iter()
+                .any(|(p, call, _)| p == "nix::unistd::fork" && *call)
+        );
+    }
+
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn rust_nix_calls_resolve_through_imports_and_macro_arguments() {
+        let src = "use nix::unistd::{self, fork as fk};\nfn f() { unistd::fork(); println!(\"{:?}\", fk()); assert!(matches!(nix::unistd::fork(), Ok(_))); }\n";
+        let got = paths("rust", src);
+        assert_eq!(
+            got.iter()
+                .filter(|(p, call, _)| p == "nix::unistd::fork" && *call)
+                .count(),
+            3
         );
     }
 
