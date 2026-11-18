@@ -443,7 +443,7 @@ jobs:
       - name: node is on PATH
         run: node --version
       - name: nextest (node runtime tests)
-        run: cargo nextest run --profile ci -p crunk-tailwind --test runtime
+        run: cargo nextest run --profile ci -p crunk-tailwind --test it -E "test(/^runtime::/)"
 
   # frob:ticket 01M4CS7ZMEY096RVK91RWD03DW
   # Command profile (~RWD03DW, docs/design/shared/build-test-ci.md section 4): `cargo dev profile` times
