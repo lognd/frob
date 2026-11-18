@@ -345,6 +345,7 @@ described in their own files, and are Milestone 2 or later (D36).
 | `baseline adopt <RULE> --reason TEXT --ticket T` | frob | frob (bin) | yes, a repeat records the same keys | 0 2 3 4 | 2 | effect: records the standing Error findings of a rule as baselined debt |
 | `baseline prune` | frob | frob (bin) | yes | 0 2 3 4 | 2 | effect: removes baseline keys whose finding no longer occurs |
 | `dismiss <RULE> <FINGERPRINT> --reason TEXT` | frob | frob (bin) | yes, a repeat of the same dismissal is a no-op | 0 2 3 4 | 2 | effect: records a finding dismissal in the precision history |
+| `accept-review <RULE> <PATH>` | frob | frob (bin) | yes, a repeat records the same review | 0 2 3 4 | 2 | effect: records an approved review of a rule finding in frob.lock |
 | `fix` | frob | frob-check | yes | 0 2 3 4 | 2 | effect: rewrites files to fix findings |
 | `ack` | frob | frob-ack | yes | 0 2 3 4 | 1 | effect: records a doc-drift acknowledgement |
 | `test [--base]` | frob | frob-tests | yes | 0 1 2 4 | 1 | policy: touched-set test selection |

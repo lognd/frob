@@ -14,6 +14,7 @@
 /// Top-level `frob` verbs and their subcommands (empty for a leaf verb), deprecated aliases included.
 pub const VERBS: &[(&str, &[&str])] = &[
     ("schema", &[]),
+    ("accept-review", &[]),
     ("serve", &[]),
     ("check", &[]),
     ("doctor", &[]),
