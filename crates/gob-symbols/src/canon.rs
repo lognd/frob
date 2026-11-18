@@ -1739,8 +1739,15 @@ mod python {
             let (p, _) = self.resolve(f, depth + 1)?;
             match p.as_str() {
                 "builtins.getattr" if args.len() >= 2 => {
-                    let (obj, _) = self.resolve(args[0], depth + 1)?;
-                    Some((format!("{obj}.{}", self.name_of(args[1])), true))
+                    let name = self.name_of(args[1]);
+                    let Some((obj, _)) = self.resolve(args[0], depth + 1) else {
+                        // an object that is no known module (`self`, a parameter) may still
+                        // be one at run time: only a computed name makes the lookup a use, as
+                        // a literal name on an unknown object cannot be attributed
+                        // (ticket 01M648G0F02C65NHXJAN6J4SDG)
+                        return (name == COMPUTED).then_some((name, true));
+                    };
+                    Some((format!("{obj}.{name}"), true))
                 }
                 "builtins.__import__" | "importlib.import_module" if !args.is_empty() => {
                     Some((self.name_of(args[0]), true))
@@ -2396,6 +2403,35 @@ mod tests {
             .collect();
         assert!(!got.is_empty(), "{got:?}");
         assert!(got.iter().all(|u| u.dynamic && u.path == "os"), "{got:?}");
+    }
+
+    // frob:ticket 01M648G0F02C65NHXJAN6J4SDG
+    // frob:tests crates/gob-symbols/src/canon.rs::path_uses
+    #[test]
+    fn python_computed_getattr_on_a_non_module_is_an_unresolved_use() {
+        let src = "def f(self, g, n):
+    getattr(self, n)()
+    getattr(g, 'x' + n)
+";
+        let got: Vec<_> = path_uses("python", src)
+            .into_iter()
+            .filter(|u| u.computed)
+            .collect();
+        assert!(!got.is_empty(), "{got:?}");
+        assert!(
+            got.iter().all(|u| u.dynamic && u.path.is_empty()),
+            "{got:?}"
+        );
+        // a literal name on an unknown object cannot be attributed
+        assert!(
+            path_uses(
+                "python",
+                "def f(g):
+    getattr(g, 'x')()
+"
+            )
+            .is_empty()
+        );
     }
 
     // frob:tests crates/gob-symbols/src/canon.rs::path_uses
