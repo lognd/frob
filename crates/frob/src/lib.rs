@@ -8,6 +8,7 @@
 //! ack, check and land verbs come from their sibling crates' `register`; [`milestone_cmd`] holds `milestone new/add/show/list`; [`cycle_cmd`] holds `cycle new/show/list/close`; [`release_cmd`] holds `release changelog`; [`doc_cmd`] holds `doc remap`; [`agent_cmd`] holds `agent sync/status/install/uninstall/brief` over the emitters in [`agent`]. Config knobs are the
 //! `ConfigTable` structs in [`config`].
 
+pub mod accept_review_cmd;
 pub mod agent;
 pub mod agent_cmd;
 pub mod agent_digest_cmd;
