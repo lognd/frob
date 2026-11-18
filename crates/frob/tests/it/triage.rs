@@ -4,7 +4,6 @@
 use std::path::Path;
 use std::process::Output;
 
-use assert_cmd::Command;
 use serde_json::Value;
 
 use crate::common;
@@ -38,8 +37,7 @@ impl Repo {
     }
 
     fn frob(&self, args: &[&str]) -> Output {
-        Command::cargo_bin("frob")
-            .expect("frob binary")
+        common::frob_command()
             .current_dir(self.path())
             .env_remove("FROB_LOG")
             .arg("--json")
