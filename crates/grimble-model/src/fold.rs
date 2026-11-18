@@ -966,6 +966,11 @@ fn what_t(w: &ClaimWhat, sp: Span) -> T {
             operands.extend(args.iter().map(|a| lit("string", &a.value, a.span)));
             apply("never", sp, operands)
         }
+        ClaimWhat::Attests { statement, on } => {
+            let mut operands = vec![lit("string", &statement.value, statement.span)];
+            operands.extend(on.iter().map(|n| reference(&n.written(), n.span)));
+            apply("attests", sp, operands)
+        }
         ClaimWhat::Bound {
             metric,
             target,

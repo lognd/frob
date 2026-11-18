@@ -142,3 +142,37 @@ fn never_claim_over_an_unknown_node_is_unresolved_reference() {
         .collect();
     assert!(got.iter().any(|r| r == "MDL006"), "{got:?}");
 }
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/parse.rs::parse_file
+#[test]
+fn attests_with_and_without_on_parses_and_resolves() {
+    let text = format!(
+        "{NODES}claim k {{\n  attests \"s\" on a;\n  assumed because=\"b\" until=2026-10-15 owner=l;\n}}\nclaim w {{\n  attests \"t\";\n  assumed because=\"b\" until=2026-10-15 owner=l;\n}}\n"
+    );
+    let model = ModelFiles::new().with_file("design/model.grmb", text.as_bytes());
+    let got: Vec<String> = check_model(&model)
+        .into_iter()
+        .map(|f| f.rule.to_string())
+        .collect();
+    assert!(
+        !got.iter().any(|r| r == "MDL006" || r == "MDL008"),
+        "{got:?}"
+    );
+}
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-model/src/check.rs::check_model
+#[test]
+fn attests_over_an_unknown_node_or_empty_statement_is_reported() {
+    let text = format!(
+        "{NODES}claim k {{\n  attests \"s\" on ghost;\n}}\nclaim e {{\n  attests \"\";\n}}\n"
+    );
+    let model = ModelFiles::new().with_file("design/model.grmb", text.as_bytes());
+    let got: Vec<String> = check_model(&model)
+        .into_iter()
+        .map(|f| f.rule.to_string())
+        .collect();
+    assert!(got.iter().any(|r| r == "MDL006"), "{got:?}");
+    assert!(got.iter().any(|r| r == "MDL008"), "{got:?}");
+}

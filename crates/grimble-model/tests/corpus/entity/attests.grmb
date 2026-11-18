@@ -1,0 +1,20 @@
+grimble = "2";
+module m;
+node shell : trusted {
+}
+claim cwe_78_vet {
+  attests "shell arguments are vetted before exec" on shell;
+  assumed because="inputs come from argv only" until=2026-10-15 owner=logan;
+}
+claim pii_retention {
+  attests "email is deleted after 30 days";
+  assumed because="policy" until=2026-10-15 owner=logan;
+}
+claim empty {
+  attests "";
+  assumed because="x" until=2026-10-15 owner=logan;
+}
+claim ghost {
+  attests "s" on nowhere;
+  assumed because="x" until=2026-10-15 owner=logan;
+}

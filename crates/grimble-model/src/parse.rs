@@ -1201,6 +1201,15 @@ impl Parser<'_> {
                     args,
                 })
             }
+            "attests" => {
+                let statement = self.string("a statement string")?;
+                let on = if self.eat_kw("on") {
+                    Some(self.ref_path("a node name")?)
+                } else {
+                    None
+                };
+                ClauseKind::What(ClaimWhat::Attests { statement, on })
+            }
             "bound" => {
                 let metric = self.any_ident("a metric")?;
                 let target = self.ref_path("a node or flow name")?;

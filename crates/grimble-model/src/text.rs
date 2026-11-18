@@ -179,6 +179,7 @@ pub fn clause_key(k: &ClauseKind) -> &'static str {
         ClauseKind::What(ClaimWhat::Noflow(..)) => "noflow",
         ClauseKind::What(ClaimWhat::Reach(..)) => "reach",
         ClauseKind::What(ClaimWhat::Never { .. }) => "never",
+        ClauseKind::What(ClaimWhat::Attests { .. }) => "attests",
         ClauseKind::What(ClaimWhat::Bound { .. }) => "bound",
         ClauseKind::Proof(_) => "proof",
         ClauseKind::Assumed(_) => "assumed",
@@ -338,6 +339,10 @@ pub fn clause_text(k: &ClauseKind) -> String {
             };
             format!("never {} uses {}{args}", subject.written(), atom_text(atom))
         }
+        ClauseKind::What(ClaimWhat::Attests { statement, on }) => match on {
+            Some(n) => format!("attests {} on {}", quote(&statement.value), n.written()),
+            None => format!("attests {}", quote(&statement.value)),
+        },
         ClauseKind::What(ClaimWhat::Bound {
             metric,
             target,

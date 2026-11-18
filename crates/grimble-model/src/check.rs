@@ -246,7 +246,7 @@ fn allowed(kind: EntityKind, key: &str) -> bool {
         EntityKind::Contract => matches!(key, "shape" | "versioning"),
         EntityKind::Claim => matches!(
             key,
-            "noflow" | "reach" | "never" | "bound" | "proof" | "assumed" | "evidence"
+            "noflow" | "reach" | "never" | "attests" | "bound" | "proof" | "assumed" | "evidence"
         ),
         EntityKind::Vmodel => {
             matches!(
@@ -287,7 +287,7 @@ fn is_list(key: &str) -> bool {
 
 fn scalar_group(key: &str) -> &str {
     match key {
-        "noflow" | "reach" | "never" | "bound" => "what",
+        "noflow" | "reach" | "never" | "attests" | "bound" => "what",
         k => k,
     }
 }
@@ -1055,7 +1055,7 @@ impl<'a> Checker<'a> {
         let need: &[(&str, &[&str])] = match e.kind {
             EntityKind::Flow => &[("label", &["label"])],
             EntityKind::Contract => &[("shape", &["shape"])],
-            EntityKind::Claim => &[("what", &["noflow", "reach", "never", "bound"])],
+            EntityKind::Claim => &[("what", &["noflow", "reach", "never", "attests", "bound"])],
             EntityKind::Vmodel => &[("kind", &["kind"]), ("level", &["level"])],
             EntityKind::Pack => &[("ref", &["ref"]), ("version", &["version"])],
             EntityKind::Template => &[("excuse", &["excuse"])],
@@ -1495,6 +1495,27 @@ impl<'a> Checker<'a> {
                     "MDL006",
                     anchor,
                 );
+            }
+            ClaimWhat::Attests { statement, on } => {
+                if statement.value.is_empty() {
+                    self.raise(
+                        "MDL008",
+                        None,
+                        rec.file,
+                        statement.span,
+                        "`attests` needs a non-empty statement".to_owned(),
+                        anchor,
+                    );
+                }
+                if let Some(n) = on {
+                    self.resolve_kind(
+                        (rec.file, &rec.ctx),
+                        n,
+                        &[EntityKind::Node],
+                        "MDL006",
+                        anchor,
+                    );
+                }
             }
             ClaimWhat::Bound {
                 metric,

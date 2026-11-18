@@ -300,6 +300,13 @@ pub enum ClaimWhat {
         /// The optional `(ARGS)` that narrow the claim to uses passing a matching argument.
         args: Vec<Spanned<String>>,
     },
+    /// `attests "STATEMENT" [on NODE];`: an owner states that the proposition holds (grmb-spec 4.4).
+    Attests {
+        /// The attested statement.
+        statement: Spanned<String>,
+        /// The node the statement is about; the whole model when absent.
+        on: Option<RefPath>,
+    },
     /// `bound METRIC TARGET <= Q;`
     Bound {
         /// The metric name.

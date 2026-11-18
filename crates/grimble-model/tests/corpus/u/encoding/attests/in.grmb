@@ -1,0 +1,10 @@
+grimble = "2";
+module m;
+node a : trusted {
+}
+claim s {
+  attests "x holds" on a;
+}
+claim w {
+  attests "y holds";
+}
