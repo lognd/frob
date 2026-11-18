@@ -125,8 +125,8 @@ fn dirty() -> (Repo, String, PathBuf) {
     let tid: frob_ledger::TicketId = id.parse().expect("ticket id");
     let transcript = format!(
         "Compiling x ({}/crates/x)\nsibling {}/{name}-wt/T1/y\nhome /home/ann/.cargo and /home/bob/z\nok\n",
-        Shown::of(repo.path()),
-        Shown::of(&parent)
+        gob_path::exact_text(repo.path()).expect("utf8 path"),
+        gob_path::exact_text(&parent).expect("utf8 path")
     );
     let mut record = toml::Table::new();
     record.insert("provider".into(), "command".into());

@@ -128,7 +128,11 @@ impl Fixture {
 
     /// Seed every language: Rust 3/4, Python 4/5, JavaScript 1/2 and C# 9/10 lines hit, plus dependency and build-output junk.
     fn seed_all(&self) {
-        let abs = |rel: &str| gob_path::Shown::of(&self.root.join(rel)).to_string();
+        let abs = |rel: &str| {
+            gob_path::exact_text(&self.root.join(rel))
+                .expect("utf8 path")
+                .to_owned()
+        };
         self.ingest(
             &RustCoverage,
             "lcov.info",
