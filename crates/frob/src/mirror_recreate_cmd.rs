@@ -367,7 +367,7 @@ impl Command for MirrorRecreate {
         gate(
             std::io::stdin().is_terminal(),
             std::io::stdout().is_terminal(),
-            |k| std::env::var(k).ok(),
+            |k| ctx.env.get(k),
         )?;
         let ledger = open(ctx)?;
         let id = resolve(&ledger, &self.ticket)?;
@@ -381,7 +381,7 @@ impl Command for MirrorRecreate {
             .ok_or_else(|| refuse("no GitHub repository: pass --repo OWNER/NAME"))?;
         let token = TOKEN_VARS
             .iter()
-            .find_map(|v| std::env::var(v).ok().filter(|t| !t.is_empty()))
+            .find_map(|v| ctx.env.get(v).filter(|t| !t.is_empty()))
             .ok_or_else(|| {
                 refuse("set GH_TOKEN or GITHUB_TOKEN to a token that can write issues")
             })?;

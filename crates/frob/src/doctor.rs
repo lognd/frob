@@ -1141,6 +1141,7 @@ mod verb_tests {
             dry_run: false,
             audience: gob_rules::Audience::Human,
             clock: std::sync::Arc::new(gob_time::SystemClock),
+            env: gob_cli::Env::process(),
         }
     }
 

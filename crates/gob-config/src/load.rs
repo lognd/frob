@@ -2,7 +2,6 @@
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::describe::{ConfigTable, TableDescription};
 use crate::error::ConfigError;
@@ -26,13 +25,15 @@ impl ConfigSource {
     }
 }
 
-/// Config files read from disk by this process so far (test hook for the one-read-per-command guarantee).
-static FILE_READS: AtomicUsize = AtomicUsize::new(0);
+thread_local! {
+    /// Config files read from disk by this thread so far (test hook for the one-read-per-command guarantee); per thread so in-process tests running in parallel do not disturb each other's count.
+    static FILE_READS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
 
-/// How many times this process has read a config file from disk; a test hook, monotonic.
+/// How many times the calling thread has read a config file from disk; a test hook, monotonic.
 #[must_use]
 pub fn file_reads() -> usize {
-    FILE_READS.load(Ordering::SeqCst)
+    FILE_READS.with(std::cell::Cell::get)
 }
 
 /// One product config file, read and parsed once, from which any number of tables are loaded.
@@ -211,7 +212,7 @@ fn build<T: ConfigTable>(
 
 /// Read and parse a TOML file; a missing file yields an empty table.
 pub(crate) fn read_table(path: &Path) -> Result<(toml::Value, bool), ConfigError> {
-    FILE_READS.fetch_add(1, Ordering::SeqCst);
+    FILE_READS.with(|c| c.set(c.get() + 1));
     match std::fs::read_to_string(path) {
         Ok(text) => {
             let table = text

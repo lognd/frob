@@ -128,7 +128,7 @@ impl Command for Refresh {
         let now = ctx.clock.now().unix();
         let base = cfg.tickets.r#ref.clone();
         if self.background && !self.status {
-            return Ok(background(&repo, &root, &cfg, now));
+            return Ok(background(&repo, &root, &cfg, now, &ctx.env));
         }
         if self.status {
             let state = RefreshState::load(repo.common_dir());
@@ -224,11 +224,12 @@ fn background(
     root: &std::path::Path,
     cfg: &FrobConfig,
     now: i64,
+    env: &gob_cli::Env,
 ) -> Payload<RefreshReport> {
     let state = RefreshState::load(repo.common_dir());
     let has_remote = repo.remote_url(&cfg.sync.remote).is_some();
     let started = has_remote
-        && !frob_ledger::sync_policy::sync_disabled(|k| std::env::var(k).ok())
+        && !frob_ledger::sync_policy::sync_disabled(|k| env.get(k))
         && std::env::current_exe().is_ok_and(|exe| {
             match frob_ledger::sync_policy::spawn_refresh(&exe, root) {
                 Ok(pid) => {

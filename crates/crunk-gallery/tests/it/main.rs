@@ -10,3 +10,4 @@ mod rendered_contrast;
 mod router;
 mod triage;
 mod visual;
+mod parity;

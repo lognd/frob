@@ -39,7 +39,9 @@ fn clone_with_origin() -> (tempfile::TempDir, tempfile::TempDir) {
         origin.path(),
         &["commit", "-q", "--allow-empty", "-m", "c1"],
     );
-    let url = gob_path::Shown::of(origin.path()).to_string();
+    let url = gob_path::exact_text(origin.path())
+        .expect("utf8 path")
+        .to_owned();
     let clone = tempfile::tempdir().expect("tmp");
     let st = std::process::Command::new("git")
         .args(["clone", "-q", &url, "."])
@@ -271,7 +273,9 @@ fn refresh_keeps_independent_roots_report_only() {
         origin.path(),
         &["commit", "-q", "--allow-empty", "-m", "remote"],
     );
-    let url = gob_path::Shown::of(origin.path()).to_string();
+    let url = gob_path::exact_text(origin.path())
+        .expect("utf8 path")
+        .to_owned();
     let local = common::git_repo();
     git(
         local.path(),
@@ -290,7 +294,7 @@ fn refresh_keeps_independent_roots_report_only() {
 
 /// A clone of `origin` using the orphan ticket-branch layout, with the ledger branch present locally.
 fn orphan_clone(origin: &Path) -> tempfile::TempDir {
-    let url = gob_path::Shown::of(origin).to_string();
+    let url = gob_path::exact_text(origin).expect("utf8 path").to_owned();
     let clone = tempfile::tempdir().expect("tmp");
     let st = std::process::Command::new("git")
         .args(["clone", "-q", &url, "."])

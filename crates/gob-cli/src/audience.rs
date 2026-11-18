@@ -33,12 +33,6 @@ pub(crate) fn detect_audience(lookup: impl Fn(&str) -> Option<String>) -> Audien
     audience
 }
 
-// frob:ticket 01M63B7F02SKSJCQG7TMXQ4HW5
-/// The audience for the running process, read from the real environment.
-pub(crate) fn process_audience() -> Audience {
-    detect_audience(|k| std::env::var(k).ok())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

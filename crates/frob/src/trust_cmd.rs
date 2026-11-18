@@ -228,7 +228,7 @@ impl Command for Trust {
         gate(
             std::io::stdin().is_terminal(),
             std::io::stdout().is_terminal(),
-            |k| std::env::var(k).ok(),
+            |k| ctx.env.get(k),
         )?;
         let (mut approved, mut denied) = (Vec::new(), Vec::new());
         for facts in pending(&ctx.cwd, &gob_time::SystemClock)? {

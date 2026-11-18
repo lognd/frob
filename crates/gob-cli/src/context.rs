@@ -6,6 +6,8 @@ use std::sync::Arc;
 use clap::ValueEnum;
 use gob_diagnostics::ColorChoice;
 
+use crate::env::Env;
+
 /// `--format`: how the result is rendered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum FormatChoice {
@@ -51,6 +53,8 @@ pub struct Context {
     pub audience: gob_rules::Audience,
     /// The command's one clock snapshot (docs/design/shared/architecture.md section 2): every date and stamp a verb writes comes from it.
     pub clock: Arc<dyn gob_time::Clock>,
+    /// The environment variables verbs read (`CI`, `COLUMNS`, `PAGER`, token variables, `PATH`); tests override them without touching the process.
+    pub env: Env,
 }
 
 impl Context {

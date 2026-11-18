@@ -31,3 +31,5 @@ mod slop_report;
 mod stamp;
 mod tokens;
 mod verbs;
+mod e2e_agent_authoring;
+mod status_ready;

@@ -9,6 +9,7 @@ use gob_diagnostics::{ColorChoice, ExitCode, is_tty};
 
 use crate::command::{Command, Registered};
 use crate::context::{ColorMode, Context, FormatChoice};
+use crate::env::Env;
 use crate::error::CliError;
 use crate::render::{self, Execution};
 use crate::schema_cmd::SchemaCmd;
@@ -264,6 +265,21 @@ impl Cli {
         I: IntoIterator<Item = T>,
         T: Into<OsString>,
     {
+        self.execute_with_env(args, default_cwd, log, Env::process())
+    }
+
+    /// [`Cli::execute`] with an explicit [`Env`] (the process environment plus overrides).
+    pub(crate) fn execute_with_env<I, T>(
+        &self,
+        args: I,
+        default_cwd: Option<&Path>,
+        log: bool,
+        env: Env,
+    ) -> Execution
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<OsString>,
+    {
         let mut full: Vec<OsString> = vec![OsString::from(self.product)];
         full.extend(args.into_iter().map(Into::into));
         let relaxed = wants_schema(&full);
@@ -282,7 +298,7 @@ impl Cli {
             }
         };
         let (path, leaf) = leaf_of(&matches);
-        let ctx = match self.context(leaf, default_cwd, log) {
+        let ctx = match self.context(leaf, default_cwd, log, env) {
             Ok(c) => c,
             Err(err) => return render::failure(None, &err, sniff_json(&full)),
         };
@@ -375,6 +391,7 @@ impl Cli {
         leaf: &ArgMatches,
         default_cwd: Option<&Path>,
         log: bool,
+        env: Env,
     ) -> Result<Context, CliError> {
         let format = match (leaf.get_flag("json"), leaf.get_flag("text")) {
             (true, true) => {
@@ -402,7 +419,7 @@ impl Cli {
             ColorMode::Never => ColorChoice::Never,
             ColorMode::Auto => {
                 // frob:defer LOG001 because="tty probe only; no bytes are written" ticket=01M79PWQP03T5YH7QVM72KW077
-                if is_tty(&std::io::stdout()) && std::env::var_os("NO_COLOR").is_none() {
+                if is_tty(&std::io::stdout()) && env.get_os("NO_COLOR").is_none() {
                     ColorChoice::Always
                 } else {
                     ColorChoice::Never
@@ -438,8 +455,9 @@ impl Cli {
             verbosity,
             quiet: leaf.get_flag("quiet"),
             dry_run,
-            audience: crate::audience::process_audience(),
+            audience: crate::audience::detect_audience(|k| env.get(k)),
             clock: std::sync::Arc::new(gob_time::SystemClock::pin()),
+            env,
         })
     }
 
@@ -741,5 +759,16 @@ fn sniff_json(argv: &[OsString]) -> bool {
 /// process's stdout is not a terminal.
 pub fn run_for_test(cli: &Cli, args: &[&str], cwd: &Path) -> (i32, String, String) {
     let exec = cli.execute(args.iter().copied(), Some(cwd), false);
+    (exec.exit, exec.stdout, exec.stderr)
+}
+
+/// [`run_for_test`] with the verbs seeing `env` (the process environment plus its overrides) instead of the live process environment alone.
+pub fn run_for_test_with_env(
+    cli: &Cli,
+    args: &[&str],
+    cwd: &Path,
+    env: Env,
+) -> (i32, String, String) {
+    let exec = cli.execute_with_env(args.iter().copied(), Some(cwd), false, env);
     (exec.exit, exec.stdout, exec.stderr)
 }

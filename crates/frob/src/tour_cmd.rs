@@ -191,6 +191,7 @@ pub fn session(
 struct PagerOpener<'a> {
     ledger: &'a Ledger,
     tip: String,
+    env: gob_cli::Env,
 }
 
 impl Opener for PagerOpener<'_> {
@@ -202,7 +203,7 @@ impl Opener for PagerOpener<'_> {
             .read_blob_at(&self.tip, &full)
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "not on the ticket branch".to_owned())?;
-        let pager = std::env::var("PAGER").unwrap_or_else(|_| "less".to_owned());
+        let pager = self.env.get("PAGER").unwrap_or_else(|| "less".to_owned());
         let mut words = pager.split_whitespace().map(str::to_owned);
         let name = words.next().unwrap_or_else(|| "less".to_owned());
         let name_of_file = path.rsplit('/').next().unwrap_or("page");
@@ -285,6 +286,7 @@ impl Command for TourVerb {
             let mut opener = PagerOpener {
                 ledger: &ledger,
                 tip,
+                env: ctx.env.clone(),
             };
             session(
                 &stops,
