@@ -9,7 +9,9 @@
 // frob:ticket R8NFWKA
 
 use std::collections::BTreeMap;
-use std::process::Command as Proc;
+use std::time::Duration;
+
+use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
 
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload, Refusal, RefusalClass};
@@ -127,13 +129,19 @@ pub struct AcceptReview {
 
 /// `Name <email>` of whoever last committed `path`, when it has history.
 fn last_author(root: &std::path::Path, path: &str) -> Option<String> {
-    let out = Proc::new("git")
-        .args(["log", "-1", "--format=%an <%ae>", "--", path])
-        .current_dir(root)
-        .output()
-        .ok()?;
-    let s = String::from_utf8_lossy(&out.stdout).trim().to_owned();
-    (out.status.success() && !s.is_empty()).then_some(s)
+    let spec = Spec {
+        program: Program::Git,
+        args: ["log", "-1", "--format=%an <%ae>", "--", path]
+            .map(str::to_owned)
+            .to_vec(),
+        cwd: Some(root.to_path_buf()),
+        env: Vec::new(),
+        timeout: Duration::from_secs(30),
+        capture: true,
+    };
+    let out = Runner::new(Limits { jobs: 1 }).run(&spec).ok()?;
+    let s = out.stdout_raw.trim().to_owned();
+    (matches!(out.status, ExecOutcome::Exited(0)) && !s.is_empty()).then_some(s)
 }
 
 impl Command for AcceptReview {
