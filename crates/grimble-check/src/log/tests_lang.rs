@@ -229,6 +229,37 @@ fn js_open_sync_with_a_non_constant_mode_is_unresolved() {
     assert_eq!(js("const fs = require('fs');\nfs.openSync('p', 'r');"), 0);
 }
 
+// frob:tests crates/grimble-check/src/log/lang_js.rs::then_callback
+#[test]
+fn js_import_then_callback_parameter_is_the_module() {
+    let js = |t: &str| unresolved("a.js", Language::JavaScript, t);
+    assert_eq!(
+        js("function f(p, m) { import('fs').then(fs => fs.openSync(p, m)); }"),
+        1
+    );
+    assert_eq!(
+        js("function f(p, m) { import('fs').then(function (fs) { fs.openSync(p, m); }); }"),
+        1
+    );
+    assert_eq!(
+        js("function f(p, m) { import('fs').then(({ openSync }) => openSync(p, m)); }"),
+        1
+    );
+    assert_eq!(
+        js("function f(p, m) { require('fs').then(fs => fs.openSync(p, m)); }"),
+        1
+    );
+    // A callback on something that is not an import leaves its parameter a plain local.
+    assert_eq!(
+        js("function f(p, m) { load('fs').then(fs => fs.openSync(p, m)); }"),
+        0
+    );
+    assert_eq!(
+        js("function f(p) { import('fs').then(fs => fs.openSync(p, 'r')); }"),
+        0
+    );
+}
+
 // frob:tests crates/grimble-check/src/log/pass.rs::analyze
 #[test]
 fn js_dynamic_console_member_is_unresolved() {
