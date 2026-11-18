@@ -3,10 +3,11 @@
 
 // frob:ticket 01M4FGYG9TXDAMZ2VS2ZHGJKX1
 
-use crate::ast::{ClauseKind, Direction, EntityKind, Header};
+use crate::ast::{ClauseKind, Direction, Entity, EntityKind, Header, LinkKind};
 use crate::fold::{LABELS, TRUST_LEVELS};
 use crate::model::{EntityRec, Index};
 use crate::span::Span;
+use crate::text::canonical_level;
 
 /// Which kernel rule a [`FlowFinding`] belongs to.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -181,5 +182,107 @@ pub fn kernel_findings(idx: &Index<'_>) -> Vec<FlowFinding> {
         }
     }
     tracing::debug!(count = out.len(), "kernel flow findings");
+    out
+}
+
+/// Which V-model closure rule a [`VmodelFinding`] belongs to (grmb-spec 4.5).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum VmodelRule {
+    /// A `requirements` artifact no design artifact satisfies.
+    OrphanRequirement,
+    /// A design artifact that satisfies no requirement.
+    UnjustifiedDesign,
+}
+
+impl VmodelRule {
+    /// The rule id.
+    pub const fn id(self) -> &'static str {
+        match self {
+            Self::OrphanRequirement => "VMOD001",
+            Self::UnjustifiedDesign => "VMOD002",
+        }
+    }
+}
+
+/// One closure finding on a vmodel artifact: the rule, its span and a message naming it.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct VmodelFinding {
+    /// The rule.
+    pub rule: VmodelRule,
+    /// The index of the file holding the artifact.
+    pub file: usize,
+    /// The artifact's full name (the finding anchor).
+    pub vmodel: String,
+    /// The span to report on (the artifact's name).
+    pub span: Span,
+    /// The message.
+    pub message: String,
+}
+
+/// The canonical level of vmodel entity `e`, when it declares one.
+fn level_of(e: &Entity) -> Option<&str> {
+    e.clauses.iter().find_map(|c| match &c.kind {
+        ClauseKind::Level(l) => Some(canonical_level(&l.text)),
+        _ => None,
+    })
+}
+
+/// Whether vmodel entity `e` is an `artifact` (not a decision or a test).
+fn is_artifact(e: &Entity) -> bool {
+    e.clauses
+        .iter()
+        .any(|c| matches!(&c.kind, ClauseKind::Kind(k) if k.text == "artifact"))
+}
+
+/// The V-model closure findings of `idx` (grmb-spec 4.5): an orphan requirement is a
+/// `requirements`-level artifact no artifact `satisfies`; an unjustified design is a
+/// `system_design` or `component_design` artifact with no resolving `satisfies` link. Each
+/// artifact is one root cause and yields at most one finding.
+pub fn vmodel_findings(idx: &Index<'_>) -> Vec<VmodelFinding> {
+    let mut satisfied = vec![false; idx.entities.len()];
+    for rec in &idx.entities {
+        if rec.entity.kind != EntityKind::Vmodel {
+            continue;
+        }
+        for c in &rec.entity.clauses {
+            if let ClauseKind::Link(l) = &c.kind
+                && l.kind == LinkKind::Satisfies
+                && let Some(r) = idx.resolve(&rec.ctx, &l.target)
+            {
+                satisfied[r.rec] = true;
+            }
+        }
+    }
+    let mut out = Vec::new();
+    for (at, rec) in idx.entities.iter().enumerate() {
+        let e = rec.entity;
+        if e.kind != EntityKind::Vmodel || !is_artifact(e) {
+            continue;
+        }
+        let name = &rec.full;
+        let satisfies_any = e.clauses.iter().any(|c| {
+            matches!(&c.kind, ClauseKind::Link(l) if l.kind == LinkKind::Satisfies
+                && idx.resolve(&rec.ctx, &l.target).is_some())
+        });
+        let (rule, message) = match level_of(e) {
+            Some("requirements") if !satisfied[at] => (
+                VmodelRule::OrphanRequirement,
+                format!("requirement `{name}` is satisfied by no design artifact"),
+            ),
+            Some("system_design" | "component_design") if !satisfies_any => (
+                VmodelRule::UnjustifiedDesign,
+                format!("design `{name}` satisfies no requirement"),
+            ),
+            _ => continue,
+        };
+        out.push(VmodelFinding {
+            rule,
+            file: rec.file,
+            vmodel: name.clone(),
+            span: e.name.span,
+            message,
+        });
+    }
+    tracing::debug!(count = out.len(), "kernel vmodel findings");
     out
 }

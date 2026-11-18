@@ -1,0 +1,1 @@
+grimble: the kernel now closes the V-model. VMOD001 reports a `requirements` artifact no design artifact satisfies, and VMOD002 a `system_design` or `component_design` artifact that satisfies no requirement; each names the artifact.

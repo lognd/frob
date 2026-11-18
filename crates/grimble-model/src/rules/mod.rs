@@ -117,6 +117,10 @@ pub mod plan044;
 pub mod sys015;
 /// Rule `SYS016`.
 pub mod sys016;
+/// Rule `VMOD001`.
+pub mod vmod001;
+/// Rule `VMOD002`.
+pub mod vmod002;
 
 /// The declaration of every rule in this crate, sorted by file stem.
 pub const METAS: &[&gob_rules::RuleDef] = &[
@@ -179,6 +183,8 @@ pub const METAS: &[&gob_rules::RuleDef] = &[
     <plan044::Plan044 as gob_rules::RuleDecl>::DEF,
     <sys015::Sys015 as gob_rules::RuleDecl>::DEF,
     <sys016::Sys016 as gob_rules::RuleDecl>::DEF,
+    <vmod001::Vmod001 as gob_rules::RuleDecl>::DEF,
+    <vmod002::Vmod002 as gob_rules::RuleDecl>::DEF,
 ];
 
 /// This crate's rule index: the declarations plus renamed and retired ids.
@@ -311,6 +317,8 @@ where
     plan044::Plan044: gob_rules::RepoRule<P>,
     sys015::Sys015: gob_rules::RepoRule<P>,
     sys016::Sys016: gob_rules::RepoRule<P>,
+    vmod001::Vmod001: gob_rules::RepoRule<P>,
+    vmod002::Vmod002: gob_rules::RepoRule<P>,
 {
     #[allow(clippy::vec_init_then_push, reason = "generated: one push per rule")]
     fn push_all(rules: &mut Vec<gob_rules::BoundRule<P>>) {
@@ -332,6 +340,8 @@ where
         rules.push(gob_rules::BoundRule::repo(plan044::Plan044));
         rules.push(gob_rules::BoundRule::repo(sys015::Sys015));
         rules.push(gob_rules::BoundRule::repo(sys016::Sys016));
+        rules.push(gob_rules::BoundRule::repo(vmod001::Vmod001));
+        rules.push(gob_rules::BoundRule::repo(vmod002::Vmod002));
     }
 }
 

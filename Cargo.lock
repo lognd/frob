@@ -1323,6 +1323,7 @@ dependencies = [
  "gob-exec",
  "gob-fs",
  "gob-git",
+ "gob-lock",
  "gob-path",
  "gob-product",
  "gob-rules",
