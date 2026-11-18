@@ -139,7 +139,7 @@ fn output_with_code(code: i32, stdout: String, stderr: String) -> std::process::
     }
 }
 
-/// The command builder tests use to run `frob`: in process by default (no spawn, no link of a second binary), a real process when the test needs `PATH`, environment, timeout or an unhermetic host `PATH`.
+/// The command builder tests use to run `frob`: in process by default (no spawn, no link of a second binary) with injectable environment overrides, a real process when the test needs `PATH`, a deep-read environment variable, a timeout or an unhermetic host `PATH`.
 #[derive(Debug, Default)]
 pub struct FrobCmd {
     cwd: Option<PathBuf>,
@@ -174,7 +174,7 @@ impl FrobCmd {
         self
     }
 
-    /// Set an environment variable; forces a real process.
+    /// Set an environment variable; injected in process for the variables `Context.env` serves (`COLUMNS`, `PAGER`, tokens, `NO_COLOR`, agent markers), any other name forces a real process.
     pub fn env(
         &mut self,
         key: impl AsRef<std::ffi::OsStr>,
@@ -185,7 +185,7 @@ impl FrobCmd {
         self
     }
 
-    /// Unset an environment variable; `FROB_LOG` is a no-op in process (no subscriber is installed), any other name forces a real process.
+    /// Unset an environment variable; `FROB_LOG` is a no-op in process (no subscriber is installed), an injectable name is hidden in process, any other name forces a real process.
     pub fn env_remove(&mut self, key: impl AsRef<std::ffi::OsStr>) -> &mut Self {
         self.removed.push(key.as_ref().to_os_string());
         self
