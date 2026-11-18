@@ -155,7 +155,10 @@ symbol, and scanning repeats until the project export table stops
 changing. It scans `exec` and `eval` of constant source (string
 literals, implicit and `+` concatenation, names bound once to such a
 constant, `compile(<constant>, ..)`) as Python in the calling scope,
-with hits attributed to the call. It reports as unresolved: `exec` or
+with hits attributed to the call; a `globals` argument written as a dict
+literal with string keys (and no `locals`) replaces the calling scope with
+exactly those names, while `globals()` or any other mapping keeps the calling
+scope as an over-approximation. It reports as unresolved: `exec` or
 `eval` of any other source, constant source that does not parse, and
 nesting deeper than four layers. Known limits: a non-literal `__all__` is
 treated as absent, and names a star-imported module defines locally (rather than aliases)

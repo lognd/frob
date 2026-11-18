@@ -978,3 +978,38 @@ fn py_log_exec_and_eval_of_constant_source_resolve() {
     // a shadowing local named exec is not the builtin
     assert_eq!(one("def exec(s): pass\nexec(src)\n"), (0, 0));
 }
+
+// frob:ticket 01M6D5C4JDEMNSMNKBK62N4Y9Y
+// frob:tests crates/grimble-check/src/log/lang_python.rs::explicit_namespace
+#[test]
+fn py_log_exec_globals_dict_replaces_the_caller_scope() {
+    let one = |t: &str| py_log(&[("a.py", t)], "a.py");
+    // the caller's `sys` alias does not leak into an explicit empty namespace
+    assert_eq!(
+        one("import sys\nexec(\"sys.stdout.write('x')\", {})\n"),
+        (0, 0)
+    );
+    // a name the dict lists is bound to what its value denotes in the caller
+    assert_eq!(
+        one("import sys\nexec(\"sys.stdout.write('x')\", {\"sys\": sys})\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("import sys\nexec(\"sys.stdout.write('x')\", globals={\"sys\": sys})\n"),
+        (1, 0)
+    );
+    // a caller shadow of print does not reach a fresh namespace
+    assert_eq!(
+        one("def print(s): pass\nexec(\"print('x')\", {})\n"),
+        (1, 0)
+    );
+    // any other mapping keeps the caller scope (over-approximation)
+    assert_eq!(
+        one("import sys\nexec(\"sys.stdout.write('x')\", globals())\n"),
+        (1, 0)
+    );
+    assert_eq!(
+        one("import sys\ng = {}\nexec(\"sys.stdout.write('x')\", g)\n"),
+        (1, 0)
+    );
+}

@@ -3,6 +3,8 @@
 // frob:ticket 01M5XMR67K19SFAWNTDJKKJPTT
 // frob:ticket 01M65FKM97K956PQS8M509EQA2
 
+use std::collections::BTreeMap;
+
 use gob_languages::{Language, ParseLimits, ParseResult, parse};
 use tree_sitter::Node;
 
@@ -520,8 +522,12 @@ fn eval_source(st: &mut State<'_>, call: Node<'_>, args: Node<'_>) {
     }
     tracing::debug!(file = %st.ctx.path, depth = st.eval_depth, "following exec/eval constant source");
     let mut inner = State::new(st.group, st.ctx, &text);
-    inner.frames.clone_from(&st.frames);
-    inner.globs.clone_from(&st.globs);
+    if let Some(ns) = explicit_namespace(st, args) {
+        inner.frames = vec![ns];
+    } else {
+        inner.frames.clone_from(&st.frames);
+        inner.globs.clone_from(&st.globs);
+    }
     inner.eval_depth = st.eval_depth + 1;
     stmts(&mut inner, tree.root());
     let scan = inner.finish_nested();
@@ -536,6 +542,47 @@ fn eval_source(st: &mut State<'_>, call: Node<'_>, args: Node<'_>) {
     for u in scan.unresolved {
         st.unres(call, &u.what);
     }
+}
+
+/// The namespace an `exec`/`eval` call gives its source when `globals` is a dict literal with
+/// literal string keys (and no `locals` argument): the caller scope does not leak in, only the
+/// listed names, each bound to what its value denotes there. `None` for any other form
+/// (`globals()`, a variable, `**` splats), which keeps the caller scope as an over-approximation.
+fn explicit_namespace(st: &mut State<'_>, args: Node<'_>) -> Option<BTreeMap<String, Binding>> {
+    let all = kids(args);
+    let mut globals = None;
+    let mut positional = 0;
+    for a in &all {
+        if a.kind() == "keyword_argument" {
+            let name = st.name(a.child_by_field_name("name")?).into_owned();
+            match name.as_str() {
+                "globals" => globals = a.child_by_field_name("value"),
+                "locals" => return None,
+                _ => {}
+            }
+        } else {
+            positional += 1;
+            match positional {
+                2 => globals = Some(*a),
+                3 => return None,
+                _ => {}
+            }
+        }
+    }
+    let dict = globals.filter(|d| d.kind() == "dictionary")?;
+    let mut ns = BTreeMap::new();
+    for pair in kids(dict) {
+        if pair.kind() != "pair" {
+            return None;
+        }
+        let key = string_lit(st, pair.child_by_field_name("key")?)?;
+        let binding = match path_of(st, pair.child_by_field_name("value")?, false) {
+            Some((p, true)) => Binding::Alias(p),
+            _ => Binding::Opaque,
+        };
+        ns.insert(key, binding);
+    }
+    Some(ns)
 }
 
 /// Report `getattr(<sys|builtins|os|subprocess>, <non-literal>)` as an unresolved dynamic form.
