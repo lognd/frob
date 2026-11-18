@@ -442,6 +442,7 @@
 | [PLAN015](PLAN015.md) | plan-sorry-hole | error | manual | P+ | false | A `sorry` hole stands in for a scenario tail. |
 | [PLAN016](PLAN016.md) | plan-retry-hazard | error | manual | P+ | false | A `retry` repeats a step that is not marked `idempotent`. |
 | [PLAN018](PLAN018.md) | plan-unrealized-one-of | error | manual | P+ | false | No alternative of a `one_of` is realized by any scenario. |
+| [PLAN020](PLAN020.md) | plan-variant-as-arm | error | manual | P+ | false | An input-chosen alternative is modeled as an outcome arm. |
 | [PLAN027](PLAN027.md) | plan-realized-non-goal | error | manual | P+ | false | A scenario realizes a `non_goal` of its system. |
 | [PLAN041](PLAN041.md) | plan-unmapped-error | error | manual | P+ | false | A failure variant of a step is reached by no outcome-map source. |
 | [PLAN042](PLAN042.md) | plan-unproducible-mapping | error | manual | P+ | false | An outcome map targets a variant the step does not declare. |

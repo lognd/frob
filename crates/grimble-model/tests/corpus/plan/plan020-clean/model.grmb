@@ -1,0 +1,18 @@
+grimble = "2";
+module m;
+
+system s {
+  ambient escalate { verified_by "tests/a.py"; }
+  actor u : human;
+  step u.pick : { ok, declined };
+
+  goal u { start; }
+  goal u.start { one_of { card; cash; } }
+
+  scenario t realizes u.start.card {
+    u.pick => {
+      ok => end ok;
+      declined => end err(declined);
+    }
+  }
+}

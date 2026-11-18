@@ -146,6 +146,7 @@ static PAGES: &[Page] = gob_cli::rule_pages![
     "PLAN014",
     "PLAN015",
     "PLAN018",
+    "PLAN020",
     "PLAN027",
     "PLAN041",
     "PLAN042",

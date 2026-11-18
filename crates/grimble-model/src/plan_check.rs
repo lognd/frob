@@ -1244,6 +1244,7 @@ fn analyze_plan(
     plan_rules(&mut t, &uses, degraded);
     plan016(&mut t, &uses);
     outcome_maps(&mut t);
+    plan020(&mut t);
     sys_flow(&mut t, idx, degraded);
     impl_checks(&mut t, &uses, degraded);
     tracing::debug!(
@@ -1853,6 +1854,52 @@ fn outcome_maps(t: &mut Tables<'_>) {
                 }
             }
         }
+    }
+    for (rule, rec, span, msg) in out {
+        t.raise(rule, &rec, span, msg);
+    }
+}
+
+/// PLAN020: an arm of a scenario that names a sibling variant of the goal variant the scenario realizes (an input-chosen alternative modeled as an outcome arm, grmb-spec 5.2).
+// frob:ticket 01M6D467K5GSWH3VRBNZM68NSY
+fn plan020(t: &mut Tables<'_>) {
+    let mut out: Vec<AmbFinding> = Vec::new();
+    for (key, sr) in &t.scenarios {
+        let mut siblings: BTreeSet<String> = BTreeSet::new();
+        for r in &sr.sc.realizes {
+            let Some((vk, _)) = find(&t.variants, &sr.rec.ctx, r) else {
+                continue;
+            };
+            let Some((parent, _)) = vk.rsplit_once('.') else {
+                continue;
+            };
+            let prefix = format!("{parent}.");
+            for other in t.variants.keys() {
+                if other != vk
+                    && let Some(leaf) = other.strip_prefix(&prefix)
+                    && !leaf.contains('.')
+                {
+                    siblings.insert(leaf.to_owned());
+                }
+            }
+        }
+        if siblings.is_empty() {
+            continue;
+        }
+        visit_scenario(sr.sc, &mut |_, arm| {
+            if let Some(a) = arm
+                && let Pattern::Path(p) = &a.pattern
+                && let Some(last) = p.segments.last()
+                && siblings.contains(last)
+            {
+                tracing::debug!(scenario = %key, arm = %last, "PLAN020: variant as arm");
+                let msg = format!(
+                    "arm `{}` of scenario `{key}` repeats the sibling goal variant `{last}`; a choice made by the input is a goal variant, not an outcome arm",
+                    a.pattern.written()
+                );
+                out.push(("PLAN020", sr.rec.clone(), a.span, msg));
+            }
+        });
     }
     for (rule, rec, span, msg) in out {
         t.raise(rule, &rec, span, msg);
