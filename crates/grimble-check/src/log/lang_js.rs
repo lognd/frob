@@ -75,6 +75,42 @@ fn pre_import(st: &mut State<'_>, n: Node<'_>) {
 }
 
 fn run_function(st: &mut State<'_>, f: Node<'_>) {
+    run_function_with(st, f, None);
+}
+
+/// The callback of `import('x').then(cb)` / `require('x').then(cb)`: its first parameter is the
+/// module namespace. Returns the module path and the callback when `f` is such a callee.
+// frob:ticket 7TED887
+fn then_callback<'t>(
+    st: &mut State<'_>,
+    f: Node<'t>,
+    args: &[Node<'t>],
+) -> Option<(SymPath, Node<'t>)> {
+    if f.kind() != "member_expression"
+        || f.child_by_field_name("property").map(|p| st.txt(p)) != Some("then")
+    {
+        return None;
+    }
+    let obj = f.child_by_field_name("object")?;
+    if obj.kind() != "call_expression" {
+        return None;
+    }
+    let callee = obj.child_by_field_name("function")?;
+    let cp = callee_path(st, callee)?;
+    if cp != ["import"] && cp != ["require"] {
+        return None;
+    }
+    let module = path_of(st, obj, false)?;
+    let cb = *args.first()?;
+    matches!(
+        cb.kind(),
+        "arrow_function" | "function_expression" | "function"
+    )
+    .then_some((module, cb))
+}
+
+/// Run a function body; `first` binds the first parameter as an alias of that module path.
+fn run_function_with(st: &mut State<'_>, f: Node<'_>, first: Option<&[String]>) {
     st.push();
     if (f.kind() == "function_expression" || f.kind() == "function")
         && let Some(name) = f.child_by_field_name("name")
@@ -86,6 +122,24 @@ fn run_function(st: &mut State<'_>, f: Node<'_>) {
     for field in ["parameters", "parameter"] {
         if let Some(p) = f.child_by_field_name(field) {
             bind_pattern(st, p, &mut d);
+            if let Some(base) = first {
+                let pat = if p.kind() == "formal_parameters" {
+                    kids(p).into_iter().find(|c| c.kind() != "comment")
+                } else {
+                    Some(p)
+                };
+                let pat = pat.map(|c| c.child_by_field_name("pattern").unwrap_or(c));
+                match pat {
+                    Some(c) if c.kind() == "identifier" => {
+                        let name = st.txt(c).to_owned();
+                        st.bind(&name, Binding::Alias(base.to_vec()));
+                    }
+                    Some(c) if c.kind() == "object_pattern" => {
+                        destructure(st, c, Some(base), &mut d);
+                    }
+                    _ => {}
+                }
+            }
         }
     }
     if let Some(body) = f.child_by_field_name("body") {
@@ -663,6 +717,7 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         .into_iter()
         .filter(|c| c.kind() != "comment")
         .collect();
+    let then = then_callback(st, f, &arg_nodes);
     let mut cp = callee_path(st, f);
     let mut args = args_from(st, &arg_nodes);
     if f.kind() != "new_expression" {
@@ -710,7 +765,13 @@ fn do_call<'t>(st: &mut State<'_>, n: Node<'t>, d: &mut Vec<Node<'t>>) {
         }
         st.in_chain = false;
         for c in arg_nodes {
-            visit(st, c, d);
+            if let Some((module, cb)) = &then
+                && cb.id() == c.id()
+            {
+                run_function_with(st, c, Some(module));
+            } else {
+                visit(st, c, d);
+            }
         }
     });
 }
