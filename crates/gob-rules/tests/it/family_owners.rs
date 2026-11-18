@@ -91,6 +91,7 @@ const OWNERS: &[(&str, &str)] = &[
     ("TYPING", "grimble-lints"),
     ("UNITY", "grimble-lints"),
     ("VET", "grimble-vet"),
+    ("VMOD", "grimble-model"),
     ("VIS", "grimble-arch"),
     ("WAIVE", "crunk-rules"),
 ];
