@@ -7,11 +7,11 @@ priority = "medium"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:53:42Z"
-updated = "2026-10-08T04:53:42Z"
+updated = "2026-11-19T16:42:12Z"
 
 [[acceptance]]
 text = "Given a scene corpus, when crunk render --engine solve runs, then layout-solve JSON is produced deterministically and LAYOUT, RESP and GX focus rules run at T1 in CI without a browser"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md sections 3, 4 and 9 (D111, D113).
