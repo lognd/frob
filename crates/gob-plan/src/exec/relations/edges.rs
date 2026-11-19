@@ -5,7 +5,7 @@
 //! of them may go anywhere. An atom is Yes in `R_lo`, No outside `R_hi` and Unknown between; the
 //! doubt names the May edge or the frontier node.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 
 use gob_ir::{NodeId, Relation, Truth};
 
@@ -95,6 +95,90 @@ impl Closure {
             hi,
             exhausted,
             frontier,
+        }
+    }
+}
+
+impl Closure {
+    /// Adds this closure to the running union of the closures of one quantifier's members
+    /// (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
+    pub(crate) fn join_into(&self, u: &mut ClosureUnion) {
+        u.sure.extend(self.sure.iter().copied());
+        u.hi.extend(self.hi.iter().copied());
+        u.frontier |= !self.frontier.is_empty();
+        u.exhausted &= self.exhausted;
+    }
+}
+
+/// The union of several [`Closure`]s: what any of them sure-reaches or possibly reaches, whether
+/// any is on the frontier, and whether every possible search was exhausted.
+pub(crate) struct ClosureUnion {
+    sure: HashSet<NodeId>,
+    hi: HashSet<NodeId>,
+    frontier: bool,
+    exhausted: bool,
+}
+
+impl ClosureUnion {
+    /// The union of no closures.
+    pub(crate) fn new() -> Self {
+        Self {
+            sure: HashSet::new(),
+            hi: HashSet::new(),
+            frontier: false,
+            exhausted: true,
+        }
+    }
+
+    /// The decided truth of `some member: member reaches to`, or `None` when the answer is an
+    /// Unknown whose doubts only the members themselves can name.
+    pub(crate) fn decides(&self, to: NodeId) -> Option<Truth> {
+        if self.sure.contains(&to) {
+            Some(Truth::Yes)
+        } else if !self.hi.contains(&to) && !self.frontier && self.exhausted {
+            Some(Truth::No)
+        } else {
+            None
+        }
+    }
+}
+
+/// The edges into each node from the members of one quantifier, for `some member: member VERB x`.
+pub(crate) struct EdgeUnion {
+    yes: HashSet<NodeId>,
+    any: HashSet<NodeId>,
+    frontier: bool,
+}
+
+impl EdgeUnion {
+    /// The union of no members' edges.
+    pub(crate) fn new() -> Self {
+        Self {
+            yes: HashSet::new(),
+            any: HashSet::new(),
+            frontier: false,
+        }
+    }
+
+    /// Adds the edges out of `a` in `rel`.
+    pub(crate) fn add(&mut self, rel: &Relation, a: NodeId) {
+        for (m, t) in rel.image(a) {
+            self.any.insert(m);
+            if t == Truth::Yes {
+                self.yes.insert(m);
+            }
+        }
+        self.frontier |= rel.is_unknown_out(a);
+    }
+
+    /// The decided truth of `some member: member VERB b`, or `None` when it is an Unknown.
+    pub(crate) fn decides(&self, b: NodeId) -> Option<Truth> {
+        if self.yes.contains(&b) {
+            Some(Truth::Yes)
+        } else if !self.any.contains(&b) && !self.frontier {
+            Some(Truth::No)
+        } else {
+            None
         }
     }
 }

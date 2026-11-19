@@ -429,3 +429,62 @@ fn a_regex_op_finds_the_same_rows_on_every_run_of_the_plan() {
     // The compiled pattern is shared between runs; a later run must read the same rows.
     assert_eq!(rows(&plan, &model), first);
 }
+
+// frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn a_folded_inside_quantifier_agrees_with_scanning_its_members() {
+    let mut d = Doc::new("a.rs", "rust");
+    let mut tops = Vec::new();
+    let mut inside = Vec::new();
+    for i in 0..20u32 {
+        let head = d.at_range(
+            |l| NodeSpec::new(Operator::reference("g"), l),
+            i * 100 + 10,
+            i * 100 + 11,
+            &[],
+        );
+        let call = d.at_range(
+            |l| NodeSpec::new(Operator::apply("call"), l),
+            i * 100 + 10,
+            i * 100 + 20,
+            &[head],
+        );
+        let f = func(
+            &mut d,
+            &format!("f{i}"),
+            "public",
+            i * 100,
+            i * 100 + 50,
+            &[call],
+        );
+        tops.push(f);
+        inside.push(call);
+    }
+    // Calls outside every function are never inside a member.
+    for i in 0..6u32 {
+        let head = d.at_range(
+            |l| NodeSpec::new(Operator::reference("g"), l),
+            5000 + i * 10,
+            5000 + i * 10 + 1,
+            &[],
+        );
+        let loose = d.at_range(
+            |l| NodeSpec::new(Operator::apply("call"), l),
+            5000 + i * 10,
+            5000 + i * 10 + 5,
+            &[head],
+        );
+        tops.push(loose);
+    }
+    let (model, _) = d.root(&tops);
+    let mut b = PlanBuilder::new("HOI001", Polarity::Pplus);
+    let c = b.find("call");
+    let some = b.quant(Quant::Some, "function", |b, g| b.inside(c, g, false));
+    b.clause(some);
+    b.report(None, c, "call in a function");
+    let out = rows(&b.build(), &model);
+    let bound: Vec<NodeId> = out.iter().filter_map(|r| r.node(c)).collect();
+    assert_eq!(bound, inside);
+    assert!(out.iter().all(|r| r.verdict.truth == Truth::Yes));
+}

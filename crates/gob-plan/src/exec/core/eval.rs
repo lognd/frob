@@ -20,6 +20,7 @@ use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, OWNED_BY, PEER_OF, SideRow, SideTable};
 use crate::plan::{Certainty, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
 
+mod hoist;
 mod index;
 mod predicate;
 
@@ -112,6 +113,10 @@ pub(crate) struct Eval<'a> {
     closures: RefCell<FastMap<(StrId, NodeId, u16), Rc<relations::Closure>>>,
     /// Computed operands (`slug`, `resolve`, dotted fields) by (op, side, argument values).
     operands: RefCell<FastMap<OperandKey, Rc<Datum>>>,
+    /// Folded graph-test quantifier bodies by body op (`None`: not foldable).
+    hoists: RefCell<FastMap<OpId, Option<Rc<hoist::Hoist>>>>,
+    /// How often each quantifier body has run, until it is folded.
+    warmth: RefCell<FastMap<OpId, u32>>,
     /// Equality-join indexes by the id of the equality conjunct they serve.
     indexes: RefCell<FastMap<OpId, Rc<index::EqIndex>>>,
     /// The equality conjuncts of each quantifier body, found once.
@@ -198,6 +203,8 @@ impl<'a> Eval<'a> {
             spans: RefCell::default(),
             closures: RefCell::default(),
             units: RefCell::default(),
+            hoists: RefCell::default(),
+            warmth: RefCell::default(),
             indexes: RefCell::default(),
             conjuncts: RefCell::default(),
             operands: RefCell::default(),
@@ -522,20 +529,24 @@ impl<'a> Eval<'a> {
                 certainty,
             } => {
                 let (a, b) = (Self::node(env, *from), self.unit_of(Self::node(env, *to)));
-                let rel = self.wired.edges[via];
-                let key = (*via, a, *within);
-                let cached = self.closures.borrow().get(&key).map(Rc::clone);
-                let closure = cached.unwrap_or_else(|| {
-                    let c = Rc::new(relations::Closure::of(rel, a, *within));
-                    self.closures.borrow_mut().insert(key, Rc::clone(&c));
-                    c
-                });
+                let closure = self.closure_of(*via, a, *within);
                 relations::reaches_in(&closure, a, b, *within, self.effective(*certainty))
             }
             Op::Find { .. } | Op::FindSide { .. } => {
                 unreachable!("binders are clauses, enumerated by the run")
             }
         }
+    }
+
+    /// The bounded forward closure of `a` over the relation named by `via`, computed once per run.
+    fn closure_of(&self, via: StrId, a: NodeId, within: u16) -> Rc<relations::Closure> {
+        let key = (via, a, within);
+        if let Some(c) = self.closures.borrow().get(&key) {
+            return Rc::clone(c);
+        }
+        let c = Rc::new(relations::Closure::of(self.wired.edges[&via], a, within));
+        self.closures.borrow_mut().insert(key, Rc::clone(&c));
+        c
     }
 
     /// The number of def views computed so far.
@@ -652,6 +663,9 @@ impl<'a> Eval<'a> {
             return acc;
         }
         let domain = self.domain(kind);
+        if let Some(t) = self.hoisted(var, cond, &domain, env) {
+            return self.settle(Verdict::certain(t == Truth::Yes));
+        }
         let visit = self.candidates(var, cond, &domain, env);
         let count = visit.as_ref().map_or(domain.len(), Vec::len);
         for i in 0..count {
@@ -668,6 +682,11 @@ impl<'a> Eval<'a> {
             }
         }
         env[usize::from(var)] = None;
+        self.settle(acc)
+    }
+
+    /// A `some` that found no member is Unknown, not No, when the model has unread regions.
+    fn settle(&self, acc: Verdict) -> Verdict {
         if acc.truth == Truth::No && self.hidden {
             return Verdict::unknown(Doubt::Hidden);
         }

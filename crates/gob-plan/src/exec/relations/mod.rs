@@ -20,7 +20,7 @@ use std::collections::BTreeMap;
 use gob_ir::Relation;
 
 pub use count::{Count, Knobs};
-pub(crate) use edges::{Closure, reaches_in, verb};
+pub(crate) use edges::{Closure, ClosureUnion, EdgeUnion, reaches_in, verb};
 pub use side::{CELLS, SideData, SideError, SideRow, SideTable};
 pub(crate) use side::{MODEL_SELECTORS, row_kind_table};
 
