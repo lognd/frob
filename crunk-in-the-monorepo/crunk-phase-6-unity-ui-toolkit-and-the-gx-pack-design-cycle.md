@@ -2,12 +2,13 @@
 id = "01M4CXSAG0YPF18FX3KAPVX45C"
 title = "crunk phase 6: Unity UI Toolkit and the GX pack; design-cycle artifacts pack"
 type = "epic"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:14Z"
-updated = "2026-11-19T20:07:56Z"
+updated = "2026-11-19T20:08:29Z"
 
 [[acceptance]]
 text = "Given hullbreach game UI, when crunk check runs with the GX pack, then USS token rules, uGUI generator literal checks and GX rules report findings"

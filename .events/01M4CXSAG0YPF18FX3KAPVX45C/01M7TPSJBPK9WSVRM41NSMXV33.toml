@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: All children done; end-to-end hullbreach game UI test through crunk_check::run reports USS token, uGUI literal and GX findings"
+at = "2026-11-19T20:08:29Z"
+actor = "lognd"
+rev = 1
