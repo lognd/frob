@@ -343,15 +343,13 @@ pub(crate) fn is_canonical_unit(model: &Model, node: NodeId) -> bool {
 /// Whether the canonical unit `node` is a test: a boolean `test` attribute (Rust, Python) or an
 /// `attr(test)` child node (the TypeScript fold of a `test()` / `it()` runner callback).
 // frob:ticket 01M5P621KV0Y3BRPBFQWVRAYZ5
-fn is_test_unit(model: &Model, node: NodeId) -> bool {
+pub(crate) fn is_test_unit(model: &Model, node: NodeId) -> bool {
     let term = model.term();
     let n = term.node(node);
-    let by_attr = matches!(n.attrs().get("test"), Some(AttrValue::Bool(true)));
-    let by_child = n.children().iter().any(|&c| {
-        matches!(term.node(c).op(), Operator::Universal(Universal::Attr { name }) if name == "test")
-    });
-    tracing::trace!(by_attr, by_child, "test unit probe");
-    by_attr || by_child
+    matches!(n.attrs().get("test"), Some(AttrValue::Bool(true)))
+        || n.children().iter().any(|&c| {
+            matches!(term.node(c).op(), Operator::Universal(Universal::Attr { name }) if name == "test")
+        })
 }
 
 /// Whether `node` stands for an external ambient unit: a `ref` that resolves to nothing in the

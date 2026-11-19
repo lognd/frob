@@ -9,13 +9,13 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 use std::rc::Rc;
 
-use gob_ir::{Location, Model, NodeId, Relation, Truth};
+use gob_ir::{Location, Model, NodeId, Operator, Relation, Truth, Universal};
 use gob_text::SourceText;
 use regex::Regex;
 
 use super::field::{Datum, Reader, Scalar, compare};
 use super::fxmap::FastMap;
-use super::kind::{KindTest, is_canonical_unit, is_group, unwrap_statement};
+use super::kind::{KindTest, is_canonical_unit, is_group, is_test_unit, unwrap_statement};
 use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, OWNED_BY, PEER_OF, SideRow, SideTable};
 use crate::plan::{Certainty, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
@@ -218,8 +218,23 @@ fn scan(model: &Model, kinds: &FastMap<StrId, KindTest>) -> (bool, FastMap<StrId
     for n in term.ids() {
         let op = term.node(n).op();
         hidden |= op.is_opaque() || op.is_hole();
+        // A unit is checked for canonical form once, whatever number of unit kinds ask.
+        let unit = match op {
+            Operator::Universal(Universal::Unit { kind, .. }) => {
+                Some((kind.as_str(), is_canonical_unit(model, n)))
+            }
+            _ => None,
+        };
         for &(i, t) in &scanned {
-            if let Some(m) = t.member(model, n) {
+            let m = match (t, unit) {
+                (KindTest::UnitKind(_) | KindTest::Test, None | Some((_, false))) => None,
+                (KindTest::UnitKind(kinds), Some((kind, true))) => {
+                    kinds.contains(&kind).then_some(Truth::Yes)
+                }
+                (KindTest::Test, Some((_, true))) => is_test_unit(model, n).then_some(Truth::Yes),
+                _ => t.member(model, n),
+            };
+            if let Some(m) = m {
                 found[i].push((n, m));
             }
         }
