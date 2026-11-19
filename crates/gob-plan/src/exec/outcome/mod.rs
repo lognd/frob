@@ -163,9 +163,12 @@ pub fn outcomes(plan: &Plan, input: &Input<'_>, rels: &Relations) -> Result<Outc
     };
     let mut findings = Vec::new();
     let mut clean = 0;
+    // One slot buffer and one guard buffer serve every binding.
+    let mut env: Env = Vec::new();
+    let mut guards: Vec<Verdict> = Vec::with_capacity(p.reports.len());
     for (i, row) in run.rows.iter().enumerate() {
-        let mut env = row.vars.clone();
-        let (guards, w) = report_guards(&ev, &mut env);
+        env.clone_from(&row.vars);
+        let w = report_guards(&ev, &mut env, &mut guards);
         let (kind, mut reasons, report) = decide(p.polarity, row, &w, &guards, p);
         let mut kind = kind;
         // `unresolved when`: a Yes or Unknown condition replaces fire or clean.
@@ -248,7 +251,8 @@ fn conditional(
         return Vec::new();
     };
     let mut env = base_row.vars.clone();
-    let (guards, w) = report_guards(ev0, &mut env);
+    let mut guards = Vec::with_capacity(ev0.plan.reports.len());
+    let w = report_guards(ev0, &mut env, &mut guards);
     let (kind0, _, _) = decide(ev0.plan.polarity, base_row, &w, &guards, ev0.plan);
     if kind0 == Some(Kind::Fire) {
         return Vec::new();
@@ -279,9 +283,9 @@ fn assumptions_at(
 /// A guard after the first `Yes` cannot change the `or` or the first report that is `Yes`, and
 /// only guards before the producing report become notes, so it is not evaluated and stands as
 /// `No` (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
-fn report_guards(ev: &super::core::Eval<'_>, env: &mut Env) -> (Vec<Verdict>, Verdict) {
+fn report_guards(ev: &super::core::Eval<'_>, env: &mut Env, guards: &mut Vec<Verdict>) -> Verdict {
     let mut w = Verdict::no();
-    let mut guards: Vec<Verdict> = Vec::with_capacity(ev.plan.reports.len());
+    guards.clear();
     for r in &ev.plan.reports {
         if w.truth == Truth::Yes {
             guards.push(Verdict::no());
@@ -291,7 +295,7 @@ fn report_guards(ev: &super::core::Eval<'_>, env: &mut Env) -> (Vec<Verdict>, Ve
         w = w.or(g.clone());
         guards.push(g);
     }
-    (guards, w)
+    w
 }
 
 /// The polarity map: the outcome (`None` is clean), the reasons of an Unresolved and the

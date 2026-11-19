@@ -25,16 +25,23 @@ pub(super) fn slug(s: Datum) -> Datum {
 /// `resolve(path, from)`: `path` against the directory of the file path `from`.
 pub(super) fn resolve(path: Datum, from: Datum) -> Datum {
     match (text_of(path), text_of(from)) {
-        (Ok(p), Ok(f)) => resolve_path(&p, &f).map_or(Datum::Absent, Datum::text),
+        (Ok(p), Ok(f)) => resolve_str(&p, &f),
         (Err(Datum::Absent), _) | (_, Err(Datum::Absent)) => Datum::Absent,
         _ => Datum::Unknown,
     }
 }
 
+/// `resolve(path, from)` over text already in hand: absent when the path escapes the root.
+///
+/// frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B
+pub(super) fn resolve_str(path: &str, from: &str) -> Datum {
+    resolve_path(path, from).map_or(Datum::Absent, Datum::text)
+}
+
 /// Joins `path` onto the directory of `from`, normalising `.` and `..`; a leading `/` is
 /// relative to the repository root. None when the result escapes the root.
 fn resolve_path(path: &str, from: &str) -> Option<String> {
-    let mut parts: Vec<&str> = Vec::new();
+    let mut out = String::with_capacity(from.len() + path.len() + 1);
     let base = match path.strip_prefix('/') {
         Some(_) => "",
         None => from.rsplit_once('/').map_or("", |(dir, _)| dir),
@@ -43,12 +50,21 @@ fn resolve_path(path: &str, from: &str) -> Option<String> {
         match seg {
             "" | "." => {}
             ".." => {
-                parts.pop()?;
+                // Dropping the last segment; nothing left to drop escapes the root.
+                if out.is_empty() {
+                    return None;
+                }
+                out.truncate(out.rfind('/').unwrap_or(0));
             }
-            s => parts.push(s),
+            s => {
+                if !out.is_empty() {
+                    out.push('/');
+                }
+                out.push_str(s);
+            }
         }
     }
-    Some(parts.join("/"))
+    Some(out)
 }
 
 #[cfg(test)]

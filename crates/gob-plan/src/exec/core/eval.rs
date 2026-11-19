@@ -5,7 +5,7 @@
 //! add an Unknown disjunct when the model has unread regions (review 2.2 item 7).
 
 use std::cell::{Cell, RefCell};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Range;
 use std::rc::Rc;
 
@@ -14,11 +14,13 @@ use gob_text::SourceText;
 use regex::Regex;
 
 use super::field::{Datum, Reader, Scalar, compare};
-use super::fxmap::FastMap;
+use super::fxmap::{FastMap, FastSet};
 use super::kind::{KindTest, is_canonical_unit, is_group, is_test_unit, unwrap_statement};
 use super::verdict::{Doubt, Verdict};
 use crate::exec::relations::{self, Count, Knobs, OWNED_BY, PEER_OF, SideRow, SideTable};
-use crate::plan::{Certainty, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId};
+use crate::plan::{
+    Certainty, Leaf, Limit, Op, OpId, Operand, PlanParts, Position, Quant, StrId, VarId,
+};
 
 mod hoist;
 mod index;
@@ -133,7 +135,7 @@ pub(crate) struct Wired<'a> {
     /// Side tables by the string id of the relation name.
     pub(crate) side: FastMap<StrId, &'a SideTable>,
     /// Kind words (by string id) that range over rows of the side table of the same id.
-    pub(crate) row_kinds: HashSet<StrId>,
+    pub(crate) row_kinds: FastSet<StrId>,
     /// The `owned by` globs per model node name, built from `model.selectors`.
     pub(crate) owners: HashMap<String, globset::GlobSet>,
     /// The `[rules]` knob overrides.
@@ -160,8 +162,8 @@ pub(crate) struct Eval<'a> {
     operands: RefCell<FastMap<OperandKey, Rc<Datum>>>,
     /// The latest computed value of each (op, side), by `op * 2 + side`.
     latest: RefCell<Vec<Option<LatestOperand>>>,
-    /// The (op, side) pairs that are the probe of an equality index.
-    probes: RefCell<HashSet<(OpId, bool)>>,
+    /// Whether each (op, side), by `op * 2 + side`, is the probe of an equality index.
+    probes: RefCell<Vec<bool>>,
     /// Folded graph-test quantifier bodies by body op (`None`: not foldable).
     hoists: RefCell<FastMap<OpId, Option<Rc<hoist::Hoist>>>>,
     /// How often each quantifier body has run, until it is folded.
@@ -373,11 +375,21 @@ impl<'a> Eval<'a> {
                 self.wired.knobs.get_int(self.string(name), default),
             )),
             Operand::Slug(a) => super::call::slug(self.leaf_text(a.operand(), env)),
-            Operand::Resolve(a, b) => super::call::resolve(
-                self.leaf_text(a.operand(), env),
-                self.leaf_text(b.operand(), env),
-            ),
+            Operand::Resolve(a, b) => self.resolve_borrowed(a, b, env).unwrap_or_else(|| {
+                super::call::resolve(
+                    self.leaf_text(a.operand(), env),
+                    self.leaf_text(b.operand(), env),
+                )
+            }),
         }
+    }
+
+    /// `resolve(a, b)` when both arguments are text borrowed from the model, with no copy of
+    /// either (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
+    fn resolve_borrowed(&self, a: Leaf, b: Leaf, env: &Env) -> Option<Datum> {
+        let path = self.borrowed_text(&a.operand(), env)??;
+        let from = self.borrowed_text(&b.operand(), env)??;
+        Some(super::call::resolve_str(path, from))
     }
 
     /// The text of a string operand borrowed from the model or the plan, without a copy:
@@ -441,8 +453,17 @@ impl<'a> Eval<'a> {
         };
         let vals = match *o {
             Operand::Slug(a) => (val(a.operand()), None),
-            Operand::Resolve(a, b) => (val(a.operand()), val(b.operand())),
-            Operand::Field(v, f) if self.string(f).contains('.') => (env[usize::from(v)], None),
+            // Computed from borrowed text in one allocation: cheaper than caching it.
+            Operand::Resolve(a, b) => match self.resolve_borrowed(a, b, env) {
+                Some(d) => return Side::Fresh(d),
+                None => (val(a.operand()), val(b.operand())),
+            },
+            Operand::Field(v, f) if self.string(f).contains('.') => {
+                if let Some(Some(s)) = self.borrowed_text(o, env) {
+                    return Side::Fresh(Datum::text(s));
+                }
+                (env[usize::from(v)], None)
+            }
             _ => return Side::Fresh(self.datum(o, env)),
         };
         // The latest value of each side answers repeats within one binding; a probe side of an
@@ -454,7 +475,7 @@ impl<'a> Eval<'a> {
             return Side::Shared(Rc::clone(d));
         }
         let key = (op, rhs, vals.0, vals.1);
-        let keyed = !self.probes.borrow().contains(&(op, rhs));
+        let keyed = !self.probes.borrow().get(slot).copied().unwrap_or(false);
         let hit = if keyed {
             self.operands.borrow().get(&key).map(Rc::clone)
         } else {
@@ -477,7 +498,12 @@ impl<'a> Eval<'a> {
 
     /// Marks the side of `op` that is the probe of an equality index.
     pub(super) fn mark_probe(&self, op: OpId, rhs: bool) {
-        self.probes.borrow_mut().insert((op, rhs));
+        let slot = op as usize * 2 + usize::from(rhs);
+        let mut probes = self.probes.borrow_mut();
+        if probes.len() <= slot {
+            probes.resize(self.plan.ops.len() * 2, false);
+        }
+        probes[slot] = true;
     }
 
     /// A call argument as a datum; a file node stands for its path.

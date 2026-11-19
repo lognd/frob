@@ -71,7 +71,8 @@ impl Eval<'_> {
             Op::And(cs) => cs,
             _ => &single,
         };
-        cs.iter()
+        let mut found: Vec<Conjunct> = cs
+            .iter()
             .filter_map(|&c| {
                 let Op::Cmp {
                     lhs,
@@ -90,7 +91,12 @@ impl Eval<'_> {
                     None
                 }
             })
-            .collect()
+            .collect();
+        // Cheap probes first: a probe that selects nothing then spares the dearer ones.
+        found.sort_by_key(|&(_, _, probe, _)| {
+            matches!(probe, Operand::Resolve(..) | Operand::Slug(_))
+        });
+        found
     }
 
     /// The index of conjunct `c` over `domain`, built on first use.
@@ -169,6 +175,9 @@ impl Eval<'_> {
             let n = hits + idx.wild.len();
             if best.as_ref().is_none_or(|(_, _, m)| n < *m) {
                 best = Some((Rc::clone(&idx), list, n));
+            }
+            if n == 0 {
+                break;
             }
         }
         best.map(|(idx, list, _)| {
