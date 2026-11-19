@@ -1,0 +1,1 @@
+frob plan --from-design now reports the verdict of every manual verified_by row (pass when a passed attestation carrying KIND/NAME/verified_by[i] sits on a live ticket implementing the entity or a design ancestor, else not-run), and grimble graph --json lists each entity's manual clause indices as plan.manual_rows.
