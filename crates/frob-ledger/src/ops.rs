@@ -423,6 +423,69 @@ impl Ledger {
         Ok(out)
     }
 
+    // frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+    /// The design clause anchors (`KIND/NAME/verified_by[i]`) that each ticket's passed attestations carry as facts.
+    ///
+    /// Only tickets that implement a design anchor are read. Within one attestation reference the latest record decides, so a later failing or unmeasured record withdraws an earlier pass. Tickets with no such fact are left out.
+    ///
+    /// # Errors
+    ///
+    /// Store failures.
+    pub fn passed_attestation_facts(&self) -> Result<Vec<(TicketId, Vec<String>)>> {
+        let mut out = Vec::new();
+        for (facts, _) in self.design_links()? {
+            let mut latest: std::collections::BTreeMap<String, Vec<String>> =
+                std::collections::BTreeMap::new();
+            for event in self.events(facts.id)? {
+                let EventBody::Evidence(data) = &event.body else {
+                    continue;
+                };
+                let text = |k: &str| data.record.get(k).and_then(toml::Value::as_str);
+                if text("provider") != Some("attestation") {
+                    continue;
+                }
+                let anchors = if crate::fold::evidence_passes(data) {
+                    data.record
+                        .get("attestation")
+                        .and_then(|a| a.get("facts"))
+                        .and_then(toml::Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .filter_map(toml::Value::as_str)
+                        .filter(|f| crate::design::row_anchor_parts(f).is_some())
+                        .map(str::to_owned)
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                latest.insert(text("ref").unwrap_or_default().to_owned(), anchors);
+            }
+            let rows: Vec<String> = latest.into_values().flatten().collect();
+            if !rows.is_empty() {
+                out.push((facts.id, rows));
+            }
+        }
+        tracing::debug!(tickets = out.len(), "passed attestation anchors read");
+        Ok(out)
+    }
+
+    // frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+    /// The verdict of every `manual` `verified_by` row of `graph` from this ledger (grmb-spec 12.8, D202).
+    ///
+    /// # Errors
+    ///
+    /// Store failures.
+    pub fn manual_row_verdicts(
+        &self,
+        graph: &crate::design::DesignGraph,
+    ) -> Result<Vec<(String, crate::design::RowVerdict)>> {
+        Ok(crate::design::manual_row_verdicts(
+            graph,
+            &self.design_links()?,
+            &self.passed_attestation_facts()?,
+        ))
+    }
+
     // frob:ticket 01M44C546DQRE4D11HHPM0HX6M
     pub(crate) fn load(s: &Synced, id: TicketId) -> Result<(Summary, Ticket)> {
         let not_found = || LedgerError::NotFound {

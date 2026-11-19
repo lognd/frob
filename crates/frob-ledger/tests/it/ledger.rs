@@ -1895,3 +1895,118 @@ fn design_links_lists_only_tickets_that_implement(layout: Layout) {
     assert_eq!(links[0].1, vec!["design:impl/w.a".to_owned()]);
 }
 both_layouts!(design_links_lists_only_tickets_that_implement);
+
+/// An attestation evidence event carrying `facts`, recorded as `status` (and `passed`) under `reference`.
+fn attestation(
+    reference: &str,
+    status: &str,
+    passed: bool,
+    facts: &[&str],
+) -> frob_ledger::event::EventBody {
+    use frob_ledger::event::{EventBody, EvidenceData};
+    let facts = facts
+        .iter()
+        .map(|f| format!("\"{f}\""))
+        .collect::<Vec<_>>()
+        .join(", ");
+    EventBody::Evidence(EvidenceData {
+        accepts: vec![1],
+        record: format!(
+            "provider = \"attestation\"
+ref = \"{reference}\"
+status = \"{status}\"
+passed = {passed}
+[attestation]
+by = \"a@example.com\"
+statement = \"checked by hand\"
+facts = [{facts}]
+"
+        )
+        .parse()
+        .expect("table"),
+    })
+}
+
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.passed_attestation_facts
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.manual_row_verdicts
+fn a_passed_attestation_is_the_pass_verdict_of_a_manual_row(layout: Layout) {
+    use frob_ledger::design::{DesignGraph, RowVerdict};
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let graph = DesignGraph::from_json(
+        r#"{"data":{"entities":[
+        {"anchor":"goal/w.g","kind":"goal","status":"declared","status_hi":"declared"},
+        {"anchor":"impl/w.a","kind":"impl","status":"bound","status_hi":"bound","plan":{"manual_rows":[1]}}],
+        "edges":[{"from":"impl/w.a","kind":"realizes","to":"goal/w.g"}]}}"#,
+    )
+    .expect("graph");
+    let row = "impl/w.a/verified_by[1]";
+    let verdict = || ledger.manual_row_verdicts(&graph).expect("verdicts");
+    let implementer = |anchor: &str| {
+        let mut req = NewTicket::new("Impl", TicketType::Task);
+        req.implements = vec![format!("design:{anchor}")];
+        ledger.new_ticket(req).expect("new").ticket.front.id
+    };
+    let own = implementer("impl/w.a");
+    assert_eq!(verdict(), vec![(row.to_owned(), RowVerdict::NotRun)]);
+
+    // an attestation with the anchor on a live implementer passes the row
+    ledger
+        .append(
+            own,
+            attestation("k1", "measured", true, &[row, "https://example.com/x"]),
+        )
+        .expect("attest");
+    assert_eq!(verdict(), vec![(row.to_owned(), RowVerdict::Pass)]);
+    let facts = ledger.passed_attestation_facts().expect("facts");
+    assert_eq!(facts, vec![(own, vec![row.to_owned()])]);
+
+    // a later failing record of the same reference withdraws it
+    ledger
+        .append(own, attestation("k1", "measured", false, &[row]))
+        .expect("fail");
+    assert_eq!(verdict(), vec![(row.to_owned(), RowVerdict::NotRun)]);
+    // and an unmeasured record never passes
+    ledger
+        .append(own, attestation("k2", "unmeasured", true, &[row]))
+        .expect("unmeasured");
+    assert_eq!(verdict(), vec![(row.to_owned(), RowVerdict::NotRun)]);
+    // a clause index that is not a manual row never passes
+    let bad = "impl/w.a/verified_by[0]";
+    ledger
+        .append(own, attestation("k3", "measured", true, &[bad]))
+        .expect("test row");
+    assert_eq!(verdict(), vec![(row.to_owned(), RowVerdict::NotRun)]);
+}
+both_layouts!(a_passed_attestation_is_the_pass_verdict_of_a_manual_row);
+
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+// frob:tests crates/frob-ledger/src/ops.rs::Ledger.manual_row_verdicts
+fn a_design_ancestor_ticket_passes_the_manual_row_and_an_unrelated_one_does_not(layout: Layout) {
+    use frob_ledger::design::{DesignGraph, RowVerdict};
+    let (_dir, ledger) = fixture(layout, RefMode::Trunk);
+    let graph = DesignGraph::from_json(
+        r#"{"data":{"entities":[
+        {"anchor":"goal/w.g","kind":"goal","status":"declared","status_hi":"declared"},
+        {"anchor":"impl/w.a","kind":"impl","status":"bound","status_hi":"bound","plan":{"manual_rows":[0]}}],
+        "edges":[{"from":"impl/w.a","kind":"realizes","to":"goal/w.g"}]}}"#,
+    )
+    .expect("graph");
+    let row = "impl/w.a/verified_by[0]";
+    let mut other = NewTicket::new("Other", TicketType::Task);
+    other.implements = vec!["design:impl/w.other".to_owned()];
+    let other = ledger.new_ticket(other).expect("other").ticket.front.id;
+    ledger
+        .append(other, attestation("k", "measured", true, &[row]))
+        .expect("attest");
+    let verdict = || ledger.manual_row_verdicts(&graph).expect("verdicts")[0].1;
+    assert_eq!(verdict(), RowVerdict::NotRun);
+    let mut parent = NewTicket::new("Goal", TicketType::Epic);
+    parent.implements = vec!["design:goal/w.g".to_owned()];
+    let parent = ledger.new_ticket(parent).expect("goal").ticket.front.id;
+    ledger
+        .append(parent, attestation("k", "measured", true, &[row]))
+        .expect("attest");
+    assert_eq!(verdict(), RowVerdict::Pass);
+}
+both_layouts!(a_design_ancestor_ticket_passes_the_manual_row_and_an_unrelated_one_does_not);

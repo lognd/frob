@@ -224,8 +224,10 @@ makes PM048's digests "differ".
 A `manual` row instead passes when a passed attestation on a live ticket implementing the entity
 or a design ancestor (PM037) carries its anchor
 `kind/full-name/verified_by[i]` (9.1) as a fact, else `not-run` (D202).
-Status: frob accepts that fact shape in ticket ~AMNDCCT; until then every
-`manual` row is `not-run` (D203).
+Status: frob accepts that fact shape and reads it as the row verdict in
+ticket ~AMNDCCT (`frob plan --from-design` lists each row; the export's
+`plan.manual_rows` names the manual clause indices); with no matching
+attestation every `manual` row is `not-run` (D203).
 
 ### 12.9 The Laws (rev 2, C10)
 

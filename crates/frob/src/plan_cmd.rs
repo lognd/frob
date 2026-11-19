@@ -9,11 +9,14 @@
 
 // frob:ticket 01M4FDBDC401KMNN4C12QTA3PK
 // frob:ticket 01M6PJTS38G6EGSH32FPD01BKM
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use frob_ledger::TicketId;
-use frob_ledger::design::{DesignGraph, DesignStatus, Entity, Overlay, link_of, overlay};
+use frob_ledger::design::{
+    DesignGraph, DesignStatus, Entity, Overlay, RowVerdict, link_of, overlay,
+};
 use frob_ledger::model::TicketType;
 use frob_ledger::ops::NewTicket;
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
@@ -44,6 +47,15 @@ pub struct PlanRow {
     pub blocked_by: Vec<String>,
 }
 
+/// The overlay verdict of one `manual` `verified_by` row (grmb-spec 12.8, D202).
+#[derive(Debug, Clone, Serialize, JsonSchema)]
+pub struct ManualRowVerdict {
+    /// The design clause anchor `KIND/NAME/verified_by[i]`.
+    pub row: String,
+    /// `pass` when a passed attestation carrying the row sits on a live ticket implementing the entity or a design ancestor, else `not-run`.
+    pub verdict: String,
+}
+
 /// Output of `frob plan --from-design`.
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct PlanData {
@@ -53,6 +65,8 @@ pub struct PlanData {
     pub proposed: Vec<PlanRow>,
     /// With `--findings`: anchors that cannot be mapped to a ticket (unmappable kind or unknown target); else empty.
     pub unmapped: Vec<String>,
+    /// The verdict of every `manual` `verified_by` row of the design (the overlay's reading of passed attestations).
+    pub manual_rows: Vec<ManualRowVerdict>,
 }
 
 /// The flags of `plan`.
@@ -195,6 +209,26 @@ fn order_by_requires<'g>(
     out
 }
 
+/// The overlay verdict of every `manual` `verified_by` row of `graph`, read from the passed attestations in `ledger`.
+fn manual_rows(
+    ledger: &frob_ledger::Ledger,
+    graph: &DesignGraph,
+) -> Result<Vec<ManualRowVerdict>, CliError> {
+    Ok(ledger
+        .manual_row_verdicts(graph)
+        .map_err(cli_err)?
+        .into_iter()
+        .map(|(row, verdict)| ManualRowVerdict {
+            row,
+            verdict: match verdict {
+                RowVerdict::Pass => "pass",
+                RowVerdict::NotRun => "not-run",
+            }
+            .to_owned(),
+        })
+        .collect())
+}
+
 impl Command for Plan {
     type Data = PlanData;
 
@@ -270,6 +304,7 @@ impl Command for Plan {
             }
             rows.push(row);
         }
+        let manual_rows = manual_rows(&ledger, &graph)?;
         let unmapped = if self.findings {
             unmapped_anchors(&graph)
         } else {
@@ -294,10 +329,16 @@ impl Command for Plan {
                 .collect::<Vec<_>>()
         };
         text.extend(unmapped.iter().map(|a| format!("unmapped {a}")));
+        text.extend(
+            manual_rows
+                .iter()
+                .map(|m| format!("manual {} {}", m.row, m.verdict)),
+        );
         Ok(Payload::new(PlanData {
             applied: self.apply,
             proposed: rows,
             unmapped,
+            manual_rows,
         })
         .with_pretty(text))
     }

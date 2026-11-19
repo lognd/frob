@@ -822,26 +822,33 @@ key of the statement. The TTY check stops scripts and obedient agents,
 not a goal-seeking process running as the same user (shared/security.md 2.3).
 
 **Design clause anchors as facts** (~AMNDCCT, grmb-spec 9.1, 12.8, D202, D207).
-Built for the fact shape and the row verdict (status below). A fact may also be a design clause
+Built: the fact shape, the row verdict and its surfacing (status below). A fact may also be a design clause
 anchor `KIND/NAME/verified_by[i]` (grmb-spec 9.1: the entity's logical
 location plus the i-th `verified_by` clause), the tie that lets a passed
 attestation be the pass verdict of a `manual` `verified_by` row. Like the
 `implements` link (section 3) the anchor is validated only through
 `grimble graph --json` (the entity exists and has a `manual` clause at that
-index) and is Unresolved, never accepted on shape alone, when grimble is
-absent. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
+index, read from the entity's `plan.manual_rows`) and is `not-run`, never
+accepted on shape alone, when grimble is absent or predates that key. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
 anchor on a live ticket that implements the entity or a design ancestor as
 that row's verdict; otherwise the row is `not-run`. Evidence and
 attestation records already store the `body_digest` of the design entity
 a `frob:ticket` directive ties to the ticket (section 6; grmb-spec 12.8
 WINDOW, PM048, D207); a record without it is outside every WINDOW and
 never makes PM048's digests differ. Status: the digest, the anchor fact
-shape and the row verdict are built. `attest` accepts an anchor on its
+shape, the row verdict and its overlay are built. `attest` accepts an anchor on its
 shape (`frob-evidence` `attestation::anchor_facts` reads them back) and
 `frob_ledger::design::manual_row_verdict` returns `Pass` only for a passed
 attestation carrying the row on a live ticket that implements the entity
-or a design ancestor, else `not-run`; an entity the graph lacks is
-`not-run`. The grimble existence check stays with the overlay.
+or a design ancestor, else `not-run`; an entity the graph lacks, or a
+clause index that is not a `manual` row of it, is `not-run`. A later
+failing or unmeasured attestation of the same reference withdraws an
+earlier pass. `Ledger::manual_row_verdicts` collects the passed attestation
+facts per ticket (`passed_attestation_facts`) and feeds the verdict; `frob
+plan --from-design` reports each row as `manual_rows` (`pass` or `not-run`)
+beside the planning proposal. The anchor is not yet checked at `attest`
+time against the graph; the overlay is where an unmatched anchor shows
+as `not-run`. PM047 and PM048 still do not read these verdicts.
 
 ## 7. Landing
 

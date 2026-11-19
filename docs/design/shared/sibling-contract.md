@@ -319,7 +319,11 @@ derived roll-up (the minimum over the impls beneath), not a declared
 fact. Scenario, goal and system rows also carry `rollup`
 (`declared`/`bound`/`verified` leaf-impl counts). Edges for the plan
 carry a `scenario` key on successor edges. Impl anchors are
-`impl/S.SCENARIO.OWNER.STEP` (`_` for `for *`).
+`impl/S.SCENARIO.OWNER.STEP` (`_` for `for *`). A planning entity whose
+`verified_by` clauses include `verified_by manual because=` rows carries
+`plan.manual_rows`, the zero-based indices of those rows among all its
+`verified_by` clauses (the `i` of `KIND/NAME/verified_by[i]`, grmb-spec 9.1);
+the key is absent when there are none (additive, ~AMNDCCT).
 
 `obligations` lists the open PLAN backlog as `rule`, `kind`, `anchor`,
 `detail`: PLAN001, PLAN003, PLAN004 (`unbound_impl`), PLAN005 and PLAN006

@@ -7,6 +7,7 @@
 // frob:ticket 01M6BYKR12BCNQ3P3BR3J3AR58
 // frob:ticket 01M4FDBDC401KMNN4C12QTA3PK
 // frob:ticket 01M6BYM5XMG4WD49JAQXZR3S4S
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
@@ -90,6 +91,8 @@ pub struct Entity {
     pub name: String,
     /// Realization and `verified_by` files the export names for the entity; seeds a ticket scope.
     pub files: Vec<String>,
+    /// The `verified_by[i]` indices that are `manual` rows (the export's `plan.manual_rows`; empty when it has none or grimble predates it).
+    pub manual_rows: Vec<usize>,
 }
 
 /// One PLAN obligation of the graph (`unrealized_goal`, `unimplemented_step`, `unbound_impl`, ...).
@@ -176,6 +179,12 @@ impl DesignGraph {
                     .into_iter()
                     .flatten()
                     .filter_map(|f| f.as_str().map(str::to_owned))
+                    .collect(),
+                manual_rows: e["plan"]["manual_rows"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|i| usize::try_from(i.as_u64()?).ok())
                     .collect(),
                 anchor: anchor.clone(),
             };
@@ -487,12 +496,16 @@ pub fn manual_row_verdict(
     passed: &[(TicketId, Vec<String>)],
     row: &str,
 ) -> RowVerdict {
-    let Some((entity, _)) = row_anchor_parts(row) else {
+    let Some((entity, index)) = row_anchor_parts(row) else {
         tracing::debug!(row, "not a design clause anchor");
         return RowVerdict::NotRun;
     };
-    if graph.entity(entity).is_none() {
+    let Some(found) = graph.entity(entity) else {
         tracing::debug!(row, "manual row names an entity the graph lacks");
+        return RowVerdict::NotRun;
+    };
+    if !found.manual_rows.contains(&index) {
+        tracing::debug!(row, "clause index is not a manual verified_by row");
         return RowVerdict::NotRun;
     }
     let verdict = row_reached(links, passed, row, &graph.self_and_ancestors(entity));
@@ -502,6 +515,29 @@ pub fn manual_row_verdict(
     } else {
         RowVerdict::NotRun
     }
+}
+
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+/// The verdict of every `manual` `verified_by` row of `graph`, as `(row anchor, verdict)` ordered by anchor then clause index.
+///
+/// This is the overlay's reading of grmb-spec 12.8 (D202): `links` and `passed` are as for [`manual_row_verdict`].
+pub fn manual_row_verdicts(
+    graph: &DesignGraph,
+    links: &[(TicketFacts, Vec<String>)],
+    passed: &[(TicketId, Vec<String>)],
+) -> Vec<(String, RowVerdict)> {
+    graph
+        .entities()
+        .flat_map(|e| {
+            e.manual_rows
+                .iter()
+                .map(|i| format!("{}/verified_by[{i}]", e.anchor))
+        })
+        .map(|row| {
+            let verdict = manual_row_verdict(graph, links, passed, &row);
+            (row, verdict)
+        })
+        .collect()
 }
 
 /// PM038: a task whose implemented entity is still `declared` at `status_hi` may not close as done.
@@ -594,7 +630,7 @@ mod tests {
     const GRAPH: &str = r#"{"data":{"entities":[
       {"anchor":"goal/w.c.place","kind":"goal","name":"place","status":"declared","status_hi":"declared"},
       {"anchor":"scenario/w.checkout","kind":"scenario","name":"checkout","status":"declared","status_hi":"declared"},
-      {"anchor":"impl/w.checkout.system.shows","kind":"impl","name":"shows","status":"declared","status_hi":"declared"},
+      {"anchor":"impl/w.checkout.system.shows","kind":"impl","name":"shows","status":"declared","status_hi":"declared","plan":{"manual_rows":[0]}},
       {"anchor":"impl/w.checkout.system.pays","kind":"impl","name":"pays","status":"bound","status_hi":"verified"}],
      "obligations":[{"rule":"PLAN009","kind":"unbound_impl","anchor":"impl/w.checkout.system.shows","detail":"d"}],
      "edges":[{"from":"impl/w.checkout.system.shows","kind":"impl_for","to":"scenario/w.checkout"},
@@ -674,6 +710,7 @@ mod tests {
 
     // frob:tests crates/frob-ledger/src/design.rs::manual_row_verdict
     // frob:tests crates/frob-ledger/src/design.rs::row_anchor_parts
+    // frob:tests crates/frob-ledger/src/design.rs::manual_row_verdicts
     #[test]
     fn a_passed_attestation_on_an_implementing_or_ancestor_ticket_passes_the_manual_row() {
         let g = DesignGraph::from_json(GRAPH).expect("graph");
@@ -711,6 +748,23 @@ mod tests {
             vec!["impl/w.checkout.system.shows/verified_by[1]".to_owned()],
         )];
         assert_eq!(verdict(&own, &other, row), RowVerdict::NotRun);
+        // a clause index the entity lacks, or one that is a test row, is never a manual row
+        for not_manual in [
+            "impl/w.checkout.system.shows/verified_by[1]",
+            "impl/w.checkout.system.pays/verified_by[0]",
+        ] {
+            let p = vec![(tid, vec![not_manual.to_owned()])];
+            assert_eq!(
+                manual_row_verdict(&g, &own, &p, not_manual),
+                RowVerdict::NotRun
+            );
+        }
+        let all = manual_row_verdicts(&g, &own, &passed);
+        assert_eq!(all, vec![(row.to_owned(), RowVerdict::Pass)]);
+        assert_eq!(
+            manual_row_verdicts(&g, &own, &[]),
+            vec![(row.to_owned(), RowVerdict::NotRun)]
+        );
         let unknown = "impl/w.nope/verified_by[0]";
         let p2 = vec![(tid, vec![unknown.to_owned()])];
         assert_eq!(verdict(&own, &p2, unknown), RowVerdict::NotRun);

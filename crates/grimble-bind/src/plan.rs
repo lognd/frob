@@ -362,6 +362,15 @@ fn level(n: &PlanNode) -> Value {
 }
 
 fn plan_object(n: &PlanNode) -> Option<Value> {
+    let mut object = plan_kind_object(n)?;
+    // frob reads these to tell a `manual` row from a test row (grmb-spec 12.8, D202)
+    if !n.manual_rows.is_empty() {
+        object["manual_rows"] = json!(n.manual_rows);
+    }
+    Some(object)
+}
+
+fn plan_kind_object(n: &PlanNode) -> Option<Value> {
     Some(match n.kind {
         "actor" => json!({"kind": n.actor_kind, "node": n.node}),
         "goal" => json!({

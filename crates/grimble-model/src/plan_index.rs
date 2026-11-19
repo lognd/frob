@@ -73,6 +73,8 @@ pub struct PlanNode {
     pub system: Option<String>,
     /// The `realization` and `verified_by` clauses, in written order.
     pub clauses: Vec<PlanClause>,
+    /// The `verified_by[i]` indices of `verified_by manual because=` rows (grmb-spec 12.8).
+    pub manual_rows: Vec<usize>,
     /// Actor kind word.
     pub actor_kind: Option<String>,
     /// Actor `node`, or the `in node` of an impl (a node anchor).
@@ -262,9 +264,20 @@ fn plan_waypoints(anchor: &str, clauses: &[crate::plan::PClause]) -> Vec<PlanWay
     out
 }
 
-fn plan_clauses(anchor: &str, clauses: &[crate::plan::PClause]) -> Vec<PlanClause> {
+impl PlanNode {
+    /// Set `clauses` and `manual_rows` from the written clauses of this node.
+    fn set_clauses(&mut self, clauses: &[crate::plan::PClause]) {
+        let (out, manual) = plan_clauses(&self.anchor, clauses);
+        self.clauses = out;
+        self.manual_rows = manual;
+    }
+}
+
+/// The selector clauses of `clauses`, and the `verified_by` indices (counting selector and `manual` rows alike) that are `manual`.
+fn plan_clauses(anchor: &str, clauses: &[crate::plan::PClause]) -> (Vec<PlanClause>, Vec<usize>) {
     let (mut real, mut ver) = (0usize, 0usize);
     let mut out = Vec::new();
+    let mut manual = Vec::new();
     for c in clauses {
         match &c.kind {
             PClauseKind::Realization(r) => {
@@ -289,10 +302,14 @@ fn plan_clauses(anchor: &str, clauses: &[crate::plan::PClause]) -> Vec<PlanClaus
                 });
                 ver += 1;
             }
+            PClauseKind::Common(c) if matches!(c.kind, crate::ast::ClauseKind::Manual(_)) => {
+                manual.push(ver);
+                ver += 1;
+            }
             _ => {}
         }
     }
-    out
+    (out, manual)
 }
 
 struct Walk<'t> {
@@ -461,7 +478,7 @@ impl Build<'_, '_> {
         {
             self.edge("refines", &anchor, p);
         }
-        n.clauses = plan_clauses(&anchor, &v.clauses);
+        n.set_clauses(&v.clauses);
         self.nodes.push(n);
     }
 
@@ -511,7 +528,7 @@ impl Build<'_, '_> {
                 _ => None,
             })
             .collect();
-        n.clauses = plan_clauses(&anchor, &clauses);
+        n.set_clauses(&clauses);
         self.nodes.push(n);
     }
 
@@ -558,7 +575,7 @@ impl Build<'_, '_> {
             }
         }
         n.waypoints = plan_waypoints(&anchor, &i.clauses);
-        n.clauses = plan_clauses(&anchor, &i.clauses);
+        n.set_clauses(&i.clauses);
         self.nodes.push(n);
     }
 
@@ -579,7 +596,7 @@ impl Build<'_, '_> {
                 _ => {}
             }
         }
-        n.clauses = plan_clauses(&anchor, &p.clauses);
+        n.set_clauses(&p.clauses);
         self.nodes.push(n);
     }
 
@@ -588,7 +605,7 @@ impl Build<'_, '_> {
             PlanItem::System(s) => {
                 let anchor = format!("system/{}", join(&r.ctx, &s.name.text));
                 let mut n = node(&self.t, r, anchor, "system", &s.name.text, s.span);
-                n.clauses = plan_clauses(&n.anchor, &s.clauses);
+                n.set_clauses(&s.clauses);
                 self.nodes.push(n);
             }
             PlanItem::Actor(a) => {
@@ -603,7 +620,7 @@ impl Build<'_, '_> {
                         }
                     }
                 }
-                n.clauses = plan_clauses(&anchor, &a.clauses);
+                n.set_clauses(&a.clauses);
                 self.nodes.push(n);
             }
             PlanItem::Goal(g) => self.goal(r, g),
@@ -622,7 +639,7 @@ impl Build<'_, '_> {
                         .collect(),
                     None => vec![("ok".to_owned(), None)],
                 };
-                n.clauses = plan_clauses(&n.anchor, &s.clauses);
+                n.set_clauses(&s.clauses);
                 self.nodes.push(n);
             }
             PlanItem::Scenario(s) => self.scenario(r, s),

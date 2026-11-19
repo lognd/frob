@@ -346,6 +346,55 @@ fn a_realization_binding_row_carries_its_kind_and_validates_against_the_schema()
     }
 }
 
+// frob:ticket 01M69J39HA547HNNCMCAMNDCCT
+// frob:tests crates/grimble-bind/src/plan.rs::plan_object
+// frob:tests crates/grimble-model/src/plan_index.rs::PlanNode.set_clauses
+#[test]
+fn a_manual_verified_by_row_is_listed_by_its_clause_index_in_the_graph_export() {
+    let dir = repo();
+    write(
+        dir.path(),
+        "grimble.toml",
+        "[grimble]
+models = [\"m.grmb\"]
+",
+    );
+    write(
+        dir.path(),
+        "m.grmb",
+        "grimble = \"2\";
+module m;
+system s {
+  actor customer : human;
+  goal customer { attr dimension = action; buy; }
+  step customer.pays;
+  scenario checkout realizes customer.buy { customer.pays -> end ok; }
+  impl customer.pays for checkout {
+    handler = \"src/lib.rs::pay\";
+    verified_by \"src/lib.rs::pay\";
+    verified_by manual because=\"walk the checkout by hand\";
+  }
+}
+",
+    );
+    write(
+        dir.path(),
+        "src/lib.rs",
+        "pub fn pay() {}
+",
+    );
+    let (_, env, err) = grimble(dir.path(), &["graph", "--json"]);
+    let with_rows: Vec<&Value> = env["data"]["entities"]
+        .as_array()
+        .unwrap_or_else(|| panic!("no entities: {env} {err}"))
+        .iter()
+        .filter(|e| e["plan"]["manual_rows"].is_array())
+        .collect();
+    assert_eq!(with_rows.len(), 1, "{env}");
+    assert_eq!(with_rows[0]["kind"], "impl");
+    assert_eq!(with_rows[0]["plan"]["manual_rows"], serde_json::json!([1]));
+}
+
 // frob:ticket 01M69T6Q3J2RVWGTT4PM7YR6SS
 // frob:ticket 01M6A0VA118026R4EZRRC8VH1W
 // frob:tests crates/grimble-bind/src/plan.rs::findings
