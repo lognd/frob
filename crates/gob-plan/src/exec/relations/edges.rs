@@ -5,7 +5,6 @@
 //! of them may go anywhere. An atom is Yes in `R_lo`, No outside `R_hi` and Unknown between; the
 //! doubt names the May edge or the frontier node.
 
-
 use gob_ir::{NodeId, Relation, Truth};
 
 use super::super::core::fxmap::FastSet;
