@@ -1,0 +1,28 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T16:42:10Z"
+digest = "3612d81e3fda7913ca2083907984251a91bba70e2a774defc128ded9f2a2edc4"
+exit_code = 0
+head = "49943b0f24f6172d92ebe29c625a58447910f912"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.56s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 018e8828-6469-4833-adc0-0a9c31fc979a with nextest profile: default
+    Starting 4 tests across 5 binaries (329 tests skipped)
+        PASS [   0.060s] crunk::it e2e_agent_authoring::edit_patch_to_a_missing_id_is_refused_naming_the_id_and_writes_nothing
+        PASS [   0.134s] crunk::it e2e_agent_authoring::edit_content_reports_content_findings_for_the_touched_key_only
+        PASS [   0.183s] crunk::it e2e_agent_authoring::new_screen_then_edit_states_reports_state_findings_for_touched_nodes_only
+        PASS [   0.283s] crunk::it e2e_agent_authoring::new_component_then_edit_variants_reports_comp_findings_for_touched_nodes_only
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.284s] 4 tests run: 4 passed, 329 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(e2e_agent_authoring)"
+size = 967
+status = "measured"
+test_count = 4
+tests_digest = "f7c63cb21a612e8dbbca4646ba5b273278f65b237d39a9434d4a798b81c64ffa"
+at = "2026-11-19T16:42:10Z"
+actor = "lognd"
+rev = 1
