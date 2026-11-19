@@ -1,0 +1,70 @@
+kind = "evidence"
+captured_at = "2026-11-19T03:56:54Z"
+digest = "e7d306b8cf16744aab8817f6d213a51d34d76b9d6ab7fb935a8070495043074a"
+exit_code = 0
+head = "9be1c83a532b8725ee873b05c9f9a0aa6a2908ad"
+inline = '''
+   Compiling windows-sys v0.61.2
+   Compiling hashbrown v0.17.1
+   Compiling gob-caps v0.532.0 (<worktree>\crates\gob-caps)
+   Compiling gob-languages v0.532.0 (<worktree>\crates\gob-languages)
+   Compiling winapi-util v0.1.11
+   Compiling same-file v1.0.6
+   Compiling anstyle-wincon v3.0.11
+   Compiling walkdir v2.5.0
+   Compiling anstyle-query v1.1.5
+   Compiling ignore v0.4.33
+   Compiling nu-ansi-term v0.50.3
+   Compiling indexmap v2.14.2
+   Compiling gob-walk v0.532.0 (<worktree>\crates\gob-walk)
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-ir v0.532.0 (<worktree>\crates\gob-ir)
+   Compiling anstream v0.6.21
+   Compiling anstream v1.0.0
+   Compiling gob-log v0.532.0 (<worktree>\crates\gob-log)
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling gob-rules v0.532.0 (<worktree>\crates\gob-rules)
+   Compiling clap_builder v4.6.7
+   Compiling gob-exec v0.532.0 (<worktree>\crates\gob-exec)
+   Compiling gob-diagnostics v0.532.0 (<worktree>\crates\gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>\crates\gob-config)
+   Compiling clap v4.6.7
+   Compiling gob-cli v0.532.0 (<worktree>\crates\gob-cli)
+   Compiling hashlink v0.12.2
+   Compiling tempfile v3.27.0
+   Compiling rusqlite v0.41.1
+   Compiling gob-trust v0.532.0 (<worktree>\crates\gob-trust)
+   Compiling petgraph v0.8.3
+   Compiling num-traits v0.2.19
+   Compiling gob-cache v0.532.0 (<worktree>\crates\gob-cache)
+   Compiling console v0.16.6
+   Compiling ppv-lite86 v0.2.21
+   Compiling gob-symbols v0.532.0 (<worktree>\crates\gob-symbols)
+   Compiling insta v1.48.0
+   Compiling gob-directives v0.532.0 (<worktree>\crates\gob-directives)
+   Compiling rusty-fork v0.3.1
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.11.0
+   Compiling gob-mdtest v0.532.0 (<worktree>\crates\gob-mdtest)
+   Compiling gob-testsupport v0.532.0 (<worktree>\crates\gob-testsupport)
+   Compiling grimble-model v0.532.0 (<worktree>\crates\grimble-model)
+    Finished `test` profile [unoptimized] target(s) in 55.94s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c3ada6c5-1fb4-48f4-bc3a-da0dfe2d78bb with nextest profile: default
+    Starting 3 tests across 2 binaries (153 tests skipped)
+        PASS [   0.014s] grimble-model::it kernel::a_design_with_no_satisfies_is_an_unjustified_design
+        PASS [   0.018s] grimble-model::it kernel::a_design_satisfying_the_requirement_closes_both_rules
+        PASS [   0.021s] grimble-model::it kernel::a_requirement_no_design_satisfies_is_one_orphan_finding
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.022s] 3 tests run: 3 passed, 153 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E test(/orphan_finding|closes_both_rules|unjustified_design/)"
+size = 2714
+status = "measured"
+test_count = 3
+tests_digest = "5192512da51285788181de1f4ca6fc60cc84c1142dc69bef17ec210fae080a98"
+at = "2026-11-19T03:56:54Z"
+actor = "lognd"
+rev = 1
