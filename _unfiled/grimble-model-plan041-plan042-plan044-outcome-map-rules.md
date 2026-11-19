@@ -2,12 +2,13 @@
 id = "01M6D467TFGMYA18TZHZAP2ZD4"
 title = "grimble-model: PLAN041, PLAN042, PLAN044 outcome-map rules"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-02T03:17:32Z"
-updated = "2026-11-19T04:01:44Z"
+updated = "2026-11-19T04:02:04Z"
 labels = ["no-story"]
 scope = ["crates/grimble-model/src/plan_check.rs,crates/grimble-model/src/rules/**,crates/grimble-model/tests/corpus/**"]
 
