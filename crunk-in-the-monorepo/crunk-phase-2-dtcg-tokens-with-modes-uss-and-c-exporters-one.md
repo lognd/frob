@@ -2,12 +2,13 @@
 id = "01M4CXQTERP5YASZGVEAH6KG4H"
 title = "crunk phase 2: DTCG tokens with modes, USS and C# exporters, one token source for web and Unity"
 type = "epic"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "high"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:53:24Z"
-updated = "2026-11-19T16:42:01Z"
+updated = "2026-11-19T16:42:09Z"
 
 [[acceptance]]
 text = "Given hullbreach's palette moved into design/tokens, when crunk export runs, then Tailwind, CSS, USS and C# outputs are generated and the ThrustRed versus stress-fail drift fires until resolved"

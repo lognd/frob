@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Phase 2 tokens: the hullbreach palette drives Tailwind, CSS, USS and C# exports and the ThrustRed drift fires until reconciled (e2e_tokens_hullbreach tests)"
+at = "2026-11-19T16:42:09Z"
+actor = "lognd"
+rev = 1
