@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:53:24Z"
-updated = "2026-10-08T04:53:24Z"
+updated = "2026-11-19T16:35:03Z"
 
 [[acceptance]]
 text = "Given hullbreach's palette moved into design/tokens, when crunk export runs, then Tailwind, CSS, USS and C# outputs are generated and the ThrustRed versus stress-fail drift fires until resolved"
