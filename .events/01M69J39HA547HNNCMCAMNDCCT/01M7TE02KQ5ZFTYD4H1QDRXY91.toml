@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [3]
+captured_at = "2026-11-19T17:34:44Z"
+digest = "97a3fb85ebc8cdb5c7386d9cb015c691b73e4f331e6ed63da9d259c552cf97fb"
+exit_code = 0
+head = "5bdaef367dd7f27c9ce5e7817903648198e92dd9"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.58s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 78521e31-e43a-4e89-827d-05d80c0f8001 with nextest profile: default
+    Starting 3 tests across 1 binary (134 tests and 1 binary skipped)
+        PASS [   0.013s] frob-evidence::it design::only_entities_naming_the_ticket_with_a_digest_are_bound
+        PASS [   0.020s] frob-evidence::it design::a_design_digest_round_trips_and_the_record_schema_names_the_field
+        PASS [   0.022s] frob-evidence::it design::a_graph_without_entities_binds_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.023s] 3 tests run: 3 passed, 134 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E binary(it)&test(design::)"
+size = 782
+status = "measured"
+test_count = 3
+tests_digest = "fb1160af05cdeac8977511d490a463ca282c1733f6f2cabd00359dcf404f0ede"
+at = "2026-11-19T17:34:44Z"
+actor = "lognd"
+rev = 1

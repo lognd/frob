@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
-updated = "2026-11-19T17:33:04Z"
+updated = "2026-11-19T17:34:44Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
 labels = ["no-story"]
 scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob-evidence/**", "crates/frob/src/**"]
@@ -23,7 +23,7 @@ bound = false
 
 [[acceptance]]
 text = "frob evidence and attestation records bound to a design entity store that entity's body_digest from grimble graph --json (grmb-spec 12.8 WINDOW, PM048, D207); records without it are outside every WINDOW"
-bound = false
+bound = true
 +++
 
 Follow-up of ~MHGA5VN cycle 12 M1: the spec states the tie; the frob side (tickets.md and the attestation provider) is outside that ticket's lease.
