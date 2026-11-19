@@ -1,0 +1,7 @@
+kind = "field"
+field = "acceptance"
+new = ["Given a model with a requirement no design satisfies or a design that satisfies nothing, when the kernel closure rules run, then VMOD001 (orphan requirement) and VMOD002 (unjustified design) each fire once, and a satisfying design closes both"]
+moved = []
+at = "2026-11-19T03:58:07Z"
+actor = "lognd"
+rev = 1
