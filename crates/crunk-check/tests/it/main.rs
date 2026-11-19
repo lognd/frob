@@ -9,6 +9,7 @@ mod flows_host;
 mod gx014;
 mod gx_corpus;
 mod has_config;
+mod hullbreach_game_ui;
 mod opaque;
 mod review;
 mod rule_coverage;
