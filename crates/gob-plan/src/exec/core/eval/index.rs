@@ -13,12 +13,17 @@ use super::{Domain, Env, Eval, Val};
 use crate::exec::core::field::{Datum, Scalar};
 use crate::plan::{CmpOp, Op, OpId, Operand, VarId};
 
+/// Domains this small are scanned, not indexed.
+const SCAN_ALL: usize = 4;
+
 /// The domain positions of one kind bucketed by one equality key.
 pub(super) struct EqIndex {
     /// Which side of the comparison reads the bound variable: the key side.
     probe: Operand,
-    /// Positions by known key, ascending.
-    buckets: FastMap<Scalar, Vec<u32>>,
+    /// The position list of each known key, by index into `lists`.
+    buckets: FastMap<Scalar, u32>,
+    /// The ascending position lists the buckets point at.
+    lists: Vec<Vec<u32>>,
     /// Positions whose key is not a known scalar, ascending; always visited.
     wild: Vec<u32>,
 }
@@ -101,13 +106,20 @@ impl Eval<'_> {
         if let Some(i) = self.indexes.borrow().get(&c) {
             return Rc::clone(i);
         }
-        let mut buckets: FastMap<Scalar, Vec<u32>> = FastMap::default();
+        let mut buckets: FastMap<Scalar, u32> = FastMap::default();
+        let mut lists: Vec<Vec<u32>> = Vec::new();
         let mut wild = Vec::new();
         for (pos, &(n, _)) in domain.iter().enumerate() {
             let pos = u32::try_from(pos).expect("domains are far below u32::MAX members");
             env[usize::from(var)] = Some(Val::Node(n));
             match self.datum(&key, env) {
-                Datum::Known(s) => buckets.entry(s).or_default().push(pos),
+                Datum::Known(s) => {
+                    let at = *buckets.entry(s).or_insert_with(|| {
+                        lists.push(Vec::new());
+                        u32::try_from(lists.len() - 1).expect("lists are far below u32::MAX")
+                    });
+                    lists[at as usize].push(pos);
+                }
                 _ => wild.push(pos),
             }
         }
@@ -121,6 +133,7 @@ impl Eval<'_> {
         let idx = Rc::new(EqIndex {
             probe,
             buckets,
+            lists,
             wild,
         });
         self.indexes.borrow_mut().insert(c, Rc::clone(&idx));
@@ -135,26 +148,53 @@ impl Eval<'_> {
         cond: OpId,
         domain: &Domain,
         env: &mut Env,
-    ) -> Option<Vec<u32>> {
-        // The smallest candidate set so far: its index, the probe key and its size.
-        let mut best: Option<(Rc<EqIndex>, Scalar, usize)> = None;
+    ) -> Option<Visit> {
+        // A handful of members is cheaper to scan than to probe; a skipped member would decide
+        // No anyway, so the verdict is the same.
+        if domain.len() <= SCAN_ALL {
+            return None;
+        }
+        // The smallest candidate set so far: its index, the bucket and its size.
+        let mut best: Option<(Rc<EqIndex>, Option<u32>, usize)> = None;
         for &(c, key, probe, probe_rhs) in self.eq_conjuncts(cond, var).iter() {
             let idx = self.eq_index(c, key, probe, var, domain, env);
+            self.mark_probe(c, probe_rhs);
             // Read through the operand cache: the body evaluates this same side next.
             let side = self.side(c, probe_rhs, &idx.probe, env);
             let Datum::Known(k) = &*side else {
                 continue;
             };
-            let hits = idx.buckets.get(k).map_or(&[][..], Vec::as_slice);
-            let n = hits.len() + idx.wild.len();
+            let list = idx.buckets.get(k).copied();
+            let hits = list.map_or(0, |l| idx.lists[l as usize].len());
+            let n = hits + idx.wild.len();
             if best.as_ref().is_none_or(|(_, _, m)| n < *m) {
-                best = Some((Rc::clone(&idx), k.clone(), n));
+                best = Some((Rc::clone(&idx), list, n));
             }
         }
-        best.map(|(idx, k, _)| {
-            let hits = idx.buckets.get(&k).map_or(&[][..], Vec::as_slice);
-            merge(hits, &idx.wild)
+        best.map(|(idx, list, _)| {
+            let hits = list.map_or(&[][..], |l| idx.lists[l as usize].as_slice());
+            let merged = (!idx.wild.is_empty()).then(|| merge(hits, &idx.wild));
+            Visit { idx, list, merged }
         })
+    }
+}
+
+/// The domain positions a probe selected, ascending.
+pub(super) struct Visit {
+    idx: Rc<EqIndex>,
+    list: Option<u32>,
+    /// The bucket and the wild positions merged, when there are wild ones.
+    merged: Option<Vec<u32>>,
+}
+
+impl Visit {
+    /// The positions to visit.
+    pub(super) fn positions(&self) -> &[u32] {
+        match (&self.merged, self.list) {
+            (Some(m), _) => m,
+            (None, Some(l)) => &self.idx.lists[l as usize],
+            (None, None) => &[],
+        }
     }
 }
 

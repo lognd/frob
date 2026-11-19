@@ -48,6 +48,9 @@ pub(crate) type Domain = Rc<Vec<(NodeId, Truth)>>;
 /// two) variables the operand reads.
 type OperandKey = (OpId, bool, Option<Val>, Option<Val>);
 
+/// The latest value of a computed side: the values of the variables it read, and the datum.
+type LatestOperand = (Option<Val>, Option<Val>, Rc<Datum>);
+
 /// A node's cached line span: `None` when the node has no location.
 type LineSpan = Option<(u32, u32)>;
 
@@ -66,6 +69,48 @@ impl std::ops::Deref for Side {
             Self::Shared(d) => d,
         }
     }
+}
+
+/// A comparison side as [`Eval::cmp_op`] reads it.
+enum View<'a> {
+    /// Text borrowed from the model or the plan.
+    Text(&'a str),
+    /// The field is absent.
+    Absent,
+    /// A datum read or cached.
+    Side(Side),
+}
+
+impl View<'_> {
+    /// The text of a known string side.
+    fn text(&self) -> Option<&str> {
+        match self {
+            Self::Text(s) => Some(s),
+            Self::Absent => None,
+            Self::Side(d) => match &**d {
+                Datum::Known(Scalar::Str(s)) => Some(s),
+                _ => None,
+            },
+        }
+    }
+
+    /// The side as an owned-or-shared datum.
+    fn side(self) -> Side {
+        match self {
+            Self::Text(s) => Side::Fresh(Datum::text(s)),
+            Self::Absent => Side::Fresh(Datum::Absent),
+            Self::Side(d) => d,
+        }
+    }
+}
+
+/// The cache key of a def view: the def and its argument values.
+#[derive(Clone, PartialEq, Eq, Hash)]
+enum ViewKey {
+    /// Up to three arguments, stored inline.
+    Small(u16, [Option<Val>; 3]),
+    /// More arguments.
+    Large(u16, Vec<Val>),
 }
 
 /// A compiled `matches` pattern.
@@ -113,6 +158,10 @@ pub(crate) struct Eval<'a> {
     closures: RefCell<FastMap<(StrId, NodeId, u16), Rc<relations::Closure>>>,
     /// Computed operands (`slug`, `resolve`, dotted fields) by (op, side, argument values).
     operands: RefCell<FastMap<OperandKey, Rc<Datum>>>,
+    /// The latest computed value of each (op, side), by `op * 2 + side`.
+    latest: RefCell<Vec<Option<LatestOperand>>>,
+    /// The (op, side) pairs that are the probe of an equality index.
+    probes: RefCell<HashSet<(OpId, bool)>>,
     /// Folded graph-test quantifier bodies by body op (`None`: not foldable).
     hoists: RefCell<FastMap<OpId, Option<Rc<hoist::Hoist>>>>,
     /// How often each quantifier body has run, until it is folded.
@@ -125,7 +174,9 @@ pub(crate) struct Eval<'a> {
     units: RefCell<FastMap<NodeId, NodeId>>,
     domains: RefCell<FastMap<StrId, Domain>>,
     /// Materialised def views by (def, argument values): each is computed once (7.0.2).
-    views: RefCell<FastMap<(u16, Vec<Val>), Verdict>>,
+    views: RefCell<FastMap<ViewKey, Verdict>>,
+    /// Spare variable slots for def bodies, reused across calls.
+    envs: RefCell<Vec<Env>>,
     steps: Cell<u64>,
     /// Snippet matches by op: the byte ranges found in the file text, computed once per run.
     snippets: RefCell<FastMap<OpId, SnippetRanges>>,
@@ -208,8 +259,11 @@ impl<'a> Eval<'a> {
             indexes: RefCell::default(),
             conjuncts: RefCell::default(),
             operands: RefCell::default(),
+            latest: RefCell::default(),
+            probes: RefCell::default(),
             domains: RefCell::new(domains),
             views: RefCell::default(),
+            envs: RefCell::default(),
             steps: Cell::new(0),
             snippets: RefCell::default(),
         }
@@ -311,6 +365,58 @@ impl<'a> Eval<'a> {
         }
     }
 
+    /// The text of a string operand borrowed from the model or the plan, without a copy:
+    /// `None` means read it with [`Eval::datum`], `Some(None)` means the field is absent.
+    #[allow(
+        clippy::option_option,
+        reason = "three states: not borrowable, absent, present"
+    )]
+    pub(crate) fn borrowed_text(&self, o: &Operand, env: &Env) -> Option<Option<&'a str>> {
+        match *o {
+            Operand::Str(s) => Some(Some(self.string(s))),
+            Operand::Field(v, f) => match env[usize::from(v)] {
+                Some(Val::Node(n)) => self.rd.borrowed(n, self.string(f)),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    /// One comparison side for [`Eval::cmp_op`]: borrowed text when it needs no copy.
+    fn view(&self, op: OpId, rhs: bool, o: &Operand, env: &Env) -> View<'a> {
+        match self.borrowed_text(o, env) {
+            Some(Some(s)) => View::Text(s),
+            Some(None) => View::Absent,
+            None => View::Side(self.side(op, rhs, o, env)),
+        }
+    }
+
+    /// `lhs op rhs`: two text sides compare in place, anything else through [`Datum`]s.
+    fn cmp_op(
+        &self,
+        id: OpId,
+        lhs: &Operand,
+        op: crate::plan::CmpOp,
+        rhs: &Operand,
+        env: &Env,
+    ) -> Verdict {
+        let (l, r) = (
+            self.view(id, false, lhs, env),
+            self.view(id, true, rhs, env),
+        );
+        if let (Some(a), Some(b)) = (l.text(), r.text()) {
+            return Verdict::certain(super::field::str_holds(op, a, b));
+        }
+        let (l, r) = (l.side(), r.side());
+        Verdict::of(compare(op, &l, &r), || {
+            if *l == Datum::Unknown {
+                self.describe(lhs, env)
+            } else {
+                self.describe(rhs, env)
+            }
+        })
+    }
+
     /// A comparison side; the loop-invariant computed operands are cached per argument values
     /// (frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST).
     fn side(&self, op: OpId, rhs: bool, o: &Operand, env: &Env) -> Side {
@@ -324,13 +430,39 @@ impl<'a> Eval<'a> {
             Operand::Field(v, f) if self.string(f).contains('.') => (env[usize::from(v)], None),
             _ => return Side::Fresh(self.datum(o, env)),
         };
-        let key = (op, rhs, vals.0, vals.1);
-        if let Some(d) = self.operands.borrow().get(&key) {
+        // The latest value of each side answers repeats within one binding; a probe side of an
+        // equality index does not recur across bindings, so only the other sides use the map.
+        let slot = op as usize * 2 + usize::from(rhs);
+        if let Some(Some((a, b, d))) = self.latest.borrow().get(slot)
+            && (*a, *b) == vals
+        {
             return Side::Shared(Rc::clone(d));
         }
-        let d = Rc::new(self.datum(o, env));
-        self.operands.borrow_mut().insert(key, Rc::clone(&d));
+        let key = (op, rhs, vals.0, vals.1);
+        let keyed = !self.probes.borrow().contains(&(op, rhs));
+        let hit = if keyed {
+            self.operands.borrow().get(&key).map(Rc::clone)
+        } else {
+            None
+        };
+        let d = hit.unwrap_or_else(|| {
+            let d = Rc::new(self.datum(o, env));
+            if keyed {
+                self.operands.borrow_mut().insert(key, Rc::clone(&d));
+            }
+            d
+        });
+        let mut latest = self.latest.borrow_mut();
+        if latest.len() <= slot {
+            latest.resize(self.plan.ops.len() * 2, None);
+        }
+        latest[slot] = Some((vals.0, vals.1, Rc::clone(&d)));
         Side::Shared(d)
+    }
+
+    /// Marks the side of `op` that is the probe of an equality index.
+    pub(super) fn mark_probe(&self, op: OpId, rhs: bool) {
+        self.probes.borrow_mut().insert((op, rhs));
     }
 
     /// A call argument as a datum; a file node stands for its path.
@@ -462,19 +594,7 @@ impl<'a> Eval<'a> {
                 Verdict::certain(self.inside(sub, sup, *direct))
             }
             Op::Order { a, b, pos } => self.order(Self::node(env, *a), Self::node(env, *b), *pos),
-            Op::Cmp { lhs, op, rhs } => {
-                let (l, r) = (
-                    self.side(id, false, lhs, env),
-                    self.side(id, true, rhs, env),
-                );
-                Verdict::of(compare(*op, &l, &r), || {
-                    if *l == Datum::Unknown {
-                        self.describe(lhs, env)
-                    } else {
-                        self.describe(rhs, env)
-                    }
-                })
-            }
+            Op::Cmp { lhs, op, rhs } => self.cmp_op(id, lhs, *op, rhs, env),
             Op::MatchRegex { subject, .. }
             | Op::MatchGlob { subject, .. }
             | Op::MatchGlobSet { subject, .. } => self.matches(id, subject, env),
@@ -556,20 +676,29 @@ impl<'a> Eval<'a> {
 
     /// `d(args)`: the def's view at the argument values, computed once per distinct arguments.
     fn call(&self, def: u16, args: &[VarId], env: &Env) -> Verdict {
-        let vals: Vec<Val> = args
-            .iter()
-            .map(|&a| env[usize::from(a)].expect("validated plans use only bound variables"))
-            .collect();
-        let key = (def, vals);
+        let val =
+            |&a: &VarId| env[usize::from(a)].expect("validated plans use only bound variables");
+        let key = if args.len() <= 3 {
+            let mut inline = [None; 3];
+            for (slot, a) in inline.iter_mut().zip(args) {
+                *slot = Some(val(a));
+            }
+            ViewKey::Small(def, inline)
+        } else {
+            ViewKey::Large(def, args.iter().map(val).collect())
+        };
         if let Some(v) = self.views.borrow().get(&key) {
             return v.clone();
         }
         let d = &self.plan.defs[usize::from(def)];
-        let mut inner: Env = vec![None; usize::from(self.plan.vars)];
-        for (&p, &v) in d.params.iter().zip(&key.1) {
-            inner[usize::from(p)] = Some(v);
+        let mut inner: Env = self.envs.borrow_mut().pop().unwrap_or_default();
+        inner.clear();
+        inner.resize(usize::from(self.plan.vars), None);
+        for (&p, a) in d.params.iter().zip(args) {
+            inner[usize::from(p)] = Some(val(a));
         }
         let v = self.eval(d.body, &mut inner);
+        self.envs.borrow_mut().push(inner);
         tracing::trace!(def, truth = ?v.truth, "def view computed");
         self.views.borrow_mut().insert(key, v.clone());
         v
@@ -667,9 +796,10 @@ impl<'a> Eval<'a> {
             return self.settle(Verdict::certain(t == Truth::Yes));
         }
         let visit = self.candidates(var, cond, &domain, env);
-        let count = visit.as_ref().map_or(domain.len(), Vec::len);
+        let listed = visit.as_ref().map(index::Visit::positions);
+        let count = listed.map_or(domain.len(), <[u32]>::len);
         for i in 0..count {
-            let pos = visit.as_ref().map_or(i, |v| v[i] as usize);
+            let pos = listed.map_or(i, |v| v[i] as usize);
             let (n, member) = domain[pos];
             env[usize::from(var)] = Some(Val::Node(n));
             let mut v = self.eval(cond, env);

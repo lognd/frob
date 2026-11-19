@@ -88,6 +88,11 @@ fn order_holds(op: CmpOp, ord: Ordering) -> bool {
     }
 }
 
+/// Text against text under `op`, as [`compare`] decides two known strings.
+pub(crate) fn str_holds(op: CmpOp, a: &str, b: &str) -> bool {
+    order_holds(op, a.cmp(b))
+}
+
 /// One scalar against one scalar; mismatched types are equal never, and unordered.
 fn scalar_cmp(op: CmpOp, a: &Scalar, b: &Scalar) -> Truth {
     match (a, b) {
@@ -237,6 +242,45 @@ impl<'a> Reader<'a> {
         }
     }
 
+    /// The field `name` of `node` as text borrowed from the model, for the string fields that need
+    /// no copy: `None` means "not borrowable, use [`Reader::field`]", `Some(None)` means absent.
+    ///
+    /// frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B
+    #[allow(
+        clippy::option_option,
+        reason = "three states: not borrowable, absent, present"
+    )]
+    pub(crate) fn borrowed(&self, node: NodeId, name: &str) -> Option<Option<&'a str>> {
+        match name {
+            "path" | "file" | "file.path" => {
+                (!is_key(self.model, node)).then(|| Some(self.file_path_str(node)))
+            }
+            "target" => self.link_dest_str(node).map(Some),
+            "target.path" | "target.anchor" => {
+                let Some(dest) = self.link_dest_str(node) else {
+                    return Some(None);
+                };
+                let (path, anchor) = dest
+                    .split_once('#')
+                    .map_or((dest, None), |(p, a)| (p, Some(a)));
+                Some(if name == "target.path" {
+                    Some(path)
+                } else {
+                    anchor
+                })
+            }
+            _ => None,
+        }
+    }
+
+    /// [`Reader::file_path`] borrowed from the model.
+    fn file_path_str(&self, node: NodeId) -> &'a str {
+        let term = self.model.term();
+        self_and_ancestors(term, node)
+            .find_map(|n| term.node(n).attrs().get_str(PATH_ATTR))
+            .unwrap_or_else(|| term.locator())
+    }
+
     /// The path of the file `node` is in: the nearest grafted file root of a multi-file example,
     /// else the artifact's locator.
     fn file_path(&self, node: NodeId) -> String {
@@ -291,13 +335,18 @@ impl<'a> Reader<'a> {
 
     /// The destination of a markdown `link` node: the spelled name of its head `ref`.
     fn link_dest(&self, node: NodeId) -> Option<String> {
+        self.link_dest_str(node).map(str::to_owned)
+    }
+
+    /// [`Reader::link_dest`] borrowed from the model.
+    fn link_dest_str(&self, node: NodeId) -> Option<&'a str> {
         let term = self.model.term();
         let n = term.node(node);
         if !matches!(n.op(), Operator::Universal(Universal::Apply { kind }) if kind == "link") {
             return None;
         }
         match term.node(*n.children().first()?).op() {
-            Operator::Universal(Universal::Ref { name }) => Some(name.clone()),
+            Operator::Universal(Universal::Ref { name }) => Some(name),
             _ => None,
         }
     }

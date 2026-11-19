@@ -70,6 +70,16 @@ fn is_relative(s: &str) -> bool {
     !s.starts_with('/') && !has_scheme(s)
 }
 
+/// The string predicate `word` over `s`.
+fn string_word(word: &str, s: &str) -> bool {
+    match word {
+        "relative" => is_relative(s),
+        "integer" => is_integer(s),
+        "bem_kebab" | "bem_snake" | "bem_camel" => is_bem_case(s, word),
+        _ => globset::Glob::new(s).is_ok(),
+    }
+}
+
 /// Whether `s` parses as a whole integer: an optional sign and digits, surrounding blanks ignored.
 fn is_integer(s: &str) -> bool {
     let ok = s.trim().parse::<i64>().is_ok();
@@ -175,21 +185,30 @@ impl Eval<'_> {
                     _ => Verdict::unknown(self.describe(subject, env)),
                 }
             }
-            _ => match self.datum(subject, env) {
-                Datum::Known(Scalar::Str(s)) => Verdict::certain(match word {
-                    "relative" => is_relative(&s),
-                    "integer" => is_integer(&s),
-                    "bem_kebab" | "bem_snake" | "bem_camel" => is_bem_case(&s, word),
-                    _ => globset::Glob::new(&s).is_ok(),
-                }),
-                Datum::Absent | Datum::Known(_) | Datum::Node(_) => Verdict::no(),
-                Datum::OneOf(_) | Datum::Unknown => Verdict::unknown(self.describe(subject, env)),
+            _ => match self.borrowed_text(subject, env) {
+                Some(Some(s)) => Verdict::certain(string_word(word, s)),
+                Some(None) => Verdict::no(),
+                None => self.is_datum(subject, word, env),
             },
+        }
+    }
+
+    /// `subject is word` for a subject that is not borrowable text.
+    fn is_datum(&self, subject: &Operand, word: &str, env: &Env) -> Verdict {
+        match self.datum(subject, env) {
+            Datum::Known(Scalar::Str(s)) => Verdict::certain(string_word(word, &s)),
+            Datum::Absent | Datum::Known(_) | Datum::Node(_) => Verdict::no(),
+            Datum::OneOf(_) | Datum::Unknown => Verdict::unknown(self.describe(subject, env)),
         }
     }
 
     /// `exists subject`: the operand has a value.
     pub(super) fn exists_op(&self, subject: &Operand, env: &Env) -> Verdict {
+        match self.borrowed_text(subject, env) {
+            Some(Some(_)) => return Verdict::yes(),
+            Some(None) => return Verdict::no(),
+            None => {}
+        }
         match self.datum(subject, env) {
             Datum::Absent => Verdict::no(),
             Datum::Unknown => Verdict::unknown(self.describe(subject, env)),
