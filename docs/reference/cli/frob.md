@@ -6,6 +6,7 @@
 
 | Verb | Idempotent | Dry run | Exits | Summary |
 |---|---|---|---|---|
+| `accept-review` | no | no | 0 ok, 3 refused, 2 usage, 4 internal | Record a second-identity review of the `frob:accept` of `RULE` in `PATH`. |
 | `ack` | no | yes | 0 ok, 2 usage, 3 refused, 4 internal | Acknowledge symbols: record their digests in frob.lock and commit it on the current branch. |
 | `agent brief` | yes | no | 0 ok, 3 refused, 2 usage, 4 internal | Print a bounded summary of the ticket leased from this worktree, its scope, the worktree and the standing rules. |
 | `agent digest` | no | no | 0 ok, 1 negative, 3 refused, 2 usage, 4 internal | Run a command, store its full output content-addressed and print head, tail, error lines and the artifact path. |
