@@ -1109,9 +1109,17 @@ fn packs_table_defaults_off_and_switches_crunk_web() {
     use crunk_spec::table::PacksConfig;
     assert!(!ok(full()).packs.crunk_web, "packs are opt-in");
     assert!(PacksConfig::default().is_default());
-    assert!(!PacksConfig { crunk_web: true }.is_default());
+    assert!(
+        !PacksConfig {
+            crunk_web: true,
+            design_cycle: false
+        }
+        .is_default()
+    );
     let on = ok(&with("[packs]\ncrunk_web = true\n"));
-    assert!(on.packs.crunk_web);
+    assert!(on.packs.crunk_web && !on.packs.design_cycle);
+    let dc = ok(&with("[packs]\ndesign_cycle = true\n"));
+    assert!(dc.packs.design_cycle && !dc.packs.crunk_web);
     let bad = err(&with("[packs]\nunknown = true\n"));
     assert!(detail(&bad).contains("unknown"), "{}", detail(&bad));
 }

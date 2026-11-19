@@ -137,6 +137,7 @@ The `[packs]` table: which std packs are on (all opt-in, off by default).
 | Key | Type | Required | Default | Doc |
 |---|---|---|---|---|
 | `crunk_web` | `bool` | no | `false` | Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL). |
+| `design_cycle` | `bool` | no | `false` | Run the design-cycle pack (UX001 route has a screen, UX002 flow dead end). |
 
 ## `[palette]`
 

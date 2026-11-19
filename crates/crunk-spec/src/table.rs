@@ -579,6 +579,8 @@ impl ReviewConfig {
 pub struct PacksConfig {
     /// Run the crunk-web pack (A11Y, SEO, LAUNCH and WEBPERF rules in GRL).
     pub crunk_web: bool,
+    /// Run the design-cycle pack (UX001 route has a screen, UX002 flow dead end).
+    pub design_cycle: bool,
 }
 
 impl PacksConfig {

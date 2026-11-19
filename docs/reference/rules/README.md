@@ -719,6 +719,13 @@
 | [UNITY301](UNITY301.md) | legacy-input-under-input-system | error | manual | P- | true | The legacy Input class used in a project whose active input handler is the Input System. |
 | [UNITY302](UNITY302.md) | physics-force-outside-fixed-update | error | manual | P- | true | A Rigidbody force or move applied from Update or LateUpdate instead of FixedUpdate. |
 
+## UX
+
+| Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |
+|---|---|---|---|---|---|---|
+| [UX001](UX001.md) | route-has-screen | error | manual | P+ | false | A sitemap route has no screen. |
+| [UX002](UX002.md) | flow-dead-end | error | manual | P+ | false | A flow state has no way out. |
+
 ## VET
 
 | Rule | Slug | Severity | Fix | Polarity | Must measure | Summary |

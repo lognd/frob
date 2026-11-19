@@ -24,6 +24,11 @@ fn runner(case: &gob_mdtest::Case) -> Vec<gob_rules::Finding> {
     // frob:tests crates/crunk-check/src/gx_pack.rs::Gx021
     // frob:tests crates/crunk-check/src/gx_pack.rs::group
     // frob:tests crates/crunk-check/src/gx_pack.rs::decide
+    // frob:ticket 01M4CXSFVWX6H3PNV29ZTQ7YT9
+    // frob:tests crates/crunk-check/src/design_cycle.rs::Ux001
+    // frob:tests crates/crunk-check/src/design_cycle.rs::Ux002
+    // frob:tests crates/crunk-check/src/design_cycle.rs::group
+    // frob:tests crates/crunk-check/src/design_cycle.rs::fingerprint
     // frob:tests crates/crunk-check/src/route_a11y.rs::A11y104
     // frob:tests crates/crunk-check/src/route_a11y.rs::group
     // frob:tests crates/crunk-check/src/route_a11y.rs::fingerprint

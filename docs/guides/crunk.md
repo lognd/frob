@@ -333,3 +333,18 @@ checks, and a skipped job counts as passing.
   job skips its dependants); the next change outside crunk does.
 - A frob-only or grimble-only change still runs the whole workspace; scoping the workspace job by
   product needs a package filter in `cargo dev ci` and is tracked separately.
+
+## The design-cycle pack
+
+The design-cycle pack checks the artifacts of the UX design cycle (docs/design/crunk/crunk.md
+section 8). It is opt-in: `[packs] design_cycle = true` in `crunk.toml` switches it on, and it is
+off by default, so a project that has not opted in sees no UX findings. The rules are Rust rules
+over `crunk_rules::ux`, run by `crunk check` through `crunk_check::design_cycle`.
+
+| Family | Rule | Checks |
+|--------|------|--------|
+| UX | UX001 | every route of `design/ia/sitemap.toml` has a screen (named by `screen = "id"` or sharing a screen's `entry` route); an unparseable sitemap is Unresolved (`sitemap-invalid`) |
+| UX | UX002 | every state of a `design/flows/*.flow.toml` flow has an outgoing edge; a state named `done`, `end`, `exit`, `complete`, `completed` or `success` ends the flow on purpose; an unparseable flow file is Unresolved (`flow-file-invalid`) |
+
+The remaining IA and flow checks (screen without route, depth, labels, reachability, error paths)
+exist in `crunk_rules::ux` and are not yet surfaced as rules.

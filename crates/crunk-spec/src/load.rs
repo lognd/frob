@@ -557,7 +557,11 @@ impl<'a> Ctx<'a> {
         validate::review(&review)?;
         // frob:ticket 01M50AQ6XHV6Z8GS0V8J66M9GD
         let packs = raw.packs.unwrap_or_default();
-        tracing::debug!(crunk_web = packs.crunk_web, "[packs] resolved");
+        tracing::debug!(
+            crunk_web = packs.crunk_web,
+            design_cycle = packs.design_cycle,
+            "[packs] resolved"
+        );
         // frob:ticket 01M5XCVZFESE41V1GVEYC5VP5X
         let figma = raw.figma;
         if let Some(f) = &figma {

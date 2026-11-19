@@ -275,7 +275,11 @@ impl Product for Crunk {
 
     fn repo_groups(&self) -> Vec<RepoGroup<Self>> {
         // frob:ticket 01M4CXSEFJEZDQFGESPKDEW049
-        vec![crate::gx_pack::group(), crate::route_a11y::group()]
+        vec![
+            crate::gx_pack::group(),
+            crate::route_a11y::group(),
+            crate::design_cycle::group(),
+        ]
     }
 
     fn repo_digest(&self, snap: &Snapshot<Self>) -> Vec<u8> {
@@ -328,6 +332,7 @@ impl Product for Crunk {
                 .extend(format!("{:?}", crunk_rules::tokens_drift::check(spec).ok()).into_bytes());
         }
         digest.extend(crate::route_a11y::fingerprint(snap));
+        digest.extend(crate::design_cycle::fingerprint(snap));
         digest
     }
 

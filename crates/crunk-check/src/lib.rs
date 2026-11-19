@@ -18,6 +18,7 @@
 // A rule crate that is a dependency but not in `product_rules!` is an unused dependency (D107).
 #![cfg_attr(not(test), deny(unused_crate_dependencies))]
 
+pub mod design_cycle;
 pub mod gx_pack;
 pub mod packs;
 mod product;
