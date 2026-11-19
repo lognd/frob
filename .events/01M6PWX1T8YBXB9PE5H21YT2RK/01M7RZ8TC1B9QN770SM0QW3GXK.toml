@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T03:58:07Z"
+digest = "5c4c2829863020f217b175da167b21a362be5d1d610758a9f300252008f1d6bf"
+exit_code = 0
+head = "9be1c83a532b8725ee873b05c9f9a0aa6a2908ad"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.38s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c4eb7a37-2099-49c2-b134-c8368c3a013e with nextest profile: default
+    Starting 3 tests across 2 binaries (153 tests skipped)
+        PASS [   0.012s] grimble-model::it kernel::a_design_with_no_satisfies_is_an_unjustified_design
+        PASS [   0.016s] grimble-model::it kernel::a_requirement_no_design_satisfies_is_one_orphan_finding
+        PASS [   0.020s] grimble-model::it kernel::a_design_satisfying_the_requirement_closes_both_rules
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 3 tests run: 3 passed, 153 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p grimble-model -E test(/orphan_finding|closes_both_rules|unjustified_design/)"
+size = 772
+status = "measured"
+test_count = 3
+tests_digest = "047196bbb7c6cac99d76a68f1c04ff283ab443ce3e3ed16f53cdb86b5da20201"
+at = "2026-11-19T03:58:07Z"
+actor = "lognd"
+rev = 1
