@@ -5,10 +5,10 @@
 //! of them may go anywhere. An atom is Yes in `R_lo`, No outside `R_hi` and Unknown between; the
 //! doubt names the May edge or the frontier node.
 
-use std::collections::{BTreeSet, HashSet};
 
 use gob_ir::{NodeId, Relation, Truth};
 
+use super::super::core::fxmap::FastSet;
 use super::super::core::{Doubt, Verdict};
 use crate::plan::Certainty;
 
@@ -38,42 +38,52 @@ pub(crate) fn verb(rel: &Relation, a: NodeId, b: NodeId, certainty: Certainty) -
     collapse(v, certainty)
 }
 
-/// Nodes first reached from `layer` by one more edge of `rel`, not yet in `reached`.
-fn step(
-    rel: &Relation,
-    layer: &BTreeSet<NodeId>,
-    reached: &BTreeSet<NodeId>,
-    only_yes: bool,
-) -> BTreeSet<NodeId> {
-    layer
-        .iter()
-        .flat_map(|&n| rel.image(n))
-        .filter(|&(m, t)| (!only_yes || t == Truth::Yes) && !reached.contains(&m))
-        .map(|(m, _)| m)
-        .collect()
-}
-
 /// The nodes reachable from `from` by 1..=`steps` edges (the Yes edges only when `only_yes`),
-/// and whether one more step would add nothing (the search was exhausted).
-fn within(rel: &Relation, from: NodeId, steps: u16, only_yes: bool) -> (BTreeSet<NodeId>, bool) {
-    let mut reached = BTreeSet::new();
-    let mut layer = BTreeSet::from([from]);
+/// whether one more step would add nothing (the search was exhausted), and whether a non-Yes
+/// edge was met while expanding (so a Yes-only search could differ).
+fn within(
+    rel: &Relation,
+    from: NodeId,
+    steps: u16,
+    only_yes: bool,
+) -> (FastSet<NodeId>, bool, bool) {
+    let mut reached: FastSet<NodeId> = FastSet::default();
+    let mut layer = vec![from];
+    let mut weak = false;
     for _ in 0..steps {
-        layer = step(rel, &layer, &reached, only_yes);
-        if layer.is_empty() {
-            return (reached, true);
+        let mut next = Vec::new();
+        for &n in &layer {
+            for (m, t) in rel.image(n) {
+                if t != Truth::Yes {
+                    weak = true;
+                    if only_yes {
+                        continue;
+                    }
+                }
+                if reached.insert(m) {
+                    next.push(m);
+                }
+            }
         }
-        reached.extend(layer.iter().copied());
+        if next.is_empty() {
+            return (reached, true, weak);
+        }
+        layer = next;
     }
-    let exhausted = step(rel, &layer, &reached, only_yes).is_empty();
-    (reached, exhausted)
+    let exhausted = layer.iter().all(|&n| {
+        rel.image(n)
+            .into_iter()
+            .all(|(m, t)| (only_yes && t != Truth::Yes) || reached.contains(&m))
+    });
+    (reached, exhausted, weak)
 }
 
 /// The sure and possible forward closures of one node within a step bound, with the possible
 /// search's exhaustion flag; shared by every `reaches` query from that node.
 pub(crate) struct Closure {
-    sure: BTreeSet<NodeId>,
-    hi: BTreeSet<NodeId>,
+    /// The Yes-edge closure; `None` when it equals `hi` (no May edge was met).
+    sure: Option<FastSet<NodeId>>,
+    hi: FastSet<NodeId>,
     exhausted: bool,
     /// The nodes of `{from} + hi` with an unknown-out edge, in id order.
     frontier: Vec<NodeId>,
@@ -82,14 +92,14 @@ pub(crate) struct Closure {
 impl Closure {
     /// Searches `rel` from `from` within `n` steps (frob:ticket 01M5C7AA29V08HTNZM0BA2A6ST).
     pub(crate) fn of(rel: &Relation, from: NodeId, n: u16) -> Self {
-        let (sure, _) = within(rel, from, n, true);
-        let (hi, exhausted) = within(rel, from, n, false);
-        let frontier = std::iter::once(from)
+        let (hi, exhausted, weak) = within(rel, from, n, false);
+        let sure = weak.then(|| within(rel, from, n, true).0);
+        let mut frontier: Vec<NodeId> = std::iter::once(from)
             .chain(hi.iter().copied())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
             .filter(|&x| rel.is_unknown_out(x))
             .collect();
+        frontier.sort_unstable();
+        frontier.dedup();
         Self {
             sure,
             hi,
@@ -97,13 +107,18 @@ impl Closure {
             frontier,
         }
     }
+
+    /// The nodes reached through certain edges alone.
+    fn sure(&self) -> &FastSet<NodeId> {
+        self.sure.as_ref().unwrap_or(&self.hi)
+    }
 }
 
 impl Closure {
     /// Adds this closure to the running union of the closures of one quantifier's members
     /// (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
     pub(crate) fn join_into(&self, u: &mut ClosureUnion) {
-        u.sure.extend(self.sure.iter().copied());
+        u.sure.extend(self.sure().iter().copied());
         u.hi.extend(self.hi.iter().copied());
         u.frontier |= !self.frontier.is_empty();
         u.exhausted &= self.exhausted;
@@ -113,8 +128,8 @@ impl Closure {
 /// The union of several [`Closure`]s: what any of them sure-reaches or possibly reaches, whether
 /// any is on the frontier, and whether every possible search was exhausted.
 pub(crate) struct ClosureUnion {
-    sure: HashSet<NodeId>,
-    hi: HashSet<NodeId>,
+    sure: FastSet<NodeId>,
+    hi: FastSet<NodeId>,
     frontier: bool,
     exhausted: bool,
 }
@@ -123,8 +138,8 @@ impl ClosureUnion {
     /// The union of no closures.
     pub(crate) fn new() -> Self {
         Self {
-            sure: HashSet::new(),
-            hi: HashSet::new(),
+            sure: FastSet::default(),
+            hi: FastSet::default(),
             frontier: false,
             exhausted: true,
         }
@@ -145,8 +160,8 @@ impl ClosureUnion {
 
 /// The edges into each node from the members of one quantifier, for `some member: member VERB x`.
 pub(crate) struct EdgeUnion {
-    yes: HashSet<NodeId>,
-    any: HashSet<NodeId>,
+    yes: FastSet<NodeId>,
+    any: FastSet<NodeId>,
     frontier: bool,
 }
 
@@ -154,8 +169,8 @@ impl EdgeUnion {
     /// The union of no members' edges.
     pub(crate) fn new() -> Self {
         Self {
-            yes: HashSet::new(),
-            any: HashSet::new(),
+            yes: FastSet::default(),
+            any: FastSet::default(),
             frontier: false,
         }
     }
@@ -208,7 +223,7 @@ pub(crate) fn reaches_in(
     n: u16,
     certainty: Certainty,
 ) -> Verdict {
-    let v = if closure.sure.contains(&to) {
+    let v = if closure.sure().contains(&to) {
         Verdict::yes()
     } else if closure.hi.contains(&to) {
         Verdict::unknown(Doubt::MayEdge { from, to })

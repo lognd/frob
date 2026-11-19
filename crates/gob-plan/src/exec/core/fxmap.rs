@@ -3,7 +3,7 @@
 //! The caches key on small integers and short vectors of them, never on untrusted input, so
 //! the default `SipHash` only costs time. This is the Fx multiply-rotate hash.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::{BuildHasherDefault, Hasher};
 
 const SEED: u64 = 0x51_7c_c1_b7_27_22_0a_95;
@@ -58,6 +58,9 @@ impl Hasher for Fx {
 
 /// A `HashMap` keyed with the Fx hash.
 pub(crate) type FastMap<K, V> = HashMap<K, V, BuildHasherDefault<Fx>>;
+
+/// A `HashSet` keyed with the Fx hash.
+pub(crate) type FastSet<K> = HashSet<K, BuildHasherDefault<Fx>>;
 
 #[cfg(test)]
 mod tests {

@@ -21,7 +21,7 @@
 mod call;
 mod eval;
 mod field;
-mod fxmap;
+pub(super) mod fxmap;
 mod kind;
 mod rowkind;
 mod verdict;
