@@ -1,0 +1,32 @@
++++
+id = "01M7TBK44G9J6HCMEXFWA6AW81"
+title = "Bind tests for crunk Standing.word and StampError.code (COV001)"
+type = "task"
+category = "todo"
+priority = "medium"
+points = 2
+parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
+reporter = "lognd"
+created = "2026-11-19T16:52:44Z"
+updated = "2026-11-19T16:52:44Z"
+idempotency_key = "cov001-crunk-standing-stamp"
+labels = ["no-story", "good-first"]
+scope = ["crates/crunk-rules/tests/**,crates/crunk/tests/**"]
+
+[[acceptance]]
+text = "Given the public methods Standing.word and StampError.code, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names either method"
+bound = false
++++
+
+frob check reports two COV001 findings: crates/crunk-rules/src/handoff.rs Standing.word and crates/crunk/src/stamp.rs StampError.code are public methods reached only through ambiguous calls, so no test is bound to them.
+
+## Start here
+Open crates/crunk-rules/tests and crates/crunk/tests, add one small test per method that calls it directly, and bind each with a `// frob:tests <path>::<Symbol.method>` comment. Run `frob check --skip-tools` and confirm both COV001 findings are gone.
+
+no-story: internal engineering task in crunk; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
+
+## Start here
+
+- Files to read first: <TODO: list the files>
+- Test command: <TODO: the command that runs the tests>
+- Who to ask: <TODO: a handle or channel>
