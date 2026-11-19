@@ -456,6 +456,38 @@ fn free_vars(p: &PlanParts, id: OpId, out: &mut Vec<VarId>) {
     }
 }
 
+/// A rough cost of evaluating condition `id`: leaf tests cost one, a quantifier, count, call or
+/// relation walk costs a scan of the model, and connectives cost their parts.
+fn cost(p: &PlanParts, id: OpId) -> u64 {
+    const SCAN: u64 = 1_000;
+    match &p.ops[id as usize] {
+        Op::And(cs) | Op::Or(cs) => cs.iter().map(|&c| cost(p, c)).sum::<u64>().max(1),
+        Op::Not(c) => cost(p, *c),
+        Op::Quant { cond, .. } | Op::CountCmp { cond, .. } => SCAN + cost(p, *cond),
+        Op::CountPair { lhs, rhs, .. } => SCAN * 2 + cost(p, lhs.cond) + cost(p, rhs.cond),
+        Op::Call { .. }
+        | Op::Reaches { .. }
+        | Op::MatchSnippet { .. }
+        | Op::MatchGlobSet { .. } => SCAN,
+        Op::Verb { .. } => 10,
+        Op::MatchRegex { .. } | Op::MatchGlob { .. } | Op::InSide { .. } => 5,
+        Op::Cmp { lhs, rhs, .. } => {
+            let computed = |o: &Operand| {
+                u64::from(!matches!(
+                    o,
+                    Operand::Var(_)
+                        | Operand::Int(_)
+                        | Operand::Str(_)
+                        | Operand::Bool(_)
+                        | Operand::KnobInt { .. }
+                ))
+            };
+            2 + computed(lhs) + computed(rhs)
+        }
+        _ => 1,
+    }
+}
+
 /// The clause schedule: binders in order, and for each depth the conditions that become
 /// evaluable once that many binders are bound.
 struct Schedule {
@@ -492,6 +524,11 @@ fn schedule(p: &PlanParts) -> Schedule {
         free_vars(p, c, &mut vars);
         let at = vars.iter().map(|v| depth_of[v]).max().unwrap_or(0);
         ready[at].push(c);
+    }
+    // Conjunction is commutative in truth and a `No` absorbs the doubts of the rest, so the cheap
+    // tests run first and a binding that fails one never pays for a scan (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
+    for conds in &mut ready {
+        conds.sort_by_cached_key(|&c| cost(p, c));
     }
     Schedule {
         binders,
