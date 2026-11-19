@@ -7,12 +7,12 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-30T21:46:42Z"
-updated = "2026-11-19T02:39:53Z"
+updated = "2026-11-19T02:47:09Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-model/src/**,docs/design/grimble-capabilities-v3.md"]
 
 [[acceptance]]
-text = "provides with unowned or foreign-owned S raises MDL008 in a model test"
+text = "Given a model whose node declares provides C via S where S is not owned by that node, when the model is checked, then MDL008 is raised in a model test"
 bound = false
 +++
 

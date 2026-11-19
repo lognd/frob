@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["provides with unowned or foreign-owned S raises MDL008 in a model test"]
+new = ["Given a model whose node declares provides C via S where S is not owned by that node, when the model is checked, then MDL008 is raised in a model test"]
+moved = [0]
+at = "2026-11-19T02:47:09Z"
+actor = "lognd"
+rev = 1
