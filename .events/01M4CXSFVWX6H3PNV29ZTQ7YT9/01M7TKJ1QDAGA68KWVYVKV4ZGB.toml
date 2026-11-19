@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: design-cycle pack is opt-in via [packs] design_cycle; UX001 and UX002 fire through crunk check and are silent when opted out (mdtest corpus)"
+at = "2026-11-19T19:11:57Z"
+actor = "lognd"
+rev = 1
