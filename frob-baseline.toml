@@ -2,7 +2,7 @@ version = 1
 
 [rules.DUP005]
 reason = "structural clones that existed when the nightly whole-repo scan was introduced; new clusters still fail"
-ticket = "~FMYPAR6"
+ticket = "~3CAR5Y4"
 findings = [
   "0e22defaf42bb08d35b059ac06b98df7369cfa8b7d7ea03e76ffa4a434d7478d",
   "0fcbc946afee66a8533c44c33241fcc6c96db40f275065d7f88bca8e95823624",
