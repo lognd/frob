@@ -275,16 +275,21 @@ fn assumptions_at(
 }
 
 /// Each report's guard under `env`, and their `or` (`Yes` when a report has no guard).
+///
+/// A guard after the first `Yes` cannot change the `or` or the first report that is `Yes`, and
+/// only guards before the producing report become notes, so it is not evaluated and stands as
+/// `No` (frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B).
 fn report_guards(ev: &super::core::Eval<'_>, env: &mut Env) -> (Vec<Verdict>, Verdict) {
     let mut w = Verdict::no();
-    let guards: Vec<Verdict> = ev
-        .plan
-        .reports
-        .iter()
-        .map(|r| r.when.map_or_else(Verdict::yes, |c| ev.eval(c, env)))
-        .collect();
-    for g in &guards {
+    let mut guards: Vec<Verdict> = Vec::with_capacity(ev.plan.reports.len());
+    for r in &ev.plan.reports {
+        if w.truth == Truth::Yes {
+            guards.push(Verdict::no());
+            continue;
+        }
+        let g = r.when.map_or_else(Verdict::yes, |c| ev.eval(c, env));
         w = w.or(g.clone());
+        guards.push(g);
     }
     (guards, w)
 }
