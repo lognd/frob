@@ -874,6 +874,69 @@ impl<'a> Checker<'a> {
         }
     }
 
+    /// MDL008 when a node's `provides C via S` names a provider `S` its own `owns` does not cover
+    /// (grimble-capabilities-v3.md 5.3): an unowned or foreign-owned `S` is no boundary of this node.
+    /// Undecidable shapes (an `owns` that is not a plain glob or a union of globs) are not reported.
+    // frob:ticket 01M67CF0W52MK6V31FN6DP3TY9
+    fn provider_owned(
+        &mut self,
+        rec: &EntityRec<'_>,
+        p: &crate::ast::Provides,
+        span: Span,
+        anchor: &str,
+    ) {
+        if rec.entity.kind != EntityKind::Node {
+            return;
+        }
+        let Ok(via) = &p.via.parsed else { return };
+        let mut provided = Vec::new();
+        collect_globs(via.root(), &mut provided);
+        if provided.is_empty() {
+            return;
+        }
+        let mut owned = Vec::new();
+        for r in self
+            .idx
+            .entities
+            .iter()
+            .chain(self.idx.extensions.iter())
+            .filter(|r| r.entity.kind == EntityKind::Node && r.full == rec.full)
+        {
+            for oc in &r.entity.clauses {
+                let ClauseKind::Owns(sel) = &oc.kind else {
+                    continue;
+                };
+                let Ok(parsed) = &sel.parsed else { return };
+                if !plain_globs(parsed.root()) {
+                    return;
+                }
+                collect_globs(parsed.root(), &mut owned);
+            }
+        }
+        let covered = |g: &gob_walk::Glob| {
+            owned.iter().any(|o| {
+                o.matches_path(g.path())
+                    && (o.qual().is_none()
+                        || g.qual().is_some() && o.matches_qual(&g.qual_segments()))
+            })
+        };
+        if let Some(bad) = provided.iter().find(|g| !covered(g)) {
+            self.raise(
+                "MDL008",
+                None,
+                rec.file,
+                span,
+                format!(
+                    "`provides {} via` names `{}`, which node `{}` does not own",
+                    p.atom.written(),
+                    bad.text(),
+                    rec.full
+                ),
+                anchor,
+            );
+        }
+    }
+
     /// Validates the `until=` date and `profile=` names of a grant (MDL009).
     // frob:ticket 01M5XNNJTK08K3CB98MCT14W34
     fn grant_window(&mut self, rec: &EntityRec<'_>, m: &crate::ast::May, anchor: &str) {
@@ -1240,6 +1303,7 @@ impl<'a> Checker<'a> {
             ClauseKind::Provides(p) => {
                 self.atom(rec, &p.atom, false, anchor);
                 self.selector(rec, &p.via, anchor);
+                self.provider_owned(rec, p, c.span, anchor);
             }
             ClauseKind::Excuses(x) => {
                 self.atom(rec, &x.atom, false, anchor);
@@ -1954,6 +2018,15 @@ fn collect_globs(n: &Node, out: &mut Vec<gob_walk::Glob>) {
         Expr::Not(i) => collect_globs(i, out),
         Expr::And(ops) | Expr::Or(ops) => ops.iter().for_each(|o| collect_globs(o, out)),
         _ => {}
+    }
+}
+
+/// True when `n` is a glob or a union of globs (an `owns` shape whose coverage is decidable).
+fn plain_globs(n: &Node) -> bool {
+    match &n.expr {
+        Expr::Glob(_) => true,
+        Expr::Or(ops) => ops.iter().all(plain_globs),
+        _ => false,
     }
 }
 

@@ -1,0 +1,13 @@
+grimble = "2";
+module m;
+node a : trusted {
+  owns "src/a/**";
+  provides fs.write via "src/a/store.rs::put" because="the one writer";
+  provides fs.write via "src/b/store.rs::put" because="owned by b";
+}
+node b : trusted {
+  owns "src/b/**";
+}
+node c : trusted {
+  provides fs.write via "src/c/store.rs::put" because="c owns nothing";
+}
