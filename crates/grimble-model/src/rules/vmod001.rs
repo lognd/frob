@@ -1,6 +1,6 @@
 //! VMOD001: A requirement is satisfied by no design artifact.
 
-// frob:ticket 21YT2RK
+// frob:ticket 01M6PWX1T8YBXB9PE5H21YT2RK
 
 use gob_rules::{Out, RepoRule, rule};
 

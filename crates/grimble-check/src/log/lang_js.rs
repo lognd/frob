@@ -80,7 +80,7 @@ fn run_function(st: &mut State<'_>, f: Node<'_>) {
 
 /// The callback of `import('x').then(cb)` / `require('x').then(cb)`: its first parameter is the
 /// module namespace. Returns the module path and the callback when `f` is such a callee.
-// frob:ticket 7TED887
+// frob:ticket 01M65CP8BAY8R4SSVGY7TED887
 fn then_callback<'t>(
     st: &mut State<'_>,
     f: Node<'t>,

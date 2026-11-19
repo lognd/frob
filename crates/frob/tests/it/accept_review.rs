@@ -1,5 +1,5 @@
 //! `frob accept-review` through the real verb: self-review is refused, a second identity is recorded.
-// frob:ticket R8NFWKA
+// frob:ticket 01M6BNZX417F7NT1CGXR8NFWKA
 
 use crate::common;
 

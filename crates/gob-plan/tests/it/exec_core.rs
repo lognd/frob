@@ -406,7 +406,7 @@ fn the_test_kind_matches_a_typescript_vitest_callback() {
     );
 }
 
-// frob:ticket PYM5S6B
+// frob:ticket 01M4PTYYJ0Z968WHGQ0PYM5S6B
 // frob:tests crates/gob-plan/src/exec/core/mod.rs::run
 #[test]
 fn a_regex_op_finds_the_same_rows_on_every_run_of_the_plan() {
