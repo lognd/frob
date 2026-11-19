@@ -23,6 +23,7 @@ mod parity;
 mod query;
 mod query_parity;
 mod rename;
+mod render_browser;
 mod render_solve;
 mod report_contrast;
 mod review;

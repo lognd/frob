@@ -1,0 +1,1 @@
+crunk render --engine browser (gallery feature) writes a hashed PNG and a boxes JSON per cell beside the solve output, exits 2 with the install remedy when the gallery feature or Playwright is missing, and shares node ids with the solve output.

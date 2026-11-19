@@ -5,9 +5,9 @@
 //! T1 driver ([`crunk_layout::solve::solve_scene_html`]) at its platform's viewport with the
 //! spec's design tokens, and written to `<out>/<screen>/<state>/<platform>.layout.json`. Cells
 //! are solved on `--jobs` worker threads but always reported and written in cell order, so the
-//! output is identical for every `--jobs` value. `--engine browser` needs the `gallery` feature
-//! and refuses with `E-GALLERY-NOT-BUILT` and the remedy in the default build. `Plan` and
-//! `solve_all` are shared with `snapshot`.
+//! output is identical for every `--jobs` value. `--engine browser` ([`crate::render_browser`])
+//! needs the `gallery` feature and exits 2 with `E-GALLERY-NOT-BUILT` and the remedy in the default
+//! build. `Plan` and `solve_all` are shared with `snapshot`.
 
 // frob:ticket 01M5XCWYMSEMEQPNZ7EFHHY9Z7
 
@@ -107,6 +107,15 @@ pub struct RenderedCell {
     pub path: String,
     /// Nodes in the solve.
     pub nodes: usize,
+    /// The screenshot, relative to the project root (`--engine browser` only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub png: Option<String>,
+    /// Lowercase hex SHA-256 of the screenshot (`--engine browser` only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    /// The browser boxes in the layout-solve shape, relative to the project root (`--engine browser` only).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub boxes: Option<String>,
 }
 
 /// Output of `render`.
@@ -139,6 +148,9 @@ pub(crate) struct Solved {
 #[derive(Debug)]
 pub(crate) struct Plan {
     pub root: PathBuf,
+    /// The loaded spec, for the browser engine.
+    #[cfg(feature = "gallery")]
+    pub spec: DesignSpec,
     pub tokens: TokenMap,
     pub items: Vec<Item>,
     pub jobs: usize,
@@ -301,6 +313,8 @@ pub(crate) fn plan(ctx: &Context, select: &SelectArgs) -> Result<Plan, CliError>
     tracing::info!(cells = items.len(), jobs, "render: plan ready");
     Ok(Plan {
         root,
+        #[cfg(feature = "gallery")]
+        spec,
         tokens,
         items,
         jobs,
@@ -378,35 +392,6 @@ pub(crate) fn posix(path: &Path) -> String {
     path.to_string_lossy().into_owned()
 }
 
-/// Refuse: the browser engine is not built into this binary.
-#[cfg(not(feature = "gallery"))]
-fn browser(verb: &str) -> Outcome<RenderData> {
-    use gob_diagnostics::RemedyCommand;
-    tracing::info!(verb, "render: browser engine not built in");
-    Err(refusal(
-        "E-GALLERY-NOT-BUILT",
-        "--engine browser is not built into this crunk binary",
-    )
-    .with_command(
-        RemedyCommand::new("cargo", "install")
-            .arg("crunk")
-            .flag("features", "gallery"),
-    )
-    .into())
-}
-
-/// Refuse: the browser engine's layout boxes are not wired to `render` yet.
-#[cfg(feature = "gallery")]
-fn browser(verb: &str) -> Outcome<RenderData> {
-    tracing::info!(verb, "render: browser engine has no layout output yet");
-    Err(refusal(
-        "E-ENGINE-UNSUPPORTED",
-        "--engine browser does not write layout-solve JSON yet",
-    )
-    .with_remedy("use --engine solve, or `crunk gallery render` for screenshots")
-    .into())
-}
-
 impl Command for Render {
     type Data = RenderData;
 
@@ -425,7 +410,10 @@ impl Command for Render {
 
     fn run(&self, ctx: &Context) -> Outcome<RenderData> {
         if self.engine == "browser" {
-            return browser("render");
+            #[cfg(not(feature = "gallery"))]
+            return Err(crate::render_browser::not_built());
+            #[cfg(feature = "gallery")]
+            return crate::render_browser::run(&plan(ctx, &self.select)?, &self.out);
         }
         let plan = plan(ctx, &self.select)?;
         let results = solve_all(&plan);
@@ -452,6 +440,9 @@ impl Command for Render {
                         platform: item.platform.clone(),
                         path: posix(&rel),
                         nodes,
+                        png: None,
+                        sha256: None,
+                        boxes: None,
                     });
                 }
                 Err(e) => {

@@ -90,7 +90,7 @@ fn render_screen_without_scene_exits_2_naming_it() {
 fn render_browser_engine_without_gallery_says_not_built_with_remedy() {
     let dir = project(None);
     let (code, out, err) = crunk(dir.path(), &["render", "--engine", "browser", "--json"]);
-    assert_ne!(code, 0, "{out} {err}");
+    assert_eq!(code, 2, "{out} {err}");
     let text = format!("{out}{err}");
     assert!(text.contains("E-GALLERY-NOT-BUILT"), "{text}");
     assert!(text.contains("--features gallery"), "{text}");

@@ -39,6 +39,7 @@ pub mod preview;
 pub mod query;
 pub mod rename;
 pub mod render;
+pub mod render_browser;
 pub mod review;
 pub mod rewrite;
 pub mod rule;
