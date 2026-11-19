@@ -1,0 +1,12 @@
+kind = "field"
+field = "body"
+old = "Follow-up from 01M666NX8TN1R3X13Q4S9CTJ1V (provides C via S boundary)."
+new = """
+Follow-up from 01M666NX8TN1R3X13Q4S9CTJ1V (provides C via S boundary).
+
+## Start here
+Find where the model checks a `provides C via S` boundary in crates/grimble-model (search for MDL008), then add the missing check: S must be a node owned by the declaring node. Add a model test next to the existing MDL008 cases.
+no-story: internal engineering task in grimble-model; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes."""
+at = "2026-11-19T02:39:53Z"
+actor = "lognd"
+rev = 1
