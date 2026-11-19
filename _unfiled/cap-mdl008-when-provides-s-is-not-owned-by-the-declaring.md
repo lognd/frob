@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-30T21:46:42Z"
-updated = "2026-11-19T02:47:09Z"
+updated = "2026-11-19T16:11:02Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-model/src/**,docs/design/grimble-capabilities-v3.md"]
 
 [[acceptance]]
 text = "Given a model whose node declares provides C via S where S is not owned by that node, when the model is checked, then MDL008 is raised in a model test"
-bound = false
+bound = true
 +++
 
 Follow-up from 01M666NX8TN1R3X13Q4S9CTJ1V (provides C via S boundary).
