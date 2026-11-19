@@ -2,12 +2,13 @@
 id = "01M67CF0W52MK6V31FN6DP3TY9"
 title = "CAP: MDL008 when provides S is not owned by the declaring node"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-30T21:46:42Z"
-updated = "2026-11-19T16:11:02Z"
+updated = "2026-11-19T16:11:14Z"
 labels = ["good-first", "no-story"]
 scope = ["crates/grimble-bind/src/caps.rs,crates/grimble-model/src/**,docs/design/grimble-capabilities-v3.md"]
 
