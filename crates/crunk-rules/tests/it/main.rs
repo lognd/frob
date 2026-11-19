@@ -14,6 +14,7 @@ mod fix_rules;
 mod grl_parity;
 mod gx_files;
 mod gx_rules;
+mod handoff;
 mod i18n_rules;
 mod org_rules;
 mod phase_profile;

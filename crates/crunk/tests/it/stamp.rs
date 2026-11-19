@@ -137,3 +137,19 @@ fn set_content_hash_keeps_comments_and_crlf_and_replaces_in_place() {
     assert_eq!(out, "# c\r\nid = \"a\"\r\ncontent_hash = \"new\" # why\r\n");
     assert!(crunk::stamp::set_content_hash("= =", "x").is_err());
 }
+
+// frob:tests crates/crunk/src/stamp.rs::StampError.code
+#[test]
+fn stamp_errors_carry_their_stable_refusal_codes() {
+    use crunk::stamp::StampError;
+    assert_eq!(StampError::Load("x".into()).code(), "E-STAMP-LOAD");
+    assert_eq!(StampError::Unknown("x".into()).code(), "E-STAMP-UNKNOWN");
+    assert_eq!(
+        StampError::Edit("f".into(), "x".into()).code(),
+        "E-STAMP-EDIT"
+    );
+    assert_eq!(
+        StampError::Write("f".into(), "x".into()).code(),
+        "E-STAMP-WRITE"
+    );
+}
