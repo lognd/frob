@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Overlay now reads passed attestations as manual verified_by row verdicts via Ledger::manual_row_verdicts, surfaced in frob plan --from-design; manual_row_verdict checks the clause index is a manual row."
+at = "2026-11-19T17:48:48Z"
+actor = "lognd"
+rev = 1
