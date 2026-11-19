@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T20:07:56Z"
+digest = "6f9b8411f4b22ff30748238a12e9864f61fd0a0cd85ce1b725b1b2c286ec727a"
+exit_code = 0
+head = "561a1e6f9f9790cc151fa5057091dad1c2c42bd5"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling crunk-check v0.532.0 (<worktree>\crates\crunk-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.09s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID e1ce4799-d169-4961-9e54-9efefa0210b0 with nextest profile: default
+    Starting 1 test across 2 binaries (96 tests skipped)
+        PASS [   0.126s] crunk-check::it hullbreach_game_ui::hullbreach_game_ui_reports_uss_token_ugui_literal_and_gx_findings
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.127s] 1 test run: 1 passed, 96 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-check -E test(hullbreach_game_ui_reports_uss_token_ugui_literal_and_gx_findings)"
+size = 721
+status = "measured"
+test_count = 1
+tests_digest = "a3ab2be2094e65ee0699eff0901991c8b02c9184eef0392d0aaf8088a2791a9d"
+at = "2026-11-19T20:07:56Z"
+actor = "lognd"
+rev = 1

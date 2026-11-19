@@ -7,11 +7,11 @@ priority = "medium"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:54:14Z"
-updated = "2026-10-08T04:54:14Z"
+updated = "2026-11-19T20:07:56Z"
 
 [[acceptance]]
 text = "Given hullbreach game UI, when crunk check runs with the GX pack, then USS token rules, uGUI generator literal checks and GX rules report findings"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md sections 7, 8 and 9 (D116, D117).
