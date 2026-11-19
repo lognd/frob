@@ -405,3 +405,27 @@ fn the_test_kind_matches_a_typescript_vitest_callback() {
         "exactly the vitest callback is a test: {out:?}"
     );
 }
+
+// frob:ticket PYM5S6B
+// frob:tests crates/gob-plan/src/exec/core/mod.rs::run
+#[test]
+fn a_regex_op_finds_the_same_rows_on_every_run_of_the_plan() {
+    let mut d = Doc::new("a.rs", "rust");
+    let (a, b) = (
+        func(&mut d, "alpha", "public", 0, 10, &[]),
+        func(&mut d, "beta", "public", 20, 30, &[]),
+    );
+    let (model, _) = d.root(&[a, b]);
+    let mut p = PlanBuilder::new("RE001", Polarity::Pplus);
+    let f = p.find("function");
+    let subject = p.field(f, "name");
+    let pattern = p.s("^al");
+    let m = p.op(Op::MatchRegex { subject, pattern });
+    p.clause(m);
+    p.report(None, f, "alpha");
+    let plan = p.build();
+    let first = rows(&plan, &model);
+    assert_eq!(first.len(), 1, "only `alpha` matches: {first:?}");
+    // The compiled pattern is shared between runs; a later run must read the same rows.
+    assert_eq!(rows(&plan, &model), first);
+}

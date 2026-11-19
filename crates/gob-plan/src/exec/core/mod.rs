@@ -204,6 +204,34 @@ fn side_members(
     Ok(members)
 }
 
+/// The most compiled regexes the process-wide memo keeps before it starts over.
+const REGEX_MEMO_CAP: usize = 256;
+
+/// Compiles `src` once per process and returns a cheap clone afterwards.
+///
+/// A rule runs once per file, so compiling its patterns inside every run repeated the same
+/// automaton build per file; the plan's patterns are fixed, so the compiled form is specialised to
+/// the pattern once (frob:ticket PYM5S6B). `Regex` clones share one compiled program.
+fn compiled_regex(src: &str) -> Result<regex::Regex, regex::Error> {
+    static MEMO: std::sync::Mutex<Option<HashMap<String, regex::Regex>>> =
+        std::sync::Mutex::new(None);
+    let mut guard = MEMO
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    let memo = guard.get_or_insert_with(HashMap::new);
+    if let Some(re) = memo.get(src) {
+        return Ok(re.clone());
+    }
+    let re = RegexBuilder::new(src)
+        .size_limit(REGEX_SIZE_LIMIT)
+        .build()?;
+    if memo.len() >= REGEX_MEMO_CAP {
+        memo.clear();
+    }
+    memo.insert(src.to_owned(), re.clone());
+    Ok(re)
+}
+
 /// Resolves every kind word, compiles every pattern and finds every relation the plan names,
 /// or names what cannot run.
 fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecError> {
@@ -226,10 +254,7 @@ fn prepare<'r>(p: &PlanParts, rels: &'r Relations) -> Result<Prepared<'r>, ExecE
             }
             Op::MatchRegex { pattern, .. } => {
                 let src = &p.strings[*pattern as usize];
-                let re = RegexBuilder::new(src)
-                    .size_limit(REGEX_SIZE_LIMIT)
-                    .build()
-                    .map_err(|e| bad_pattern(p, src, &e))?;
+                let re = compiled_regex(src).map_err(|e| bad_pattern(p, src, &e))?;
                 matchers.insert(id, Matcher::Regex(re));
             }
             Op::MatchGlob { pattern, .. } => {
