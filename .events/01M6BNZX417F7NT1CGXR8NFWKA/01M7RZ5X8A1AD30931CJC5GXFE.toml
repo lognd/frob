@@ -1,0 +1,29 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T03:56:28Z"
+digest = "7493143723d03143a67986dfc26239c427ed11a628c7488ab08c6f7c38d2166d"
+exit_code = 0
+head = "9be1c83a532b8725ee873b05c9f9a0aa6a2908ad"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>\crates\frob)
+    Finished `test` profile [unoptimized] target(s) in 4.01s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 69f9e455-6a6a-4167-a614-c3699d3ec301 with nextest profile: default
+    Starting 4 tests across 4 binaries (567 tests skipped)
+        PASS [   0.013s] frob-cli accept_review_cmd::tests::the_author_cannot_review_their_own_accept_unless_owner
+        PASS [   0.034s] frob-cli accept_review_cmd::tests::a_review_is_keyed_by_subject_and_replaced
+        PASS [   0.357s] frob-cli::it accept_review::the_author_cannot_review_their_own_accept
+        PASS [   0.441s] frob-cli::it accept_review::a_second_identity_records_a_review_in_the_lock
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.443s] 4 tests run: 4 passed, 567 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(accept_review)"
+size = 925
+status = "measured"
+test_count = 4
+tests_digest = "8482c2e69fdb805e52e3b5d835d0cc0634fe3ad553abffa9cf38b6c092f11792"
+at = "2026-11-19T03:56:28Z"
+actor = "lognd"
+rev = 1

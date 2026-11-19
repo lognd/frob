@@ -8,9 +8,9 @@ points = 3
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-01T13:50:10Z"
-updated = "2026-11-19T03:54:02Z"
+updated = "2026-11-19T03:56:28Z"
 
 [[acceptance]]
 text = "docs/design/exceptions.md second-identity review has a frob verb and a test"
-bound = false
+bound = true
 +++
