@@ -1,0 +1,1 @@
+An end-to-end test now shows crunk check reporting, with evidence, the default-indigo, emoji-bullet and identical-icon-card SLOP findings and the paired missing-CRAFT decisions on a generated landing page.
