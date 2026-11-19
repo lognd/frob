@@ -1,0 +1,149 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-19T17:46:46Z"
+digest = "1ba3aa31a3650a64b08a53ce8272b11e0a4908153cc343a863286d8520c00113"
+exit_code = 0
+head = "1407399146d952dcedfc9c66e2f452f026df46bb"
+inline = '''
+   Compiling unicode-normalization v0.1.25
+   Compiling syn v3.0.6
+   Compiling stable_deref_trait v1.2.1
+   Compiling crypto-common v0.1.7
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling zerocopy-derive v0.8.59
+   Compiling either v1.18.0
+   Compiling zerocopy v0.8.59
+   Compiling indexmap v2.14.2
+   Compiling heapless v0.8.0
+   Compiling gob-caps v0.532.0 (<worktree>\crates\gob-caps)
+   Compiling digest v0.10.7
+   Compiling regex-automata v0.4.18
+   Compiling num-traits v0.2.19
+   Compiling sha1 v0.10.7
+   Compiling rayon v1.12.0
+   Compiling gix-utils v0.3.6
+   Compiling sha1-checked v0.10.0
+   Compiling faster-hex v0.10.1
+   Compiling gix-quote v0.8.0
+   Compiling ciborium-io v0.2.2
+   Compiling clap_builder v4.6.7
+   Compiling itertools v0.10.5
+   Compiling bit-vec v0.8.0
+   Compiling serde_derive_internals v0.30.0
+   Compiling quick-error v1.2.3
+   Compiling cast v0.3.0
+   Compiling rusty-fork v0.3.1
+   Compiling regex v1.13.1
+   Compiling bit-set v0.8.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling tree-sitter v0.27.0
+   Compiling criterion-plot v0.5.0
+   Compiling clap v4.6.7
+   Compiling rand_xorshift v0.4.0
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive v1.0.229
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling is-terminal v0.4.17
+   Compiling ref-cast v1.0.27
+   Compiling unarray v0.1.4
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling error_set_impl v0.9.2
+   Compiling thiserror v2.0.21
+   Compiling gix-path v0.12.6
+   Compiling gix-packetline v0.22.2
+   Compiling gix-zlib v0.1.0
+   Compiling gob-path v0.532.0 (<worktree>\crates\gob-path)
+   Compiling gix-features v0.49.1
+   Compiling gix-command v0.10.1
+   Compiling gix-hash v0.26.2
+   Compiling gix-fs v0.22.1
+   Compiling gix-glob v0.27.1
+   Compiling serde v1.0.229
+   Compiling gix-tempfile v24.0.0
+   Compiling gix-hashtable v0.16.0
+   Compiling gix-commitgraph v0.39.0
+   Compiling gix-object v0.64.1
+   Compiling gix-lock v24.0.0
+   Compiling gix-attributes v0.35.0
+   Compiling gix-sec v0.14.2
+   Compiling gix-config-value v0.19.1
+   Compiling gix-ignore v0.22.1
+   Compiling schemars v1.2.2
+   Compiling gix-url v0.38.0
+   Compiling gix-pathspec v0.20.0
+   Compiling gob-walk v0.532.0 (<worktree>\crates\gob-walk)
+   Compiling gix-revwalk v0.35.0
+   Compiling gix-ref v0.67.1
+   Compiling gix-traverse v0.61.0
+   Compiling gix-filter v0.34.0
+   Compiling gob-fs v0.532.0 (<worktree>\crates\gob-fs)
+   Compiling gix-index v0.55.0
+   Compiling gix-discover v0.55.0
+   Compiling ppv-lite86 v0.2.21
+   Compiling gix-worktree v0.56.0
+   Compiling gix-diff v0.67.1
+   Compiling tracing-serde v0.2.0
+   Compiling gix-dir v0.29.1
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-languages v0.532.0 (<worktree>\crates\gob-languages)
+   Compiling rand_chacha v0.9.0
+   Compiling gix-config v0.60.0
+   Compiling gob-ir v0.532.0 (<worktree>\crates\gob-ir)
+   Compiling gix-revision v0.49.1
+   Compiling gix-pack v0.74.2
+   Compiling gix-transport v0.59.2
+   Compiling gix-shallow v0.13.0
+   Compiling gob-macros v0.532.0 (<worktree>\crates\gob-macros)
+   Compiling gix-refspec v0.45.1
+   Compiling gix-submodule v0.34.0
+   Compiling gix-odb v0.84.0
+   Compiling gix-protocol v0.65.1
+   Compiling gix-merge v0.20.1
+   Compiling gob-log v0.532.0 (<worktree>\crates\gob-log)
+   Compiling rand v0.9.5
+   Compiling gix-status v0.34.1
+   Compiling gix-worktree-state v0.34.1
+   Compiling half v2.7.1
+   Compiling gix v0.87.1
+   Compiling ciborium-ll v0.2.2
+   Compiling gob-rules v0.532.0 (<worktree>\crates\gob-rules)
+   Compiling gob-exec v0.532.0 (<worktree>\crates\gob-exec)
+   Compiling ciborium v0.2.2
+   Compiling ulid v1.2.1
+   Compiling gob-time v0.532.0 (<worktree>\crates\gob-time)
+   Compiling tinytemplate v1.2.1
+   Compiling error_set v0.9.2
+   Compiling proptest v1.11.0
+   Compiling criterion v0.5.1
+   Compiling gob-config v0.532.0 (<worktree>\crates\gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>\crates\gob-diagnostics)
+   Compiling gob-git v0.532.0 (<worktree>\crates\gob-git)
+   Compiling frob-ledger v0.532.0 (<worktree>\crates\frob-ledger)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 51s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 75daea8e-356c-4e70-9dd5-2a04fcdfc25f with nextest profile: default
+    Starting 5 tests across 2 binaries (357 tests skipped)
+        PASS [   0.039s] frob-ledger design::tests::a_passed_attestation_on_an_implementing_or_ancestor_ticket_passes_the_manual_row
+        PASS [   0.565s] frob-ledger::it ledger::a_design_ancestor_ticket_passes_the_manual_row_and_an_unrelated_one_does_not::dir
+        PASS [   0.618s] frob-ledger::it ledger::a_design_ancestor_ticket_passes_the_manual_row_and_an_unrelated_one_does_not::branch
+        PASS [   0.667s] frob-ledger::it ledger::a_passed_attestation_is_the_pass_verdict_of_a_manual_row::branch
+        PASS [   0.669s] frob-ledger::it ledger::a_passed_attestation_is_the_pass_verdict_of_a_manual_row::dir
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.670s] 5 tests run: 5 passed, 357 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E test(manual_row)"
+size = 5385
+status = "measured"
+test_count = 5
+tests_digest = "59e80ecdb85fa9c2f8b097acff6a177f51eb92d0345b60262000add559d0f1ae"
+at = "2026-11-19T17:46:46Z"
+actor = "lognd"
+rev = 1

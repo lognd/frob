@@ -8,7 +8,7 @@ points = 8
 parent = "01M67VDQ8WGS0SYG4J4NFXNQJE"
 reporter = "lognd"
 created = "2026-10-31T18:03:38Z"
-updated = "2026-11-19T17:34:44Z"
+updated = "2026-11-19T17:46:46Z"
 idempotency_key = "grmb-cycle12-attestation-tie"
 labels = ["no-story"]
 scope = ["docs/design/tickets.md", "crates/frob-ledger/**", "crates/frob-evidence/src/attestation.rs", "crates/frob-evidence/src/record.rs", "crates/frob-evidence/tests/attestation.rs", "crates/frob-evidence/**", "crates/frob/src/**"]
@@ -19,7 +19,7 @@ bound = true
 
 [[acceptance]]
 text = "frob's overlay reads a passed attestation carrying that anchor on a live ticket implementing the entity or a design ancestor as the pass verdict of that manual verified_by row (grmb-spec 12.8, D202)"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob evidence and attestation records bound to a design entity store that entity's body_digest from grimble graph --json (grmb-spec 12.8 WINDOW, PM048, D207); records without it are outside every WINDOW"
