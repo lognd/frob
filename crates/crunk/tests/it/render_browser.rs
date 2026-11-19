@@ -47,9 +47,14 @@ fn ids_the_browser_did_not_measure_are_named_in_solve_order() {
 
 // frob:tests crates/crunk/src/render_browser.rs::file_url
 #[test]
-fn file_urls_use_forward_slashes_and_a_third_slash_for_rooted_paths() {
+fn file_urls_turn_backslashes_into_forward_slashes() {
     let rel = file_url(Path::new(r"proj\design\a.scene.html"));
     assert_eq!(rel, "file:///proj/design/a.scene.html");
+}
+
+// frob:tests crates/crunk/src/render_browser.rs::file_url
+#[test]
+fn file_urls_of_rooted_paths_get_exactly_three_slashes() {
     let rooted = Path::new(std::path::MAIN_SEPARATOR_STR).join("proj");
     assert_eq!(file_url(&rooted), "file:///proj");
 }
@@ -88,10 +93,13 @@ fn files_under(root: &Path) -> Vec<std::path::PathBuf> {
 
 #[cfg(feature = "gallery")]
 fn init_logging() {
-    let _ = tracing_subscriber::fmt()
+    let installed = tracing_subscriber::fmt()
         .with_test_writer()
         .with_max_level(tracing::Level::DEBUG)
         .try_init();
+    if installed.is_err() {
+        tracing::debug!("a test logger was already installed");
+    }
 }
 
 #[cfg(feature = "gallery")]
