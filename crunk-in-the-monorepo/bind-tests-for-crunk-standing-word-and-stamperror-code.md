@@ -8,14 +8,14 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T16:52:44Z"
-updated = "2026-11-19T17:10:14Z"
+updated = "2026-11-19T17:11:14Z"
 idempotency_key = "cov001-crunk-standing-stamp"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk-rules/tests/**,crates/crunk/tests/**"]
 
 [[acceptance]]
 text = "Given the public methods Standing.word and StampError.code, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names either method"
-bound = false
+bound = true
 +++
 
 Two public methods, Standing.word in crates/crunk-rules/src/handoff.rs and StampError.code in crates/crunk/src/stamp.rs, had no test bound to them, so frob check raised COV001 for each.
