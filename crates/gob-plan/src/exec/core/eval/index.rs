@@ -22,6 +22,8 @@ pub(super) struct EqIndex {
     probe: Operand,
     /// The position list of each known key, by index into `lists`.
     buckets: FastMap<Scalar, u32>,
+    /// The same for text keys, so a borrowed probe needs no copy to look one up.
+    texts: FastMap<String, u32>,
     /// The ascending position lists the buckets point at.
     lists: Vec<Vec<u32>>,
     /// Positions whose key is not a known scalar, ascending; always visited.
@@ -113,6 +115,7 @@ impl Eval<'_> {
             return Rc::clone(i);
         }
         let mut buckets: FastMap<Scalar, u32> = FastMap::default();
+        let mut texts: FastMap<String, u32> = FastMap::default();
         let mut lists: Vec<Vec<u32>> = Vec::new();
         let mut wild = Vec::new();
         for (pos, &(n, _)) in domain.iter().enumerate() {
@@ -120,10 +123,14 @@ impl Eval<'_> {
             env[usize::from(var)] = Some(Val::Node(n));
             match self.datum(&key, env) {
                 Datum::Known(s) => {
-                    let at = *buckets.entry(s).or_insert_with(|| {
+                    let fresh = || {
                         lists.push(Vec::new());
                         u32::try_from(lists.len() - 1).expect("lists are far below u32::MAX")
-                    });
+                    };
+                    let at = match s {
+                        Scalar::Str(t) => *texts.entry(t).or_insert_with(fresh),
+                        s => *buckets.entry(s).or_insert_with(fresh),
+                    };
                     lists[at as usize].push(pos);
                 }
                 _ => wild.push(pos),
@@ -132,13 +139,14 @@ impl Eval<'_> {
         env[usize::from(var)] = None;
         tracing::debug!(
             op = c,
-            keys = buckets.len(),
+            keys = buckets.len() + texts.len(),
             wild = wild.len(),
             "equality index built"
         );
         let idx = Rc::new(EqIndex {
             probe,
             buckets,
+            texts,
             lists,
             wild,
         });
@@ -165,12 +173,20 @@ impl Eval<'_> {
         for &(c, key, probe, probe_rhs) in self.eq_conjuncts(cond, var).iter() {
             let idx = self.eq_index(c, key, probe, var, domain, env);
             self.mark_probe(c, probe_rhs);
-            // Read through the operand cache: the body evaluates this same side next.
-            let side = self.side(c, probe_rhs, &idx.probe, env);
-            let Datum::Known(k) = &*side else {
-                continue;
+            // Borrowed text is looked up in place; anything else reads through the operand cache,
+            // since the body evaluates this same side next.
+            let list = match self.borrowed_text(&idx.probe, env) {
+                Some(Some(t)) => idx.texts.get(t).copied(),
+                Some(None) => continue,
+                None => {
+                    let side = self.side(c, probe_rhs, &idx.probe, env);
+                    match &*side {
+                        Datum::Known(Scalar::Str(t)) => idx.texts.get(t.as_str()).copied(),
+                        Datum::Known(k) => idx.buckets.get(k).copied(),
+                        _ => continue,
+                    }
+                }
             };
-            let list = idx.buckets.get(k).copied();
             let hits = list.map_or(0, |l| idx.lists[l as usize].len());
             let n = hits + idx.wild.len();
             if best.as_ref().is_none_or(|(_, _, m)| n < *m) {

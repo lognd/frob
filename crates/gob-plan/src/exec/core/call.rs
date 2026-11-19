@@ -42,6 +42,12 @@ pub(super) fn resolve_str(path: &str, from: &str) -> Datum {
 /// relative to the repository root. None when the result escapes the root.
 fn resolve_path(path: &str, from: &str) -> Option<String> {
     let mut out = String::with_capacity(from.len() + path.len() + 1);
+    resolve_into(path, from, &mut out).then_some(out)
+}
+
+/// [`resolve_path`] written into `out` (cleared first): false when the result escapes the root.
+pub(super) fn resolve_into(path: &str, from: &str, out: &mut String) -> bool {
+    out.clear();
     let base = match path.strip_prefix('/') {
         Some(_) => "",
         None => from.rsplit_once('/').map_or("", |(dir, _)| dir),
@@ -52,7 +58,7 @@ fn resolve_path(path: &str, from: &str) -> Option<String> {
             ".." => {
                 // Dropping the last segment; nothing left to drop escapes the root.
                 if out.is_empty() {
-                    return None;
+                    return false;
                 }
                 out.truncate(out.rfind('/').unwrap_or(0));
             }
@@ -64,7 +70,7 @@ fn resolve_path(path: &str, from: &str) -> Option<String> {
             }
         }
     }
-    Some(out)
+    true
 }
 
 #[cfg(test)]

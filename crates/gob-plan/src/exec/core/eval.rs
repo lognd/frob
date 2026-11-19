@@ -179,6 +179,8 @@ pub(crate) struct Eval<'a> {
     views: RefCell<FastMap<ViewKey, Verdict>>,
     /// Spare variable slots for def bodies, reused across calls.
     envs: RefCell<Vec<Env>>,
+    /// A reusable buffer for `resolve(..)` results that are only compared, never kept.
+    scratch: RefCell<String>,
     steps: Cell<u64>,
     /// Snippet matches by op: the byte ranges found in the file text, computed once per run.
     snippets: RefCell<FastMap<OpId, SnippetRanges>>,
@@ -281,6 +283,7 @@ impl<'a> Eval<'a> {
             domains: RefCell::new(domains),
             views: RefCell::default(),
             envs: RefCell::default(),
+            scratch: RefCell::default(),
             steps: Cell::new(0),
             snippets: RefCell::default(),
         }
@@ -418,6 +421,36 @@ impl<'a> Eval<'a> {
         }
     }
 
+    /// `lhs op rhs` where one side is `resolve(a, b)` over borrowed text and the other is borrowed
+    /// text or absent: the resolved path is built in a reused buffer and compared in place, as
+    /// [`compare`] would decide the same two datums. `None` when the shape does not apply.
+    fn resolve_cmp(
+        &self,
+        lhs: &Operand,
+        op: crate::plan::CmpOp,
+        rhs: &Operand,
+        env: &Env,
+    ) -> Option<Verdict> {
+        use crate::plan::CmpOp;
+        let (a, b, other, resolve_left) = match (lhs, rhs) {
+            (&Operand::Resolve(a, b), o) => (a, b, o, true),
+            (o, &Operand::Resolve(a, b)) => (a, b, o, false),
+            _ => return None,
+        };
+        let other = self.borrowed_text(other, env)?;
+        let path = self.borrowed_text(&a.operand(), env)??;
+        let from = self.borrowed_text(&b.operand(), env)??;
+        let mut buf = self.scratch.borrow_mut();
+        let resolved = super::call::resolve_into(path, from, &mut buf).then_some(buf.as_str());
+        let holds = match (resolved, other) {
+            (None, None) => matches!(op, CmpOp::Eq | CmpOp::Le | CmpOp::Ge),
+            (None, Some(_)) | (Some(_), None) => op == CmpOp::Ne,
+            (Some(r), Some(o)) if resolve_left => super::field::str_holds(op, r, o),
+            (Some(r), Some(o)) => super::field::str_holds(op, o, r),
+        };
+        Some(Verdict::certain(holds))
+    }
+
     /// `lhs op rhs`: two text sides compare in place, anything else through [`Datum`]s.
     fn cmp_op(
         &self,
@@ -427,6 +460,9 @@ impl<'a> Eval<'a> {
         rhs: &Operand,
         env: &Env,
     ) -> Verdict {
+        if let Some(v) = self.resolve_cmp(lhs, op, rhs, env) {
+            return v;
+        }
         let (l, r) = (
             self.view(id, false, lhs, env),
             self.view(id, true, rhs, env),
