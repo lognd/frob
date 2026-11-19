@@ -2,13 +2,14 @@
 id = "01M70W9EY0YN8GJVW455DTPPQN"
 title = "B1 TODO001: plan executor still 3.0x per file; scan pass and allocation dominate"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-11-09T19:24:18Z"
-updated = "2026-11-19T16:17:14Z"
+updated = "2026-11-19T16:17:54Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/exec/**"]
 

@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: TODO001 plan/handwritten per-file median measured 0.91x with findings equal (B1 bench); shipped in b7fd8215cf and 36ffaf0df2"
+at = "2026-11-19T16:17:54Z"
+actor = "lognd"
+rev = 1
