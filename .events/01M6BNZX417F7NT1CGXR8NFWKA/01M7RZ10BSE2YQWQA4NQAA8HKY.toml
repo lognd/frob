@@ -1,0 +1,22 @@
+kind = "evidence"
+captured_at = "2026-11-19T03:53:15Z"
+digest = "11fb5464e716350fc5f5651dd78456789321378e9c2889135ad68adc602abfb4"
+exit_code = 101
+head = "9be1c83a532b8725ee873b05c9f9a0aa6a2908ad"
+inline = '''
+   Compiling frob-cli v0.532.0 (<worktree>\crates\frob)
+error: failed to remove file `<worktree>\target\debug\frob.exe`
+
+Caused by:
+  Access is denied. (os error 5)
+warning: build failed, waiting for other jobs to finish...
+error: command `'~\.rustup\toolchains\1.98.0-x86_64-pc-windows-msvc\bin\cargo.exe' '--color=never' test --no-run '--message-format=json-render-diagnostics' '--package=frob-cli'` exited with code 101
+'''
+passed = false
+provider = "nextest"
+ref = "-p frob-cli -E test(accept_review)"
+size = 423
+status = "measured"
+at = "2026-11-19T03:53:15Z"
+actor = "lognd"
+rev = 1
