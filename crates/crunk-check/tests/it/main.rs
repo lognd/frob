@@ -13,6 +13,7 @@ mod opaque;
 mod review;
 mod rule_coverage;
 mod scene_docs;
+mod slop_landing;
 mod spec_errors;
 mod static_tailwind;
 mod stylelint;
