@@ -1,0 +1,8 @@
+kind = "field"
+field = "acceptance"
+old = ["Given the eight listed public methods, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"]
+new = ["Given Reason.line, load_comments, StampData.lines and StatusError.code, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"]
+moved = [0]
+at = "2026-11-19T18:49:28Z"
+actor = "lognd"
+rev = 1

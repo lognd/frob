@@ -8,13 +8,13 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T17:10:29Z"
-updated = "2026-11-19T18:49:09Z"
+updated = "2026-11-19T18:49:28Z"
 idempotency_key = "cov001-remaining-eight"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk-rules/tests/**", "crates/crunk-spec/tests/**", "crates/crunk/tests/**"]
 
 [[acceptance]]
-text = "Given the eight listed public methods, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"
+text = "Given Reason.line, load_comments, StampData.lines and StatusError.code, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"
 bound = false
 +++
 
