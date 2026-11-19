@@ -2,13 +2,14 @@
 id = "01M6PWX1T8YBXB9PE5H21YT2RK"
 title = "grmb planning: derived V-model levels into kernel closure rules (orphan requirement, unjustified design)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 parent = "01M5XNHDQCQBE228DR8FZ3G6WK"
 reporter = "lognd"
 created = "2026-11-05T22:22:35Z"
-updated = "2026-11-19T03:58:07Z"
+updated = "2026-11-19T03:58:09Z"
 idempotency_key = "p4-vmodel-closure-followup"
 
 [[acceptance]]
