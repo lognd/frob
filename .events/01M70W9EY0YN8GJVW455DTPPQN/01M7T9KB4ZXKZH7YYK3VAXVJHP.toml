@@ -1,0 +1,33 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T16:17:14Z"
+digest = "0a9fab4821f7d48ecf5f7f743b437ec3f9aced1e56ac7ffd064545465f3fa911"
+exit_code = 0
+head = "49943b0f24f6172d92ebe29c625a58447910f912"
+inline = '''
+   Compiling gob-plan v0.532.0 (<worktree>\crates\gob-plan)
+   Compiling grimble-model v0.532.0 (<worktree>\crates\grimble-model)
+   Compiling gob-packs v0.532.0 (<worktree>\crates\gob-packs)
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling grimble-capabilities v0.532.0 (<worktree>\crates\grimble-capabilities)
+   Compiling grimble-bind v0.532.0 (<worktree>\crates\grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>\crates\grimble-arch)
+   Compiling grimble-check v0.532.0 (<worktree>\crates\grimble-check)
+    Finished `test` profile [unoptimized] target(s) in 34.50s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 837a2af1-e39b-4a42-9492-0ea8d3c8b5c2 with nextest profile: default
+    Starting 1 test across 5 binaries (411 tests skipped)
+        PASS [   0.011s] gob-plan::it exec_core::a_folded_inside_quantifier_agrees_with_scanning_its_members
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.012s] 1 test run: 1 passed, 411 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-plan -E test(a_folded_inside_quantifier_agrees_with_scanning_its_members)"
+size = 1109
+status = "measured"
+test_count = 1
+tests_digest = "34b3e9403d0375640ba961d309341183a8c17ed95d531ce162cfdcff58d9afb2"
+at = "2026-11-19T16:17:14Z"
+actor = "lognd"
+rev = 1
