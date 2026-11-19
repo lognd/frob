@@ -116,6 +116,7 @@ Ok(
         },
         packs: PacksConfig {
             crunk_web: false,
+            design_cycle: false,
         },
         figma: None,
         game: None,
