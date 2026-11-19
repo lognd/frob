@@ -8,7 +8,7 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T18:49:28Z"
-updated = "2026-11-19T18:49:28Z"
+updated = "2026-11-19T18:54:37Z"
 idempotency_key = "cov001-gob-cli-env"
 labels = ["no-story", "good-first"]
 scope = ["crates/gob-cli/tests/**"]
@@ -24,9 +24,3 @@ Four public methods on Env in crates/gob-cli/src/env.rs, namely with, get, is_se
 Open crates/gob-cli/src/env.rs and read the four methods, then add one small test per method under crates/gob-cli/tests that calls it directly on an Env and asserts the value it returns. Put a frob:tests comment naming the method on the line above each test. Then run frob check --skip-tools and confirm none of the four is named in a COV001 finding.
 
 no-story: internal engineering task in gob-cli; it has no direct user-visible outcome of its own, which is carried by its parent/epic or by the release notes.
-
-## Start here
-
-- Files to read first: <TODO: list the files>
-- Test command: <TODO: the command that runs the tests>
-- Who to ask: <TODO: a handle or channel>
