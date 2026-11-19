@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-19T16:42:01Z"
+digest = "2c4272bd9a96153795ffd2b7abfda75a5172d7aa0441100ef3e49c4354e8d433"
+exit_code = 0
+head = "49943b0f24f6172d92ebe29c625a58447910f912"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+    Finished `test` profile [unoptimized] target(s) in 6.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 9df2f4b7-8dcb-4930-9db7-4b6af839391e with nextest profile: default
+    Starting 2 tests across 5 binaries (331 tests skipped)
+        PASS [   0.047s] crunk::it e2e_tokens_hullbreach::e2e_tokens_hullbreach_palette_drives_every_export
+        PASS [   0.437s] crunk::it e2e_tokens_hullbreach::e2e_tokens_hullbreach_stress_fail_drift_names_thrustred_until_reconciled
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.438s] 2 tests run: 2 passed, 331 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(e2e_tokens_hullbreach)"
+size = 750
+status = "measured"
+test_count = 2
+tests_digest = "2731528c096f0d64c53a799faada286e127549e4c4a13dc2fb8c086cf6153cd8"
+at = "2026-11-19T16:42:01Z"
+actor = "lognd"
+rev = 1

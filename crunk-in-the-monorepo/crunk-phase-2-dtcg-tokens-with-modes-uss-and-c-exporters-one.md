@@ -7,11 +7,11 @@ priority = "high"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:53:24Z"
-updated = "2026-11-19T16:35:03Z"
+updated = "2026-11-19T16:42:01Z"
 
 [[acceptance]]
 text = "Given hullbreach's palette moved into design/tokens, when crunk export runs, then Tailwind, CSS, USS and C# outputs are generated and the ThrustRed versus stress-fail drift fires until resolved"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md sections 2 and 9 (D109). Exit: one token source drives hullbreach web and the Unity HUD.
