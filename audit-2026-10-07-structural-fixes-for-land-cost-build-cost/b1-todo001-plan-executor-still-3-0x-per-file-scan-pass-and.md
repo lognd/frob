@@ -8,9 +8,13 @@ points = 3
 parent = "01M4D6NB00MBEV0PRHN15CXZP8"
 reporter = "lognd"
 created = "2026-11-09T19:24:18Z"
-updated = "2026-11-12T12:36:37Z"
+updated = "2026-11-19T16:17:11Z"
 labels = ["no-story"]
 scope = ["crates/gob-plan/src/exec/**"]
+
+[[acceptance]]
+text = "Given the 100k-line B1 fixture, when the plan executor runs TODO001, then its per-file median is within 1.3x of the handwritten rule and the findings are equal"
+bound = false
 +++
 
 Follow-up of ~W0Q305Z. FastMap for matchers/kinds/edges/side was neutral (3.03x to 3.02x). Profile of b1/TODO001/plan is flat: Eval::scan full-node pass (is_opaque cache misses) 6-10%, libc malloc 19%, regex lazy DFA 6%, verdict join/clone 2%. Next: avoid the whole-term scan (lazy hidden/domains or kind index), cut per-node Verdict/acc clones in enumerate, pool allocations.
