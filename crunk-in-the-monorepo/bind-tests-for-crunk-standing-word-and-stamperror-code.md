@@ -2,13 +2,14 @@
 id = "01M7TBK44G9J6HCMEXFWA6AW81"
 title = "Bind tests for crunk Standing.word and StampError.code (COV001)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T16:52:44Z"
-updated = "2026-11-19T17:11:14Z"
+updated = "2026-11-19T17:11:20Z"
 idempotency_key = "cov001-crunk-standing-stamp"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk-rules/tests/**,crates/crunk/tests/**"]

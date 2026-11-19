@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Both methods now have bound tests; COV001 no longer names them."
+at = "2026-11-19T17:11:20Z"
+actor = "lognd"
+rev = 1
