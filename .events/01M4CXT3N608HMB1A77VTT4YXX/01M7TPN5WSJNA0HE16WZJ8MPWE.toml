@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Landing-page de-slop scenario verified end to end through crunk_check::run: SLOP001, SLOP040, SLOP020 and the paired CRAFT006/008/013 findings carry evidence; all 8 child tasks done"
+at = "2026-11-19T20:06:05Z"
+actor = "lognd"
+rev = 1
