@@ -1,0 +1,1 @@
+An end-to-end hullbreach game UI test runs crunk check with a USS sheet, a uGUI prefab generator and a console HUD scene, and reports the USS token (COLOR001), uGUI literal (GX014) and GX (GX015) findings.
