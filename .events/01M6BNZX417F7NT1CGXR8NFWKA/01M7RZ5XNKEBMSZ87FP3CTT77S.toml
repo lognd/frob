@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: frob accept-review shipped in da7e794f76; 4 nextest tests pass"
+at = "2026-11-19T03:56:34Z"
+actor = "lognd"
+rev = 1
