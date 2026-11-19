@@ -142,7 +142,7 @@ pub(crate) use imp::run;
 mod imp {
     use super::{browser_files, file_url, playwright_missing, solved_ids, unshared_ids};
     use crate::render::{
-        Item, Plan, RenderData, RenderedCell, cell_file, posix, solve_all, write_file,
+        Item, Plan, RenderData, RenderedCell, Solved, cell_file, posix, solve_all, write_file,
     };
     use crunk_gallery::boxes::{BoxesError, capture_boxes};
     use crunk_gallery::cells::Cell;
@@ -247,59 +247,90 @@ mod imp {
         write_file(&plan.root.join(&boxes), &format!("{text}\n"))
     }
 
-    /// Solve every cell, then screenshot and measure it in the browser.
-    pub(crate) fn run(plan: &Plan, out: &str) -> Outcome<RenderData> {
-        let stage = plan.root.join(out).join(".browser-work");
-        let mut data = RenderData {
-            engine: "browser".to_owned(),
-            cells: Vec::new(),
+    /// The cells written so far, their report lines and the cells that failed.
+    #[derive(Default)]
+    struct Collected {
+        data: Vec<RenderedCell>,
+        text: Vec<String>,
+        failures: Vec<String>,
+    }
+
+    /// Solve, screenshot, measure and write one cell; its report line is the label and paths.
+    fn build_cell(
+        plan: &Plan,
+        out: &str,
+        item: &Item,
+        solved: Result<Solved, String>,
+        stage: &Path,
+    ) -> Result<RenderedCell, Failure> {
+        let s = solved.map_err(Failure::Cell)?;
+        let ids = solved_ids(&s.json).map_err(Failure::Cell)?;
+        let got = capture(&plan.spec, item, &ids, stage)?;
+        write_cell(plan, out, item, &s.json, &got).map_err(Failure::Cell)?;
+        let (png, boxes) = super::browser_paths(out, item);
+        Ok(RenderedCell {
+            screen: item.screen.clone(),
+            state: item.state.clone(),
+            platform: item.platform.clone(),
+            path: posix(&cell_file(out, item)),
+            nodes: s.nodes,
+            png: Some(png),
+            sha256: Some(got.sha256),
+            boxes: Some(boxes),
+        })
+    }
+
+    /// Build every cell in order; only a missing Playwright stops the run.
+    fn collect(plan: &Plan, out: &str, stage: &Path) -> Result<Collected, CliError> {
+        let mut done = Collected {
+            text: plan.skipped.clone(),
+            ..Collected::default()
         };
-        let mut text = plan.skipped.clone();
-        let mut failures = Vec::new();
         for (item, solved) in plan.items.iter().zip(solve_all(plan)) {
             let label = format!("{}/{} on {}", item.screen, item.state, item.platform);
-            let step = solved.map_err(Failure::Cell).and_then(|s| {
-                let ids = solved_ids(&s.json).map_err(Failure::Cell)?;
-                let got = capture(&plan.spec, item, &ids, &stage)?;
-                write_cell(plan, out, item, &s.json, &got).map_err(Failure::Cell)?;
-                Ok((s.nodes, got.sha256))
-            });
-            match step {
-                Ok((nodes, sha256)) => {
-                    let (png, boxes) = super::browser_paths(out, item);
-                    tracing::info!(cell = %label, nodes, %sha256, "render: browser cell written");
-                    text.push(format!("{label}: {png}, {boxes}"));
-                    data.cells.push(RenderedCell {
-                        screen: item.screen.clone(),
-                        state: item.state.clone(),
-                        platform: item.platform.clone(),
-                        path: posix(&cell_file(out, item)),
-                        nodes,
-                        png: Some(png),
-                        sha256: Some(sha256),
-                        boxes: Some(boxes),
-                    });
+            match build_cell(plan, out, item, solved, stage) {
+                Ok(cell) => {
+                    tracing::info!(cell = %label, nodes = cell.nodes, "render: browser cell written");
+                    let files =
+                        [cell.png.as_deref(), cell.boxes.as_deref()].map(Option::unwrap_or_default);
+                    done.text.push(format!("{label}: {}", files.join(", ")));
+                    done.data.push(cell);
                 }
                 Err(Failure::NoPlaywright { reason, remedy }) => {
-                    discard(&stage);
                     return Err(playwright_missing(&reason, &remedy));
                 }
                 Err(Failure::Cell(e)) => {
                     tracing::info!(cell = %label, error = %e, "render: browser cell failed");
-                    failures.push(format!("{label}: {e}"));
+                    done.failures.push(format!("{label}: {e}"));
                 }
             }
         }
-        discard(&stage);
-        if failures.is_empty() {
-            return Ok(Payload::new(data).with_rendered(text));
+        Ok(done)
+    }
+
+    /// Turn the collected cells into the verb's outcome: success, or a gate failure with the data.
+    fn finish(done: Collected) -> Outcome<RenderData> {
+        let data = RenderData {
+            engine: "browser".to_owned(),
+            cells: done.data,
+        };
+        if done.failures.is_empty() {
+            return Ok(Payload::new(data).with_rendered(done.text));
         }
         let value = serde_json::to_value(&data).map_err(CliError::internal)?;
         Err(CliError::Gate {
-            message: format!("render: {} cell(s) failed", failures.len()),
+            message: format!("render: {} cell(s) failed", done.failures.len()),
             data: value,
-            warnings: failures,
+            warnings: done.failures,
         })
+    }
+
+    /// Solve every cell, then screenshot and measure it in the browser.
+    pub(crate) fn run(plan: &Plan, out: &str) -> Outcome<RenderData> {
+        let stage = plan.root.join(out).join(".browser-work");
+        let collected = collect(plan, out, &stage);
+        discard(&stage);
+        finish(collected?)
     }
 
     /// Remove the staging directory; a leftover is only scratch, so failure is logged.
@@ -308,10 +339,6 @@ mod imp {
             && e.kind() != std::io::ErrorKind::NotFound
         {
             tracing::warn!(error = %e, "render: could not remove the staging directory");
-        }
-        // Drop the output directory too when the run left it empty; a failure just means it is not.
-        if let Some(parent) = stage.parent() {
-            let _ = std::fs::remove_dir(parent);
         }
     }
 }

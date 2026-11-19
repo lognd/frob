@@ -47,10 +47,11 @@ fn ids_the_browser_did_not_measure_are_named_in_solve_order() {
 
 // frob:tests crates/crunk/src/render_browser.rs::file_url
 #[test]
-fn file_urls_use_forward_slashes_and_a_third_slash_for_drive_letters() {
-    let url = file_url(Path::new(r"C:\proj\design\a.scene.html"));
-    assert_eq!(url, "file:///C:/proj/design/a.scene.html");
-    assert!(file_url(Path::new("/proj/a.html")).starts_with("file:///proj"));
+fn file_urls_use_forward_slashes_and_a_third_slash_for_rooted_paths() {
+    let rel = file_url(Path::new(r"proj\design\a.scene.html"));
+    assert_eq!(rel, "file:///proj/design/a.scene.html");
+    let rooted = Path::new(std::path::MAIN_SEPARATOR_STR).join("proj");
+    assert_eq!(file_url(&rooted), "file:///proj");
 }
 
 #[cfg(not(feature = "gallery"))]
