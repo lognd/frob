@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T23:05:47Z"
+digest = "3b60e4405bee19517ef4e349fd1b9ae7af0f95624b2bc5bfa29ed5e713cca7ca"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c9e64cf2-bcb2-4167-ace7-fd2e4a647b01 with nextest profile: default
+    Starting 1 test across 2 binaries (193 tests skipped)
+        PASS [   0.269s] frob-evidence::it evidence::dir_uris_outside_the_store_or_not_regular_files_are_refused
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.270s] 1 test run: 1 passed, 193 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(dir_uris_outside_the_store_or_not_regular_files_are_refused)"
+size = 568
+status = "measured"
+test_count = 1
+tests_digest = "e1b7f90ba8c88fd2faadd7117e45af0c5424c4be8de4061e688e9da59ec9cd4f"
+at = "2026-11-20T23:05:47Z"
+actor = "lognd"
+rev = 1
