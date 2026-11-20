@@ -16,6 +16,16 @@ pub const PERSONAS_DIR: &str = "design/personas";
 /// Directory holding journey files, relative to the project root.
 pub const JOURNEYS_DIR: &str = "design/journeys";
 
+/// Days in `month` (1 to 12) of `year`, Gregorian leap years included.
+fn days_in_month(year: i64, month: u32) -> u32 {
+    match month {
+        2 if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
+}
+
 /// A calendar date, `YYYY-MM-DD`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Date {
@@ -32,7 +42,10 @@ impl Date {
         let year: i64 = parts.next()?.parse().ok()?;
         let month: u32 = parts.next()?.parse().ok()?;
         let day: u32 = parts.next()?.parse().ok()?;
-        if parts.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        if parts.next().is_some()
+            || !(1..=12).contains(&month)
+            || !(1..=days_in_month(year, month)).contains(&day)
+        {
             return None;
         }
         Some(Self { year, month, day })
@@ -129,6 +142,8 @@ fn unquote(v: &str) -> &str {
 /// [`ResearchError`] at the offending line for a missing or unclosed block, a malformed line, or a
 /// missing `id` or missing/invalid `date`.
 pub fn parse_research(text: &str) -> Result<ResearchDoc, ResearchError> {
+    // Editors on Windows prepend a UTF-8 byte-order mark; it is not part of the first line.
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
     let mut lines = text.lines().enumerate();
     match lines.next() {
         Some((_, l)) if l.trim_end() == "---" => {}
@@ -236,11 +251,32 @@ fn read_dir_files(
         tracing::debug!(dir, "no research directory");
         return Vec::new();
     };
-    let mut names: Vec<String> = entries
-        .filter_map(Result::ok)
-        .filter_map(|e| e.file_name().into_string().ok())
-        .filter(|n| n.ends_with(suffix))
-        .collect();
+    let mut names: Vec<String> = Vec::new();
+    for entry in entries {
+        match entry.map(|e| e.file_name().into_string()) {
+            Ok(Ok(name)) => {
+                if name.ends_with(suffix) {
+                    names.push(name);
+                }
+            }
+            Ok(Err(_)) => {
+                tracing::warn!(dir, "research directory entry skipped: name is not UTF-8");
+                problems.push(ResearchProblem {
+                    path: dir.to_owned(),
+                    line: None,
+                    message: "an entry with a non-UTF-8 name was skipped".to_owned(),
+                });
+            }
+            Err(err) => {
+                tracing::warn!(dir, %err, "research directory entry unreadable");
+                problems.push(ResearchProblem {
+                    path: dir.to_owned(),
+                    line: None,
+                    message: format!("a directory entry was unreadable: {err}"),
+                });
+            }
+        }
+    }
     names.sort();
     let mut out = Vec::new();
     for name in names {
@@ -374,6 +410,54 @@ mod tests {
         let b = Date::parse("2026-02-01").expect("b");
         assert_eq!(a.days() - b.days(), 28);
         assert_eq!(Date::parse("1970-01-01").expect("epoch").days(), 0);
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::Date
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn impossible_days_are_none_and_leap_days_follow_the_gregorian_rule() {
+        for bad in [
+            "2026-02-31",
+            "2026-02-29",
+            "2026-04-31",
+            "1900-02-29",
+            "2026-06-31",
+        ] {
+            assert_eq!(Date::parse(bad), None, "{bad}");
+        }
+        for good in [
+            "2026-02-28",
+            "2028-02-29",
+            "2000-02-29",
+            "2026-12-31",
+            "2026-04-30",
+        ] {
+            assert!(Date::parse(good).is_some(), "{good}");
+        }
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::parse_research
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn a_leading_byte_order_mark_does_not_hide_the_front_matter() {
+        let ok = parse_research("\u{feff}---\nid: r1\ndate: 2026-01-02\n---\nbody\n").expect("bom");
+        assert_eq!(ok.id, "r1");
+    }
+
+    // frob:tests crates/crunk-spec/src/research.rs::load_research
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[cfg(unix)]
+    #[test]
+    fn a_non_utf8_entry_name_is_reported_not_silently_dropped() {
+        use std::os::unix::ffi::OsStrExt;
+        let dir = tempfile::tempdir().expect("tmp");
+        let p = dir.path().join(PERSONAS_DIR);
+        std::fs::create_dir_all(&p).expect("mk");
+        let odd = std::ffi::OsStr::from_bytes(b"bad\xff.toml");
+        std::fs::write(p.join(odd), "id = \"x\"\n").expect("w");
+        let set = load_research(dir.path());
+        assert_eq!(set.problems.len(), 1, "{:?}", set.problems);
+        assert!(set.problems[0].message.contains("non-UTF-8"));
     }
 
     // frob:tests crates/crunk-spec/src/research.rs::load_research
