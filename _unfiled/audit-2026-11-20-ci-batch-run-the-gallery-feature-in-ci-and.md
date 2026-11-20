@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-20T18:23:22Z"
-updated = "2026-11-20T22:01:55Z"
+updated = "2026-11-20T22:54:54Z"
 labels = ["no-story"]
 scope = [".github/**", "crates/*/tests/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given the vacuous tests, when their setup fails, then they fail: redact.rs the_repository_contains_neither_rule_nor_term asserts exit codes, gallery.rs GalleryCheck binding points at a test that exercises it, and the fixed-port reuse is replaced by reading the bound port"
-bound = false
+bound = true
 +++
 
 no-story: internal CI and test-quality hardening from the 2026-11-20 audit; no user-visible behavior change. Audit finding: crunk default=[] and ci.yml:358 / gob-dev ci.rs:311-326 never enable gallery, so 19 tests never run in CI. Others: crates/frob/tests/it/redact.rs:220, crates/crunk/tests/it/gallery.rs:16-18 and :184, crates/crunk/tests/it/rename.rs:186 silent pass under root and on Windows.

@@ -1,0 +1,71 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T22:54:54Z"
+digest = "c62ea3a5999dc7e3c5cebf44269a5bc652d4a42db489a85d4801eaec198b9101"
+exit_code = 0
+head = "7648f6fa725d4ee7f2b15ca8bff5568d3e6bdcac"
+inline = '''
+   Compiling gob-cli v0.532.0 (<worktree>\crates\gob-cli)
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling frob-ledger v0.532.0 (<worktree>\crates\frob-ledger)
+   Compiling gob-trust v0.532.0 (<worktree>\crates\gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>\crates\gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>\crates\gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>\crates\gob-directives)
+   Compiling gob-plan v0.532.0 (<worktree>\crates\gob-plan)
+   Compiling gob-packs v0.532.0 (<worktree>\crates\gob-packs)
+   Compiling frob-pm v0.532.0 (<worktree>\crates\frob-pm)
+   Compiling grimble-capabilities v0.532.0 (<worktree>\crates\grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>\crates\grimble-model)
+   Compiling frob-lease v0.532.0 (<worktree>\crates\frob-lease)
+   Compiling crunk-spec v0.532.0 (<worktree>\crates\crunk-spec)
+   Compiling grimble-bind v0.532.0 (<worktree>\crates\grimble-bind)
+   Compiling grimble-arch v0.532.0 (<worktree>\crates\grimble-arch)
+   Compiling frob-release v0.532.0 (<worktree>\crates\frob-release)
+   Compiling grimble-ci v0.532.0 (<worktree>\crates\grimble-ci)
+   Compiling grimble-lints v0.532.0 (<worktree>\crates\grimble-lints)
+   Compiling crunk-tailwind v0.532.0 (<worktree>\crates\crunk-tailwind)
+   Compiling crunk-scene v0.532.0 (<worktree>\crates\crunk-scene)
+   Compiling grimble-check v0.532.0 (<worktree>\crates\grimble-check)
+   Compiling frob-evidence v0.532.0 (<worktree>\crates\frob-evidence)
+   Compiling frob-doc v0.532.0 (<worktree>\crates\frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>\crates\frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>\crates\frob-tests)
+   Compiling crunk-ingest v0.532.0 (<worktree>\crates\crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>\crates\crunk-tokens)
+   Compiling frob-obligations v0.532.0 (<worktree>\crates\frob-obligations)
+   Compiling crunk-layout v0.532.0 (<worktree>\crates\crunk-layout)
+   Compiling frob-mirror v0.532.0 (<worktree>\crates\frob-mirror)
+   Compiling frob-worktree v0.532.0 (<worktree>\crates\frob-worktree)
+   Compiling gob-product v0.532.0 (<worktree>\crates\gob-product)
+   Compiling crunk-gallery v0.532.0 (<worktree>\crates\crunk-gallery)
+   Compiling frob-check v0.532.0 (<worktree>\crates\frob-check)
+   Compiling crunk-rules v0.532.0 (<worktree>\crates\crunk-rules)
+   Compiling frob-metrics v0.532.0 (<worktree>\crates\frob-metrics)
+   Compiling gob-frameworks v0.532.0 (<worktree>\crates\gob-frameworks)
+   Compiling frob-land v0.532.0 (<worktree>\crates\frob-land)
+   Compiling crunk-check v0.532.0 (<worktree>\crates\crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>\crates\crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>\crates\grimble-serve)
+   Compiling crunk-query v0.532.0 (<worktree>\crates\crunk-query)
+   Compiling grimble v0.532.0 (<worktree>\crates\grimble)
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+   Compiling frob-cli v0.532.0 (<worktree>\crates\frob)
+    Finished `test` profile [unoptimized] target(s) in 1m 57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fa329b40-ef32-4b6b-a44a-acd54aebf4ae with nextest profile: default
+    Starting 1 test across 4 binaries (570 tests skipped)
+        PASS [   5.255s] frob-cli::it redact::the_repository_contains_neither_rule_nor_term
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.257s] 1 test run: 1 passed, 570 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(the_repository_contains_neither_rule_nor_term)"
+size = 3574
+status = "measured"
+test_count = 1
+tests_digest = "d76ba339193c2bf34e1b9e00ce63694a149176171c42a200a39cd5a0c5ce3123"
+at = "2026-11-20T22:54:54Z"
+actor = "lognd"
+rev = 1
