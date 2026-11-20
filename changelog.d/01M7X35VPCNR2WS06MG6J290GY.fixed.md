@@ -1,0 +1,1 @@
+A land lock holder whose children cannot be inspected is never taken over, a failure after a ledger commit is reported as a warning instead of an error that invites a duplicate retry, unreadable test reports are errors rather than zero tests, and research dates reject impossible days.

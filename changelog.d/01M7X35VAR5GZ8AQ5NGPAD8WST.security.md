@@ -1,0 +1,1 @@
+Evidence commands no longer inherit the parent environment, secrets are redacted more widely, dir: evidence URIs are confined to the store, and crunk's command renderer carries the trust notice with a relative-only working directory.
