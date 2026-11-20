@@ -7,7 +7,8 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-20T18:23:22Z"
-updated = "2026-11-20T18:23:22Z"
+updated = "2026-11-20T19:47:12Z"
+labels = ["no-story"]
 scope = [".github/**", "crates/*/tests/**"]
 
 [[acceptance]]
