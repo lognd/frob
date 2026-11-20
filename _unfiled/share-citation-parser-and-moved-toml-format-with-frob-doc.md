@@ -2,12 +2,13 @@
 id = "01M5NCNPRJE2AFXWKSNFKPR5G3"
 title = "Share citation parser and MOVED.toml format with frob doc remap"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-10-23T22:04:01Z"
-updated = "2026-11-20T04:39:52Z"
+updated = "2026-11-20T04:52:10Z"
 labels = ["no-story", "good-first"]
 scope = ["crates/gob-text/**"]
 
