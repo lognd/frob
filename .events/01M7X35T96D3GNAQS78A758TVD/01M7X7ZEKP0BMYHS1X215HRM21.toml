@@ -1,0 +1,7 @@
+kind = "field"
+field = "body"
+old = "Audit finding: crunk default=[] and ci.yml:358 / gob-dev ci.rs:311-326 never enable gallery, so 19 tests never run in CI. Others: crates/frob/tests/it/redact.rs:220, crates/crunk/tests/it/gallery.rs:16-18 and :184, crates/crunk/tests/it/rename.rs:186 silent pass under root and on Windows."
+new = "no-story: internal CI and test-quality hardening from the 2026-11-20 audit; no user-visible behavior change. Audit finding: crunk default=[] and ci.yml:358 / gob-dev ci.rs:311-326 never enable gallery, so 19 tests never run in CI. Others: crates/frob/tests/it/redact.rs:220, crates/crunk/tests/it/gallery.rs:16-18 and :184, crates/crunk/tests/it/rename.rs:186 silent pass under root and on Windows."
+at = "2026-11-20T19:47:17Z"
+actor = "lognd"
+rev = 1
