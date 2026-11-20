@@ -2,7 +2,8 @@
 id = "01M7X35T96D3GNAQS78A758TVD"
 title = "Audit 2026-11-20 CI batch: run the gallery feature in CI and fix vacuous or mis-bound tests"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
