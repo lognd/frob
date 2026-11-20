@@ -2,13 +2,14 @@
 id = "01M5XCXVAR2WSR1H6X5X7ETR1R"
 title = "crunk render --engine browser: PNG and boxes through the gallery renderer"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:23Z"
-updated = "2026-11-20T14:09:29Z"
+updated = "2026-11-20T14:09:57Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/src/render_browser.rs, crates/crunk/tests/render_browser.rs"]
 

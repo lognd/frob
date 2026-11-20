@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: crunk render --engine browser verified against a real Chromium (PNG, boxes, shared ids) and the not-built exit 2; a real run found and fixed a home-tilde file URL bug"
+at = "2026-11-20T14:09:57Z"
+actor = "lognd"
+rev = 1
