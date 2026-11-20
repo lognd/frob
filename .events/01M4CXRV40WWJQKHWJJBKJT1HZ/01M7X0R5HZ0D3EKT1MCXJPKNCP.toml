@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: all 12 children done; the corpus acceptance is bound to a passing real-Chromium nextest record"
+at = "2026-11-20T17:40:58Z"
+actor = "lognd"
+rev = 1
