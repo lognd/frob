@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T23:06:02Z"
+digest = "55e87f862b966dd25329e02d001f3e904d3f077f434c817c7a396db5a14dafa3"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.96s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 276ea246-deac-4372-9e8b-1b8f46a8e71a with nextest profile: default
+    Starting 3 tests across 2 binaries (362 tests skipped)
+        PASS [   0.023s] frob-ledger merge::tests::an_unreadable_ours_file_is_an_io_error_not_an_empty_document
+        PASS [   0.215s] frob-ledger ledger::tests::a_post_commit_failure_is_a_warning_and_the_commit_stands
+        PASS [   0.233s] frob-ledger ledger::tests::reconcile_that_loses_every_attempt_reports_contention_not_nothing_to_do
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.235s] 3 tests run: 3 passed, 362 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E test(a_post_commit_failure_is_a_warning_and_the_commit_stands)|test(reconcile_that_loses_every_attempt_reports_contention_not_nothing_to_do)|test(an_unreadable_ours_file_is_an_io_error_not_an_empty_document)"
+size = 802
+status = "measured"
+test_count = 3
+tests_digest = "7172504682146879dc4270ed52e3a60e9c1cf19bcdc6ac908c62c349373b5d5c"
+at = "2026-11-20T23:06:02Z"
+actor = "lognd"
+rev = 1
