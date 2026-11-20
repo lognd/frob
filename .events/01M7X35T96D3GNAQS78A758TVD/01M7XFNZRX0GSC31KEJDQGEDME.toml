@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T22:01:55Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "0e41515bb510b7c131c663ed2962a7937d809953"
+inline = ""
+passed = true
+provider = "command"
+ref = "git grep -q --all-match -e crunk/gallery -- .github/workflows/ci.yml"
+size = 0
+status = "measured"
+at = "2026-11-20T22:01:55Z"
+actor = "lognd"
+rev = 1

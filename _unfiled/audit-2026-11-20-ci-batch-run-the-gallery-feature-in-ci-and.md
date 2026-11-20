@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-20T18:23:22Z"
-updated = "2026-11-20T19:47:17Z"
+updated = "2026-11-20T22:01:55Z"
 labels = ["no-story"]
 scope = [".github/**", "crates/*/tests/**"]
 
 [[acceptance]]
 text = "Given CI, when nextest runs, then crunk's gallery-gated tests (gallery.rs, render_browser.rs, render_solve.rs) are built and run on at least the Linux leg"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the vacuous tests, when their setup fails, then they fail: redact.rs the_repository_contains_neither_rule_nor_term asserts exit codes, gallery.rs GalleryCheck binding points at a test that exercises it, and the fixed-port reuse is replaced by reading the bound port"
