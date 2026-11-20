@@ -2,13 +2,14 @@
 id = "01M5XCXVVHQ2SMQFAJVWPZ2BDG"
 title = "Phase 5 e2e: screen corpus through both engines reports parity, VIS and axe findings and above-tier lints as not run"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-11-20T14:41:10Z"
+updated = "2026-11-20T14:42:10Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/tests/e2e_render_tiers.rs, crates/crunk/tests/fixtures/render_corpus/**"]
 
