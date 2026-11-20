@@ -18,7 +18,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::Outcome;
 use gob_git::{RemoteProbe, RemoteRun, Repo};
 
 use crate::claim::{remote_claim, sync_settings};
@@ -290,16 +290,10 @@ fn git_failed(what: &str, text: &str) -> WorktreeError {
 
 /// Run one local git command in `repo`, returning trimmed stdout.
 fn git_out(repo: &Repo, args: &[&str], cwd: Option<&Path>) -> Result<String, WorktreeError> {
-    let spec = Spec {
-        program: Program::Git,
-        args: args.iter().map(|a| (*a).to_owned()).collect(),
-        cwd: cwd
-            .map(Path::to_path_buf)
-            .or_else(|| repo.work_dir().map(Path::to_path_buf)),
-        env: Vec::new(),
-        timeout: Duration::from_secs(30),
-        capture: true,
-    };
+    let mut spec = gob_git::git_spec(Path::new(""), args, Duration::from_secs(30));
+    spec.cwd = cwd
+        .map(Path::to_path_buf)
+        .or_else(|| repo.work_dir().map(Path::to_path_buf));
     let out = repo
         .runner()
         .run(&spec)

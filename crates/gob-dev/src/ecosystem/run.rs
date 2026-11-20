@@ -54,15 +54,10 @@ impl Options {
 }
 
 fn git(runner: &Runner, cwd: &Path, args: &[&str]) -> Result<String, String> {
+    let mut spec = gob_git::git_spec(cwd, args, GIT_TIMEOUT);
+    spec.env = vec![("GIT_TERMINAL_PROMPT".to_owned(), "0".to_owned())];
     let out = runner
-        .run(&Spec {
-            program: Program::Git,
-            args: args.iter().map(|a| (*a).to_owned()).collect(),
-            cwd: Some(cwd.to_path_buf()),
-            env: vec![("GIT_TERMINAL_PROMPT".to_owned(), "0".to_owned())],
-            timeout: GIT_TIMEOUT,
-            capture: true,
-        })
+        .run(&spec)
         .map_err(|e| format!("git {}: {e}", args.first().copied().unwrap_or_default()))?;
     match out.status {
         gob_exec::Outcome::Exited(0) => Ok(out.stdout_raw),

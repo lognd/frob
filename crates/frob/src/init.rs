@@ -483,14 +483,7 @@ fn append_line(path: &Path, existing: &str, line: &str) -> Result<(), CliError> 
 
 /// Run `git <args>` in `root`, returning its exit code and trimmed stdout.
 fn git(runner: &Runner, root: &Path, args: &[&str]) -> Result<(i32, String), CliError> {
-    let spec = Spec {
-        program: Program::Git,
-        args: args.iter().map(|a| (*a).to_owned()).collect(),
-        cwd: Some(root.to_path_buf()),
-        env: Vec::new(),
-        timeout: GIT_TIMEOUT,
-        capture: true,
-    };
+    let spec = gob_git::git_spec(root, args, GIT_TIMEOUT);
     let out = runner.run(&spec).map_err(CliError::internal)?;
     match out.status {
         ExecOutcome::Exited(code) => Ok((code, out.stdout.trim().to_owned())),

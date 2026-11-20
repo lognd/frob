@@ -226,14 +226,7 @@ mod tests {
 
     /// Run `git` in `dir` through the runner and assert it exited 0.
     fn git(dir: &Path, args: &[&str]) {
-        let spec = gob_exec::Spec {
-            program: gob_exec::Program::Git,
-            args: args.iter().map(|a| (*a).to_owned()).collect(),
-            cwd: Some(dir.to_owned()),
-            env: Vec::new(),
-            timeout: std::time::Duration::from_secs(30),
-            capture: true,
-        };
+        let spec = gob_git::git_spec(dir, args, std::time::Duration::from_secs(30));
         let out = gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
             .run(&spec)
             .expect("run git");

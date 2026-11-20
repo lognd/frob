@@ -137,16 +137,11 @@ fn awaiting_review(
 
 /// The id of the repository's first root commit, or empty when it cannot be read.
 fn root_commit(root: &Path) -> String {
-    let spec = gob_exec::Spec {
-        program: gob_exec::Program::Git,
-        args: ["rev-list", "--max-parents=0", "HEAD"]
-            .map(str::to_owned)
-            .to_vec(),
-        cwd: Some(root.to_owned()),
-        env: Vec::new(),
-        timeout: std::time::Duration::from_secs(10),
-        capture: true,
-    };
+    let spec = gob_git::git_spec(
+        root,
+        ["rev-list", "--max-parents=0", "HEAD"],
+        std::time::Duration::from_secs(10),
+    );
     gob_exec::Runner::new(gob_exec::Limits { jobs: 1 })
         .run(&spec)
         .ok()

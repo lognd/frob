@@ -33,7 +33,7 @@ use frob_pm::eval::wip::{self, WipLimits};
 use gob_cli::clap::{ArgMatches, Command as ClapCommand};
 use gob_cli::{CliError, Command, Context, Outcome, Payload};
 use gob_diagnostics::ColorChoice;
-use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+use gob_exec::{Limits, Outcome as ExecOutcome, Runner};
 use schemars::JsonSchema;
 use serde::Serialize;
 
@@ -114,16 +114,11 @@ fn read_events(
 
 /// Commit time of the newest commit on `branch` that the checked-out base lacks, or `None`.
 fn last_commit(runner: &Runner, root: &Path, branch: &str) -> Option<Stamp> {
-    let spec = Spec {
-        program: Program::Git,
-        args: ["log", "-1", "--format=%ct", &format!("HEAD..{branch}")]
-            .map(str::to_owned)
-            .to_vec(),
-        cwd: Some(root.to_path_buf()),
-        env: Vec::new(),
-        timeout: GIT_TIMEOUT,
-        capture: true,
-    };
+    let spec = gob_git::git_spec(
+        root,
+        ["log", "-1", "--format=%ct", &format!("HEAD..{branch}")],
+        GIT_TIMEOUT,
+    );
     let out = runner.run(&spec).ok()?;
     if out.status != ExecOutcome::Exited(0) {
         tracing::debug!(branch, "no readable branch commits");

@@ -7,7 +7,7 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use gob_exec::{Outcome, Program, Runner, Spec};
+use gob_exec::{Outcome, Runner};
 use tempfile::TempDir;
 
 use super::ProfileError;
@@ -41,14 +41,7 @@ impl Fixture {
 /// [`ProfileError::Git`] when git cannot start or exits non-zero.
 pub fn git(runner: &Runner, cwd: &Path, args: &[&str]) -> Result<String, ProfileError> {
     let out = runner
-        .run(&Spec {
-            program: Program::Git,
-            args: args.iter().map(|a| (*a).to_owned()).collect(),
-            cwd: Some(cwd.to_path_buf()),
-            env: Vec::new(),
-            timeout: GIT_TIMEOUT,
-            capture: true,
-        })
+        .run(&gob_git::git_spec(cwd, args, GIT_TIMEOUT))
         .map_err(|e| ProfileError::Git(format!("git {}: {e}", args.join(" "))))?;
     if out.status == Outcome::Exited(0) {
         Ok(out.stdout.trim().to_owned())

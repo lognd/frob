@@ -658,17 +658,10 @@ mod tests {
     use frob_ledger::LedgerConfig;
     use frob_ledger::model::TicketType;
     use frob_ledger::ops::NewTicket;
-    use gob_exec::{Limits, Outcome as ExecOutcome, Program, Runner, Spec};
+    use gob_exec::{Limits, Outcome as ExecOutcome, Runner};
 
     fn git(dir: &Path, args: &[&str]) {
-        let spec = Spec {
-            program: Program::Git,
-            args: args.iter().map(|a| (*a).to_owned()).collect(),
-            cwd: Some(dir.to_path_buf()),
-            env: Vec::new(),
-            timeout: std::time::Duration::from_secs(30),
-            capture: true,
-        };
+        let spec = gob_git::git_spec(dir, args, std::time::Duration::from_secs(30));
         let out = Runner::new(Limits { jobs: 1 }).run(&spec).expect("git");
         assert_eq!(
             out.status,

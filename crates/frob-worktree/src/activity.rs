@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use frob_ledger::event::{Event, EventBody, LeaseOp};
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::Outcome;
 use gob_git::Repo;
 use serde::{Deserialize, Serialize};
 
@@ -306,14 +306,8 @@ pub fn commit_facts(
     if let Some(s) = since.filter(|s| repo.rev_parse(s).is_ok()) {
         args.push(format!("^{s}"));
     }
-    let spec = Spec {
-        program: Program::Git,
-        args,
-        cwd: repo.work_dir().map(Path::to_path_buf),
-        env: Vec::new(),
-        timeout: Duration::from_secs(60),
-        capture: true,
-    };
+    let mut spec = gob_git::git_spec(Path::new(""), args, Duration::from_secs(60));
+    spec.cwd = repo.work_dir().map(Path::to_path_buf);
     let out = repo.runner().run(&spec).map_err(|e| e.to_string())?;
     if out.status != Outcome::Exited(0) {
         return Err(out.stderr.trim().to_owned());
@@ -504,14 +498,7 @@ mod tests {
     fn run_git(repo: &Repo, cwd: &Path, args: &[&str]) {
         let mut full = vec!["-c", "user.name=ann", "-c", "user.email=a@x"];
         full.extend_from_slice(args);
-        let spec = Spec {
-            program: Program::Git,
-            args: full.iter().map(|a| (*a).to_owned()).collect(),
-            cwd: Some(cwd.to_path_buf()),
-            env: Vec::new(),
-            timeout: Duration::from_secs(30),
-            capture: true,
-        };
+        let spec = gob_git::git_spec(cwd, full, Duration::from_secs(30));
         let out = repo.runner().run(&spec).unwrap();
         assert_eq!(out.status, Outcome::Exited(0), "{args:?}");
     }

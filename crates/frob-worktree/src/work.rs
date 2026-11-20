@@ -20,7 +20,7 @@ use frob_lease::{Holder, Lease, LeaseError, LeaseStore};
 use frob_ledger::model::{Category, CommentSubtype, TicketType};
 use frob_ledger::{Ledger, TicketId};
 use gob_diagnostics::{Refusal, RefusalClass};
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::{Outcome, Program};
 use gob_git::{MergeOutcome, Repo};
 
 use crate::anyway::Anyway;
@@ -933,14 +933,7 @@ pub fn normalize_mtimes(repo: &Repo, root: &Path) -> usize {
 
 /// Stdout of `git <args>` in `cwd` through the repository's runner, or `None` when it fails.
 fn git_out(repo: &Repo, cwd: &Path, args: &[&str]) -> Option<String> {
-    let spec = Spec {
-        program: Program::Git,
-        args: args.iter().map(|a| (*a).to_owned()).collect(),
-        cwd: Some(cwd.to_path_buf()),
-        env: Vec::new(),
-        timeout: std::time::Duration::from_secs(60),
-        capture: true,
-    };
+    let spec = gob_git::git_spec(cwd, args, std::time::Duration::from_secs(60));
     let out = repo.runner().run(&spec).ok()?;
     (out.status == Outcome::Exited(0)).then_some(out.stdout)
 }

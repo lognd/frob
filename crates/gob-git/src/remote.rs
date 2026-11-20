@@ -1,12 +1,11 @@
 //! The bounded, non-prompting `git ls-remote` probe behind `frob refresh` (`distributed-tickets.md` section 5.2).
 
-use std::path::PathBuf;
 use std::time::Duration;
 
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::{Outcome, Spec};
 use tracing::{debug, info, warn};
 
-use crate::{GitError, Repo, SpawnClass};
+use crate::{GitError, Repo, SpawnClass, git_spec};
 
 /// One advertised ref of a remote.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -157,22 +156,14 @@ impl Repo {
 
     /// The non-prompting, bounded `git` spec every remote spawn shares.
     fn remote_spec(&self, args: Vec<String>, timeout: Duration) -> Spec {
-        let cwd: PathBuf = self
-            .work_dir()
-            .unwrap_or_else(|| self.git_dir())
-            .to_path_buf();
+        let cwd = self.work_dir().unwrap_or_else(|| self.git_dir());
         let ssh = batch_ssh_command(std::env::var("GIT_SSH_COMMAND").ok().as_deref());
-        Spec {
-            program: Program::Git,
-            args,
-            cwd: Some(cwd),
-            env: vec![
-                ("GIT_TERMINAL_PROMPT".to_owned(), "0".to_owned()),
-                ("GIT_SSH_COMMAND".to_owned(), ssh),
-            ],
-            timeout,
-            capture: true,
-        }
+        let mut spec = git_spec(cwd, args, timeout);
+        spec.env = vec![
+            ("GIT_TERMINAL_PROMPT".to_owned(), "0".to_owned()),
+            ("GIT_SSH_COMMAND".to_owned(), ssh),
+        ];
+        spec
     }
 
     fn run_remote(

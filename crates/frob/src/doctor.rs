@@ -490,14 +490,7 @@ fn attester_warnings(runner: &Runner, root: &std::path::Path, cfg: &FrobConfig) 
     if cfg.evidence.attesters.is_empty() {
         return Vec::new();
     }
-    let spec = Spec {
-        program: Program::Git,
-        args: ["log", "--format=%ae%n%ce"].map(str::to_owned).to_vec(),
-        cwd: Some(root.to_path_buf()),
-        env: Vec::new(),
-        timeout: PROBE_TIMEOUT,
-        capture: true,
-    };
+    let spec = gob_git::git_spec(root, ["log", "--format=%ae%n%ce"], PROBE_TIMEOUT);
     match runner.run(&spec) {
         Ok(out) if out.status == ExecOutcome::Exited(0) => {
             let committers = committer_emails(&out.stdout);

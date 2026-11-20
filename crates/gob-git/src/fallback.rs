@@ -3,10 +3,10 @@
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::Outcome;
 use tracing::{debug, info, warn};
 
-use crate::{GitError, Repo, SpawnClass};
+use crate::{GitError, Repo, SpawnClass, git_spec};
 
 /// The result of [`Repo::merge_branch`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,14 +31,7 @@ impl Repo {
         args: &[&str],
     ) -> Result<(i32, String), GitError> {
         debug_assert!(class.is_git());
-        let spec = Spec {
-            program: Program::Git,
-            args: args.iter().map(|s| (*s).to_owned()).collect(),
-            cwd: Some(cwd.to_path_buf()),
-            env: Vec::new(),
-            timeout: TIMEOUT,
-            capture: true,
-        };
+        let spec = git_spec(cwd, args, TIMEOUT);
         let joined = args.join(" ");
         info!(class = class.label(), args = %joined, "spawn fallback");
         let out = self.runner.run(&spec).map_err(|e| GitError::Spawn {

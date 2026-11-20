@@ -94,13 +94,17 @@ pub(crate) fn cargo(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<GitRun, La
 
 fn spawn(repo: &Repo, cwd: &Path, program: Program, args: &[&str]) -> Result<GitRun, LandError> {
     let name = format!("{program:?}");
-    let spec = Spec {
-        program,
-        args: args.iter().map(|s| (*s).to_owned()).collect(),
-        cwd: Some(cwd.to_path_buf()),
-        env: Vec::new(),
-        timeout: TIMEOUT,
-        capture: true,
+    let spec = if program == Program::Git {
+        gob_git::git_spec(cwd, args, TIMEOUT)
+    } else {
+        Spec {
+            program,
+            args: args.iter().map(|s| (*s).to_owned()).collect(),
+            cwd: Some(cwd.to_path_buf()),
+            env: Vec::new(),
+            timeout: TIMEOUT,
+            capture: true,
+        }
     };
     tracing::info!(program = %name, args = %args.join(" "), cwd = %Shown::of(cwd), "land spawn");
     let out = repo

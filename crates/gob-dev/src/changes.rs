@@ -10,7 +10,7 @@
 use std::path::Path;
 use std::time::Duration;
 
-use gob_exec::{Limits, Outcome, Program, Runner, Spec};
+use gob_exec::{Limits, Outcome, Runner};
 use serde::Deserialize;
 
 /// The mapping data, embedded so the tool needs no file at run time.
@@ -178,17 +178,7 @@ pub fn diff_paths(root: &Path, base: &str) -> Result<Vec<String>, ChangesError> 
             reason,
         }
     };
-    let spec = Spec {
-        program: Program::Git,
-        args: ["diff", "--name-only", base, "HEAD"]
-            .iter()
-            .map(|s| (*s).to_owned())
-            .collect(),
-        cwd: Some(root.to_path_buf()),
-        env: Vec::new(),
-        timeout: DIFF_TIMEOUT,
-        capture: true,
-    };
+    let spec = gob_git::git_spec(root, ["diff", "--name-only", base, "HEAD"], DIFF_TIMEOUT);
     let out = Runner::new(Limits { jobs: 1 })
         .run(&spec)
         .map_err(|e| fail(e.to_string()))?;

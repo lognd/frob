@@ -5,7 +5,7 @@ use gob_path::Shown;
 use std::path::Path;
 use std::time::Duration;
 
-use gob_exec::{Outcome, Program, Spec};
+use gob_exec::Outcome;
 use gob_git::Repo;
 
 /// Wall-clock limit of one git spawn.
@@ -17,14 +17,7 @@ const TIMEOUT: Duration = Duration::from_secs(60);
 ///
 /// The runner's error text when git cannot be spawned or is killed by the timeout.
 pub fn git(repo: &Repo, cwd: &Path, args: &[&str]) -> Result<(i32, String), String> {
-    let spec = Spec {
-        program: Program::Git,
-        args: args.iter().map(|s| (*s).to_owned()).collect(),
-        cwd: Some(cwd.to_path_buf()),
-        env: Vec::new(),
-        timeout: TIMEOUT,
-        capture: true,
-    };
+    let spec = gob_git::git_spec(cwd, args, TIMEOUT);
     tracing::debug!(args = %args.join(" "), cwd = %Shown::of(cwd), "gc git spawn");
     let out = repo
         .runner()
