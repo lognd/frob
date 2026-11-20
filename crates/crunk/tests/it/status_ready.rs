@@ -1,6 +1,7 @@
 //! `crunk status ID ready` end to end: the handoff gate refuses with every reason and records nothing, or records the hash.
 
 // frob:ticket 01M5XCZ18GTA7MKKF4Z0MD95W3
+// frob:ticket 01M7TCKMBT95HKXRACWVH5VVDY
 
 use std::path::Path;
 
@@ -158,4 +159,24 @@ fn a_comment_on_a_deleted_state_is_orphaned_and_does_not_block() {
     let (code, text) = ready(dir.path());
     assert_eq!(code, 0, "{text}");
     assert!(text.contains("c1"), "orphan reported: {text}");
+}
+
+// frob:tests crates/crunk/src/status.rs::StatusError.code
+#[test]
+fn status_errors_carry_their_stable_refusal_codes() {
+    use crunk::status::StatusError;
+    assert_eq!(StatusError::Load("x".into()).code(), "E-STATUS-LOAD");
+    assert_eq!(StatusError::Unknown("x".into()).code(), "E-STATUS-UNKNOWN");
+    assert_eq!(
+        StatusError::NotReady {
+            id: "home".into(),
+            reasons: vec!["x".into()]
+        }
+        .code(),
+        "E-STATUS-NOT-READY"
+    );
+    assert_eq!(
+        StatusError::Write("f".into(), "x".into()).code(),
+        "E-STATUS-WRITE"
+    );
 }

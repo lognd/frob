@@ -2,6 +2,7 @@
 // frob:ticket 01M5AH5JNAB2APDDP317HGFM86
 mod common;
 mod cov_unresolved;
+mod handoff_comments;
 mod inline;
 mod naming;
 mod parity;

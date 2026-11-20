@@ -1,6 +1,7 @@
 //! `crunk stamp` end to end: the recorded hash satisfies STATE007 until the screen or a token changes.
 
 // frob:ticket 01M5EF4AEM3BG06QWEX6081JS9
+// frob:ticket 01M7TCKMBT95HKXRACWVH5VVDY
 
 use std::path::Path;
 
@@ -152,4 +153,31 @@ fn stamp_errors_carry_their_stable_refusal_codes() {
         StampError::Write("f".into(), "x".into()).code(),
         "E-STAMP-WRITE"
     );
+}
+
+// frob:tests crates/crunk/src/stamp.rs::StampData.lines
+#[test]
+fn stamp_data_lines_name_each_screen_and_tally_the_rest() {
+    use crunk::stamp::{StampData, Stamped};
+    let screen = |changed| Stamped {
+        file: "design/screens/home.screen.toml".into(),
+        id: "home".into(),
+        content_hash: "abc".into(),
+        changed,
+    };
+    let mut data = StampData {
+        screens: vec![screen(true), screen(false)],
+        dry_run: false,
+        skipped: 3,
+    };
+    assert_eq!(
+        data.lines(),
+        [
+            "stamped design/screens/home.screen.toml (home)",
+            "unchanged design/screens/home.screen.toml (home)",
+            "2 locked screen(s), 3 skipped",
+        ]
+    );
+    data.dry_run = true;
+    assert!(data.lines()[0].starts_with("would stamp "));
 }
