@@ -7,11 +7,11 @@ priority = "critical"
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T04:55:02Z"
-updated = "2026-10-08T04:55:02Z"
+updated = "2026-11-20T18:17:28Z"
 
 [[acceptance]]
 text = "Given the property tests over random completions of May and Unknown edges, when they run, then every Yes or No from the evaluator matches the classical answer in every completion"
-bound = false
+bound = true
 +++
 
 notes/review/formal-review-2026-10-08.md (5 HIGH, 7 MEDIUM, 5 LOW). No rule runs through GRL or the gob-ir evaluator today; Unknown edges are dropped (H1).
