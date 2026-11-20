@@ -162,7 +162,12 @@ pub fn merged_document(
 /// [`LedgerError::Fold`] / [`LedgerError::Malformed`] when no valid history
 /// exists, [`LedgerError::Io`] on filesystem failures.
 pub fn resolve(root: &Path, path: &str, ours: &Path, extra: Vec<Event>) -> Result<MergeReport> {
-    let text = std::fs::read_to_string(ours).unwrap_or_default();
+    // Only a missing file reads as empty; any other failure must not be mistaken for an empty document.
+    let text = match std::fs::read_to_string(ours) {
+        Ok(text) => text,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => return Err(e.into()),
+    };
     let (layout, id) = locate(path, &[&text])?;
     resolve_at(root, path, layout, id, ours, extra)
 }
@@ -182,7 +187,37 @@ pub fn resolve_at(
 ) -> Result<MergeReport> {
     let disk = read_events_dir(&events_dir_on_disk(root, path, layout, id))?;
     let (text, report) = merged_document(id, disk, extra)?;
-    std::fs::write(ours, text)?;
+    // Atomic: git reads `ours` after the driver exits, so a torn write would be committed as the merge.
+    gob_fs::write_atomic(ours, text.as_bytes())?;
     tracing::info!(ticket = %id, ?layout, events = report.events, from_extra = report.from_extra, "ticket document re-folded by merge driver");
     Ok(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:tests crates/frob-ledger/src/merge.rs::resolve
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn an_unreadable_ours_file_is_an_io_error_not_an_empty_document() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let id = TicketId::mint();
+        let ours = dir.path().join("ours.md");
+        // Not UTF-8: reading it as text fails with something other than NotFound.
+        std::fs::write(&ours, [0xff, 0xfe, 0x00]).expect("seed");
+        let err = resolve(
+            dir.path(),
+            &format!("tickets/{id}/ticket.md"),
+            &ours,
+            Vec::new(),
+        )
+        .expect_err("unreadable ours");
+        assert!(matches!(err, LedgerError::Io(_)), "{err}");
+        assert_eq!(
+            std::fs::read(&ours).expect("still there"),
+            vec![0xff, 0xfe, 0x00],
+            "the unreadable file is left untouched"
+        );
+    }
 }

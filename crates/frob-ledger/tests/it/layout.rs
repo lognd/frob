@@ -270,6 +270,16 @@ fn the_merge_driver_finds_a_branch_ticket_by_its_frontmatter_id_and_unions_event
     );
     let text = std::fs::read_to_string(&out).expect("read");
     assert!(!text.contains("<<<<<<<"), "{text}");
+    let mut left: Vec<_> = std::fs::read_dir(disk.path())
+        .expect("ls")
+        .map(|e| e.expect("entry").file_name())
+        .collect();
+    left.sort();
+    assert_eq!(
+        left,
+        [".events", "ours.md"],
+        "the atomic write leaves no temp file"
+    );
     let doc = frob_ledger::doc::parse("m", &text).expect("parse");
     assert_eq!(doc.front.id, real);
     // A path in a ULID directory still names its ticket without reading any document.
