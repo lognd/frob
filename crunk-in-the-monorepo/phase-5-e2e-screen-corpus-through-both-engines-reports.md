@@ -8,7 +8,7 @@ points = 3
 parent = "01M4CXRV40WWJQKHWJJBKJT1HZ"
 reporter = "lognd"
 created = "2026-10-27T00:42:24Z"
-updated = "2026-10-28T12:56:04Z"
+updated = "2026-11-20T14:41:10Z"
 labels = ["area:crunk", "no-story"]
 scope = ["crates/crunk/tests/e2e_render_tiers.rs, crates/crunk/tests/fixtures/render_corpus/**"]
 
@@ -26,7 +26,7 @@ target = "01M5XCXVAR2WSR1H6X5X7ETR1R"
 
 [[acceptance]]
 text = "Given the corpus, when both engines render in the optional playwright job, then parity, VIS and axe findings appear in one report; given playwright absent, then those findings are not run, not green, and the job is skipped with a notice"
-bound = false
+bound = true
 +++
 
 Epic acceptance for phase 5. Test-only.
