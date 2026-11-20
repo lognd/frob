@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T23:07:05Z"
+digest = "b37eb40d8e933c8011b68d09443caf8559dcb4ea5e07658809ed517eb4339304"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.49s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 691361f6-f154-447a-9d7d-00a2dd671adb with nextest profile: default
+    Starting 1 test across 2 binaries (193 tests skipped)
+        PASS [   0.013s] frob-evidence provider::tests::an_unreadable_report_is_an_error_and_an_absent_one_is_empty
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.014s] 1 test run: 1 passed, 193 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(an_unreadable_report_is_an_error_and_an_absent_one_is_empty)"
+size = 571
+status = "measured"
+test_count = 1
+tests_digest = "f4e0eac15722687c0999a7ef86d51c30c1b2de8d75f376fb5b1d69d30f392cd9"
+at = "2026-11-20T23:07:05Z"
+actor = "lognd"
+rev = 1
