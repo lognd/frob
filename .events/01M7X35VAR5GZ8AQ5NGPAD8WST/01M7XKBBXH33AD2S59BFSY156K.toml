@@ -1,0 +1,30 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T23:05:49Z"
+digest = "92f1ee542f7749374908d6dda8b81c7e6b82a16fceee71bd474a8711ba14b6bd"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+   Compiling crunk-spec v0.532.0 (<worktree>\crates\crunk-spec)
+   Compiling crunk-gallery v0.532.0 (<worktree>\crates\crunk-gallery)
+    Finished `test` profile [unoptimized] target(s) in 10.53s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID b06d53c3-de4e-476f-a165-b1d86d74d2bc with nextest profile: default
+    Starting 4 tests across 2 binaries (63 tests skipped)
+        PASS [   0.011s] crunk-gallery render::tests::artifact_names_refuse_drive_relative_and_stream_ids
+        PASS [   0.018s] crunk-gallery render::tests::reads_over_the_cap_are_refused_without_loading
+        PASS [   0.024s] crunk-gallery render::command::tests::the_cwd_must_stay_inside_the_project
+        PASS [   0.026s] crunk-gallery render::tests::a_command_cell_gets_the_trust_notice
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.027s] 4 tests run: 4 passed, 63 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk-gallery -E test(the_cwd_must_stay_inside_the_project)|test(a_command_cell_gets_the_trust_notice)|test(artifact_names_refuse_drive_relative_and_stream_ids)|test(reads_over_the_cap_are_refused_without_loading)"
+size = 988
+status = "measured"
+test_count = 4
+tests_digest = "6dfc0625a8ab3c22c89e53ad463f669d7bd9c689cf26a0cee87f98ce8bd05416"
+at = "2026-11-20T23:05:49Z"
+actor = "lognd"
+rev = 1
