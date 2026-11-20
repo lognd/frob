@@ -1,0 +1,5 @@
+kind = "changelog-exempt"
+reason = "CI and test hardening only, no user-visible effect; gallery tests ran green in CI on a1a1b9a97b"
+at = "2026-11-20T22:57:22Z"
+actor = "lognd"
+rev = 1
