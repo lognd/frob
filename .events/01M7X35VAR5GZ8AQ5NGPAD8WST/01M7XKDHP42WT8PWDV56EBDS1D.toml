@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: security batch fixed in 4528598984 and 0e41515bb5; tests bound"
+at = "2026-11-20T23:07:13Z"
+actor = "lognd"
+rev = 1

@@ -2,12 +2,13 @@
 id = "01M7X35VAR5GZ8AQ5NGPAD8WST"
 title = "Audit 2026-11-20 security batch: evidence env and redaction, dir: URIs, command renderer, drive-relative names, read caps"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-20T18:23:23Z"
-updated = "2026-11-20T23:05:49Z"
+updated = "2026-11-20T23:07:13Z"
 scope = ["crates/frob-evidence/**", "crates/crunk-gallery/**"]
 
 [[acceptance]]
