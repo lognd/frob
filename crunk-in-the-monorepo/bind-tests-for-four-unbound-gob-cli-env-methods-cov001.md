@@ -8,14 +8,14 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T18:49:28Z"
-updated = "2026-11-19T18:54:37Z"
+updated = "2026-11-20T07:05:48Z"
 idempotency_key = "cov001-gob-cli-env"
 labels = ["no-story", "good-first"]
 scope = ["crates/gob-cli/tests/**"]
 
 [[acceptance]]
 text = "Given Env.with, Env.get, Env.is_set_nonempty and Env.path, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"
-bound = false
+bound = true
 +++
 
 Four public methods on Env in crates/gob-cli/src/env.rs, namely with, get, is_set_nonempty and path, have no test bound to them, so frob check raises COV001 for each.

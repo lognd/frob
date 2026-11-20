@@ -1,0 +1,86 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T07:05:48Z"
+digest = "73edb641ffdd850285502f3a2d8459e314454b5eaa11da3314acb7f2b689b864"
+exit_code = 0
+head = "8145be4c94df11c2934f213e3b011820bf15b1f0"
+inline = '''
+   Compiling serde_core v1.0.229
+   Compiling windows-sys v0.61.2
+   Compiling syn v3.0.6
+   Compiling syn v2.0.119
+   Compiling serde_json v1.0.151
+   Compiling hashbrown v0.17.1
+   Compiling bstr v1.13.1
+   Compiling smallvec v1.16.2
+   Compiling indexmap v2.14.2
+   Compiling globset v0.4.20
+   Compiling winapi-util v0.1.11
+   Compiling anstyle-wincon v3.0.11
+   Compiling anstyle-query v1.1.5
+   Compiling nu-ansi-term v0.50.3
+   Compiling tempfile v3.27.0
+   Compiling anstream v1.0.0
+   Compiling same-file v1.0.6
+   Compiling anstream v0.6.21
+   Compiling walkdir v2.5.0
+   Compiling clap_builder v4.6.7
+   Compiling ignore v0.4.33
+   Compiling serde_derive_internals v0.30.0
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling serde_spanned v1.1.1
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling toml_edit v0.25.15+spec-1.1.0
+   Compiling tree-sitter v0.27.0
+   Compiling darling_core v0.20.11
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.21
+   Compiling ref-cast-impl v1.0.27
+   Compiling schemars_derive v1.2.2
+   Compiling ref-cast v1.0.27
+   Compiling clap_derive v4.6.7
+   Compiling tracing-attributes v0.1.31
+   Compiling thiserror v2.0.21
+   Compiling tracing v0.1.44
+   Compiling darling_macro v0.20.11
+   Compiling clap v4.6.7
+   Compiling gob-path v0.532.0 (<worktree>\crates\gob-path)
+   Compiling gob-caps v0.532.0 (<worktree>\crates\gob-caps)
+   Compiling gob-term v0.532.0 (<worktree>\crates\gob-term)
+   Compiling serde v1.0.229
+   Compiling darling v0.20.11
+   Compiling schemars v1.2.2
+   Compiling gob-fs v0.532.0 (<worktree>\crates\gob-fs)
+   Compiling gob-walk v0.532.0 (<worktree>\crates\gob-walk)
+   Compiling gob-macros v0.532.0 (<worktree>\crates\gob-macros)
+   Compiling tracing-serde v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling gob-time v0.532.0 (<worktree>\crates\gob-time)
+   Compiling gob-ir v0.532.0 (<worktree>\crates\gob-ir)
+   Compiling gob-log v0.532.0 (<worktree>\crates\gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>\crates\gob-exec)
+   Compiling gob-languages v0.532.0 (<worktree>\crates\gob-languages)
+   Compiling gob-rules v0.532.0 (<worktree>\crates\gob-rules)
+   Compiling gob-config v0.532.0 (<worktree>\crates\gob-config)
+   Compiling gob-diagnostics v0.532.0 (<worktree>\crates\gob-diagnostics)
+   Compiling gob-cli v0.532.0 (<worktree>\crates\gob-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.57s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID af1410c6-5573-449f-bd47-7696aae6c04c with nextest profile: default
+    Starting 3 tests across 2 binaries (66 tests skipped)
+        PASS [   0.010s] gob-cli::it env::with_overrides_a_name_that_get_then_reads
+        PASS [   0.014s] gob-cli::it env::an_empty_override_is_set_but_not_nonempty
+        PASS [   0.020s] gob-cli::it env::path_reads_the_override_and_is_empty_when_hidden
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 3 tests run: 3 passed, 66 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-cli -E test(with_overrides_a_name_that_get_then_reads)|test(an_empty_override_is_set_but_not_nonempty)|test(path_reads_the_override_and_is_empty_when_hidden)"
+size = 3085
+status = "measured"
+test_count = 3
+tests_digest = "e8c4476eec59ab1e149041a9f6996c2be7deca5d4fc52668334eaec03647fc7b"
+at = "2026-11-20T07:05:48Z"
+actor = "lognd"
+rev = 1
