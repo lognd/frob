@@ -8,14 +8,14 @@ points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T17:10:29Z"
-updated = "2026-11-19T18:49:28Z"
+updated = "2026-11-20T07:01:55Z"
 idempotency_key = "cov001-remaining-eight"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk-rules/tests/**", "crates/crunk-spec/tests/**", "crates/crunk/tests/**"]
 
 [[acceptance]]
 text = "Given Reason.line, load_comments, StampData.lines and StatusError.code, when frob check runs, then each is reached by a test bound with frob:tests and no COV001 finding names any of them"
-bound = false
+bound = true
 +++
 
 Four public methods, Reason.line in crates/crunk-rules/src/handoff.rs, load_comments in crates/crunk-spec/src/handoff.rs, StampData.lines in crates/crunk/src/stamp.rs and StatusError.code in crates/crunk/src/status.rs, have no test bound to them, so frob check raises COV001 for each.
