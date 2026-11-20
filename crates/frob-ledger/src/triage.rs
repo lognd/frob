@@ -301,13 +301,22 @@ impl Ledger {
             .repo
             .commit_paths(&ref_name, &changes, &message, &opts)?;
         tracing::info!(action = %req.action, tickets = planned.len(), commit = %out.oid, retries = out.retries, "triage commit");
+        let mut reconcile_warnings: Vec<String> = Vec::new();
         if out.retries > 0 {
             // A concurrent writer moved the ref: re-fold any ticket that gained a foreign event.
+            // The ref has moved already: a failed re-fold is a warning, never an error a caller would retry.
             for (id, _) in planned {
-                self.reconcile_with(&ref_name, *id, crate::ledger::MAX_RECONCILE)?;
+                if let Err(e) = self.reconcile_with(&ref_name, *id, crate::ledger::MAX_RECONCILE) {
+                    tracing::warn!(ticket = %id, error = %e, "post-commit reconcile failed; the triage commit stands");
+                    reconcile_warnings.push(format!(
+                        "triage commit {} was made, but re-folding {id} afterwards failed ({e}); do not retry, run `frob ticket doctor --fix`",
+                        out.oid
+                    ));
+                }
             }
         }
-        let warnings = crate::ledger::unsynced_warnings(&out.unsynced);
+        let mut warnings = crate::ledger::unsynced_warnings(&out.unsynced);
+        warnings.extend(reconcile_warnings);
         Ok((out.oid, warnings))
     }
 

@@ -1120,8 +1120,9 @@ impl Ledger {
             .commit_paths(&ref_name, &changes, &message, &opts)?;
         tracing::info!(verb, ticket = %id, commit = %out.oid, events = new.len(), retries = out.retries, "ledger commit");
         // frob:ticket 01M42MGNZZ1BY6YCG49BDHEZAT
-        let warnings = unsynced_warnings(&out.unsynced);
-        self.after_commit(
+        let mut warnings = unsynced_warnings(&out.unsynced);
+        // The ref has moved: nothing after this point may fail the call, or a caller's retry would duplicate the events.
+        if let Err(e) = self.after_commit(
             &mut index,
             tree,
             &key,
@@ -1130,7 +1131,13 @@ impl Ledger {
             new,
             &ticket,
             (&file, &events_dir),
-        )?;
+        ) {
+            tracing::warn!(ticket = %id, commit = %out.oid, error = %e, "post-commit bookkeeping failed; the commit stands");
+            warnings.push(format!(
+                "the ledger commit {} was made, but updating the index afterwards failed ({e}); do not retry the verb, the next read rebuilds the index",
+                out.oid
+            ));
+        }
         Ok(Applied {
             ticket,
             handle,
@@ -1236,6 +1243,10 @@ impl Ledger {
         (file, events_dir): (&str, &str),
     ) -> Result<()> {
         let id = ticket.front.id;
+        #[cfg(test)]
+        if tests::FAIL_AFTER_COMMIT.with(std::cell::Cell::get) {
+            return Err(LedgerError::invalid("injected post-commit failure"));
+        }
         let prefix = self.tree_prefix();
         let rel = |p: &str| p.strip_prefix(&prefix).unwrap_or(p).to_owned();
         let new_tree = self.tickets_tree(Some(commit))?;
@@ -1286,7 +1297,8 @@ impl Ledger {
     ///
     /// # Errors
     ///
-    /// Git, parse or fold failures.
+    /// Git, parse or fold failures, and a `GitError::CasExhausted` when concurrent writers kept
+    /// moving the ref for every attempt (the frontmatter may still be stale: retry).
     pub fn reconcile(&self, id: TicketId) -> Result<Option<Oid>> {
         let ref_name = self.ledger_write_ref()?;
         self.reconcile_with(&ref_name, id, MAX_RECONCILE)
@@ -1309,6 +1321,7 @@ impl Ledger {
                 tracing::warn!(ticket = %id, error = %e, "ticket.md unreadable; re-rendering it from the events");
                 None
             });
+            let stored = if lose_races() { None } else { stored };
             if stored.as_ref() == Some(&folded.ticket) {
                 return Ok(None);
             }
@@ -1334,17 +1347,137 @@ impl Ledger {
             )?;
             tracing::info!(ticket = %id, commit = %out.oid, "frontmatter reconciled");
             // Loop to confirm no further concurrent event landed meanwhile.
-            if self.tip_of(ref_name)? == Some(out.oid) {
+            if !lose_races() && self.tip_of(ref_name)? == Some(out.oid) {
                 return Ok(Some(out.oid));
             }
         }
-        Ok(None)
+        Err(LedgerError::Git(gob_git::GitError::CasExhausted {
+            ref_name: ref_name.to_owned(),
+            attempts: attempts.max(1),
+        }))
+    }
+}
+
+/// Test seam: pretend a concurrent writer overtakes every reconcile attempt.
+fn lose_races() -> bool {
+    #[cfg(test)]
+    {
+        tests::LOSE_RACES.with(std::cell::Cell::get)
+    }
+    #[cfg(not(test))]
+    {
+        false
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    thread_local! {
+        /// Makes [`Ledger::after_commit`] fail, to prove a post-commit error never fails the call.
+        pub(super) static FAIL_AFTER_COMMIT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+        /// Makes every reconcile attempt look overtaken by a concurrent writer.
+        pub(super) static LOSE_RACES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    }
+
+    /// A temporary repository on `main` with a root commit, an identity and an open ledger.
+    fn fixture() -> (tempfile::TempDir, Ledger) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let repo = Repo::init(dir.path()).expect("init");
+        std::fs::write(
+            repo.git_dir().join("HEAD"),
+            "ref: refs/heads/main
+",
+        )
+        .expect("head");
+        let cfg = std::fs::read_to_string(repo.git_dir().join("config")).expect("config");
+        std::fs::write(
+            repo.git_dir().join("config"),
+            format!(
+                "{cfg}[user]
+	name = Test User
+	email = test@example.com
+"
+            ),
+        )
+        .expect("identity");
+        drop(repo);
+        let repo = Repo::discover(dir.path()).expect("discover");
+        repo.commit_paths(
+            "refs/heads/main",
+            &[(
+                RelPath::new("README.md").expect("path"),
+                Some(
+                    b"hi
+"
+                    .to_vec(),
+                ),
+            )],
+            "root",
+            &CommitOptions::default(),
+        )
+        .expect("root commit");
+        let ledger = Ledger::open(
+            repo,
+            LedgerConfig::default(),
+            std::sync::Arc::new(gob_time::SystemClock),
+        );
+        (dir, ledger)
+    }
+
+    // frob:tests crates/frob-ledger/src/ledger.rs::Ledger
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn a_post_commit_failure_is_a_warning_and_the_commit_stands() {
+        let (_dir, ledger) = fixture();
+        FAIL_AFTER_COMMIT.with(|c| c.set(true));
+        let applied = ledger
+            .new_ticket(crate::ops::NewTicket::new(
+                "Survives",
+                crate::model::TicketType::Task,
+            ))
+            .expect("the commit was made, so the call is not an error");
+        FAIL_AFTER_COMMIT.with(|c| c.set(false));
+        assert!(applied.commit.is_some());
+        assert!(
+            applied.warnings.iter().any(|w| w.contains("do not retry")),
+            "{:?}",
+            applied.warnings
+        );
+        let id = applied.ticket.front.id;
+        assert!(
+            ledger.show(id).is_ok(),
+            "the ticket is committed exactly once"
+        );
+    }
+
+    // frob:tests crates/frob-ledger/src/ledger.rs::Ledger
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn reconcile_that_loses_every_attempt_reports_contention_not_nothing_to_do() {
+        let (_dir, ledger) = fixture();
+        let id = ledger
+            .new_ticket(crate::ops::NewTicket::new(
+                "Raced",
+                crate::model::TicketType::Task,
+            ))
+            .expect("new")
+            .ticket
+            .front
+            .id;
+        LOSE_RACES.with(|c| c.set(true));
+        let got = ledger.reconcile(id);
+        LOSE_RACES.with(|c| c.set(false));
+        let err = got.expect_err("three overtaken attempts are not Ok(None)");
+        assert!(
+            matches!(
+                err,
+                LedgerError::Git(gob_git::GitError::CasExhausted { attempts: 3, .. })
+            ),
+            "{err}"
+        );
+    }
 
     fn items(n: usize) -> Vec<(EventId, String, Vec<u8>)> {
         (0..n)
