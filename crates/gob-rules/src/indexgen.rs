@@ -518,7 +518,7 @@ mod tests {
         assert!(text.contains("<cov002::Cov002 as gob_rules::RuleDecl>::DEF,"));
         assert!(text.contains("cov001::Cov001: gob_rules::FileRule<P>,"));
         assert!(text.contains("rules.push(gob_rules::BoundRule::repo(cov002::Cov002));"));
-        assert!(text.contains("#[allow(clippy::too_many_lines, reason ="));
+        assert!(text.contains("#[allow(\n    clippy::too_many_lines,\n    reason = "));
         assert!(text.contains("fn rules_index_is_fresh()"));
         // the module must be named `tests` so DEAD001's test-unit heuristic sees test code
         assert!(text.contains("#[cfg(test)]\nmod tests {"));
