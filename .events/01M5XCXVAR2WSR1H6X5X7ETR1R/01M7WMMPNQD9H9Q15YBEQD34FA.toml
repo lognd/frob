@@ -1,0 +1,32 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T14:08:42Z"
+digest = "0e2d86180b19212441cd1d43aa5ccd380e7e5c7d9f810b9f011d20bac9adb6f0"
+exit_code = 0
+head = "1c5ab001a8abe60d57bc3125e78e2b5f03e2dec6"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling crunk-check v0.532.0 (<worktree>\crates\crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>\crates\crunk-fix)
+   Compiling gob-product v0.532.0 (<worktree>\crates\gob-product)
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+    Finished `test` profile [unoptimized] target(s) in 26.48s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fc94df4d-7534-4c02-9e9d-f93d791aab9a with nextest profile: default
+    Starting 3 tests across 5 binaries (342 tests skipped)
+        PASS [   0.018s] crunk::it render_browser::solved_ids_are_read_in_document_order_and_bad_documents_refused
+        PASS [   0.024s] crunk::it render_browser::ids_the_browser_did_not_measure_are_named_in_solve_order
+        PASS [   7.634s] crunk::it render_browser::browser_engine_without_playwright_exits_2_and_never_fakes_a_pass
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   7.636s] 3 tests run: 3 passed, 342 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk --features gallery -E test(browser_engine_without_playwright_exits_2_and_never_fakes_a_pass)|test(solved_ids_are_read_in_document_order_and_bad_documents_refused)|test(ids_the_browser_did_not_measure_are_named_in_solve_order)"
+size = 1107
+status = "measured"
+test_count = 3
+tests_digest = "fd9c9b621b89eef034a8fe76acf7ab7e5348e89eabdd31d1f0624a5c1d7d0570"
+at = "2026-11-20T14:08:42Z"
+actor = "lognd"
+rev = 1
