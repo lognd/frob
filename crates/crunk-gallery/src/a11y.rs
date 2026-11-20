@@ -285,7 +285,7 @@ impl PlaywrightAxe {
             }
             other => A11yError::Render(other),
         })?;
-        std::fs::read_to_string(results)
+        crate::render::read_text_capped(results)
             .map_err(|_| A11yError::BadReport("the scan wrote no results file".to_owned()))
     }
 }

@@ -2,16 +2,32 @@
 
 // frob:ticket 01M43ATDR7DWY5RZPB3QB3GE3K
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crunk_spec::DesignSpec;
 use crunk_spec::model::CommandRendererParams;
 use gob_exec::{Program, Runner};
-use gob_path::Shown;
+use gob_path::{RelPath, Shown};
 use tracing::debug;
 
 use super::{RenderError, RenderOptions, Resolved, arg, render_env, require_success, spec_for};
 use crate::cells::Cell;
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+/// The directory a command renderer runs in: the project root, or a relative `cwd` below it.
+///
+/// # Errors
+/// [`RenderError::BadCell`] for an absolute path, a drive prefix, or a `..` segment.
+fn command_cwd(root: &Path, cwd: Option<&str>) -> Result<PathBuf, RenderError> {
+    match cwd {
+        None | Some(".") => Ok(root.to_path_buf()),
+        Some(c) => RelPath::new(c).map(|rel| rel.to_host(root)).map_err(|_| {
+            RenderError::BadCell(format!(
+                "command cwd `{c}` must be a relative path inside the project"
+            ))
+        }),
+    }
+}
 
 /// Run `params.command` under `sh -c` and expect it to write a PNG to `$CRUNK_OUTPUT`.
 ///
@@ -42,10 +58,7 @@ pub(crate) fn render(
         ("CRUNK_PLATFORM".to_owned(), cell.platform.clone()),
         ("CRUNK_ENTRY".to_owned(), resolved.screen.entry.clone()),
     ]);
-    let cwd = params
-        .cwd
-        .as_ref()
-        .map_or_else(|| spec.root.clone(), |c| spec.root.join(c));
+    let cwd = command_cwd(&spec.root, params.cwd.as_deref())?;
     debug!(command = %params.command, cwd = %Shown::of(&cwd), "running command renderer");
     let exec = spec_for(
         Program::Tool {
@@ -58,4 +71,24 @@ pub(crate) fn render(
     );
     let out = runner.run_with_env(&exec, &render_env())?;
     require_success(out, opts.timeout).map(|_| ())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn the_cwd_must_stay_inside_the_project() {
+        let root = Path::new("proj");
+        assert_eq!(command_cwd(root, None).expect("none"), root);
+        assert_eq!(command_cwd(root, Some(".")).expect("dot"), root);
+        assert_eq!(
+            command_cwd(root, Some("tools/shots")).expect("rel"),
+            root.join("tools/shots")
+        );
+        for bad in ["..", "../x", "a/../../x", "C:x", "a\\b"] {
+            assert!(command_cwd(root, Some(bad)).is_err(), "{bad}");
+        }
+    }
 }

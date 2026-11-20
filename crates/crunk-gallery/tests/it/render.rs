@@ -52,7 +52,7 @@ fn command_renderer_writes_hashed_png() {
         .iter()
         .fold(String::new(), |acc, b| acc + &format!("{b:02x}"));
     assert_eq!(r.sha256, want);
-    assert!(report.notice.is_none());
+    assert!(report.notice.is_some());
 }
 
 // frob:tests render

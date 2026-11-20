@@ -184,10 +184,10 @@ fn image(s: &Session, index: &str) -> Response {
         .and_then(|e| e.render.as_ref())
         .map(|r| r.path.as_str());
     // Render paths are bare file names; anything with path syntax is never served.
-    let Some(rel) = rel.filter(|r| !r.is_empty() && !r.contains(['/', '\\']) && *r != "..") else {
+    let Some(rel) = rel.filter(|r| crate::render::is_plain_component(r)) else {
         return Response::text(404, "no render");
     };
-    match std::fs::read(s.artifacts.join(rel)) {
+    match crate::render::read_capped(&s.artifacts.join(rel)) {
         Ok(bytes) => Response {
             status: 200,
             content_type: "image/png",

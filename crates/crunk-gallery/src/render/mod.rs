@@ -8,7 +8,8 @@
 //! [`RenderError::PlaywrightMissing`] whose [`RenderError::exit_code`] is 2.
 //!
 //! Playwright executes the project's own code (its pages and init scripts), so a web render is a
-//! trust decision: [`TRUST_NOTICE`] is attached to every report that rendered a web cell.
+//! trust decision: [`TRUST_NOTICE`] is attached to every report that rendered a cell. A `command`
+//! platform runs a shell command from `crunk.toml`, so it needs the same notice.
 
 // frob:ticket 01M43ATDR7DWY5RZPB3QB3GE3K
 
@@ -29,7 +30,35 @@ use tracing::{debug, info, warn};
 use crate::cells::Cell;
 
 /// What a web render means: the project's pages and scripts run in a real browser.
-pub const TRUST_NOTICE: &str = "web rendering executes project code (pages, init scripts) in a real browser; render only a project you trust";
+pub const TRUST_NOTICE: &str = "rendering executes project code (pages and init scripts in a real browser, capture commands from crunk.toml in a shell); render only a project you trust";
+
+/// Largest file the renderers read back whole (a PNG or a results JSON); a bigger one is refused.
+pub(crate) const MAX_READ_BYTES: u64 = 64 * 1024 * 1024;
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+/// Read the regular file at `path`, refusing one larger than [`MAX_READ_BYTES`] before loading it.
+pub(crate) fn read_capped(path: &Path) -> std::io::Result<Vec<u8>> {
+    let len = std::fs::metadata(path)?.len();
+    if len > MAX_READ_BYTES {
+        return Err(std::io::Error::other(format!(
+            "file is {len} bytes, over the {MAX_READ_BYTES} byte read cap"
+        )));
+    }
+    std::fs::read(path)
+}
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+/// [`read_capped`] as text.
+pub(crate) fn read_text_capped(path: &Path) -> std::io::Result<String> {
+    String::from_utf8(read_capped(path)?)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
+}
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+/// True when `id` is one plain file-name component: no separators, `..`, drive or stream `:`, or reserved name.
+pub(crate) fn is_plain_component(id: &str) -> bool {
+    !id.contains(['/', '\\']) && !id.contains("..") && gob_path::RelPath::new(id).is_ok()
+}
 
 /// The PNG file signature every rendered artifact must start with.
 const PNG_MAGIC: &[u8] = &[0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a];
@@ -143,7 +172,7 @@ pub struct CellResult {
 pub struct RenderReport {
     /// One result per requested cell, in request order.
     pub results: Vec<CellResult>,
-    /// [`TRUST_NOTICE`] when any web cell was attempted.
+    /// [`TRUST_NOTICE`] when any cell was attempted (web or command).
     pub notice: Option<&'static str>,
 }
 
@@ -167,15 +196,7 @@ pub fn render(
 ) -> Result<RenderReport, RenderError> {
     std::fs::create_dir_all(&opts.out_dir)?;
     let runner = Runner::new(Limits { jobs: 1 }).output_cap(opts.output_cap);
-    let wants_web = cells.iter().any(|c| {
-        spec.platforms
-            .get(&c.platform)
-            .is_some_and(|p| matches!(p.params, RendererParams::Web(_)))
-    });
-    if wants_web {
-        warn!("{TRUST_NOTICE}");
-        playwright::probe(&runner, opts, &spec.root)?;
-    }
+    let notice = prepare(&runner, spec, cells, opts)?;
     let mut results = Vec::with_capacity(cells.len());
     for cell in cells {
         let outcome = render_cell(&runner, spec, cell, opts);
@@ -192,10 +213,33 @@ pub fn render(
             outcome,
         });
     }
-    Ok(RenderReport {
-        results,
-        notice: wants_web.then_some(TRUST_NOTICE),
-    })
+    Ok(RenderReport { results, notice })
+}
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+/// Before any cell runs: log and return [`TRUST_NOTICE`] when a cell executes project code (every
+/// renderer does, a browser page or a shell command), and probe Playwright when a web cell needs it.
+fn prepare(
+    runner: &Runner,
+    spec: &DesignSpec,
+    cells: &[Cell],
+    opts: &RenderOptions,
+) -> Result<Option<&'static str>, RenderError> {
+    let platform_of = |c: &Cell| spec.platforms.get(&c.platform);
+    let notice = cells
+        .iter()
+        .any(|c| platform_of(c).is_some())
+        .then_some(TRUST_NOTICE);
+    if let Some(n) = notice {
+        warn!("{n}");
+    }
+    if cells
+        .iter()
+        .any(|c| platform_of(c).is_some_and(|p| matches!(p.params, RendererParams::Web(_))))
+    {
+        playwright::probe(runner, opts, &spec.root)?;
+    }
+    Ok(notice)
 }
 
 /// Everything a renderer needs about one cell, resolved from the spec.
@@ -231,7 +275,7 @@ pub(crate) fn resolve<'a>(spec: &'a DesignSpec, cell: &Cell) -> Result<Resolved<
 /// The artifact file name of `cell`; ids carrying path syntax are refused.
 fn artifact_name(cell: &Cell) -> Result<String, RenderError> {
     for id in [&cell.screen, &cell.state, &cell.platform] {
-        if id.is_empty() || id.contains(['/', '\\']) || id.contains("..") {
+        if id.is_empty() || !is_plain_component(id) {
             return Err(RenderError::BadCell(format!(
                 "id `{id}` cannot be used in an artifact name"
             )));
@@ -271,7 +315,7 @@ fn render_cell(
             command::render(runner, spec, cell, &resolved, cmd, opts, &target)?;
         }
     }
-    let bytes = std::fs::read(&target).map_err(|_| RenderError::NoOutput(target.clone()))?;
+    let bytes = read_capped(&target).map_err(|_| RenderError::NoOutput(target.clone()))?;
     if !bytes.starts_with(PNG_MAGIC) {
         return Err(RenderError::Failed {
             status: "exit 0".to_owned(),
@@ -337,4 +381,84 @@ pub(crate) fn arg(path: &Path) -> Result<String, RenderError> {
     path.to_str()
         .map(str::to_owned)
         .ok_or_else(|| RenderError::BadCell(format!("path {} is not UTF-8", Shown::of(path))))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crunk_spec::parse_spec;
+
+    fn cell(screen: &str, state: &str, platform: &str) -> Cell {
+        Cell {
+            screen: screen.to_owned(),
+            state: state.to_owned(),
+            platform: platform.to_owned(),
+        }
+    }
+
+    fn spec_with(platform: &str, dir: &Path) -> DesignSpec {
+        let text = format!(
+            "[project]\ncss_root = \".\"\ntokens_file = \"t.css\"\nroot_font_size = 10\n\n\
+             [palette]\na = \"white\"\n\n[scales]\nspacing = [1]\nfont_sizes = [10]\n\n\
+             [typography]\nfamilies = [\"x\"]\nweights = [400]\n\n[org]\nbuckets = [\"b\"]\n\n\
+             {platform}\n\n[[screen]]\nid = \"home\"\nentry = \"/\"\n\n\
+             [[screen.states]]\nid = \"default\"\n"
+        );
+        parse_spec(&text, &dir.join("design.toml"), dir).expect("spec parses")
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn a_command_cell_gets_the_trust_notice() {
+        let dir = tempfile::tempdir().expect("dir");
+        let spec = spec_with(
+            "[[platform]]\nid = \"shot\"\nrenderer = \"command\"\ncommand = \"true\"\n",
+            dir.path(),
+        );
+        let runner = Runner::new(Limits { jobs: 1 });
+        let opts = RenderOptions::new(dir.path().join("art"));
+        let one = [cell("home", "default", "shot")];
+        assert!(
+            prepare(&runner, &spec, &one, &opts)
+                .expect("prepare")
+                .is_some()
+        );
+        assert!(
+            prepare(&runner, &spec, &[], &opts)
+                .expect("prepare")
+                .is_none()
+        );
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn artifact_names_refuse_drive_relative_and_stream_ids() {
+        assert!(artifact_name(&cell("home", "default", "web")).is_ok());
+        for bad in ["C:x", "a:b", "a/b", "a\\b", "..", "a..b", "", "con"] {
+            assert!(
+                artifact_name(&cell(bad, "default", "web")).is_err(),
+                "{bad}"
+            );
+            assert!(artifact_name(&cell("home", bad, "web")).is_err(), "{bad}");
+            assert!(
+                artifact_name(&cell("home", "default", bad)).is_err(),
+                "{bad}"
+            );
+        }
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn reads_over_the_cap_are_refused_without_loading() {
+        let dir = tempfile::tempdir().expect("dir");
+        let small = dir.path().join("small");
+        std::fs::write(&small, "ok").expect("write");
+        assert_eq!(read_text_capped(&small).expect("small"), "ok");
+        let big = dir.path().join("big");
+        std::fs::File::create(&big)
+            .and_then(|f| f.set_len(MAX_READ_BYTES + 1))
+            .expect("sparse file");
+        assert!(read_capped(&big).is_err());
+        assert!(read_text_capped(&big).is_err());
+    }
 }

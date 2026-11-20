@@ -282,6 +282,6 @@ fn run_once(
         }
         other => BoxesError::Render(other),
     })?;
-    std::fs::read_to_string(results)
+    crate::render::read_text_capped(results)
         .map_err(|_| BoxesError::BadReport("the capture wrote no results file".to_owned()))
 }
