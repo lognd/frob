@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: indexgen emits #[allow(clippy::too_many_lines)] with a reason on generated bind(); all rules/mod.rs regenerated, gen --check green, clippy clean on gob-rules/crunk-rules/frob-pm, nextest on the generator tests passes"
+at = "2026-11-20T03:21:28Z"
+actor = "lognd"
+rev = 1
