@@ -282,6 +282,19 @@ pub fn plain_env() -> Vec<(String, String)> {
     .collect()
 }
 
+/// Read a report the test tool was asked to write.
+///
+/// A missing file is an empty report (the tool died before writing it; the exit status still speaks).
+/// Any other failure is an error: an unreadable report must never be taken for "zero tests ran".
+// frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+fn read_report(path: &Path) -> Result<String> {
+    match std::fs::read_to_string(path) {
+        Ok(text) => Ok(text),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(e) => Err(EvidenceError::io(path, e)),
+    }
+}
+
 fn exit_of(status: Outcome) -> (Option<i32>, bool) {
     match status {
         Outcome::Exited(c) => (Some(c), true),
@@ -717,13 +730,14 @@ pub fn run_pytest(
     ]);
     full.extend(args.iter().cloned());
     let out = runner.run(&spec(launcher.program, full, cwd, timeout));
-    let xml = std::fs::read_to_string(&junit).unwrap_or_default();
+    let xml = read_report(&junit);
     if junit.exists()
         && let Err(e) = std::fs::remove_file(&junit)
     {
         tracing::warn!(path = %Shown::of(&junit), error = %e, "could not remove the junit file");
     }
     let out = out?;
+    let xml = xml?;
     let prefix = rootdir_prefix(&out.stdout, cwd);
     let mut seen = parse_junit_under(&xml, &prefix);
     demote_xpass(&mut seen, &out.stdout, &prefix);
@@ -1011,13 +1025,14 @@ pub fn run_js_tests(runner: &Runner, job: &JsRun<'_>) -> Result<Capture> {
         run_spec.env.push(("PATH".to_owned(), path_var));
     }
     let out = runner.run(&run_spec);
-    let json = std::fs::read_to_string(&report).unwrap_or_default();
+    let json = read_report(&report);
     if report.exists()
         && let Err(e) = std::fs::remove_file(&report)
     {
         tracing::warn!(path = %Shown::of(&report), error = %e, "could not remove the JSON report");
     }
     let out = out?;
+    let json = json?;
     let seen = parse_js_json(&json, &cwd, member);
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);
@@ -1624,11 +1639,12 @@ pub fn run_dotnet(runner: &Runner, job: &DotnetRun<'_>) -> Result<Capture> {
         full.extend(["--filter".to_owned(), dotnet_filter(&ids)]);
     }
     let out = runner.run(&spec(program, full, cwd, timeout));
-    let xml = std::fs::read_to_string(results.join(TRX_FILE)).unwrap_or_default();
+    let xml = read_report(&results.join(TRX_FILE));
     if let Err(e) = std::fs::remove_dir_all(&results) {
         tracing::warn!(path = %Shown::of(&results), error = %e, "could not remove the results directory");
     }
     let out = out?;
+    let xml = xml?;
     let trx = parse_trx(&xml);
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);
@@ -2088,7 +2104,7 @@ pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> 
         job.run.project,
         timeout,
     ));
-    let xml = std::fs::read_to_string(&file).unwrap_or_default();
+    let xml = read_report(&file);
     if let Err(e) = std::fs::remove_dir_all(&results) {
         tracing::warn!(path = %Shown::of(&results), error = %e, "could not remove the results directory");
     }
@@ -2098,6 +2114,7 @@ pub fn run_unity(runner: &Runner, job: &UnityTestRun<'_>, timeout: Duration) -> 
     if let Some(refusal) = unity_license_refusal(found.version.as_deref(), &transcript) {
         return Err(refusal);
     }
+    let xml = xml?;
     let nunit = parse_nunit(&xml);
     if !nunit.summary.is_empty() {
         transcript.push_str("\n-- nunit results --\n");
@@ -2457,6 +2474,26 @@ fn refuse_empty(cap: &Capture, empty: bool, what: &str, reference: &str) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // frob:tests crates/frob-evidence/src/provider.rs::read_report
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn an_unreadable_report_is_an_error_and_an_absent_one_is_empty() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        assert_eq!(
+            read_report(&dir.path().join("gone.xml")).expect("absent"),
+            ""
+        );
+        let good = dir.path().join("good.xml");
+        std::fs::write(&good, "<testsuite/>").expect("write");
+        assert_eq!(read_report(&good).expect("read"), "<testsuite/>");
+        // A directory, and a file that is not UTF-8, both exist yet cannot be read as text.
+        let err = read_report(dir.path()).expect_err("a directory is not a report");
+        assert!(matches!(err, EvidenceError::Io { .. }), "{err}");
+        let binary = dir.path().join("bin.xml");
+        std::fs::write(&binary, [0xff, 0xfe]).expect("write");
+        assert!(read_report(&binary).is_err(), "not UTF-8 is not zero tests");
+    }
 
     // frob:ticket 01M3DG64CNAZ8K50HQ046VKHER
     fn control_cap(tests: &[&str], transcript: &str) -> Capture {
