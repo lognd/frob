@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T04:39:52Z"
+digest = "b5d6203cf42336a695e4b54bf2b2d473403300ee35560c68cdb5dd0e4acaf08c"
+exit_code = 0
+head = "b565ecb4cee040196d003d1513ea02793c03327f"
+inline = '''
+   Compiling gob-text v0.532.0 (<worktree>\crates\gob-text)
+    Finished `test` profile [unoptimized] target(s) in 0.86s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c999edc8-9654-4686-aeb2-05688bd42839 with nextest profile: default
+    Starting 2 tests across 3 binaries (24 tests skipped)
+        PASS [   0.010s] gob-text::shared_citation remap_and_doc006_call_the_shared_parser
+        PASS [   0.418s] gob-text::shared_citation no_crate_but_gob_text_defines_a_citation_scanner
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.419s] 2 tests run: 2 passed, 24 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-text -E test(remap_and_doc006_call_the_shared_parser)|test(no_crate_but_gob_text_defines_a_citation_scanner)"
+size = 706
+status = "measured"
+test_count = 2
+tests_digest = "cb0cbdef0521a2f824b12a978d74bc5e75e59e42ac5fc2262bc9d98a12de1812"
+at = "2026-11-20T04:39:52Z"
+actor = "lognd"
+rev = 1
