@@ -1,0 +1,27 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T03:21:12Z"
+digest = "d31168cdab47290d1b5c532e239762f29f1672003d386158bb216a584dca7ec2"
+exit_code = 0
+head = "503aac0f758b1d9967eda885f831a11731dc9f19"
+inline = '''
+   Compiling gob-rules v0.532.0 (<worktree>\crates\gob-rules)
+    Finished `test` profile [unoptimized] target(s) in 3.72s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 076c22c5-481e-41b0-b4ef-9d153b88841b with nextest profile: default
+    Starting 2 tests across 2 binaries (108 tests skipped)
+        PASS [   0.013s] gob-rules indexgen::tests::a_large_catalog_binds_through_chunked_parts
+        PASS [   0.017s] gob-rules indexgen::tests::render_lists_mods_metas_bind_and_the_freshness_test
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.018s] 2 tests run: 2 passed, 108 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-rules -E test(render_lists_mods_metas_bind_and_the_freshness_test)|test(a_large_catalog_binds_through_chunked_parts)"
+size = 719
+status = "measured"
+test_count = 2
+tests_digest = "0c4ab28c489d6e65b3c147a8afbf342ada5e920fd66d13d9ecdac3472bfbb0db"
+at = "2026-11-20T03:21:12Z"
+actor = "lognd"
+rev = 1
