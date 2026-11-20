@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-20T18:23:22Z"
-updated = "2026-11-20T18:23:22Z"
+updated = "2026-11-20T21:01:50Z"
 scope = ["docs/**", "changelog.d/**"]
 
 [[acceptance]]
