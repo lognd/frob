@@ -1,0 +1,39 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T23:05:22Z"
+digest = "8439a7a391cfbf5d82e4adfd15fdfa105d6fa465312f533cb2a8f3fce11d9fde"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+   Compiling regex-automata v0.4.18
+   Compiling syn v2.0.119
+   Compiling serde_json v1.0.151
+   Compiling windows-sys v0.61.2
+   Compiling tracing-attributes v0.1.31
+   Compiling tracing v0.1.44
+   Compiling tracing-serde v0.2.0
+   Compiling nu-ansi-term v0.50.3
+   Compiling matchers v0.2.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling regex v1.13.1
+   Compiling gob-log v0.532.0 (<worktree>\crates\gob-log)
+    Finished `test` profile [unoptimized] target(s) in 10.02s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID fd469928-8f4e-4cd2-8fd5-bb206f8914ba with nextest profile: default
+    Starting 3 tests across 1 binary (13 tests skipped)
+        PASS [   0.034s] gob-log redact::tests::key_and_credential_names_are_masked
+        PASS [   0.038s] gob-log redact::tests::colon_and_json_forms_are_masked
+        PASS [   0.041s] gob-log redact::tests::pem_blocks_are_masked
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.042s] 3 tests run: 3 passed, 13 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-log -E test(key_and_credential_names_are_masked)|test(colon_and_json_forms_are_masked)|test(pem_blocks_are_masked)"
+size = 1107
+status = "measured"
+test_count = 3
+tests_digest = "fa16d9bad67b936b738c59a0a22fceb499b36df93be9599fa0ee746808160aeb"
+at = "2026-11-20T23:05:22Z"
+actor = "lognd"
+rev = 1

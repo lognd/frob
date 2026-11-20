@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-20T18:23:23Z"
-updated = "2026-11-20T18:23:23Z"
+updated = "2026-11-20T23:05:22Z"
 scope = ["crates/frob-evidence/**", "crates/crunk-gallery/**"]
 
 [[acceptance]]
 text = "Given an evidence command that prints its environment, when its record is stored, then secret-shaped values (KEY, TOKEN, SECRET, PASSWORD, CREDENTIAL, key: value forms, PEM blocks) are redacted and the child does not inherit the full environment"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a ledger dir: URI with .. or an absolute or drive path, or a non-regular file, when fetched, then it is refused and reads are size-capped; given a crunk.toml command renderer or an artifact name like C:x, then it gets the trust notice, a relative cwd, and is refused respectively"
