@@ -21,12 +21,6 @@ fn options() -> CheckOptions {
     CheckOptions {
         skip_telemetry: true,
         skip_tools: false,
-        only: [
-            "TOOL", "LINT", "DEAD", "ERR", "CONC", "TYPING", "A11Y", "REACT", "UNITY", "SPELL",
-            "LOGIC", "NEAT", "TESTQ",
-        ]
-        .map(str::to_owned)
-        .to_vec(),
         ..CheckOptions::default()
     }
 }
