@@ -699,3 +699,31 @@ fn only_panic_and_diverge_break_totality() {
     assert!(EffectAtom::breaks_totality(&EffectAtom::Diverge));
     assert!(!EffectAtom::breaks_totality(&EffectAtom::Clock));
 }
+
+// frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+// frob:tests crates/gob-directives/src/scan.rs::Scanner
+#[test]
+fn a_continued_directive_parses_the_same_as_the_unfolded_one() {
+    let unfolded = common::scan(
+        "src/a.rs",
+        "// frob:tests src/a.rs::f kind=unit\nfn f() {}\n",
+    );
+    assert!(unfolded.findings.is_empty(), "{:?}", unfolded.findings);
+    // A break inside a positional argument and inside a value (a verb is never split: the first line must read as a directive).
+    for folded in [
+        "// frob:tests src/a\\\n// .rs::f kind=unit\nfn f() {}\n",
+        "// frob:tests src/a.rs::f kind=un\\\n// it\nfn f() {}\n",
+    ] {
+        let r = common::scan("src/a.rs", folded);
+        assert!(r.findings.is_empty(), "{folded:?}: {:?}", r.findings);
+        let (a, b) = (by(&unfolded, "tests"), by(&r, "tests"));
+        assert_eq!(a.verb, b.verb, "{folded:?}");
+        assert_eq!(a.bound, b.bound, "{folded:?}");
+        let args = |d: &gob_directives::DirectiveRecord| {
+            Tests::parse_args(&d.args)
+                .map(|t| (t.kind, format!("{:?}", t.target)))
+                .unwrap()
+        };
+        assert_eq!(args(a), args(b), "{folded:?}");
+    }
+}
