@@ -94,3 +94,20 @@ fn row_anchor_rules() {
     let fenced = "```\n| id |\n|---|\n| R-1 |\n```\n";
     assert!(row_anchors(fenced, &[]).is_empty());
 }
+
+// frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+// frob:tests crates/grimble-bind/src/anchors.rs::row_anchors
+#[test]
+fn a_four_backtick_fence_is_not_closed_by_a_three_backtick_line() {
+    let t = "````\n```\n| id |\n|---|\n| R-1 |\n````\n\n| id |\n|---|\n| R-2 |\n";
+    assert_eq!(row_anchors(t, &[]), vec!["r-2"]);
+}
+
+// frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+// frob:tests crates/grimble-bind/src/anchors.rs::row_anchors
+#[test]
+fn a_fence_closes_only_on_a_long_enough_bare_run() {
+    // A closer may be longer than the opener, never shorter; text after the fence characters keeps it open.
+    let t = "```\n```not a closer\n| id |\n|---|\n| R-1 |\n`````\n| id |\n|---|\n| R-2 |\n";
+    assert_eq!(row_anchors(t, &[]), vec!["r-2"]);
+}

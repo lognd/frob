@@ -17,19 +17,21 @@ pub const ROW_KIND: &str = "table-row";
 pub fn row_anchors(text: &str, taken: &[String]) -> Vec<String> {
     let mut used: HashMap<String, usize> = taken.iter().map(|t| (t.clone(), 1)).collect();
     let mut out = Vec::new();
-    let mut fence: Option<&str> = None;
+    // The open fence: its character and run length (a closer is at least as long, nothing else on the line).
+    let mut fence: Option<(char, usize)> = None;
     let mut prev: Option<&str> = None;
     let mut in_body = false;
     for line in text.lines() {
         let t = line.trim_start();
-        if let Some(open) = fence {
-            if t.starts_with(open) {
+        if let Some((ch, len)) = fence {
+            let run = t.chars().take_while(|c| *c == ch).count();
+            if run >= len && t[run * ch.len_utf8()..].trim().is_empty() {
                 fence = None;
             }
             continue;
         }
-        if let Some(mark) = ["```", "~~~"].into_iter().find(|m| t.starts_with(m)) {
-            fence = Some(mark);
+        if let Some(open) = fence_open(t) {
+            fence = Some(open);
             in_body = false;
             prev = None;
             continue;
@@ -50,6 +52,13 @@ pub fn row_anchors(text: &str, taken: &[String]) -> Vec<String> {
     }
     tracing::debug!(rows = out.len(), "table-row anchors scanned");
     out
+}
+
+/// The character and run length of a code fence opening on `t` (three or more backticks or tildes).
+fn fence_open(t: &str) -> Option<(char, usize)> {
+    let ch = t.chars().next().filter(|c| matches!(c, '`' | '~'))?;
+    let run = t.chars().take_while(|c| *c == ch).count();
+    (run >= 3).then_some((ch, run))
 }
 
 fn cells(line: &str) -> Vec<&str> {
