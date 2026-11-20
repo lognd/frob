@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Bound tests added for Env.with, get, is_set_nonempty and path; nextest evidence passed"
+at = "2026-11-20T07:14:12Z"
+actor = "lognd"
+rev = 1

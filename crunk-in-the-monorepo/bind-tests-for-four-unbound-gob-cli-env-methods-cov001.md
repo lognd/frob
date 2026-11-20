@@ -2,13 +2,14 @@
 id = "01M7TJ8WDCE6AZPP9AGQRV4RWY"
 title = "Bind tests for four unbound gob-cli Env methods (COV001)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T18:49:28Z"
-updated = "2026-11-20T07:05:48Z"
+updated = "2026-11-20T07:14:12Z"
 idempotency_key = "cov001-gob-cli-env"
 labels = ["no-story", "good-first"]
 scope = ["crates/gob-cli/tests/**"]
