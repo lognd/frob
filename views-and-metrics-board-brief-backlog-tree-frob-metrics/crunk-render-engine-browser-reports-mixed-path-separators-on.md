@@ -5,10 +5,9 @@ type = "bug"
 category = "todo"
 priority = "medium"
 points = 1
-parent = "01M48Q294B33TB7C0GSATZRGJB"
 reporter = "lognd"
 created = "2026-11-20T14:46:39Z"
-updated = "2026-11-20T14:46:39Z"
+updated = "2026-11-20T14:46:52Z"
 
 [[acceptance]]
 text = "Given a Windows run of crunk render --engine browser, when the JSON data lists each cell's png, boxes and path, then every reported path uses only forward slashes"
