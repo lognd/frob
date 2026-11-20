@@ -2,13 +2,14 @@
 id = "01M7TCKMBT95HKXRACWVH5VVDY"
 title = "Bind tests for four unbound crunk public methods (COV001)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-11-19T17:10:29Z"
-updated = "2026-11-20T07:01:55Z"
+updated = "2026-11-20T07:14:11Z"
 idempotency_key = "cov001-remaining-eight"
 labels = ["no-story", "good-first"]
 scope = ["crates/crunk-rules/tests/**", "crates/crunk-spec/tests/**", "crates/crunk/tests/**"]
