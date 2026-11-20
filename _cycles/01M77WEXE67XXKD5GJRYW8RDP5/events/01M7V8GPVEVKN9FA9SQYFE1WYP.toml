@@ -1,0 +1,6 @@
+kind = "cycle"
+op = "retro"
+text = "Closed the end-to-end acceptance epics (de-slop, design-cycle, game UI) and fixed CI repeatedly (PM031/PM032, UX owner and snapshots, GEN001, frob check errors). Open: browser render engine needs a live Playwright run, the release cut needs approval, profile budget evidence and the B1 perf gap need decisions."
+at = "2026-11-20T01:18:06Z"
+actor = "lognd"
+rev = 1
