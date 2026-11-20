@@ -4,7 +4,7 @@ start = "2026-11-20"
 end = "2026-11-26"
 goal = "push toward 0.533.0 and grimble language"
 state = "planned"
-tickets = ["01M43AVMZGQ4JYB8QYWAYA6294", "01M48Q2D1S4AC9RQE8HPNPTY6C"]
+tickets = ["01M43AVMZGQ4JYB8QYWAYA6294", "01M48Q2D1S4AC9RQE8HPNPTY6C", "01M4YDMAEVVMXZG161VGAT7S84"]
 created = "2026-11-20T01:17:59Z"
 updated = "2026-11-20T01:18:06Z"
 +++
