@@ -10,6 +10,7 @@
 // frob:ticket 01M4M52WKHGXADHPQ08J1AS8BJ
 mod ensure;
 mod gitdir;
+mod node_modules;
 mod path;
 
 pub use ensure::{
@@ -18,6 +19,7 @@ pub use ensure::{
 };
 
 pub use gitdir::git_common_dir;
+pub use node_modules::node_modules_dirs;
 pub use path::{
     Style, canonical, has_dot_component, path_has_dot_component, path_strictly_inside,
     simplify_verbatim, strictly_inside,

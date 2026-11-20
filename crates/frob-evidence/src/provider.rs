@@ -874,14 +874,11 @@ pub fn parse_js_json(json: &str, cwd: &Path, member: &str) -> Parsed {
 // frob:ticket 01M48NCJSRM2PV84779RNQ92ZK
 /// The runner binary `name`: `node_modules/.bin/<name>` in `cwd` or an ancestor up to `root`, else `name` on `PATH`.
 pub(crate) fn find_js_runner(root: &Path, cwd: &Path, name: &str) -> Option<PathBuf> {
-    for dir in cwd.ancestors() {
-        let bin = dir.join("node_modules").join(".bin");
+    for modules in gob_fs::node_modules_dirs(root, cwd) {
+        let bin = modules.join(".bin");
         let candidates = [bin.join(name), bin.join(format!("{name}.cmd"))];
         if let Some(hit) = candidates.into_iter().find(|c| c.is_file()) {
             return Some(hit);
-        }
-        if dir == root {
-            break;
         }
     }
     which::which(name).ok()
@@ -898,16 +895,11 @@ pub fn js_bin_path(
     cwd: &Path,
     existing: Option<std::ffi::OsString>,
 ) -> Option<String> {
-    let mut dirs: Vec<PathBuf> = Vec::new();
-    for dir in cwd.ancestors() {
-        let bin = dir.join("node_modules").join(".bin");
-        if bin.is_dir() {
-            dirs.push(bin);
-        }
-        if dir == root {
-            break;
-        }
-    }
+    let mut dirs: Vec<PathBuf> = gob_fs::node_modules_dirs(root, cwd)
+        .into_iter()
+        .map(|modules| modules.join(".bin"))
+        .filter(|bin| bin.is_dir())
+        .collect();
     if dirs.is_empty() {
         return None;
     }

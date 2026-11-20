@@ -169,16 +169,10 @@ fn declares(root: &Path, runner: &str) -> bool {
 
 /// The first `node_modules/<package>` directory from `cwd` up to `root`.
 fn installed_package(root: &Path, cwd: &Path, package: &str) -> Option<PathBuf> {
-    for dir in cwd.ancestors() {
-        let hit = dir.join("node_modules").join(package);
-        if hit.is_dir() {
-            return Some(hit);
-        }
-        if dir == root {
-            break;
-        }
-    }
-    None
+    gob_fs::node_modules_dirs(root, cwd)
+        .into_iter()
+        .map(|modules| modules.join(package))
+        .find(|hit| hit.is_dir())
 }
 
 /// The report path of `out_dir` as text.
