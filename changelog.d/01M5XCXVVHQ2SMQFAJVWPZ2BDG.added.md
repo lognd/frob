@@ -1,0 +1,1 @@
+The render corpus now runs through both engines in the optional playwright job and reports parity, VIS001 and axe findings in one report, with any tier that could not run listed as not run and the job skipped with a notice.
