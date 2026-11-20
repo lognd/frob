@@ -2,12 +2,13 @@
 id = "01M7X35VPCNR2WS06MG6J290GY"
 title = "Audit 2026-11-20 correctness batch: land lock liveness, post-commit errors, CAS give-up, unreadable reports, merge driver"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-20T18:23:24Z"
-updated = "2026-11-20T23:07:05Z"
+updated = "2026-11-20T23:07:13Z"
 scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
