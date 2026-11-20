@@ -1,0 +1,15 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-20T21:01:59Z"
+digest = "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+exit_code = 0
+head = "853613629d9bbaaaeb25b0fb4959f62a45b6cabb"
+inline = ""
+passed = true
+provider = "command"
+ref = "git grep -q --all-match -e E-PLAYWRIGHT-MISSING -e E-GALLERY-NOT-BUILT -e 'npx playwright install' -e 'features gallery' -e axe -- docs/guides/crunk.md"
+size = 0
+status = "measured"
+at = "2026-11-20T21:01:59Z"
+actor = "lognd"
+rev = 1
