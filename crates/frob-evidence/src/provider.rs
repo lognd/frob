@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use frob_ledger::model::Stamp;
-use gob_exec::{Outcome, Program, Runner, Spec};
+use gob_exec::{EnvPolicy, Outcome, Program, Runner, Spec};
 
 use crate::attestation::escape_non_ascii;
 use crate::error::{EvidenceError, Result};
@@ -1044,6 +1044,37 @@ pub fn js_matched_no_tests(cap: &Capture) -> bool {
             || cap.transcript.contains("No tests found"))
 }
 
+/// Environment names an allowlisted `command` tool may inherit on top of the gob-exec baseline:
+/// locale, temp dir and the toolchain locations. Everything else, secrets above all, stays behind;
+/// secret-shaped names are refused even when listed here.
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+const COMMAND_ENV: &[&str] = &[
+    "LANG",
+    "LC_ALL",
+    "TERM",
+    "TMPDIR",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "PROGRAMFILES",
+    "PROGRAMDATA",
+    "COMSPEC",
+    "USERNAME",
+    "CARGO_HOME",
+    "RUSTUP_HOME",
+    "RUSTUP_TOOLCHAIN",
+    "CARGO_TARGET_DIR",
+    "CARGO_BUILD_JOBS",
+    "CARGO_INCREMENTAL",
+    "CARGO_PROFILE_DEV_DEBUG",
+    "RUSTFLAGS",
+    "NODE_PATH",
+    "XDG_CACHE_HOME",
+    "XDG_CONFIG_HOME",
+    "XDG_DATA_HOME",
+];
+
 /// Run an allowlisted tool (`argv[0]` must be in `allowed`) and capture exit code and transcript.
 ///
 /// # Errors
@@ -1075,7 +1106,10 @@ pub fn run_command(
         tracing::warn!(tool, "command evidence refused: tool not allowlisted");
         return Err(EvidenceError::ToolNotAllowed { tool: tool.clone() });
     };
-    let out = runner.run(&spec(program, rest.to_vec(), cwd, timeout))?;
+    let out = runner.run_with_env(
+        &spec(program, rest.to_vec(), cwd, timeout),
+        &EnvPolicy::scrubbed(COMMAND_ENV.iter().copied()),
+    )?;
     let (exit_code, measured) = exit_of(out.status);
     let mut transcript = out.stdout;
     transcript.push_str(&out.stderr);

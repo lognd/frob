@@ -831,7 +831,7 @@ attestation be the pass verdict of a `manual` `verified_by` row. Like the
 index, read from the entity's `plan.manual_rows`) and is `not-run`, never
 accepted on shape alone, when grimble is absent or predates that key. The overlay (grmb-spec 17.3) reads a passed attestation carrying the
 anchor on a live ticket that implements the entity or a design ancestor as
-that row's verdict; otherwise the row is `not-run`. Evidence and
+that row's verdict; otherwise the row is `not-run`. A presence check on a record (an attestation or a file) shows that it exists, not that its claim is true; the guard cannot tell a truthful statement from a false one. Evidence and
 attestation records already store the `body_digest` of the design entity
 a `frob:ticket` directive ties to the ticket (section 6; grmb-spec 12.8
 WINDOW, PM048, D207); a record without it is outside every WINDOW and

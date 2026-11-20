@@ -196,6 +196,34 @@ fn transcripts_over_the_threshold_go_to_the_dir_store() {
     assert_eq!(st.fetch(&uri), Fetched::Found(big.into_bytes()));
 }
 
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+#[test]
+fn dir_uris_outside_the_store_or_not_regular_files_are_refused() {
+    // frob:tests crates/frob-evidence/src/store.rs::BlobStore.fetch
+    let dir = repo("base");
+    let st = store(dir.path(), 10);
+    let outside = dir.path().join("outside.txt");
+    std::fs::write(&outside, "secret").expect("write");
+    let abs = format!("dir:{}", Shown::of(&outside));
+    let store_dir = dir.path().join(".git/frob/artifacts");
+    std::fs::create_dir_all(store_dir.join("adir")).expect("mkdir");
+    let big = std::fs::File::create(store_dir.join("big")).expect("create");
+    big.set_len(65 * 1024 * 1024).expect("len");
+    for uri in [
+        abs.as_str(),
+        "dir:.git/frob/artifacts/../../outside.txt",
+        "dir:../outside.txt",
+        "dir:C:/Windows/win.ini",
+        "dir:.git/frob/artifacts/adir",
+        "dir:.git/frob/artifacts/big",
+    ] {
+        assert!(
+            matches!(st.fetch(uri), Fetched::Unmeasured { .. }),
+            "{uri} must be refused"
+        );
+    }
+}
+
 #[test]
 fn a_missing_blob_is_unmeasured_not_failed() {
     let dir = repo("base");
@@ -260,6 +288,39 @@ fn command_tools_outside_the_allowlist_are_refused() {
         Workspace::open(dir.path(), std::sync::Arc::new(gob_time::SystemClock)).expect("workspace");
     let err = provider::capture(&ws, Provider::Command, "rm -rf /", &[]).expect_err("refused");
     assert!(err.to_string().starts_with("E-EVIDENCE-TOOL"), "{err}");
+}
+
+// frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+#[test]
+fn a_command_tool_does_not_inherit_the_parent_environment() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_command
+    let dir = repo("base");
+    let (tool, argv): (&str, Vec<String>) = if cfg!(windows) {
+        ("cmd", vec!["cmd".into(), "/c".into(), "set".into()])
+    } else {
+        ("env", vec!["env".into()])
+    };
+    // cargo always sets CARGO_MANIFEST_DIR for a test; it is not on the command allowlist.
+    assert!(std::env::var_os("CARGO_MANIFEST_DIR").is_some());
+    let runner = gob_exec::Runner::new(gob_exec::Limits::default());
+    let cap = provider::run_command(
+        &runner,
+        &[tool.to_owned()],
+        dir.path(),
+        &argv,
+        std::time::Duration::from_secs(60),
+    )
+    .expect("run");
+    assert!(
+        !cap.transcript.contains("CARGO_MANIFEST_DIR"),
+        "{}",
+        cap.transcript
+    );
+    assert!(
+        cap.transcript.to_ascii_uppercase().contains("PATH="),
+        "{}",
+        cap.transcript
+    );
 }
 
 fn cli() -> gob_cli::Cli {

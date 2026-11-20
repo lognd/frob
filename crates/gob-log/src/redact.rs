@@ -8,6 +8,11 @@ use regex::Regex;
 /// Marker substituted for every masked secret.
 pub const REDACTED: &str = "[REDACTED]";
 
+/// Name fragments (case-insensitive substring) that mark a variable or field name as carrying a
+/// secret. The one list: `gob_exec::is_secret_shaped` and the `KEY=VALUE` masking both use it.
+pub const SECRET_NAME_FRAGMENTS: &[&str] =
+    &["TOKEN", "SECRET", "KEY", "PASSWORD", "PASSWD", "CREDENTIAL"];
+
 /// One masking rule: a pattern and its replacement template.
 struct Rule {
     re: Regex,
@@ -22,7 +27,13 @@ fn rule(pattern: &str, replacement: &str) -> Rule {
 }
 
 static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
+    let names = SECRET_NAME_FRAGMENTS.join("|");
     vec![
+        // PEM private key blocks (an unterminated block is masked to the end of the text).
+        rule(
+            r"(?s)-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|\z)",
+            "{M}",
+        ),
         // Authorization bearer tokens.
         rule(r"(?i)(\bbearer\s+)[A-Za-z0-9._~+/=-]+", "${1}{M}"),
         // AWS access key ids.
@@ -36,7 +47,16 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
         rule(r"([A-Za-z][A-Za-z0-9+.-]*://)[^/\s@]+@", "${1}{M}@"),
         // KEY=VALUE where KEY names a secret.
         rule(
-            r#"(?i)(\b[A-Za-z0-9_.-]*(?:TOKEN|SECRET|PASSWORD|PASSWD)[A-Za-z0-9_.-]*[ \t]*=[ \t]*)("[^"]*"|'[^']*'|[^\s"']+)"#,
+            &format!(
+                r#"(?i)(\b[A-Za-z0-9_.-]*(?:{names})[A-Za-z0-9_.-]*[ \t]*=[ \t]*)("[^"]*"|'[^']*'|[^\s"']+)"#
+            ),
+            "${1}{M}",
+        ),
+        // `key: value` and JSON `"api_key": "value"` where the key names a secret.
+        rule(
+            &format!(
+                r#"(?i)(\b[A-Za-z0-9_.-]*(?:{names})[A-Za-z0-9_.-]*["']?[ \t]*:[ \t]*)("[^"]*"|'[^']*'|[^\s"',}}\]]+)"#
+            ),
             "${1}{M}",
         ),
     ]
@@ -45,8 +65,8 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
 /// Masks secret-shaped substrings in `text`, leaving all other bytes identical.
 ///
 /// Covers bearer tokens, AWS access keys, GitHub tokens, URL userinfo, and
-/// `KEY=VALUE` pairs whose key contains TOKEN, SECRET, PASSWORD or PASSWD
-/// (case-insensitive). Borrows when nothing matched.
+/// PEM private key blocks, and `KEY=VALUE`, `key: value` and JSON `"key": "value"` pairs whose key
+/// contains one of [`SECRET_NAME_FRAGMENTS`] (case-insensitive). Borrows when nothing matched.
 pub fn redact(text: &str) -> Cow<'_, str> {
     let mut out = Cow::Borrowed(text);
     for r in RULES.iter() {
@@ -100,6 +120,48 @@ mod tests {
         assert_eq!(redact("MY_SECRET=\"a b\""), "MY_SECRET=[REDACTED]");
         assert_eq!(redact("PASSWD=x"), "PASSWD=[REDACTED]");
         assert_eq!(redact("PATH=/usr/bin"), "PATH=/usr/bin");
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn key_and_credential_names_are_masked() {
+        assert_eq!(redact("API_KEY=abc"), "API_KEY=[REDACTED]");
+        assert_eq!(redact("AWS_CREDENTIAL=abc"), "AWS_CREDENTIAL=[REDACTED]");
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn colon_and_json_forms_are_masked() {
+        assert_eq!(redact("api_key: abc123"), "api_key: [REDACTED]");
+        assert_eq!(
+            redact(r#"{"api_key": "x y", "name": "n"}"#),
+            r#"{"api_key": [REDACTED], "name": "n"}"#
+        );
+        assert_eq!(redact("name: bob"), "name: bob");
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn pem_blocks_are_masked() {
+        let pem = "a
+-----BEGIN RSA PRIVATE KEY-----
+MIIB
+abc=
+-----END RSA PRIVATE KEY-----
+b";
+        assert_eq!(
+            redact(pem),
+            "a
+[REDACTED]
+b"
+        );
+        assert_eq!(
+            redact(
+                "x -----BEGIN PRIVATE KEY-----
+MIIB"
+            ),
+            "x [REDACTED]"
+        );
     }
 
     #[test]

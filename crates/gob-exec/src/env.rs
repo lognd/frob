@@ -30,8 +30,9 @@ pub const BASELINE: &[&str] = &[
     "USERPROFILE",
 ];
 
-/// Variable-name fragments that mark a name secret-shaped (case-insensitive substring).
-const SECRET_FRAGMENTS: &[&str] = &["TOKEN", "SECRET", "KEY", "PASSWORD", "PASSWD", "CREDENTIAL"];
+// Variable-name fragments that mark a name secret-shaped (case-insensitive substring); the same
+// list the output redactor masks `KEY=VALUE` pairs by.
+use gob_log::SECRET_NAME_FRAGMENTS as SECRET_FRAGMENTS;
 
 /// Variable-name prefixes that mark a name secret-shaped (case-insensitive).
 const SECRET_PREFIXES: &[&str] = &[

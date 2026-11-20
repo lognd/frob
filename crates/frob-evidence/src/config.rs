@@ -13,7 +13,7 @@ pub const DEFAULT_STORE: &str = "dir:.git/frob/artifacts";
 #[derive(Debug, Clone, ConfigTable)]
 #[config(table = "evidence", materialize)]
 pub struct EvidenceTable {
-    /// Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too.
+    /// Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too. The list matches program names only, never arguments: `python3`, `git` and `cargo` can run arbitrary code through flags, so list only tools you would let any ticket author run. The child gets a scrubbed environment and its transcript is redacted.
     #[config(default = vec!["cargo".to_owned(), "git".to_owned(), "pytest".to_owned(), "vitest".to_owned(), "jest".to_owned(), "dotnet".to_owned()])]
     pub allowed_tools: Vec<String>,
     /// Transcripts up to this many bytes are stored inline in the event file.

@@ -1061,7 +1061,7 @@
             "jest",
             "dotnet"
           ],
-          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too.",
+          "description": "Programs the `command` provider may run (the first word of the command must be listed); the `pytest`, `vitest`, `jest` and `dotnet` providers need their own name listed too. The list matches program names only, never arguments: `python3`, `git` and `cargo` can run arbitrary code through flags, so list only tools you would let any ticket author run. The child gets a scrubbed environment and its transcript is redacted.",
           "items": {
             "type": "string"
           },

@@ -5,7 +5,7 @@
 //! `.git/frob/artifacts` by default (outside `.frob/`, non-authoritative), and
 //! `https://` URIs are recorded but never downloaded or uploaded.
 
-use gob_path::Shown;
+use gob_path::{RelPath, Shown};
 use std::path::{Path, PathBuf};
 
 use gob_git::Repo;
@@ -13,6 +13,21 @@ use gob_git::Repo;
 use crate::config::EvidenceTable;
 use crate::error::{EvidenceError, Result};
 use crate::record::digest_hex;
+
+/// Largest blob `fetch` reads; a bigger file is unmeasured, not loaded.
+const MAX_BLOB_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Read a regular file of at most [`MAX_BLOB_BYTES`].
+fn read_capped(path: &Path) -> std::io::Result<Vec<u8>> {
+    let meta = std::fs::metadata(path)?;
+    if !meta.is_file() {
+        return Err(std::io::Error::other("not a regular file"));
+    }
+    if meta.len() > MAX_BLOB_BYTES {
+        return Err(std::io::Error::other("blob exceeds the read cap"));
+    }
+    std::fs::read(path)
+}
 
 /// Store schemes of later milestones, rejected with a clear message.
 const UNSUPPORTED: &[&str] = &["gh-artifact:", "gh-release:", "s3:", "gcs:"];
@@ -172,6 +187,24 @@ impl BlobStore {
         Ok(format!("dir:{rel}/{hex}"))
     }
 
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    /// The host path of the blob a `dir:` URI names, only when it is `<store dir>/<one file name>`.
+    ///
+    /// A ledger event is untrusted input: an absolute path, a drive prefix, a `..` segment or a
+    /// different directory is refused rather than read.
+    fn confine(&self, rel: &str) -> std::result::Result<PathBuf, &'static str> {
+        let Target::Dir { rel: store } = &self.target else {
+            return Err("no dir: store is configured");
+        };
+        let (parent, name) = rel
+            .rsplit_once('/')
+            .ok_or("blob path is not inside the store")?;
+        if parent != store || RelPath::new(name).is_err() {
+            return Err("blob path is not inside the store");
+        }
+        Ok(self.resolve(rel))
+    }
+
     /// Fetch the blob at `uri`; a missing blob (or an https URI) is `Unmeasured`, never an error.
     pub fn fetch(&self, uri: &str) -> Fetched {
         let Some(rel) = uri.strip_prefix("dir:") else {
@@ -186,8 +219,17 @@ impl BlobStore {
                 reason: reason.to_owned(),
             };
         };
-        let path = self.resolve(rel);
-        match std::fs::read(&path) {
+        let path = match self.confine(rel) {
+            Ok(p) => p,
+            Err(reason) => {
+                tracing::warn!(uri, reason, "dir: blob URI refused");
+                return Fetched::Unmeasured {
+                    uri: uri.to_owned(),
+                    reason: reason.to_owned(),
+                };
+            }
+        };
+        match read_capped(&path) {
             Ok(bytes) => Fetched::Found(bytes),
             Err(e) => {
                 tracing::info!(uri, path = %Shown::of(&path), error = %e, "blob missing; evidence is unmeasured");

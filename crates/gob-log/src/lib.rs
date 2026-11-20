@@ -13,4 +13,4 @@ mod redact;
 pub mod testing;
 
 pub use init::{InitError, LOG_ENV, init};
-pub use redact::{REDACTED, redact};
+pub use redact::{REDACTED, SECRET_NAME_FRAGMENTS, redact};
