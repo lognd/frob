@@ -1,0 +1,43 @@
+# Phase 5 e2e corpus: two screens through the solver and the browser engine.
+#   clean  - boxes only; both engines agree, it matches its design image and axe finds nothing.
+#   broken - a transformed box (the solver ignores `transform`, so parity differs), a low-contrast
+#            heading and an image with no alt text (axe), and a block drawn in the wrong color (VIS001).
+
+[project]
+css_root = "."
+tokens_file = "tokens.css"
+root_font_size = 16
+
+[palette]
+ink = "#1a1a1a"
+
+[scales]
+spacing = [0, 8]
+font_sizes = [16]
+
+[typography]
+families = ["sans-serif"]
+weights = [400]
+
+[org]
+buckets = ["base"]
+
+[[platform]]
+id = "chromium-desktop"
+renderer = "web"
+engine = "chromium"
+viewport = { width = 320, height = 200 }
+
+[[screen]]
+id = "clean"
+entry = "/clean"
+
+[[screen.states]]
+id = "default"
+
+[[screen]]
+id = "broken"
+entry = "/broken"
+
+[[screen.states]]
+id = "default"

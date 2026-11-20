@@ -7,6 +7,8 @@ mod docs;
 mod doctor_report;
 mod dtcg;
 mod e2e_agent_authoring;
+#[cfg(feature = "gallery")]
+mod e2e_render_tiers;
 mod e2e_tokens_hullbreach;
 mod edit;
 mod export_verb;
