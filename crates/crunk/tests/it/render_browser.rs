@@ -59,6 +59,19 @@ fn file_urls_of_rooted_paths_get_exactly_three_slashes() {
     assert_eq!(file_url(&rooted), "file:///proj");
 }
 
+// frob:tests crates/crunk/src/render_browser.rs::file_url
+#[test]
+fn file_urls_keep_the_home_directory_instead_of_folding_it_into_a_tilde() {
+    let Some(home) = ["USERPROFILE", "HOME"].iter().find_map(std::env::var_os) else {
+        tracing::debug!("no home directory variable set; nothing to fold");
+        return;
+    };
+    let url = file_url(&Path::new(&home).join("proj").join("a.scene.html"));
+    assert!(!url.contains('~'), "a browser cannot open {url}");
+    assert!(url.starts_with("file:///"), "{url}");
+    assert!(url.ends_with("/proj/a.scene.html"), "{url}");
+}
+
 #[cfg(not(feature = "gallery"))]
 // frob:tests crates/crunk/src/render_browser.rs::not_built
 #[test]

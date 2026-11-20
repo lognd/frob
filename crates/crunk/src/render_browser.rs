@@ -86,7 +86,8 @@ pub fn unshared_ids(solved: &[String], measured: &[String]) -> Vec<String> {
 /// The `file://` URL of `path`, with forward slashes and the extra slash a drive letter needs.
 #[must_use]
 pub fn file_url(path: &Path) -> String {
-    let text = gob_path::Shown::of(path).to_string().replace('\\', "/");
+    // Not `Shown`: it folds the home directory into `~`, which a browser cannot open.
+    let text = gob_path::forward_slashes(path);
     if text.starts_with('/') {
         format!("file://{text}")
     } else {
