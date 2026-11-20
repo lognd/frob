@@ -317,6 +317,10 @@ fn nextest_step(require_python: bool) -> Step {
             "--unreferenced",
             "reject",
             "--workspace",
+            // The crunk screen gallery tests (gallery.rs, render_browser.rs, render_solve.rs) sit
+            // behind this opt-in feature; without it they never build in CI (~A758TVD).
+            "--features",
+            "crunk/gallery",
             "--test-runner",
             "nextest",
             "--nextest-profile",
@@ -1450,6 +1454,40 @@ mod tests {
         let text = e.to_string();
         assert!(text.contains("no-such-tool-0g8qf7v"), "{text}");
         assert!(text.contains("sudo apt-get install -y ghost-pkg"), "{text}");
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::summary
+    #[test]
+    fn summary_marks_each_step_and_fails_the_verdict_on_a_failure() {
+        let result = |name, status| StepResult {
+            name,
+            status,
+            elapsed: Duration::from_millis(1500),
+            remote: None,
+        };
+        let (lines, ok) = summary(&[
+            result("fmt", StepStatus::Passed),
+            result("slow", StepStatus::Skipped("linux only".to_owned())),
+        ]);
+        assert!(ok, "{lines:?}");
+        assert!(lines[0].starts_with("ok "), "{lines:?}");
+        assert!(lines[1].contains("skipped") && lines[1].contains("linux only"));
+        assert_eq!(lines.last().unwrap(), "ci: all steps passed");
+        let (lines, ok) = summary(&[result("clippy", StepStatus::Failed("boom".to_owned()))]);
+        assert!(!ok);
+        assert!(lines[0].starts_with("FAILED") && lines[0].contains("boom"));
+        assert_eq!(lines.last().unwrap(), "ci: FAILED");
+    }
+
+    // frob:tests crates/gob-dev/src/ci.rs::GowayRunner.with_retry
+    #[test]
+    fn with_retry_keeps_the_given_policy() {
+        let goway = Program::Tool {
+            name: "goway".to_owned(),
+        };
+        let runner = GowayRunner::with_retry(goway, RemoteOs::Linux, 3, Duration::from_millis(7));
+        assert_eq!(runner.retries, 3);
+        assert_eq!(runner.backoff, Duration::from_millis(7));
     }
 
     // frob:tests crates/gob-dev/src/ci.rs::PENDING_SNAPSHOT_GUARD

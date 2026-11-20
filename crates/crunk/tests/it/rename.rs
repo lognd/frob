@@ -172,22 +172,57 @@ fn rename_dry_run_writes_nothing() {
     assert_eq!(read(p, "crunk.toml"), before);
 }
 
+/// What to lock so the write of `styles/base/a.css` fails: a read-only directory refuses the atomic
+/// temp file on Unix; a read-only file refuses the rename over it on Windows.
+fn lock_target(p: &Path) -> std::path::PathBuf {
+    if cfg!(unix) {
+        p.join("styles/base")
+    } else {
+        p.join("styles/base/a.css")
+    }
+}
+
+/// Lock or unlock `target` (see [`lock_target`]).
+fn set_locked(target: &Path, locked: bool) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = if locked { 0o555 } else { 0o755 };
+        std::fs::set_permissions(target, std::fs::Permissions::from_mode(mode)).unwrap();
+    }
+    #[cfg(not(unix))]
+    {
+        let mut perms = std::fs::metadata(target).unwrap().permissions();
+        #[allow(clippy::permissions_set_readonly_false)]
+        perms.set_readonly(locked);
+        std::fs::set_permissions(target, perms).unwrap();
+    }
+}
+
+/// Whether the lock on `target` is enforced (it is not under root on Unix).
+fn lock_enforced(target: &Path) -> bool {
+    !cfg!(unix) || std::fs::write(target.join("probe"), "").is_err()
+}
+
 // frob:tests crates/crunk/src/rewrite.rs::commit
 // frob:tests crates/crunk/src/rename.rs::Rename
-#[cfg(unix)]
 #[test]
 fn rename_write_failure_leaves_every_file_untouched() {
-    use std::os::unix::fs::PermissionsExt;
     let dir = project();
     let p = dir.path();
-    let css = p.join("styles/base");
-    std::fs::set_permissions(&css, std::fs::Permissions::from_mode(0o555)).unwrap();
-    if std::fs::write(css.join("probe"), "").is_ok() {
-        return; // running as root: permissions are not enforced
-    }
     let before = read(p, "crunk.toml");
+    let target = lock_target(p);
+    set_locked(&target, true);
+    if !lock_enforced(&target) {
+        set_locked(&target, false);
+        // The environment cannot refuse a write (root); say so instead of passing silently.
+        eprintln!(
+            "SKIPPED rename_write_failure_leaves_every_file_untouched: file permissions are not enforced here (running as root)"
+        );
+        return;
+    }
     let (code, out, err) = crunk(p, &["rename", "--color-ink", "--color-text"]);
-    std::fs::set_permissions(&css, std::fs::Permissions::from_mode(0o755)).unwrap();
+    set_locked(&target, false);
     assert_ne!(code, 0, "{out} {err}");
     assert_eq!(read(p, "crunk.toml"), before);
     assert_eq!(read(p, "src/A.tsx"), TSX);

@@ -217,9 +217,14 @@ fn check_flags_and_doctor_fix_repairs() {
 fn the_repository_contains_neither_rule_nor_term() {
     let repo = Repo::new();
     repo.set_rule();
-    let _ = repo.json(&["ticket", "new", "--title", "Clean", "--acceptance", "ok"]);
-    let _ = repo.json(&["doctor"]);
-    let _ = repo.json(&["init"]);
+    for args in [
+        &["ticket", "new", "--title", "Clean", "--acceptance", "ok"][..],
+        &["doctor"][..],
+        &["init"][..],
+    ] {
+        let (status, body) = repo.json(args);
+        assert_eq!(status, 0, "frob {args:?} failed: {body}");
+    }
     let tracked = git(repo.path(), &["ls-files"]);
     assert!(
         !tracked.lines().any(|l| l.ends_with("privacy.toml")),

@@ -13,7 +13,7 @@ fn crunk(dir: &Path, args: &[&str]) -> (i32, String, String) {
 }
 
 #[cfg(not(feature = "gallery"))]
-// frob:tests crates/crunk/src/gallery.rs::GalleryCheck
+// frob:tests crates/crunk/src/gallery.rs::not_built
 #[test]
 fn default_build_says_the_gallery_is_not_built_in_and_how_to_get_it() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -152,10 +152,17 @@ fn spawn_triage(root: &Path, port: u16) -> std::thread::JoinHandle<(i32, String,
 
 /// Poll until the triage server answers `GET /`, and return the page.
 #[cfg(feature = "gallery")]
-fn wait_for_page(port: u16) -> String {
+/// `None` when the server already exited (it lost the port race); panics when it never answers.
+fn wait_for_page(
+    port: u16,
+    server: &std::thread::JoinHandle<(i32, String, String)>,
+) -> Option<String> {
     for _ in 0..100 {
         if let Some(page) = http(port, "GET", "/", None, "") {
-            return page;
+            return Some(page);
+        }
+        if server.is_finished() {
+            return None;
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
@@ -180,12 +187,18 @@ fn triage_serves_a_contact_sheet_and_saves_verdicts_to_the_manifest() {
         manifest.to_string(),
     )
     .expect("manifest");
-    let port = {
-        let l = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("probe");
-        l.local_addr().expect("addr").port()
-    };
-    let server = spawn_triage(dir.path(), port);
-    let page = wait_for_page(port);
+    // Port 0 reports the bound port only after the server exits, so a free port is probed and
+    // the server is retried when another process takes it first (E-GALLERY-PORT).
+    let (server, port, page) = (0..5)
+        .find_map(|_| {
+            let port = {
+                let l = std::net::TcpListener::bind(("127.0.0.1", 0)).expect("probe");
+                l.local_addr().expect("addr").port()
+            };
+            let server = spawn_triage(dir.path(), port);
+            wait_for_page(port, &server).map(|page| (server, port, page))
+        })
+        .expect("a triage server came up on some free port");
     let token = page
         .split("const T=\"")
         .nth(1)
@@ -214,7 +227,7 @@ fn triage_serves_a_contact_sheet_and_saves_verdicts_to_the_manifest() {
 
 #[cfg(not(feature = "gallery"))]
 // frob:ticket 01M43ATE06MNRNVJJ314KW24RJ
-// frob:tests crates/crunk/src/gallery.rs::GalleryTriage
+// frob:tests crates/crunk/src/gallery.rs::not_built
 #[test]
 fn default_build_refuses_triage_and_render_and_enumerate() {
     let dir = tempfile::tempdir().expect("tempdir");

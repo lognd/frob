@@ -355,7 +355,8 @@ jobs:
       - name: nextest (crunk crates)
         run: |
           # shellcheck disable=SC2086 # the package list is meant to split
-          cargo nextest run --profile ci $CRUNK_PACKAGES
+          # the gallery feature gates crunk's gallery, render_browser and render_solve tests (~A758TVD)
+          cargo nextest run --profile ci --features crunk/gallery $CRUNK_PACKAGES
       # One generator covers all three products (monorepo.md 4).
       - name: Generated files are current (GEN001)
         run: cargo dev gen all --check
