@@ -459,8 +459,10 @@ fn judge_holder(
     };
     let idle = u64::try_from(SystemClock.now().unix() - record.progress).unwrap_or(0);
     let alive = pid_alive(record.pid);
-    let busy = alive && has_live_children(record.pid);
-    let stale = alive && !busy && Duration::from_secs(idle) >= opts.stall_after * 2;
+    // A holder whose children cannot be inspected (non-Linux) counts as busy: never steal on a guess.
+    let busy = alive && !matches!(probe_children(record.pid), ChildProbe::None);
+    // Saturating: `FROB_LAND_STALL_SECS=18446744073709551615` must not overflow the doubling.
+    let stale = alive && !busy && Duration::from_secs(idle) >= opts.stall_after.saturating_mul(2);
     if let Some(at) = taken_over {
         if at.elapsed() >= KILL_GRACE {
             tracing::warn!(
@@ -517,14 +519,43 @@ fn replace_lock(path: &Path, sidecar: &Path, file: &File) -> Result<File, LandEr
     open_lock(path)
 }
 
-/// True when process `pid` has a live child (any thread's children list is non-empty); Linux only.
-fn has_live_children(pid: u32) -> bool {
+/// What a probe of a process's children found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ChildProbe {
+    /// At least one live child.
+    Children,
+    /// Inspected and none.
+    None,
+    /// The platform cannot say (no `/proc` children list).
+    Unknown,
+}
+
+/// Look for live children of process `pid` (any thread's children list non-empty); only Linux can tell.
+fn probe_children(pid: u32) -> ChildProbe {
+    if !cfg!(target_os = "linux") {
+        return ChildProbe::Unknown;
+    }
     let Ok(tasks) = std::fs::read_dir(format!("/proc/{pid}/task")) else {
-        return false;
+        return ChildProbe::Unknown;
     };
-    tasks.flatten().any(|t| {
-        std::fs::read_to_string(t.path().join("children")).is_ok_and(|s| !s.trim().is_empty())
-    })
+    let mut unknown = false;
+    for t in tasks.flatten() {
+        match std::fs::read_to_string(t.path().join("children")) {
+            Ok(s) if !s.trim().is_empty() => return ChildProbe::Children,
+            Ok(_) => {}
+            Err(_) => unknown = true,
+        }
+    }
+    if unknown {
+        ChildProbe::Unknown
+    } else {
+        ChildProbe::None
+    }
+}
+
+/// True when this process has a live child; where that cannot be told the watchdog still fires (it only guards itself, bounded by `stall_after`).
+fn has_live_children(pid: u32) -> bool {
+    probe_children(pid) == ChildProbe::Children
 }
 
 /// Default terminator: SIGKILL a process whose name says it is a frob binary, never this process.
@@ -605,4 +636,70 @@ fn spawn_watchdog(
         })
         .map_err(|e| tracing::error!(error = %e, "land watchdog not started"))
         .ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    /// A sidecar naming this (alive) process as a holder idle for an hour, plus the open lock file.
+    fn stale_self_holder(dir: &Path) -> (PathBuf, File) {
+        let sidecar = dir.join("sidecar.json");
+        let record = HolderRecord {
+            pid: std::process::id(),
+            holder: "x".to_owned(),
+            started: 0,
+            stage: "check".to_owned(),
+            progress: SystemClock.now().unix() - 3_600,
+            build: "debug".to_owned(),
+        };
+        write_record(&sidecar, &record).expect("record");
+        let file = open_lock(&dir.join("lock")).expect("lock");
+        (sidecar, file)
+    }
+
+    fn opts_with(stall_after: Duration, flag: Arc<AtomicBool>) -> LockOptions {
+        LockOptions {
+            stall_after,
+            tick: Duration::from_secs(1),
+            on_stall: StallAction::Hook(Arc::new(|_| {})),
+            terminate: Arc::new(move |_| {
+                flag.store(true, Ordering::SeqCst);
+                true
+            }),
+        }
+    }
+
+    // frob:tests crates/frob-land/src/lock.rs::LandLock
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn a_stall_bound_of_u64_max_does_not_overflow_the_judgement() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (sidecar, file) = stale_self_holder(dir.path());
+        let killed = Arc::new(AtomicBool::new(false));
+        let opts = opts_with(Duration::from_secs(u64::MAX), killed.clone());
+        let mut taken = None;
+        judge_holder(&dir.path().join("lock"), &sidecar, file, &opts, &mut taken)
+            .expect("judged without panicking");
+        assert!(!killed.load(Ordering::SeqCst), "an hour idle is not stale");
+    }
+
+    // frob:tests crates/frob-land/src/lock.rs::LandLock
+    // frob:ticket 01M7X35VPCNR2WS06MG6J290GY
+    #[test]
+    fn a_holder_whose_children_cannot_be_inspected_is_never_terminated() {
+        if cfg!(target_os = "linux") {
+            return;
+        }
+        assert_eq!(probe_children(std::process::id()), ChildProbe::Unknown);
+        let dir = tempfile::tempdir().expect("tempdir");
+        let (sidecar, file) = stale_self_holder(dir.path());
+        let killed = Arc::new(AtomicBool::new(false));
+        let opts = opts_with(Duration::from_secs(1), killed.clone());
+        let mut taken = None;
+        judge_holder(&dir.path().join("lock"), &sidecar, file, &opts, &mut taken).expect("judged");
+        assert!(!killed.load(Ordering::SeqCst), "unknown means busy");
+        assert!(taken.is_none());
+    }
 }

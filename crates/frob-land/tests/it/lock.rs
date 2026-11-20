@@ -1,7 +1,7 @@
 //! The land lock's safety nets: progress watchdog, stale-holder takeover, status (frob:ticket 01M4W4R7PNWSRECR99078ATXCB).
 
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use frob_land::{LandLock, LockOptions, StallAction};
@@ -78,8 +78,10 @@ fn progress_reaches_the_sidecar_and_the_status_readout() {
 }
 
 // frob:tests crates/frob-land/src/lock.rs::LandLock
+#[cfg(target_os = "linux")] // elsewhere a holder's children cannot be inspected, so it is never judged stale
 #[test]
 fn a_waiter_takes_over_a_holder_whose_progress_is_stale() {
+    use std::sync::Mutex;
     let dir = tempfile::tempdir().expect("tempdir");
     // A holder without a watchdog (as an old binary would be), whose record says it stalled long ago.
     let held = LandLock::acquire_with(dir.path(), Duration::ZERO, "old landing ~wedged", &quick(0))
