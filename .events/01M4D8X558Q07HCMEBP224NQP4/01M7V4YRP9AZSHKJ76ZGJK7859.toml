@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T00:12:46Z"
+digest = "7261022ab9bba9d416462bf5e697e8770f373c34e23ae9d9dccd39f4967c2db0"
+exit_code = 100
+failed_tests = ["tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required"]
+head = "8034cebc924435211c057d32061decf35375c01e"
+inline = '''
+   Compiling frob-check v0.532.0 (<worktree>\crates\frob-check)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 19.42s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 90a1eb27-5ee1-465f-82ad-cc7e9e1c7a99 with nextest profile: default
+    Starting 1 test across 3 binaries (184 tests skipped)
+        FAIL [   0.304s] frob-check::it tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required
+  stdout \u{2500}\u{2500}\u{2500}
+
+    running 1 test
+    test tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required ... FAILED
+
+    failures:
+
+    failures:
+        tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 125 filtered out; finished in 0.29s
+
+  stderr \u{2500}\u{2500}\u{2500}
+
+    thread 'tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required' (8556) panicked at crates\frob-check\tests\it\tool_ids.rs:88:40:
+    run: UnknownFamily("LINT")
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.314s] 1 test run: 0 passed, 1 failed, 184 skipped
+        FAIL [   0.304s] frob-check::it tool_ids::clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required
+error: test run failed
+'''
+passed = false
+provider = "nextest"
+ref = "-p frob-check -E test(clippy_ruff_eslint_roslyn_and_typos_arrive_under_frob_ids_and_unreadable_output_is_required)"
+size = 1600
+status = "measured"
+test_count = 1
+tests_digest = "811831e5b3224e540a792c2876d7a41d430e5d4a2202b3f3b7222d5c137a09f8"
+at = "2026-11-20T00:12:46Z"
+actor = "lognd"
+rev = 1

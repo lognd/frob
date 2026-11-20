@@ -7,7 +7,7 @@ priority = "high"
 parent = "01M3Z6XVPGS23NYVXDF0BTGRT5"
 reporter = "lognd"
 created = "2026-10-08T08:07:15Z"
-updated = "2026-10-08T08:07:15Z"
+updated = "2026-11-20T00:12:46Z"
 
 [[acceptance]]
 text = "Given this repository and a TS and a Unity fixture, when frob check runs with the bound stages, then clippy, ruff, ESLint, Roslyn and typos findings appear under frob ids with source_rule and unreadable tool output is a required TOOL001"
