@@ -7,11 +7,11 @@ priority = "medium"
 parent = "01M43ANVJYA7GHN0Y8GX0SN72M"
 reporter = "lognd"
 created = "2026-10-08T04:53:58Z"
-updated = "2026-10-08T04:53:58Z"
+updated = "2026-11-20T17:39:54Z"
 
 [[acceptance]]
 text = "Given a screen corpus, when rendered by both engines in CI, then parity, VIS and axe findings are reported and above-tier lints are reported as not run"
-bound = false
+bound = true
 +++
 
 docs/design/crunk.md sections 3, 4 and 9. Existing gallery tickets ~AKETJJH ~QB3GE3K ~4KW24RJ move under this epic.
