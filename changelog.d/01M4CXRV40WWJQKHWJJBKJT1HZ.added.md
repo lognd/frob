@@ -1,1 +1,1 @@
-crunk phase 5 is complete: a screen corpus rendered through both engines reports solver-browser parity, VIS and axe findings, and lists the tiers that did not run as not run.
+crunk-gallery's parity, VIS and axe checks are now exercised end to end by a render-corpus test over both engines, with any tier that did not run reported as not run; `crunk render --engine browser` is the only CLI surface for browser rendering.

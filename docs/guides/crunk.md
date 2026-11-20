@@ -196,6 +196,20 @@ Not yet verified: the manifest shapes and cell order were rebuilt from the desig
 shipped fixtures because the Python source is not in this checkout; the parity check is tracked as
 a follow-up ticket. Rendering is separate work (render orchestration).
 
+## Browser rendering (opt-in)
+
+`crunk render --engine browser` loads each scene in a real browser and writes a PNG and a boxes
+JSON beside the layout-solve output. It needs three things the default install lacks:
+
+1. The `gallery` feature. Release archives are built without it; install with
+   `cargo install crunk --features gallery`.
+2. Playwright with Chromium: `npm install --save-dev playwright && npx playwright install chromium`.
+3. For the accessibility tier, axe-core next to Playwright: `npm install --save-dev axe-core`.
+
+Exit codes: a build without the gallery feature exits 2 with `E-GALLERY-NOT-BUILT`; a missing Node
+or Playwright exits 2 with `E-PLAYWRIGHT-MISSING` and the install command. Neither writes output or
+reports a pass: a tier that could not run is reported as not run, never as green.
+
 ## Scene ingest and layout solve
 
 The T1 solver corpus lives in `crates/crunk-layout/tests/corpus/`: scenes (`*.scene.html`) are solved twice at 375 and 1280 px, must be byte-identical, and must match the committed `baselines/<scene>.<width>.layout.json`. LAYOUT001/002 findings come from `crunk_layout::findings` (`child_overflows`, `sibling_overlaps`), the same functions the crunk-rules LAYOUT001/002 rules call on the solver output of each `design/scenes/*.scene.html`, so the rules and the corpus cannot disagree; they are compared, with the RESP root-width and GX002-005 findings, against `baselines/<scene>.findings.json`. No browser is involved. Rewrite baselines with `CRUNK_UPDATE_BASELINES=1 cargo nextest run -p crunk-layout -E 'test(corpus::)'`.
@@ -325,7 +339,7 @@ checks, and a skipped job counts as passing.
 - The `crunk-node` job runs the node Tailwind runtime tests with `CRUNK_REQUIRE_NODE=1` (a missing
   node fails instead of skipping). It is `continue-on-error`, nothing lists it in `needs`, and it
   must never be a required check, so red or skipped never blocks a merge or the dev channel. The
-  playwright gallery tests join it when the gallery port lands.
+  playwright gallery tests run in the separate optional playwright job.
 - The `docs-only` job runs only when every changed path is in a docs class; any other change
   (including a workflow edit, which also sets the `workflows` output) selects the full set.
 - An unreadable diff base runs everything.

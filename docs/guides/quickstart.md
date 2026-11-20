@@ -79,15 +79,19 @@ No vet hook is generated; see [hooks.md](hooks.md#claude-code-hooks) for the hoo
 ## 3. Plan: a cycle and a ticket
 
 A cycle is a time box with a capacity in story points. Create one that contains
-today, then a ticket with a scope, points and one acceptance criterion:
+today, then a ticket with a scope, points and one acceptance criterion. Replace
+`<today>` with today's date and `<today+7>` with the date a week later, both as
+`YYYY-MM-DD` (for example `date +%F` prints today in bash). The commands assume
+a bash-like shell:
 
 ```sh
-frob cycle new --start 2026-10-08 --end 2026-10-15 --goal "first cycle" --capacity 8
+frob cycle new --start <today> --end <today+7> --goal "first cycle" --capacity 8
 frob ticket new --title "Add multiply" --scope 'src/**' --points 2 \
     --acceptance "Given two numbers, when mul runs, then it returns their product"
 ```
 
-Note the handle in the output (here `~Q5FEE2P`). Put the ticket in the cycle:
+Note the handle in the output (here `~Q5FEE2P`); substitute your own handle by hand in
+the commands below. Put the ticket in the cycle:
 
 ```sh
 frob cycle assign ~Q5FEE2P

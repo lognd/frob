@@ -43,8 +43,8 @@ fn rel(days: i64) -> String {
 fn prepare(script: &str) -> String {
     let joined = script
         .replace("\\\n", "")
-        .replace("2026-10-08", &rel(0))
-        .replace("2026-10-15", &rel(7));
+        .replace("<today>", &rel(0))
+        .replace("<today+7>", &rel(7));
     let capture = r#" --json | sed -n 's/.*"handle":"\(~[0-9A-Z]*\)".*/\1/p' | head -1)"#;
     let lines: Vec<String> = joined
         .lines()

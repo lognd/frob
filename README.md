@@ -93,6 +93,7 @@ and does not fail the gate. A new ticket with no parent story makes `frob check`
 report planning findings (for example PM007, PM032 and PM033) until the ticket
 is placed in a story and the ready queue is larger.
 
+Next step: put the ticket in a cycle and work it; `frob check` prints the next command to run.
 The full loop (cycle, work, test, evidence, land, release status) is in
 [docs/guides/quickstart.md](docs/guides/quickstart.md).
 

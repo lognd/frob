@@ -229,7 +229,7 @@ fn viewport_for(spec: &DesignSpec, platform: &str) -> Option<(f32, f32)> {
 /// The usage hint naming a screen/state that has no scene file and the paths tried.
 fn missing_scene_hint(select: &SelectArgs, screen: &str, state: &str) -> String {
     format!(
-        "screen '{screen}' state '{state}' has no scene file (expected {d}/{screen}.{state}.scene.html or {d}/{screen}.scene.html)",
+        "screen '{screen}' state '{state}' has no scene file (expected {d}/{screen}.{state}.scene.html or {d}/{screen}.scene.html); add one of those files or narrow the run with --screen/--state",
         d = select.scenes
     )
 }

@@ -80,7 +80,9 @@ list lives next to the code.
 
 ### Not yet at parity
 
-- Playwright-backed gallery and web-page scenarios were never captured (no browser in the
-  capture environment, `PROVENANCE`); `crunk gallery check` is opt-in (`--features gallery`).
-  Keep the Python gallery step until hullbreach adopts the Rust gallery.
+- Playwright-backed gallery and web-page scenarios were never captured from the Python tool (no
+  browser in the capture environment, `PROVENANCE`), so there is no recorded parity baseline.
+  The Rust side now has `crunk render --engine browser` (opt-in, `--features gallery`; see
+  [Browser rendering](crunk.md#browser-rendering-opt-in)) and `crunk gallery check`. Keep the
+  Python gallery step until hullbreach adopts the Rust gallery.
 - The gallery manifest shapes were rebuilt from the design notes (README, "Gallery (opt-in)").

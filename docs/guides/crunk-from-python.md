@@ -45,7 +45,7 @@ calls recorded in the parity corpus (`tests/crunk-parity`, see its `PROVENANCE`)
 | (none) | `crunk doctor`, `crunk schema`, `crunk serve` | Shared by every goblin binary. |
 | (none) | `crunk review`, `crunk ack` | Human review of screen states, recorded in `crunk.lock`. |
 | (none) | `crunk rule catalog` | The std pack rules that `[packs]` switches on. |
-| the Python gallery | `crunk gallery check` | Opt-in (`cargo install crunk --features gallery`); the Playwright rendering is not ported, see "Not yet at parity" in [the hullbreach exit page](crunk-hullbreach.md). |
+| the Python gallery | `crunk gallery check` | Opt-in (`cargo install crunk --features gallery`); browser rendering is `crunk render --engine browser`, see "Browser rendering (opt-in)" in [the crunk guide](crunk.md#browser-rendering-opt-in). |
 
 ## Install
 
