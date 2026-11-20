@@ -681,7 +681,7 @@ mod png {
         usize::try_from(u32::from_be_bytes([b[0], b[1], b[2], b[3]])).expect("u32 fits usize")
     }
 
-    fn paeth(a: u8, b: u8, c: u8) -> u8 {
+    fn filter_four_predictor(a: u8, b: u8, c: u8) -> u8 {
         let (ia, ib, ic) = (i32::from(a), i32::from(b), i32::from(c));
         let p = ia + ib - ic;
         let (pa, pb, pc) = ((p - ia).abs(), (p - ib).abs(), (p - ic).abs());
@@ -746,7 +746,7 @@ mod png {
                     1 => left,
                     2 => up,
                     3 => u8::try_from(u16::midpoint(u16::from(left), u16::from(up))).expect("avg"),
-                    4 => paeth(left, up, corner),
+                    4 => filter_four_predictor(left, up, corner),
                     other => return Err(format!("png: bad filter {other}")),
                 };
                 rows[y * stride + x] = cur.wrapping_add(add);
