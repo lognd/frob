@@ -1,0 +1,12 @@
+kind = "create"
+title = "crunk render --engine browser reports mixed path separators on Windows"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 1
+parent = "01M48Q294B33TB7C0GSATZRGJB"
+acceptance = ["Given a Windows run of crunk render --engine browser, when the JSON data lists each cell's png, boxes and path, then every reported path uses only forward slashes"]
+body = 'Found while closing ~WPZ2BDG: the reported paths look like .crunk/render\clean\default\chromium-desktop.png, a forward-slash base joined with backslash components. Start in crates/crunk/src/render_browser.rs: browser_paths joins through posix(), but the cell path comes from another join. Fix at the join, and pin it with a test that asserts no backslash in any reported path.'
+at = "2026-11-20T14:46:39Z"
+actor = "lognd"
+rev = 1
