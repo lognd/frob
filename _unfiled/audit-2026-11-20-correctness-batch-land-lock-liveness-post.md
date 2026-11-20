@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-20T18:23:24Z"
-updated = "2026-11-20T23:06:02Z"
+updated = "2026-11-20T23:06:05Z"
 scope = ["crates/frob-land/**", "crates/frob-ledger/**"]
 
 [[acceptance]]
 text = "Given a lock holder with a live child on a non-Linux platform, when judged, then it is busy and never stolen; given an after_commit failure, then the call reports the applied commit with a warning and does not return Err"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given three lost CAS attempts, when reconcile_with gives up, then it returns a contention error; given an unreadable test report or merge-driver ours file, then the error is surfaced and not read as empty; given FROB_LAND_STALL_SECS at u64 max, then there is no panic"

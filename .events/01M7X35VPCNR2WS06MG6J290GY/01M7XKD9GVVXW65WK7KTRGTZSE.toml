@@ -1,0 +1,47 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T23:06:05Z"
+digest = "5a9337bb8bd326e4f5fc8172cfbfcd5b640a61443f2f40a7e81a86defd2bd1e5"
+exit_code = 0
+head = "81416a96f525c74402dc92ec32eb1ba97bd298ad"
+inline = '''
+   Compiling frob-ledger v0.532.0 (<worktree>\crates\frob-ledger)
+   Compiling gob-directives v0.532.0 (<worktree>\crates\gob-directives)
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling grimble-model v0.532.0 (<worktree>\crates\grimble-model)
+   Compiling frob-pm v0.532.0 (<worktree>\crates\frob-pm)
+   Compiling frob-lease v0.532.0 (<worktree>\crates\frob-lease)
+   Compiling rustls v0.23.46
+   Compiling frob-release v0.532.0 (<worktree>\crates\frob-release)
+   Compiling frob-evidence v0.532.0 (<worktree>\crates\frob-evidence)
+   Compiling grimble-bind v0.532.0 (<worktree>\crates\grimble-bind)
+   Compiling ureq v3.4.2
+   Compiling frob-ack v0.532.0 (<worktree>\crates\frob-ack)
+   Compiling grimble-arch v0.532.0 (<worktree>\crates\grimble-arch)
+   Compiling frob-tests v0.532.0 (<worktree>\crates\frob-tests)
+   Compiling grimble-check v0.532.0 (<worktree>\crates\grimble-check)
+   Compiling frob-obligations v0.532.0 (<worktree>\crates\frob-obligations)
+   Compiling frob-mirror v0.532.0 (<worktree>\crates\frob-mirror)
+   Compiling frob-worktree v0.532.0 (<worktree>\crates\frob-worktree)
+   Compiling frob-metrics v0.532.0 (<worktree>\crates\frob-metrics)
+   Compiling frob-check v0.532.0 (<worktree>\crates\frob-check)
+   Compiling frob-land v0.532.0 (<worktree>\crates\frob-land)
+    Finished `test` profile [unoptimized] target(s) in 57.14s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 3597c3d5-1138-4c50-a97a-21f43248aaf6 with nextest profile: default
+    Starting 2 tests across 2 binaries (168 tests skipped)
+        PASS [   0.031s] frob-land lock::tests::a_holder_whose_children_cannot_be_inspected_is_never_terminated
+        PASS [   0.032s] frob-land lock::tests::a_stall_bound_of_u64_max_does_not_overflow_the_judgement
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.033s] 2 tests run: 2 passed, 168 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-land -E test(a_stall_bound_of_u64_max_does_not_overflow_the_judgement)|test(a_holder_whose_children_cannot_be_inspected_is_never_terminated)"
+size = 1995
+status = "measured"
+test_count = 2
+tests_digest = "eba0cc285a2f90d00b00aa2b64818497e7cb3494c963baa1868b499db781204c"
+at = "2026-11-20T23:06:05Z"
+actor = "lognd"
+rev = 1
