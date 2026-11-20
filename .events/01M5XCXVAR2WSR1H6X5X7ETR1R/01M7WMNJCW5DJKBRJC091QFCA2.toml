@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-20T14:09:29Z"
+digest = "9cdb4af62262a9f6df1d50b976a5e3fc009232755fb71135f632dc1bb6ec70ec"
+exit_code = 0
+head = "1c5ab001a8abe60d57bc3125e78e2b5f03e2dec6"
+inline = '''
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+    Finished `test` profile [unoptimized] target(s) in 17.28s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID a91523c7-89ca-43e2-ba06-1f041965620b with nextest profile: default
+    Starting 1 test across 5 binaries (342 tests skipped)
+        PASS [   0.017s] crunk::it render_browser::browser_engine_without_gallery_exits_2_with_the_remedy_and_writes_nothing
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.019s] 1 test run: 1 passed, 342 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p crunk -E test(browser_engine_without_gallery_exits_2_with_the_remedy_and_writes_nothing)"
+size = 635
+status = "measured"
+test_count = 1
+tests_digest = "89233c50d7bcfa57d151dfe6514007d269cd79835e29d87601df78f5186e2841"
+at = "2026-11-20T14:09:29Z"
+actor = "lognd"
+rev = 1
