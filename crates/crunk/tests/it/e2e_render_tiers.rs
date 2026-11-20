@@ -150,15 +150,26 @@ struct Corpus {
     _guard: tempfile::TempDir,
 }
 
+/// Every file under `dir`, found by walking a worklist of directories.
+fn files_in(dir: &Path) -> Vec<PathBuf> {
+    let (mut files, mut todo) = (Vec::new(), vec![dir.to_path_buf()]);
+    while let Some(next) = todo.pop() {
+        let (dirs, plain): (Vec<_>, Vec<_>) = std::fs::read_dir(&next)
+            .expect("read dir")
+            .flatten()
+            .map(|e| e.path())
+            .partition(|p| p.is_dir());
+        todo.extend(dirs);
+        files.extend(plain);
+    }
+    files
+}
+
 fn copy_dir(from: &Path, to: &Path) {
-    std::fs::create_dir_all(to).expect("create dir");
-    for entry in std::fs::read_dir(from).expect("read dir").flatten() {
-        let (src, dst) = (entry.path(), to.join(entry.file_name()));
-        if src.is_dir() {
-            copy_dir(&src, &dst);
-        } else {
-            std::fs::copy(&src, &dst).expect("copy fixture");
-        }
+    for src in files_in(from) {
+        let dst = to.join(src.strip_prefix(from).expect("under the fixture"));
+        std::fs::create_dir_all(dst.parent().expect("parent")).expect("create dir");
+        std::fs::copy(&src, &dst).expect("copy fixture");
     }
 }
 
