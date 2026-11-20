@@ -271,10 +271,11 @@ fn push_lines(rules: &[RuleSrc]) -> String {
     s
 }
 
+// frob:ticket 01M778EENHT3NQ80WZRG76M9WS
 /// The generated `bind`, split into per-chunk `BindPart` impls once the catalog is large.
 fn render_bind(rules: &[RuleSrc]) -> String {
     let mut s = String::new();
-    let head = "// frob:accept DUP004 because=\"generated bind: one push per rule, shape-identical across crates by construction\"\n/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n";
+    let head = "// frob:accept DUP004 because=\"generated bind: one push per rule, shape-identical across crates by construction\"\n/// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.\n#[allow(\n    clippy::too_many_lines,\n    reason = \"generated: the where clause and body grow with the catalog\"\n)]\n";
     if rules.len() <= BIND_CHUNK {
         writeln!(
             s,
@@ -517,6 +518,7 @@ mod tests {
         assert!(text.contains("<cov002::Cov002 as gob_rules::RuleDecl>::DEF,"));
         assert!(text.contains("cov001::Cov001: gob_rules::FileRule<P>,"));
         assert!(text.contains("rules.push(gob_rules::BoundRule::repo(cov002::Cov002));"));
+        assert!(text.contains("#[allow(clippy::too_many_lines, reason ="));
         assert!(text.contains("fn rules_index_is_fresh()"));
         // the module must be named `tests` so DEAD001's test-unit heuristic sees test code
         assert!(text.contains("#[cfg(test)]\nmod tests {"));

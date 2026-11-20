@@ -352,6 +352,10 @@ where
 
 // frob:accept DUP004 because="generated bind: one push per rule, shape-identical across crates by construction"
 /// Bind every rule of this crate to the product host `P`; fails to compile unless `P` hosts them all.
+#[allow(
+    clippy::too_many_lines,
+    reason = "generated: the where clause and body grow with the catalog"
+)]
 pub fn bind<P: ?Sized + 'static>() -> Vec<gob_rules::BoundRule<P>>
 where
     Part0: BindPart<P>,
