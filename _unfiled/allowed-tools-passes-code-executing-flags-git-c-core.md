@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-21T04:31:42Z"
-updated = "2026-11-21T04:50:38Z"
+updated = "2026-11-21T04:50:41Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given ordinary git, cargo and python3 invocations used by existing evidence, when they run, then they are unaffected"
-bound = false
+bound = true
 +++
 
 Audit 2026-11-20 deferred item. allowed_tools matches program names only (documented in 0e41515bb5). Add a small deny-list of execution flags per program (git: -c, --config-env, --upload-pack, --receive-pack, --exec-path, --ext-cmd style; python3: -c, -m with non-allowlisted? decide; cargo: --config) in the command provider. no-story: audit follow-up.
