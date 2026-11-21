@@ -115,3 +115,41 @@ fn batched_read_is_not_slower_than_per_blob_reads() {
         "batched {batched:?} vs per-blob {single:?}"
     );
 }
+
+#[test]
+// frob:ticket 01M7XXCT68PZ5DA86TY2TYMRJR
+// frob:tests crates/gob-git/src/read.rs::Repo.read_blob_capped
+// frob:tests crates/gob-git/src/read.rs::Repo.read_blobs_capped
+// frob:tests crates/gob-git/src/read.rs::Repo.read_blob_at_capped
+fn capped_reads_refuse_an_oversized_blob_from_its_header() {
+    let (_dir, repo, ids) = repo_with(&[
+        ("a.txt".to_owned(), vec![b'a'; 10]),
+        ("b.txt".to_owned(), vec![b'b'; 11]),
+    ]);
+    assert_eq!(repo.read_blob_capped(&ids[0], 10).unwrap().len(), 10);
+    assert_eq!(repo.read_blobs_capped(&ids[..1], 10).unwrap().len(), 1);
+    assert_eq!(
+        repo.read_blob_at_capped(MAIN, "a.txt", 10)
+            .unwrap()
+            .map(|b| b.len()),
+        Some(10)
+    );
+    for err in [
+        repo.read_blob_capped(&ids[1], 10).unwrap_err(),
+        repo.read_blobs_capped(&ids, 10).unwrap_err(),
+        repo.read_blob_at_capped(MAIN, "b.txt", 10).unwrap_err(),
+    ] {
+        assert!(
+            matches!(
+                err,
+                gob_git::GitError::BlobTooLarge {
+                    size: 11,
+                    cap: 10,
+                    ..
+                }
+            ),
+            "{err:?}"
+        );
+        assert!(err.to_string().contains("10 byte read cap"));
+    }
+}

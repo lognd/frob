@@ -125,7 +125,7 @@ impl Ledger {
                         .is_some_and(|e| e == "md")
                     && !self
                         .repo()
-                        .read_blob(oid)?
+                        .read_blob_capped(oid, crate::ledger::MAX_BLOB_BYTES)?
                         .starts_with(GENERATED_MARKER_PREFIX.as_bytes())
                 {
                     bad.push(format!("moved or deleted {path}"));

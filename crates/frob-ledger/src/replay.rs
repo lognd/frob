@@ -36,7 +36,11 @@ impl Ledger {
     fn tree_at(&self, commit: &gob_git::Oid) -> Result<Tree> {
         let mut out = Tree::new();
         for (path, oid) in self.list_blobs(&format!("{commit}^{{tree}}"))? {
-            out.insert(path, self.repo().read_blob(&oid)?);
+            out.insert(
+                path,
+                self.repo()
+                    .read_blob_capped(&oid, crate::ledger::MAX_BLOB_BYTES)?,
+            );
         }
         Ok(out)
     }

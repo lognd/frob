@@ -101,7 +101,7 @@ impl Ledger {
         let mut others: Vec<String> = Vec::new();
         for (rel, oid) in self.list_blobs(&spec)? {
             let path = format!("{prefix}{rel}");
-            let bytes = self.repo().read_blob(&oid)?;
+            let bytes = self.blob_bytes(&oid)?;
             let fired = rules.hits(&bytes);
             if fired.is_empty() {
                 continue;

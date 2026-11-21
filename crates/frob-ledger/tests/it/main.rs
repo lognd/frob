@@ -1,5 +1,6 @@
 //! One integration-test binary per crate (audit M17): fewer links, one process pool.
 // frob:ticket 01M5AH5JFD9MVN1H1B6YHPX7GN
+mod blob_cap;
 mod branch;
 mod claim_cover;
 mod gen_by_id;

@@ -81,6 +81,16 @@ pub enum GitError {
         /// Underlying failure.
         detail: String,
     },
+    /// A blob is larger than the read cap the caller set, so it was not loaded.
+    #[error("E-GIT-BLOB-TOO-LARGE: blob {oid} is {size} bytes, over the {cap} byte read cap")]
+    BlobTooLarge {
+        /// The oversized blob.
+        oid: String,
+        /// Its size in bytes, from the object header.
+        size: u64,
+        /// The cap it exceeded, in bytes.
+        cap: u64,
+    },
     /// A spawn fallback could not run or exited non-zero.
     #[error("E-GIT-SPAWN: git {args}: {detail}")]
     Spawn {
@@ -108,6 +118,7 @@ impl GitError {
             Self::LocalEdits { .. } => "E-GIT-LOCAL-EDITS",
             Self::Unsupported(_) => "E-GIT-UNSUPPORTED",
             Self::ShallowBase { .. } => "E-GIT-SHALLOW-BASE",
+            Self::BlobTooLarge { .. } => "E-GIT-BLOB-TOO-LARGE",
             Self::Spawn { .. } => "E-GIT-SPAWN",
         }
     }

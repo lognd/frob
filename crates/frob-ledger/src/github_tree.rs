@@ -74,7 +74,11 @@ impl Ledger {
         let mut files = Vec::new();
         for (rel, oid) in self.list_blobs(&tree.to_string())? {
             if in_github_tree(&rel) {
-                files.push((rel, self.repo.read_blob(&oid)?));
+                files.push((
+                    rel,
+                    self.repo
+                        .read_blob_capped(&oid, crate::ledger::MAX_BLOB_BYTES)?,
+                ));
             }
         }
         let out = github_tree_findings(&files, &expected);

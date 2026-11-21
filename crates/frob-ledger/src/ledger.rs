@@ -174,6 +174,13 @@ impl Default for LedgerConfig {
     }
 }
 
+/// Largest ledger blob (ticket file, event, generated file) read into memory, in bytes.
+///
+/// Real tickets are a few KiB; a blob over this is refused from its object header, before any of it
+/// is inflated, with `E-GIT-BLOB-TOO-LARGE` naming the cap.
+// frob:ticket 01M7XXCT68PZ5DA86TY2TYMRJR
+pub const MAX_BLOB_BYTES: u64 = 8 * 1024 * 1024;
+
 /// An open ledger: a repository plus its configuration.
 #[derive(Debug)]
 pub struct Ledger {
@@ -552,15 +559,25 @@ impl Ledger {
             .collect())
     }
 
+    /// The bytes of the blob `oid`, refused when over [`MAX_BLOB_BYTES`].
+    pub(crate) fn blob_bytes(&self, oid: &Oid) -> Result<Vec<u8>> {
+        Ok(self.repo.read_blob_capped(oid, MAX_BLOB_BYTES)?)
+    }
+
     /// UTF-8 text of the blob `oid`, which was listed as `path` (named in the error only).
     pub(crate) fn text_of(&self, path: &str, oid: &Oid) -> Result<String> {
-        String::from_utf8(self.repo.read_blob(oid)?)
-            .map_err(|_| LedgerError::malformed(path, "not valid UTF-8"))
+        String::from_utf8(
+            self.repo
+                .read_blob_capped(oid, crate::ledger::MAX_BLOB_BYTES)?,
+        )
+        .map_err(|_| LedgerError::malformed(path, "not valid UTF-8"))
     }
 
     fn blob(&self, rev: &str, path: &str) -> Result<Option<Vec<u8>>> {
         self.count_git_read();
-        Ok(self.repo.read_blob_at(rev, path)?)
+        Ok(self
+            .repo
+            .read_blob_at_capped(rev, path, crate::ledger::MAX_BLOB_BYTES)?)
     }
 
     pub(crate) fn text(&self, rev: &str, path: &str) -> Result<Option<String>> {
@@ -780,7 +797,9 @@ impl Ledger {
         }
         let oids: Vec<Oid> = picked.iter().map(|(_, _, _, oid)| *oid).collect();
         let files = picked.len();
-        let blobs = self.repo.read_blobs(&oids)?;
+        let blobs = self
+            .repo
+            .read_blobs_capped(&oids, crate::ledger::MAX_BLOB_BYTES)?;
         let owners: Vec<TicketId> = picked.iter().map(|(id, ..)| *id).collect();
         let items = picked
             .into_iter()
@@ -904,7 +923,10 @@ impl Ledger {
             return Ok(self.ticket_file_at(&tip, id, None)?.is_some());
         }
         let path = format!("{}/{id}/ticket.md", self.cfg.dir);
-        match self.repo.read_blob_at(rev, &path) {
+        match self
+            .repo
+            .read_blob_at_capped(rev, &path, crate::ledger::MAX_BLOB_BYTES)
+        {
             Ok(b) => Ok(b.is_some()),
             Err(e) if is_rev_error(&e) => Ok(false),
             Err(e) => Err(e.into()),

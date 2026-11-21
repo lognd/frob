@@ -1296,7 +1296,10 @@ impl Ledger {
         let before: Tree = blobs
             .into_iter()
             .map(|(path, _)| path)
-            .zip(self.repo().read_blobs(&oids)?)
+            .zip(
+                self.repo()
+                    .read_blobs_capped(&oids, crate::ledger::MAX_BLOB_BYTES)?,
+            )
             .collect();
         let opts = ReindexOptions {
             version: env!("CARGO_PKG_VERSION"),

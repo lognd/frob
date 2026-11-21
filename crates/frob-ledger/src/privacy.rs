@@ -225,7 +225,9 @@ impl Ledger {
                 continue;
             }
             let path = format!("{prefix}{rel}");
-            let bytes = self.repo().read_blob(&oid)?;
+            let bytes = self
+                .repo()
+                .read_blob_capped(&oid, crate::ledger::MAX_BLOB_BYTES)?;
             scanned += 1;
             out.extend(tick004(&path, &bytes));
         }
@@ -311,7 +313,9 @@ impl Ledger {
         let mut out = Vec::new();
         for (rel, oid) in self.list_blobs(&self.tree_spec(&hex))? {
             let path = format!("{prefix}{rel}");
-            let bytes = self.repo().read_blob(&oid)?;
+            let bytes = self
+                .repo()
+                .read_blob_capped(&oid, crate::ledger::MAX_BLOB_BYTES)?;
             out.extend(crate::redact::tick005(&path, &bytes, rules));
         }
         tracing::info!(findings = out.len(), "ledger private-term scan finished");

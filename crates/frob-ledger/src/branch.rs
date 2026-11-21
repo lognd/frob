@@ -119,15 +119,16 @@ fn adopt_from_origin(repo: &Repo, branch: &str, full: &str) -> Result<Option<Oid
 /// Backfill the LF pin into the `.gitattributes` of an existing ticket branch at `tip`, keeping every line already there; returns the new tip, or `tip` when nothing was missing or the branch could not be written (read-only repo, lost race), which is logged and never fatal.
 // frob:ticket 01M5J931Y2JCF9J0XFVRP71BER
 fn pin_eol(repo: &Repo, branch: &str, full: &str, tip: Oid, cas_retries: u32) -> Oid {
-    let existing = match repo.read_blob_at(full, ".gitattributes") {
-        Ok(blob) => blob
-            .map(|b| String::from_utf8_lossy(&b).into_owned())
-            .unwrap_or_default(),
-        Err(e) => {
-            tracing::warn!(%branch, error = %e, "cannot read .gitattributes; eol pin skipped");
-            return tip;
-        }
-    };
+    let existing =
+        match repo.read_blob_at_capped(full, ".gitattributes", crate::ledger::MAX_BLOB_BYTES) {
+            Ok(blob) => blob
+                .map(|b| String::from_utf8_lossy(&b).into_owned())
+                .unwrap_or_default(),
+            Err(e) => {
+                tracing::warn!(%branch, error = %e, "cannot read .gitattributes; eol pin skipped");
+                return tip;
+            }
+        };
     let missing = crate::layout::missing_eol_pins(&existing);
     if missing.is_empty() {
         tracing::debug!(%branch, "ticket branch eol pin already present");

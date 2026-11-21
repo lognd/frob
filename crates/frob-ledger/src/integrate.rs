@@ -169,8 +169,11 @@ impl Ledger {
                 .repo
                 .diff_names(&TreeRef::Oid(ours), &TreeRef::Oid(theirs))?,
         };
-        let blob =
-            |rev: &str, p: &str| -> Result<Option<Vec<u8>>> { Ok(self.repo.read_blob_at(rev, p)?) };
+        let blob = |rev: &str, p: &str| -> Result<Option<Vec<u8>>> {
+            Ok(self
+                .repo
+                .read_blob_at_capped(rev, p, crate::ledger::MAX_BLOB_BYTES)?)
+        };
         let mut plan: BTreeMap<String, Option<Vec<u8>>> = BTreeMap::new();
         let mut conflicts = Vec::new();
         let (mut events, mut refolded) = (0, 0);

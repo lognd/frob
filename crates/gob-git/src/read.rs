@@ -63,12 +63,26 @@ const PARALLEL_MIN_BLOBS: usize = 1024;
 /// Upper bound on reader threads, so a many-core host does not oversubscribe the disk cache.
 const MAX_READ_THREADS: usize = 8;
 
-/// Read `oids` in order from `gix` with one reused scratch buffer.
-fn read_blob_run(gix: &gix::Repository, oids: &[Oid]) -> Result<Vec<Vec<u8>>, GitError> {
+/// Refuse the blob `oid` when its header says it is larger than `cap`, before any of it is inflated.
+fn check_blob_cap(gix: &gix::Repository, oid: &Oid, cap: u64) -> Result<(), GitError> {
+    let size = gix.find_header(*oid).map_err(odb_err)?.size();
+    if size > cap {
+        return Err(GitError::BlobTooLarge {
+            oid: oid.to_string(),
+            size,
+            cap,
+        });
+    }
+    Ok(())
+}
+
+/// Read `oids` in order from `gix` with one reused scratch buffer, refusing any blob over `cap`.
+fn read_blob_run(gix: &gix::Repository, oids: &[Oid], cap: u64) -> Result<Vec<Vec<u8>>, GitError> {
     use gix::prelude::FindExt;
     let mut scratch = Vec::new();
     let mut out = Vec::with_capacity(oids.len());
     for oid in oids {
+        check_blob_cap(gix, oid, cap)?;
         let data = gix.objects.find(oid, &mut scratch).map_err(odb_err)?;
         if data.kind != gix::object::Kind::Blob {
             return Err(odb_err(format!(
@@ -242,12 +256,26 @@ impl Repo {
     /// # Errors
     /// [`GitError::Rev`] when `rev` does not resolve; [`GitError::Odb`] on read failure.
     pub fn read_blob_at(&self, rev: &str, path: &str) -> Result<Option<Vec<u8>>, GitError> {
+        self.read_blob_at_capped(rev, path, u64::MAX)
+    }
+
+    /// [`Self::read_blob_at`], refusing a blob larger than `cap` bytes before inflating it.
+    ///
+    /// # Errors
+    /// As [`Self::read_blob_at`], plus [`GitError::BlobTooLarge`] when the blob exceeds `cap`.
+    pub fn read_blob_at_capped(
+        &self,
+        rev: &str,
+        path: &str,
+        cap: u64,
+    ) -> Result<Option<Vec<u8>>, GitError> {
         let tree = self.tree_of(&self.rev_parse(rev)?)?;
         let entry = tree.lookup_entry_by_path(path).map_err(odb_err)?;
         let Some(entry) = entry else { return Ok(None) };
         if !entry.mode().is_blob() {
             return Ok(None);
         }
+        check_blob_cap(&self.gix, &entry.object_id(), cap)?;
         let blob = self.gix.find_blob(entry.object_id()).map_err(odb_err)?;
         Ok(Some(blob.data.clone()))
     }
@@ -273,6 +301,15 @@ impl Repo {
     /// # Errors
     /// [`GitError::Odb`] when the object is missing or not a blob.
     pub fn read_blob(&self, oid: &Oid) -> Result<Vec<u8>, GitError> {
+        self.read_blob_capped(oid, u64::MAX)
+    }
+
+    /// [`Self::read_blob`], refusing a blob larger than `cap` bytes before inflating it.
+    ///
+    /// # Errors
+    /// As [`Self::read_blob`], plus [`GitError::BlobTooLarge`] when the blob exceeds `cap`.
+    pub fn read_blob_capped(&self, oid: &Oid, cap: u64) -> Result<Vec<u8>, GitError> {
+        check_blob_cap(&self.gix, oid, cap)?;
         let blob = self.gix.find_blob(*oid).map_err(odb_err)?;
         Ok(blob.data.clone())
     }
@@ -287,6 +324,14 @@ impl Repo {
     /// [`GitError::Odb`] when any object is missing or not a blob; nothing is returned partially.
     // frob:ticket 01M5JCT8CXN20B2GJHAE5JDHHC
     pub fn read_blobs(&self, oids: &[Oid]) -> Result<Vec<Vec<u8>>, GitError> {
+        self.read_blobs_capped(oids, u64::MAX)
+    }
+
+    /// [`Self::read_blobs`], refusing any blob larger than `cap` bytes before inflating it.
+    ///
+    /// # Errors
+    /// As [`Self::read_blobs`], plus [`GitError::BlobTooLarge`] when any blob exceeds `cap`.
+    pub fn read_blobs_capped(&self, oids: &[Oid], cap: u64) -> Result<Vec<Vec<u8>>, GitError> {
         let workers = if oids.len() < PARALLEL_MIN_BLOBS {
             1
         } else {
@@ -295,7 +340,7 @@ impl Repo {
                 .min(MAX_READ_THREADS)
         };
         if workers <= 1 {
-            return read_blob_run(&self.gix, oids);
+            return read_blob_run(&self.gix, oids, cap);
         }
         let shared = self.gix.clone().into_sync();
         let chunk = oids.len().div_ceil(workers);
@@ -304,7 +349,7 @@ impl Repo {
                 .chunks(chunk)
                 .map(|part| {
                     let shared = &shared;
-                    scope.spawn(move || read_blob_run(&shared.to_thread_local(), part))
+                    scope.spawn(move || read_blob_run(&shared.to_thread_local(), part, cap))
                 })
                 .collect();
             handles

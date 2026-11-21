@@ -152,7 +152,10 @@ impl Ledger {
         let mut unknown = Vec::new();
         for (rel, oid) in self.list_blobs(&format!("{tip}:{dir}"))? {
             let parts: Vec<&str> = rel.split('/').collect();
-            let bytes = || self.repo().read_blob(&oid);
+            let bytes = || {
+                self.repo()
+                    .read_blob_capped(&oid, crate::ledger::MAX_BLOB_BYTES)
+            };
             let tid = parts[0].parse::<TicketId>().ok();
             match (parts.as_slice(), tid) {
                 ([head, ..], _) if head.starts_with('_') => {
@@ -359,7 +362,11 @@ impl Ledger {
                     "verification failed: {path} is missing on {branch_ref}"
                 )));
             };
-            if self.repo.read_blob(oid)? != *bytes {
+            if self
+                .repo
+                .read_blob_capped(oid, crate::ledger::MAX_BLOB_BYTES)?
+                != *bytes
+            {
                 return Err(LedgerError::invalid(format!(
                     "verification failed: {path} differs on {branch_ref}"
                 )));
