@@ -7,13 +7,13 @@ priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-20T23:17:42Z"
-updated = "2026-11-20T23:17:42Z"
+updated = "2026-11-21T00:30:13Z"
 labels = ["no-story"]
 scope = ["crates/gob-log/**", "crates/gob-exec/**"]
 
 [[acceptance]]
 text = "Given a tool whose JSON stdout has a key field holding an object, when the runner redacts stdout, then the JSON is unchanged and still parses"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given a quoted secret value in key: value or JSON form, when redacted, then the quotes are kept so the output stays valid JSON"
