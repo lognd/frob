@@ -1,0 +1,41 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-21T06:33:02Z"
+digest = "f9c69a2ec1b8265503a351cb30d1bf4e4c6d33388e2625a0fdf86f32d66c8f8b"
+exit_code = 0
+head = "f6a81ae0146230892281173a43b8b6ccd87c870d"
+inline = '''
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling frob-mirror v0.532.0 (<worktree>\crates\frob-mirror)
+   Compiling grimble-check v0.532.0 (<worktree>\crates\grimble-check)
+   Compiling gob-product v0.532.0 (<worktree>\crates\gob-product)
+   Compiling frob-obligations v0.532.0 (<worktree>\crates\frob-obligations)
+   Compiling crunk-check v0.532.0 (<worktree>\crates\crunk-check)
+   Compiling crunk-fix v0.532.0 (<worktree>\crates\crunk-fix)
+   Compiling frob-check v0.532.0 (<worktree>\crates\frob-check)
+   Compiling grimble-serve v0.532.0 (<worktree>\crates\grimble-serve)
+   Compiling frob-cli v0.532.0 (<worktree>\crates\frob)
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+   Compiling frob-land v0.532.0 (<worktree>\crates\frob-land)
+   Compiling grimble v0.532.0 (<worktree>\crates\grimble)
+   Compiling gob-dev v0.532.0 (<worktree>\crates\gob-dev)
+   Compiling frob-docgen v0.532.0 (<worktree>\crates\frob-docgen)
+    Finished `test` profile [unoptimized] target(s) in 1m 06s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 206acfca-0d49-4008-9a32-c77665dfbf28 with nextest profile: default
+    Starting 2 tests across 3 binaries (35 tests skipped)
+        PASS [   0.052s] frob-docgen::it config_rule_ids::an_unknown_rule_id_is_reported_and_a_renamed_one_resolves
+        PASS [   0.077s] frob-docgen::it config_rule_ids::every_rule_id_named_in_a_shipped_config_exists_or_redirects
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.081s] 2 tests run: 2 passed, 35 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen -E test(an_unknown_rule_id_is_reported_and_a_renamed_one_resolves)|test(every_rule_id_named_in_a_shipped_config_exists_or_redirects)"
+size = 1646
+status = "measured"
+test_count = 2
+tests_digest = "07e4de3c1d41150cc8d01d3f32b8308e34a718eb2e8b74e9e672da420c102a29"
+at = "2026-11-21T06:33:02Z"
+actor = "lognd"
+rev = 1

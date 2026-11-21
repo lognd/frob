@@ -8,13 +8,13 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:26Z"
-updated = "2026-10-28T12:55:45Z"
+updated = "2026-11-21T06:33:02Z"
 labels = ["no-story"]
 scope = ["crates/gob-config/**", "crates/gob-rules/**", "crates/frob/**"]
 
 [[acceptance]]
 text = "a config naming an unknown rule id fails the test naming the file and key"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "a renamed rule id named in config resolves through the redirect table and passes"
