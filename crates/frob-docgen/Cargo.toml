@@ -37,6 +37,7 @@ gob-cli = { path = "../gob-cli" }
 gob-path = { path = "../gob-path" }
 grimble = { path = "../grimble" }
 serde_json = "1"
+toml = "1"
 tempfile = "3"
 
 [lints]

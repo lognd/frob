@@ -1382,6 +1382,7 @@ dependencies = [
  "grimble-check",
  "serde_json",
  "tempfile",
+ "toml",
 ]
 
 [[package]]
