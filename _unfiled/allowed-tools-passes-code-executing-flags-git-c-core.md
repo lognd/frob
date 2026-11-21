@@ -2,12 +2,13 @@
 id = "01M7Y5ZP89J1XC63S4448HACSB"
 title = "allowed_tools passes code-executing flags: git -c core.sshCommand, --upload-pack, --exec-path run arbitrary programs"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-21T04:31:42Z"
-updated = "2026-11-21T04:50:41Z"
+updated = "2026-11-21T04:50:44Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/**"]
 
