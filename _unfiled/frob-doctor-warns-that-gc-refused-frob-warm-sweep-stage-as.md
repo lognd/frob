@@ -2,7 +2,8 @@
 id = "01M4860HNQ80M8GQ4HNF3531D9"
 title = "frob doctor warns that gc refused .frob/warm-sweep-stage as outside its roots, though the path is inside .frob"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 reporter = "lognd"
