@@ -2,7 +2,8 @@
 id = "01M1WJMD2YDY1KSRZAJKCTJCK8"
 title = "lint: a *_path Field default that is a relative path should be flagged"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 2
 parent = "01M1T07P0DHR8Z9D3E3PRGDJ7B"
