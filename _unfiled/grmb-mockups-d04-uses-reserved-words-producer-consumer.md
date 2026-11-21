@@ -2,7 +2,8 @@
 id = "01M6D2TVC67B256QBGRENM5HCS"
 title = "grmb mockups: d04 uses reserved words producer/consumer (MDL000); d11 uses old retry arm form"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 1
 reporter = "lognd"
