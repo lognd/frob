@@ -25,8 +25,8 @@
 grimble = "2";
 module events;
 system bus_app { ambient escalate; }
-node producer : trusted; node consumer : trusted;
-flow f_evt : producer -> consumer { label Internal; }
+node publisher : trusted; node subscriber : trusted;
+flow f_evt : publisher -> subscriber { label Internal; }
 actor clerk : human;
 goal clerk { ship; }
 step clerk.ships;
