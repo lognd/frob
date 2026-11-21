@@ -2,7 +2,8 @@
 id = "01M1T07NVYEXD9JQP1G82JF0MY"
 title = "ENVVAR003: config constructed outside its designated site"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
