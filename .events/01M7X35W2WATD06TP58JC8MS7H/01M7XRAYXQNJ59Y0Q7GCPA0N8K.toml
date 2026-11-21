@@ -1,0 +1,82 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-21T00:30:43Z"
+digest = "c095cec970525658ab09f02cf1b87be588cdb721818587418ea89396e7aaefa9"
+exit_code = 0
+head = "903b6b5d03784a88c659ddd31ea6212dd1dbbddc"
+inline = '''
+   Compiling gob-ir v0.532.0 (<worktree>\crates\gob-ir)
+   Compiling gob-log v0.532.0 (<worktree>\crates\gob-log)
+   Compiling gob-exec v0.532.0 (<worktree>\crates\gob-exec)
+   Compiling gob-git v0.532.0 (<worktree>\crates\gob-git)
+   Compiling gob-rules v0.532.0 (<worktree>\crates\gob-rules)
+   Compiling gob-diagnostics v0.532.0 (<worktree>\crates\gob-diagnostics)
+   Compiling gob-config v0.532.0 (<worktree>\crates\gob-config)
+   Compiling gob-cli v0.532.0 (<worktree>\crates\gob-cli)
+   Compiling gob-trust v0.532.0 (<worktree>\crates\gob-trust)
+   Compiling gob-cache v0.532.0 (<worktree>\crates\gob-cache)
+   Compiling gob-symbols v0.532.0 (<worktree>\crates\gob-symbols)
+   Compiling gob-directives v0.532.0 (<worktree>\crates\gob-directives)
+   Compiling gob-pattern v0.532.0 (<worktree>\crates\gob-pattern)
+   Compiling gob-plan v0.532.0 (<worktree>\crates\gob-plan)
+   Compiling gob-check v0.532.0 (<worktree>\crates\gob-check)
+   Compiling frob-ledger v0.532.0 (<worktree>\crates\frob-ledger)
+   Compiling gob-packs v0.532.0 (<worktree>\crates\gob-packs)
+   Compiling frob-pm v0.532.0 (<worktree>\crates\frob-pm)
+   Compiling grimble-verdict v0.532.0 (<worktree>\crates\grimble-verdict)
+   Compiling frob-lease v0.532.0 (<worktree>\crates\frob-lease)
+   Compiling grimble-capabilities v0.532.0 (<worktree>\crates\grimble-capabilities)
+   Compiling grimble-model v0.532.0 (<worktree>\crates\grimble-model)
+   Compiling crunk-spec v0.532.0 (<worktree>\crates\crunk-spec)
+   Compiling grimble-bind v0.532.0 (<worktree>\crates\grimble-bind)
+   Compiling frob-release v0.532.0 (<worktree>\crates\frob-release)
+   Compiling grimble-arch v0.532.0 (<worktree>\crates\grimble-arch)
+   Compiling grimble-vet v0.532.0 (<worktree>\crates\grimble-vet)
+   Compiling grimble-ci v0.532.0 (<worktree>\crates\grimble-ci)
+   Compiling crunk-tailwind v0.532.0 (<worktree>\crates\crunk-tailwind)
+   Compiling grimble-lints v0.532.0 (<worktree>\crates\grimble-lints)
+   Compiling crunk-scene v0.532.0 (<worktree>\crates\crunk-scene)
+   Compiling frob-evidence v0.532.0 (<worktree>\crates\frob-evidence)
+   Compiling grimble-check v0.532.0 (<worktree>\crates\grimble-check)
+   Compiling frob-doc v0.532.0 (<worktree>\crates\frob-doc)
+   Compiling frob-ack v0.532.0 (<worktree>\crates\frob-ack)
+   Compiling frob-tests v0.532.0 (<worktree>\crates\frob-tests)
+   Compiling crunk-ingest v0.532.0 (<worktree>\crates\crunk-ingest)
+   Compiling crunk-tokens v0.532.0 (<worktree>\crates\crunk-tokens)
+   Compiling crunk-layout v0.532.0 (<worktree>\crates\crunk-layout)
+   Compiling frob-obligations v0.532.0 (<worktree>\crates\frob-obligations)
+   Compiling frob-mirror v0.532.0 (<worktree>\crates\frob-mirror)
+   Compiling frob-worktree v0.532.0 (<worktree>\crates\frob-worktree)
+   Compiling gob-product v0.532.0 (<worktree>\crates\gob-product)
+   Compiling crunk-gallery v0.532.0 (<worktree>\crates\crunk-gallery)
+   Compiling frob-check v0.532.0 (<worktree>\crates\frob-check)
+   Compiling crunk-rules v0.532.0 (<worktree>\crates\crunk-rules)
+   Compiling frob-metrics v0.532.0 (<worktree>\crates\frob-metrics)
+   Compiling gob-frameworks v0.532.0 (<worktree>\crates\gob-frameworks)
+   Compiling frob-cli v0.532.0 (<worktree>\crates\frob)
+   Compiling crunk-check v0.532.0 (<worktree>\crates\crunk-check)
+   Compiling frob-land v0.532.0 (<worktree>\crates\frob-land)
+   Compiling gob-fix v0.532.0 (<worktree>\crates\gob-fix)
+   Compiling crunk-fix v0.532.0 (<worktree>\crates\crunk-fix)
+   Compiling grimble-serve v0.532.0 (<worktree>\crates\grimble-serve)
+   Compiling crunk-query v0.532.0 (<worktree>\crates\crunk-query)
+   Compiling crunk v0.532.0 (<worktree>\crates\crunk)
+   Compiling grimble v0.532.0 (<worktree>\crates\grimble)
+    Finished `test` profile [unoptimized] target(s) in 2m 24s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID ac97a56e-2029-4d23-b7ae-bc3ed26f076d with nextest profile: default
+    Starting 1 test across 4 binaries (572 tests skipped)
+        PASS [   0.324s] frob-cli::it remedy_verbs::every_frob_remedy_names_a_real_verb
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.326s] 1 test run: 1 passed, 572 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(every_frob_remedy_names_a_real_verb)"
+size = 4266
+status = "measured"
+test_count = 1
+tests_digest = "fc28212f2ec45e73ba13252547cf7db4625794f8cbecc60f50106caf33813d3f"
+at = "2026-11-21T00:30:43Z"
+actor = "lognd"
+rev = 1
