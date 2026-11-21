@@ -13,6 +13,17 @@ pub enum EvidenceError {
         /// The rejected program name.
         tool: String,
     },
+    // frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+    /// The `command` provider was given a flag that runs arbitrary code or injects configuration.
+    #[error("E-EVIDENCE-FLAG: `{tool}` was given `{flag}`, which is denied: {why}")]
+    FlagDenied {
+        /// The allowlisted program as written.
+        tool: String,
+        /// The denied flag, as listed in the deny table.
+        flag: String,
+        /// Why it is refused.
+        why: String,
+    },
     /// The `command` or `nextest` reference was empty or could not be split.
     #[error("E-EVIDENCE-REF: {0}")]
     BadReference(String),
@@ -205,6 +216,12 @@ impl EvidenceError {
                 Refusal::new("E-EVIDENCE-TOOL", GuardNeedsAction, self.to_string()).with_remedy(
                     format!("add \"{tool}\" to [evidence] allowed_tools in frob.toml"),
                 ),
+            ),
+            // frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+            Self::FlagDenied { tool, flag, .. } => Some(
+                Refusal::new("E-EVIDENCE-FLAG", UsageError, self.to_string()).with_remedy(format!(
+                    "drop `{flag}` from the `{tool}` command; put the setting in the repository's committed config or run a committed script instead"
+                )),
             ),
             Self::NotHuman { .. } => Some(
                 Refusal::new("E-ATTEST-NOT-HUMAN", GuardNeedsAction, self.to_string())

@@ -1198,3 +1198,26 @@ fn stale_head_warns_only_for_a_head_that_is_not_an_ancestor_of_the_tip() {
     assert_eq!(warns.len(), 1, "{warns:?}");
     assert!(warns[0].contains(&side[..12]), "{warns:?}");
 }
+
+// frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+#[test]
+fn a_command_with_a_code_executing_flag_is_refused_before_it_runs() {
+    // frob:tests crates/frob-evidence/src/provider.rs::run_command
+    let dir = repo("base");
+    let runner = gob_exec::Runner::new(gob_exec::Limits::default());
+    let argv: Vec<String> = ["git", "-c", "core.sshCommand=calc", "status"]
+        .map(str::to_owned)
+        .into();
+    let err = provider::run_command(
+        &runner,
+        &["git".to_owned()],
+        dir.path(),
+        &argv,
+        std::time::Duration::from_secs(60),
+    )
+    .expect_err("refused");
+    assert!(
+        matches!(&err, frob_evidence::EvidenceError::FlagDenied { flag, .. } if flag == "-c"),
+        "{err}"
+    );
+}

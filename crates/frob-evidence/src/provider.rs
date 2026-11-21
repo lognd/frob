@@ -1113,6 +1113,12 @@ pub fn run_command(
         tracing::warn!(tool, "command evidence refused: tool not allowlisted");
         return Err(EvidenceError::ToolNotAllowed { tool: tool.clone() });
     };
+    if matches!(
+        program,
+        Program::Cargo | Program::Git | Program::Tool { .. }
+    ) {
+        check_denied_flags(tool, rest)?;
+    }
     let out = runner.run_with_env(
         &spec(program, rest.to_vec(), cwd, timeout),
         &EnvPolicy::scrubbed(COMMAND_ENV.iter().copied()),
@@ -1129,6 +1135,148 @@ pub fn run_command(
         non_passing: NonPassing::default(),
         transcript,
     })
+}
+
+/// Where in the argument list a denied flag counts.
+#[derive(Clone, Copy)]
+enum Scope {
+    /// Anywhere before a bare `--`.
+    Anywhere,
+    /// Only among the program's own options, before its subcommand, script or module.
+    Options,
+}
+
+/// One program's denied flags: what the flags are and which options take a separate value.
+struct DenyRule {
+    /// The program name, lowercase and without `.exe`; `python*` names fold to `python`.
+    program: &'static str,
+    /// Options that consume the next argument, so it is not mistaken for the subcommand or script.
+    value_options: &'static [&'static str],
+    /// `(flag, scope, allowed values)`: the flag is refused unless its value is in the allowed list.
+    denied: &'static [(&'static str, Scope, &'static [&'static str])],
+}
+
+// frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+/// Flags that run arbitrary code or inject configuration. Repository-local files (`.git/config`, a script
+/// the command names, `conftest.py`) stay trusted: they are committed content, not ticket-author text.
+const DENY_RULES: &[DenyRule] = &[
+    DenyRule {
+        program: "git",
+        value_options: &[
+            "-C",
+            "--git-dir",
+            "--work-tree",
+            "--namespace",
+            "--super-prefix",
+            "--attr-source",
+        ],
+        denied: &[
+            ("-c", Scope::Options, &[]),
+            ("--config-env", Scope::Options, &[]),
+            ("--exec-path", Scope::Options, &[]),
+            ("--upload-pack", Scope::Anywhere, &[]),
+            ("--receive-pack", Scope::Anywhere, &[]),
+            ("--exec", Scope::Anywhere, &[]),
+            ("--extcmd", Scope::Anywhere, &[]),
+            ("--open-files-in-pager", Scope::Anywhere, &[]),
+        ],
+    },
+    DenyRule {
+        program: "cargo",
+        value_options: &[],
+        denied: &[("--config", Scope::Anywhere, &[])],
+    },
+    DenyRule {
+        program: "python",
+        value_options: &["-W", "-X", "--check-hash-based-pycs"],
+        denied: &[
+            ("-c", Scope::Options, &[]),
+            ("-m", Scope::Options, &["pytest", "unittest"]),
+        ],
+    },
+];
+
+// frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+/// Refuse a flag of `tool` that executes arbitrary code or injects config ([`DENY_RULES`]).
+///
+/// Matches `--flag value`, `--flag=value`, unambiguous long-option abbreviations (git accepts them), and
+/// short flags inside a cluster or with an attached value (`-Bc`, `-mpytest`).
+fn check_denied_flags(tool: &str, args: &[String]) -> Result<()> {
+    let lower = tool.to_ascii_lowercase();
+    let name = lower.strip_suffix(".exe").unwrap_or(&lower);
+    let name = if name.starts_with("python") {
+        "python"
+    } else {
+        name
+    };
+    for rule in DENY_RULES.iter().filter(|r| r.program == name) {
+        let options_only = rule.denied.iter().all(|d| matches!(d.1, Scope::Options));
+        let mut skip_value = false;
+        let mut options_ended = false;
+        for (i, arg) in args.iter().enumerate() {
+            if arg == "--" || (options_ended && options_only) {
+                break;
+            }
+            if std::mem::take(&mut skip_value) {
+                continue;
+            }
+            if !arg.starts_with('-') || arg == "-" {
+                options_ended = true;
+                continue;
+            }
+            for &(flag, scope, allowed) in rule.denied {
+                if options_ended && matches!(scope, Scope::Options) {
+                    continue;
+                }
+                let Some(tail) = flag_tail(arg, flag, rule.value_options) else {
+                    continue;
+                };
+                // The module of `-m`: attached (`-mpytest`, `--flag=v`), else the next argument.
+                let value = Some(tail)
+                    .filter(|t| !t.is_empty())
+                    .or_else(|| args.get(i + 1).map(String::as_str));
+                if value.is_some_and(|v| allowed.contains(&v)) {
+                    continue;
+                }
+                let why = if allowed.is_empty() {
+                    "it runs arbitrary code or injects configuration"
+                } else {
+                    "only `pytest` and `unittest` may be run as a module"
+                };
+                return Err(EvidenceError::FlagDenied {
+                    tool: tool.to_owned(),
+                    flag: flag.to_owned(),
+                    why: why.to_owned(),
+                });
+            }
+            skip_value = rule.value_options.contains(&arg.as_str());
+        }
+    }
+    Ok(())
+}
+
+/// `Some(attached value)` when `arg` is `flag`, `flag=value`, an abbreviation of a long `flag`, or (short
+/// `flag`) a cluster holding it. The text is the value attached to the flag, empty when none.
+fn flag_tail<'a>(arg: &'a str, flag: &str, value_options: &[&str]) -> Option<&'a str> {
+    if arg.starts_with("--") {
+        let (stem, value) = arg.split_once('=').unwrap_or((arg, ""));
+        // git abbreviates long options when unambiguous, so a long prefix names the flag too.
+        return (flag.starts_with("--") && stem.len() >= 5 && flag.starts_with(stem))
+            .then_some(value);
+    }
+    let letter = flag
+        .strip_prefix('-')
+        .filter(|l| l.len() == 1 && !flag.starts_with("--"))?;
+    for (at, c) in arg[1..].char_indices() {
+        let rest = &arg[1 + at + c.len_utf8()..];
+        if letter.starts_with(c) {
+            return Some(rest);
+        }
+        if value_options.iter().any(|o| o.len() == 2 && o.ends_with(c)) {
+            return None; // the rest of the cluster is that option's value
+        }
+    }
+    None
 }
 
 /// Canonical paths of the running executable and its `frob`/`grimble` siblings, allowed as command tools without listing.
@@ -3008,5 +3156,97 @@ mod tests {
             ["tests/test_m.py", "tests/sub/test_n.py"]
         );
         assert!(collection_error_files("1 passed").is_empty());
+    }
+
+    fn argv(line: &str) -> Vec<String> {
+        line.split_whitespace().map(str::to_owned).collect()
+    }
+
+    fn denied_flag(tool: &str, line: &str) -> Option<String> {
+        match check_denied_flags(tool, &argv(line)) {
+            Err(EvidenceError::FlagDenied { flag, .. }) => Some(flag),
+            Err(e) => panic!("unexpected {e}"),
+            Ok(()) => None,
+        }
+    }
+
+    // frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+    #[test]
+    fn denied_flags_are_refused_in_every_spelling_naming_the_flag() {
+        // frob:tests crates/frob-evidence/src/provider.rs::check_denied_flags
+        // frob:tests crates/frob-evidence/src/provider.rs::flag_tail
+        let cases = [
+            ("git", "-c core.sshCommand=calc fetch", "-c"),
+            ("git", "--no-pager -c core.pager=x log", "-c"),
+            ("git", "-C sub -c a=b status", "-c"),
+            ("git", "--config-env=core.x=VAR log", "--config-env"),
+            ("git", "--config-env core.x=VAR log", "--config-env"),
+            ("git", "--exec-path=/tmp/x status", "--exec-path"),
+            (
+                "git",
+                "ls-remote --upload-pack=calc origin",
+                "--upload-pack",
+            ),
+            ("git", "fetch --upload-pack calc origin", "--upload-pack"),
+            ("git", "fetch --receive-pack=calc origin", "--receive-pack"),
+            ("git", "rebase --exec=calc main", "--exec"),
+            ("git", "difftool --extcmd=calc", "--extcmd"),
+            (
+                "git",
+                "grep --open-files-in-pager=calc x",
+                "--open-files-in-pager",
+            ),
+            ("git", "ls-remote --upload-p=calc origin", "--upload-pack"),
+            ("cargo", "--config build.rustc=calc build", "--config"),
+            ("cargo", "build --config=build.rustc=calc", "--config"),
+            ("python3", "-c print(1)", "-c"),
+            ("python3", "-Ic print(1)", "-c"),
+            ("python3", "-X dev -c print(1)", "-c"),
+            ("python3", "-m http.server", "-m"),
+            ("python3", "-mpip install x", "-m"),
+            ("python3", "-m", "-m"),
+            ("python3.12", "-c x", "-c"),
+            ("PYTHON3.EXE", "-c x", "-c"),
+        ];
+        for (tool, line, flag) in cases {
+            assert_eq!(
+                denied_flag(tool, line).as_deref(),
+                Some(flag),
+                "{tool} {line}"
+            );
+        }
+        let err = check_denied_flags("git", &argv("-c a=b log")).unwrap_err();
+        assert!(err.to_string().starts_with("E-EVIDENCE-FLAG:"), "{err}");
+        assert!(err.to_string().contains("`-c`"), "{err}");
+    }
+
+    // frob:ticket 01M7Y5ZP89J1XC63S4448HACSB
+    #[test]
+    fn ordinary_invocations_pass_the_flag_check() {
+        // frob:tests crates/frob-evidence/src/provider.rs::check_denied_flags
+        // frob:tests crates/frob-evidence/src/provider.rs::flag_tail
+        let ok = [
+            ("git", "log -1 --format=%B"),
+            ("git", "-C sub status"),
+            ("git", "log -c"),
+            ("git", "switch -c topic"),
+            ("git", "diff -- -c"),
+            ("git", "--git-dir=.git status"),
+            ("cargo", "test -p frob-evidence"),
+            ("cargo", "nextest run --no-fail-fast"),
+            ("cargo", "test -- --config"),
+            ("python3", "script.py -c arg"),
+            ("python3", "-m pytest -c pytest.ini"),
+            ("python3", "-m unittest -v"),
+            ("python3", "-mpytest tests"),
+            ("python3", "-W error script.py"),
+            ("python3", "-Wdefault script.py"),
+            ("python3", "-B -I tools/check.py"),
+            ("pytest", "-c pytest.ini"),
+            ("goway", "-c anything"),
+        ];
+        for (tool, line) in ok {
+            assert_eq!(denied_flag(tool, line), None, "{tool} {line}");
+        }
     }
 }
