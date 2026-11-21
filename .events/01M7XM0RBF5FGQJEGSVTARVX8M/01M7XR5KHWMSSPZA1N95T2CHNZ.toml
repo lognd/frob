@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-21T00:30:14Z"
+digest = "eceea97ef4abfde81dbf2290c000c036db880315e5ceba7396074244e88c1b22"
+exit_code = 0
+head = "28e056b6e46868fbb0e2318177aa674d1f74831d"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.19s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID d9f3008d-3c69-4078-846f-9ae7bfedf860 with nextest profile: default
+    Starting 2 tests across 1 binary (15 tests skipped)
+        PASS [   0.035s] gob-log redact::tests::a_secret_named_field_holding_an_object_is_left_alone
+        PASS [   0.039s] gob-log redact::tests::colon_and_json_forms_are_masked
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.040s] 2 tests run: 2 passed, 15 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p gob-log -E test(a_secret_named_field_holding_an_object_is_left_alone)|test(colon_and_json_forms_are_masked)"
+size = 634
+status = "measured"
+test_count = 2
+tests_digest = "0ea1cb64b76cf09a84f2079431b90fe7f57f0a834e8b5a40989e94d6e2462699"
+at = "2026-11-21T00:30:14Z"
+actor = "lognd"
+rev = 1
