@@ -744,3 +744,61 @@ fn board_syncs_and_walks_events_once_however_many_tickets() {
         "{opens} index opens for {tickets} tickets: sync must not run per ticket"
     );
 }
+
+// frob:ticket 01M4A4NFPYHY82A7KDT0Z38E1B
+#[test]
+fn board_next_and_ticket_doable_agree_on_the_order() {
+    // frob:tests crates/frob/src/board_cmd.rs::BoardVerb
+    let dir = repo();
+    let p = dir.path();
+    for (title, priority, class) in [
+        ("low standard", "low", "standard"),
+        ("critical standard", "critical", "standard"),
+        ("high standard", "high", "standard"),
+        ("medium expedite", "medium", "expedite"),
+        ("high intangible", "high", "intangible"),
+    ] {
+        ok(
+            p,
+            &[
+                "--json",
+                "ticket",
+                "new",
+                "--title",
+                title,
+                "--type",
+                "task",
+                "--category",
+                "todo",
+                "--priority",
+                priority,
+                "--class",
+                class,
+            ],
+        );
+    }
+    let titles = |v: &Value, path: &[&str]| -> Vec<String> {
+        let mut cur = v;
+        for k in path {
+            cur = &cur[*k];
+        }
+        cur.as_array()
+            .expect("rows")
+            .iter()
+            .map(|r| r["title"].as_str().expect("title").to_owned())
+            .collect()
+    };
+    let doable = titles(
+        &ok(p, &["--json", "ticket", "doable"]),
+        &["data", "tickets"],
+    );
+    let next = titles(
+        &ok(p, &["--json", "board", "--brief"]),
+        &["data", "brief", "next"],
+    );
+    assert!(
+        doable.len() >= 6,
+        "the fixture queues six todos: {doable:?}"
+    );
+    assert_eq!(next, doable, "the board NEXT list is the doable order");
+}
