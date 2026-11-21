@@ -2,7 +2,8 @@
 id = "01M7X35W2WATD06TP58JC8MS7H"
 title = "Audit 2026-11-20 refactor batch: one git spawn helper, one node_modules walk, verb-checked remedies"
 type = "chore"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 5
 reporter = "lognd"
