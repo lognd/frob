@@ -7,12 +7,12 @@ priority = "medium"
 points = 5
 reporter = "lognd"
 created = "2026-11-20T18:23:24Z"
-updated = "2026-11-20T18:23:24Z"
+updated = "2026-11-21T00:30:28Z"
 scope = ["crates/gob-git/**", "crates/frob-evidence/**"]
 
 [[acceptance]]
 text = "Given the ten hand-rolled git spawns, when migrated, then they go through one gob-git helper that the spawn counter sees and no Program::Git Spec is built outside gob-git"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given the four node_modules walk-ups, when unified, then one bounded helper serves them and a node_modules above the root is not found; given RemedyCommand strings, then a test checks each names a real verb"
