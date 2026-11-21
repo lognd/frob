@@ -2,7 +2,8 @@
 id = "01M1T07NW2YVH57B3ZF1HQATKY"
 title = "PROTO001: protocol conformance at wiring sites"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
