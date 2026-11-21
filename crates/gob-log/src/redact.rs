@@ -52,10 +52,18 @@ static RULES: LazyLock<Vec<Rule>> = LazyLock::new(|| {
             ),
             "${1}{M}",
         ),
-        // `key: value` and JSON `"api_key": "value"` where the key names a secret.
+        // `key: value` and JSON `"api_key": "value"` where the key names a secret. A quoted value
+        // keeps its quotes (so JSON stays valid), and a value opening an object or array is never
+        // masked: `{"key":{"Local":...}}` names a field, it does not hold a secret.
         rule(
             &format!(
-                r#"(?i)(\b[A-Za-z0-9_.-]*(?:{names})[A-Za-z0-9_.-]*["']?[ \t]*:[ \t]*)("[^"]*"|'[^']*'|[^\s"',}}\]]+)"#
+                r#"(?i)(\b[A-Za-z0-9_.-]*(?:{names})[A-Za-z0-9_.-]*["']?[ \t]*:[ \t]*)(?:"[^"]*"|'[^']*')"#
+            ),
+            "${1}\"{M}\"",
+        ),
+        rule(
+            &format!(
+                r#"(?i)(\b[A-Za-z0-9_.-]*(?:{names})[A-Za-z0-9_.-]*["']?[ \t]*:[ \t]*)[^\s"',{{}}\[\]]+"#
             ),
             "${1}{M}",
         ),
@@ -135,9 +143,16 @@ mod tests {
         assert_eq!(redact("api_key: abc123"), "api_key: [REDACTED]");
         assert_eq!(
             redact(r#"{"api_key": "x y", "name": "n"}"#),
-            r#"{"api_key": [REDACTED], "name": "n"}"#
+            r#"{"api_key": "[REDACTED]", "name": "n"}"#
         );
         assert_eq!(redact("name: bob"), "name: bob");
+    }
+
+    // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
+    #[test]
+    fn a_secret_named_field_holding_an_object_is_left_alone() {
+        let json = r#"{"key":{"Local":{"verbatim_path":"./ci.yml"}},"keys":["a"]}"#;
+        assert_eq!(redact(json), json);
     }
 
     // frob:ticket 01M7X35VAR5GZ8AQ5NGPAD8WST
