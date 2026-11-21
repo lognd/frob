@@ -2,7 +2,8 @@
 id = "01M1T07NVGEMSZHP634ZBSN566"
 title = "ASSERT001: no bare assert in src/**"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
