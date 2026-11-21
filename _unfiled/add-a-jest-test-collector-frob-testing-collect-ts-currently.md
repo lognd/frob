@@ -2,7 +2,8 @@
 id = "01M1QDTYTH4NPRXJGF55ND00YZ"
 title = "add a jest test collector (frob.testing._collect_ts currently vitest-only)"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 reporter = "human"
