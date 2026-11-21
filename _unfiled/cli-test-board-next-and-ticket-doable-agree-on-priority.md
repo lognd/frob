@@ -2,12 +2,13 @@
 id = "01M4A4NFPYHY82A7KDT0Z38E1B"
 title = "CLI test: board NEXT and ticket doable agree on priority order"
 type = "task"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T02:56:45Z"
-updated = "2026-11-21T06:36:03Z"
+updated = "2026-11-21T06:36:12Z"
 labels = ["no-story"]
 scope = ["crates/frob/tests/board.rs"]
 

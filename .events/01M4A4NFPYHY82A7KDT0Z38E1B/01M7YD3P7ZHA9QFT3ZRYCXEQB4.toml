@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "Test-only: board_next_and_ticket_doable_agree_on_the_order (frob-cli board.rs)"
+at = "2026-11-21T06:36:12Z"
+actor = "lognd"
+rev = 1
