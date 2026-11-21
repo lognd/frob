@@ -7,7 +7,7 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-21T02:01:35Z"
-updated = "2026-11-21T02:18:55Z"
+updated = "2026-11-21T02:18:58Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**"]
 
@@ -17,7 +17,7 @@ bound = true
 
 [[acceptance]]
 text = "Given blobs under the cap, when read, then behavior is unchanged"
-bound = false
+bound = true
 +++
 
 Audit 2026-11-20 deferred item. no-story: audit follow-up.

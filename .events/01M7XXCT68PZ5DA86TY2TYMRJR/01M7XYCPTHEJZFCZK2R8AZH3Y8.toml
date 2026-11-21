@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-21T02:18:58Z"
+digest = "bce744beb7a1156a794d148e33aa14d7df32b0bc38def4f07336045386a05bfc"
+exit_code = 0
+head = "df49cee5e7a7687128fd7a3847bc9031b313587a"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.41s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 31d70bc9-a439-451c-9195-faa4e200363c with nextest profile: default
+    Starting 1 test across 2 binaries (366 tests skipped)
+        PASS [   0.150s] frob-ledger::it blob_cap::a_ticket_blob_under_the_cap_still_reads
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.151s] 1 test run: 1 passed, 366 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-ledger -E test(a_ticket_blob_under_the_cap_still_reads)"
+size = 546
+status = "measured"
+test_count = 1
+tests_digest = "2918ddd1ccb78a199a29e61b06358071736813154559c28b73b814f552e53e04"
+at = "2026-11-21T02:18:58Z"
+actor = "lognd"
+rev = 1
