@@ -1,0 +1,26 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-21T04:50:38Z"
+digest = "fb8b88937c6ed2b92b9165ecab9c4369d37ccd2d4a5c00323e1dc73ed8c0d379"
+exit_code = 0
+head = "66377c1cdceb957b5cb4ff006f4b5a87faec1edc"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.73s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID 1ecfd48f-fbe5-4090-aa5e-3b5e8e0732ec with nextest profile: default
+    Starting 2 tests across 2 binaries (195 tests skipped)
+        PASS [   0.017s] frob-evidence provider::tests::denied_flags_are_refused_in_every_spelling_naming_the_flag
+        PASS [   0.357s] frob-evidence::it evidence::a_command_with_a_code_executing_flag_is_refused_before_it_runs
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.359s] 2 tests run: 2 passed, 195 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-evidence -E test(a_command_with_a_code_executing_flag_is_refused_before_it_runs)|test(denied_flags_are_refused_in_every_spelling_naming_the_flag)"
+size = 688
+status = "measured"
+test_count = 2
+tests_digest = "e59003b296e925d92473cf36ac5949c9b2aae203115d6b17f3f851ae48b01138"
+at = "2026-11-21T04:50:38Z"
+actor = "lognd"
+rev = 1

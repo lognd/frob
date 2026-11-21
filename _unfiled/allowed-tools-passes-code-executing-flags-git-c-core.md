@@ -7,13 +7,13 @@ priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-21T04:31:42Z"
-updated = "2026-11-21T04:31:42Z"
+updated = "2026-11-21T04:50:38Z"
 labels = ["no-story"]
 scope = ["crates/frob-evidence/**"]
 
 [[acceptance]]
 text = "Given a command-provider evidence ref whose program is git and whose args carry a config-injection or program-execution flag, when it runs, then it is refused with a typed error naming the flag"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "Given ordinary git, cargo and python3 invocations used by existing evidence, when they run, then they are unaffected"
