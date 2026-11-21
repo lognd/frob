@@ -2,7 +2,8 @@
 id = "01M1T07NVZXW6MZ7GK5ZTTYPJ4"
 title = "RESULT001: network-I/O async def may not return None"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYV6Z35XFTPNT4QW70Y2"
