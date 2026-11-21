@@ -2,12 +2,13 @@
 id = "01M7XM0RBF5FGQJEGSVTARVX8M"
 title = "Redaction of key: value and JSON forms corrupts tool stdout that frob-check parses"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 2
 reporter = "lognd"
 created = "2026-11-20T23:17:42Z"
-updated = "2026-11-21T00:30:14Z"
+updated = "2026-11-21T00:30:20Z"
 labels = ["no-story"]
 scope = ["crates/gob-log/**", "crates/gob-exec/**"]
 
