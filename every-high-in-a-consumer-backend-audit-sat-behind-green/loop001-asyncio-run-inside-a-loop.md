@@ -2,7 +2,8 @@
 id = "01M1T07NW47BKQA0BTWGT0S8M0"
 title = "LOOP001: asyncio.run inside a loop"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
