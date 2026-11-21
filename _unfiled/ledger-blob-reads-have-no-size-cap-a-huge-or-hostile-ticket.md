@@ -2,12 +2,13 @@
 id = "01M7XXCT68PZ5DA86TY2TYMRJR"
 title = "Ledger blob reads have no size cap: a huge or hostile ticket blob is read whole into memory"
 type = "bug"
-category = "todo"
+category = "done"
+outcome = "done"
 priority = "medium"
 points = 3
 reporter = "lognd"
 created = "2026-11-21T02:01:35Z"
-updated = "2026-11-21T02:18:58Z"
+updated = "2026-11-21T02:19:00Z"
 labels = ["no-story"]
 scope = ["crates/frob-ledger/**"]
 

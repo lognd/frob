@@ -1,0 +1,8 @@
+kind = "transition"
+from = "todo"
+to = "done"
+outcome = "done"
+reason = "retroactive closeout: Blob reads capped at 8 MiB via header-size check before inflate; typed E-GIT-BLOB-TOO-LARGE"
+at = "2026-11-21T02:19:00Z"
+actor = "lognd"
+rev = 1
