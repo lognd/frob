@@ -7,13 +7,13 @@ priority = "low"
 points = 3
 reporter = "lognd"
 created = "2026-10-07T02:56:45Z"
-updated = "2026-11-21T06:36:02Z"
+updated = "2026-11-21T06:36:03Z"
 labels = ["no-story"]
 scope = ["crates/frob/tests/board.rs"]
 
 [[acceptance]]
 text = "Given tickets of mixed priority and class, when board NEXT and ticket doable are listed, then they show the same order"
-bound = false
+bound = true
 +++
 
 found while working ~N9XHZS1: the end-to-end test (new todo tickets with --priority and --class; ticket doable titles equal board --brief next titles) was drafted but crates/frob/** was leased by another ticket. Draft kept by the implementer in the session scratchpad; recreate it here.

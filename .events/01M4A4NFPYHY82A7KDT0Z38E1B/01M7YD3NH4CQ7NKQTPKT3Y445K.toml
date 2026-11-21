@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [1]
+captured_at = "2026-11-21T06:36:03Z"
+digest = "2bb7aa8035294139e2ae6833ea8e7309318451623a81db62359778d6554f4c22"
+exit_code = 0
+head = "f6a81ae0146230892281173a43b8b6ccd87c870d"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.97s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID cbb6c5b0-02f4-475d-b0a3-03b3b54352d2 with nextest profile: default
+    Starting 1 test across 4 binaries (573 tests skipped)
+        PASS [   5.966s] frob-cli::it board::board_next_and_ticket_doable_agree_on_the_order
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   5.969s] 1 test run: 1 passed, 573 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-cli -E test(board_next_and_ticket_doable_agree_on_the_order)"
+size = 548
+status = "measured"
+test_count = 1
+tests_digest = "94467245e214c9e41e7aa692f70016f5f661028fb70bdc6f947a7d6d101e1a01"
+at = "2026-11-21T06:36:03Z"
+actor = "lognd"
+rev = 1
