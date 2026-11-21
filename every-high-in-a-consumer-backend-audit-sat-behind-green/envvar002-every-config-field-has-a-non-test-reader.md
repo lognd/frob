@@ -2,7 +2,8 @@
 id = "01M1T07NW3YT3YM71W7Z53C7YQ"
 title = "ENVVAR002: every config field has a non-test reader"
 type = "security"
-category = "todo"
+category = "done"
+outcome = "wont-fix"
 priority = "low"
 points = 3
 parent = "01M1QDTYTFZHQYMDHNFBSGQXJJ"
