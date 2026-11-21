@@ -1,0 +1,13 @@
+kind = "create"
+title = "Ledger blob reads have no size cap: a huge or hostile ticket blob is read whole into memory"
+type = "bug"
+category = "todo"
+priority = "medium"
+points = 3
+labels = ["no-story"]
+scope = ["crates/frob-ledger/**"]
+acceptance = ["Given a ledger blob larger than the cap, when it is read, then the read fails with a typed error naming the cap and nothing larger than the cap is buffered", "Given blobs under the cap, when read, then behavior is unchanged"]
+body = "Audit 2026-11-20 deferred item. no-story: audit follow-up."
+at = "2026-11-21T02:01:35Z"
+actor = "lognd"
+rev = 1
