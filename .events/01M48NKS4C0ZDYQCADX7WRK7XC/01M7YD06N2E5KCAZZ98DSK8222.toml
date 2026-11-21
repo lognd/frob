@@ -1,0 +1,25 @@
+kind = "evidence"
+accepts = [2]
+captured_at = "2026-11-21T06:34:16Z"
+digest = "cee2b55291250c86ff273d5853c94b3c9dad336f7502e31082658a6bf1626235"
+exit_code = 0
+head = "f6a81ae0146230892281173a43b8b6ccd87c870d"
+inline = '''
+    Finished `test` profile [unoptimized] target(s) in 0.99s
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+ Nextest run ID c3f35637-bb8c-40e6-852c-bbdca7eab72d with nextest profile: default
+    Starting 1 test across 3 binaries (36 tests skipped)
+        PASS [   0.020s] frob-docgen::it config_rule_ids::an_unknown_rule_id_is_reported_and_a_renamed_one_resolves
+\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}
+     Summary [   0.021s] 1 test run: 1 passed, 36 skipped
+'''
+passed = true
+provider = "nextest"
+ref = "-p frob-docgen -E test(an_unknown_rule_id_is_reported_and_a_renamed_one_resolves)"
+size = 569
+status = "measured"
+test_count = 1
+tests_digest = "a38936556ac9abb80f946e8c75787e4597d2372d001bb46e6f63a80a1d7e4f10"
+at = "2026-11-21T06:34:16Z"
+actor = "lognd"
+rev = 1

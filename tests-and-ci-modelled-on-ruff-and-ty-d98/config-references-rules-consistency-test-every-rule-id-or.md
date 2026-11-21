@@ -8,7 +8,7 @@ points = 3
 parent = "01M47QTS14TAZQ67NN2M9NHDJP"
 reporter = "lognd"
 created = "2026-10-06T13:14:26Z"
-updated = "2026-11-21T06:33:02Z"
+updated = "2026-11-21T06:34:16Z"
 labels = ["no-story"]
 scope = ["crates/gob-config/**", "crates/gob-rules/**", "crates/frob/**"]
 
@@ -18,7 +18,7 @@ bound = true
 
 [[acceptance]]
 text = "a renamed rule id named in config resolves through the redirect table and passes"
-bound = false
+bound = true
 
 [[acceptance]]
 text = "frob doctor reports an unknown rule id in a user repository's config"
